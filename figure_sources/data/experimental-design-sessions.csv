@@ -1,0 +1,5 @@
+number,name,mismatch,color
+1,Standard oddball,"Orientation, halt, and omission deviants",#008F80
+2,Sensorimotor mismatch,Visual flow decoupled from locomotion,#3157B7
+3,Sequence mismatch,Substitution in a learned grating sequence,#C65D13
+4,Duration mismatch,Shorter and longer inter-stimulus delays,#A47C00

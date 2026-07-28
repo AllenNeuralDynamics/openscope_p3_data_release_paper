@@ -1,0 +1,27 @@
+version: 1
+
+project:
+  contributors:
+    - id: jerome-lecoq
+      name: Jérôme Lecoq
+      first_name: Jérôme
+      last_name: Lecoq
+      orcid: 0000-0002-0131-0938
+      email: jeromel@alleninstitute.org
+      corresponding: true
+      affiliations:
+        - allen
+      social_links:
+        - platform: orcid
+          url: https://orcid.org/0000-0002-0131-0938
+        - platform: github
+          url: https://github.com/jeromelecoq
+        - platform: email
+          url: mailto:jeromel@alleninstitute.org
+
+  affiliations:
+    - id: allen
+      name: Allen Institute for Neural Dynamics
+      city: Seattle
+      region: WA
+      country: US

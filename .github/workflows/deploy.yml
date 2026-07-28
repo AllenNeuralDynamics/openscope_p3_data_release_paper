@@ -1,0 +1,87 @@
+name: Validate and deploy MyST publication
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  BASE_URL: /openscope_p3_data_release_paper
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.28"
+          enable-cache: true
+
+      - name: Install Python package
+        run: uv sync --locked --extra dev
+
+      - name: Check Python
+        run: uv run ruff check .
+
+      - name: Test publication code
+        run: uv run pytest
+
+      - name: Regenerate interactive figures
+        run: uv run build-publication-figures
+
+      - name: Check generated figures are current
+        run: git diff --exit-code -- interactive images/figures/generated
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install MyST
+        run: npm install --global mystmd@1.10.1
+
+      - name: Build HTML publication
+        run: myst build --html
+
+      - name: Check interactive site assets
+        run: test -f _build/html/interactive/experimental-design.html
+
+      - name: Configure Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_build/html
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

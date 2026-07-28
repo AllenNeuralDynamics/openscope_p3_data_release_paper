@@ -1,0 +1,9 @@
+# MyST build outputs
+_build/
+
+# Python environments and build artifacts
+.venv/
+.pytest_cache/
+.ruff_cache/
+**/__pycache__/
+*.egg-info/

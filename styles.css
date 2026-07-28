@@ -1,0 +1,10 @@
+#fig-interactive-experimental-design .relative.inline-block {
+  height: 520px;
+  padding-bottom: 0 !important;
+}
+
+@media (max-width: 640px) {
+  #fig-interactive-experimental-design .relative.inline-block {
+    height: 540px;
+  }
+}

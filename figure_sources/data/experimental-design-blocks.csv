@@ -1,0 +1,9 @@
+order,name,duration_minutes,category
+1,Standard control,6.4,shared
+2,Context mismatch,26.0,context
+3,Standard control repeat,6.4,shared
+4,Sequential control,4.7,shared
+5,Jitter control,6.4,shared
+6,Open-loop playback,6.4,shared
+7,Natural movie,10.0,shared
+8,Receptive field mapping,5.0,shared

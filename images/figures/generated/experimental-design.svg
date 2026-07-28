@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" role="img" aria-labelledby="title description">
+<title id="title">Shared structure of the four predictive-processing sessions</title>
+<desc id="description">Four horizontal session timelines with a context-specific mismatch block and seven shared control and characterization blocks.</desc>
+<rect width="1200" height="500" fill="#FFFFFF"/>
+<text x="40" y="52" font-family="IBM Plex Sans, sans-serif" font-size="28" font-weight="600" fill="#172126">Shared structure of the four predictive-processing sessions</text>
+<text x="40" y="123" font-family="IBM Plex Sans, sans-serif" font-size="17" font-weight="600" fill="#172126">Session 1</text>
+<text x="40" y="144" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#49565C">Standard oddball</text>
+<rect x="220.00" y="105" width="82.58" height="44" fill="#D9DFE3" stroke="#FFFFFF" stroke-width="1"/>
+<text x="261.29" y="132" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control</text>
+<rect x="302.58" y="105" width="335.48" height="44" fill="#008F80" stroke="#FFFFFF" stroke-width="1"/>
+<text x="470.32" y="132" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Context mismatch</text>
+<rect x="638.06" y="105" width="82.58" height="44" fill="#C7D0D6" stroke="#FFFFFF" stroke-width="1"/>
+<text x="679.35" y="132" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control repeat</text>
+<rect x="720.65" y="105" width="60.65" height="44" fill="#B5C1C8" stroke="#FFFFFF" stroke-width="1"/>
+<rect x="781.29" y="105" width="82.58" height="44" fill="#A4B2BA" stroke="#FFFFFF" stroke-width="1"/>
+<text x="822.58" y="132" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Jitter control</text>
+<rect x="863.87" y="105" width="82.58" height="44" fill="#92A3AC" stroke="#FFFFFF" stroke-width="1"/>
+<text x="905.16" y="132" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Open-loop playback</text>
+<rect x="946.45" y="105" width="129.03" height="44" fill="#80949E" stroke="#FFFFFF" stroke-width="1"/>
+<text x="1010.97" y="132" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Natural movie</text>
+<rect x="1075.48" y="105" width="64.52" height="44" fill="#6F858F" stroke="#FFFFFF" stroke-width="1"/>
+<text x="40" y="195" font-family="IBM Plex Sans, sans-serif" font-size="17" font-weight="600" fill="#172126">Session 2</text>
+<text x="40" y="216" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#49565C">Sensorimotor mismatch</text>
+<rect x="220.00" y="177" width="82.58" height="44" fill="#D9DFE3" stroke="#FFFFFF" stroke-width="1"/>
+<text x="261.29" y="204" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control</text>
+<rect x="302.58" y="177" width="335.48" height="44" fill="#3157B7" stroke="#FFFFFF" stroke-width="1"/>
+<text x="470.32" y="204" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Context mismatch</text>
+<rect x="638.06" y="177" width="82.58" height="44" fill="#C7D0D6" stroke="#FFFFFF" stroke-width="1"/>
+<text x="679.35" y="204" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control repeat</text>
+<rect x="720.65" y="177" width="60.65" height="44" fill="#B5C1C8" stroke="#FFFFFF" stroke-width="1"/>
+<rect x="781.29" y="177" width="82.58" height="44" fill="#A4B2BA" stroke="#FFFFFF" stroke-width="1"/>
+<text x="822.58" y="204" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Jitter control</text>
+<rect x="863.87" y="177" width="82.58" height="44" fill="#92A3AC" stroke="#FFFFFF" stroke-width="1"/>
+<text x="905.16" y="204" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Open-loop playback</text>
+<rect x="946.45" y="177" width="129.03" height="44" fill="#80949E" stroke="#FFFFFF" stroke-width="1"/>
+<text x="1010.97" y="204" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Natural movie</text>
+<rect x="1075.48" y="177" width="64.52" height="44" fill="#6F858F" stroke="#FFFFFF" stroke-width="1"/>
+<text x="40" y="267" font-family="IBM Plex Sans, sans-serif" font-size="17" font-weight="600" fill="#172126">Session 3</text>
+<text x="40" y="288" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#49565C">Sequence mismatch</text>
+<rect x="220.00" y="249" width="82.58" height="44" fill="#D9DFE3" stroke="#FFFFFF" stroke-width="1"/>
+<text x="261.29" y="276" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control</text>
+<rect x="302.58" y="249" width="335.48" height="44" fill="#C65D13" stroke="#FFFFFF" stroke-width="1"/>
+<text x="470.32" y="276" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Context mismatch</text>
+<rect x="638.06" y="249" width="82.58" height="44" fill="#C7D0D6" stroke="#FFFFFF" stroke-width="1"/>
+<text x="679.35" y="276" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control repeat</text>
+<rect x="720.65" y="249" width="60.65" height="44" fill="#B5C1C8" stroke="#FFFFFF" stroke-width="1"/>
+<rect x="781.29" y="249" width="82.58" height="44" fill="#A4B2BA" stroke="#FFFFFF" stroke-width="1"/>
+<text x="822.58" y="276" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Jitter control</text>
+<rect x="863.87" y="249" width="82.58" height="44" fill="#92A3AC" stroke="#FFFFFF" stroke-width="1"/>
+<text x="905.16" y="276" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Open-loop playback</text>
+<rect x="946.45" y="249" width="129.03" height="44" fill="#80949E" stroke="#FFFFFF" stroke-width="1"/>
+<text x="1010.97" y="276" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Natural movie</text>
+<rect x="1075.48" y="249" width="64.52" height="44" fill="#6F858F" stroke="#FFFFFF" stroke-width="1"/>
+<text x="40" y="339" font-family="IBM Plex Sans, sans-serif" font-size="17" font-weight="600" fill="#172126">Session 4</text>
+<text x="40" y="360" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#49565C">Duration mismatch</text>
+<rect x="220.00" y="321" width="82.58" height="44" fill="#D9DFE3" stroke="#FFFFFF" stroke-width="1"/>
+<text x="261.29" y="348" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control</text>
+<rect x="302.58" y="321" width="335.48" height="44" fill="#A47C00" stroke="#FFFFFF" stroke-width="1"/>
+<text x="470.32" y="348" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Context mismatch</text>
+<rect x="638.06" y="321" width="82.58" height="44" fill="#C7D0D6" stroke="#FFFFFF" stroke-width="1"/>
+<text x="679.35" y="348" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control repeat</text>
+<rect x="720.65" y="321" width="60.65" height="44" fill="#B5C1C8" stroke="#FFFFFF" stroke-width="1"/>
+<rect x="781.29" y="321" width="82.58" height="44" fill="#A4B2BA" stroke="#FFFFFF" stroke-width="1"/>
+<text x="822.58" y="348" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Jitter control</text>
+<rect x="863.87" y="321" width="82.58" height="44" fill="#92A3AC" stroke="#FFFFFF" stroke-width="1"/>
+<text x="905.16" y="348" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Open-loop playback</text>
+<rect x="946.45" y="321" width="129.03" height="44" fill="#80949E" stroke="#FFFFFF" stroke-width="1"/>
+<text x="1010.97" y="348" font-family="IBM Plex Sans, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Natural movie</text>
+<rect x="1075.48" y="321" width="64.52" height="44" fill="#6F858F" stroke="#FFFFFF" stroke-width="1"/>
+<line x1="220" y1="405" x2="1140" y2="405" stroke="#49565C" stroke-width="1"/>
+<line x1="220.00" y1="405" x2="220.00" y2="411" stroke="#49565C" stroke-width="1"/>
+<text x="220.00" y="429" font-family="IBM Plex Sans, sans-serif" font-size="12" text-anchor="middle" fill="#49565C">0 min</text>
+<line x1="349.03" y1="405" x2="349.03" y2="411" stroke="#49565C" stroke-width="1"/>
+<text x="349.03" y="429" font-family="IBM Plex Sans, sans-serif" font-size="12" text-anchor="middle" fill="#49565C">10 min</text>
+<line x1="478.06" y1="405" x2="478.06" y2="411" stroke="#49565C" stroke-width="1"/>
+<text x="478.06" y="429" font-family="IBM Plex Sans, sans-serif" font-size="12" text-anchor="middle" fill="#49565C">20 min</text>
+<line x1="607.10" y1="405" x2="607.10" y2="411" stroke="#49565C" stroke-width="1"/>
+<text x="607.10" y="429" font-family="IBM Plex Sans, sans-serif" font-size="12" text-anchor="middle" fill="#49565C">30 min</text>
+<line x1="736.13" y1="405" x2="736.13" y2="411" stroke="#49565C" stroke-width="1"/>
+<text x="736.13" y="429" font-family="IBM Plex Sans, sans-serif" font-size="12" text-anchor="middle" fill="#49565C">40 min</text>
+<line x1="865.16" y1="405" x2="865.16" y2="411" stroke="#49565C" stroke-width="1"/>
+<text x="865.16" y="429" font-family="IBM Plex Sans, sans-serif" font-size="12" text-anchor="middle" fill="#49565C">50 min</text>
+<line x1="994.19" y1="405" x2="994.19" y2="411" stroke="#49565C" stroke-width="1"/>
+<text x="994.19" y="429" font-family="IBM Plex Sans, sans-serif" font-size="12" text-anchor="middle" fill="#49565C">60 min</text>
+<line x1="1123.23" y1="405" x2="1123.23" y2="411" stroke="#49565C" stroke-width="1"/>
+<text x="1123.23" y="429" font-family="IBM Plex Sans, sans-serif" font-size="12" text-anchor="middle" fill="#49565C">70 min</text>
+</svg>
