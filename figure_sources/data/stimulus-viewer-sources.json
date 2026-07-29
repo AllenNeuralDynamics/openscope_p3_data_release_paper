@@ -4,6 +4,7 @@
   "generator_url": "https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generate_experiment_csv.py",
   "workflow_url": "https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generic_oddball.bonsai",
   "zebra_movie_url": "https://raw.githubusercontent.com/AllenNeuralDynamics/openscope-community-predictive-processing/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/movies/zebra_allen_screen_tscale_30_scale_10.mp4",
+  "zebra_movie_sha256": "3ee4d88356dba7220eb67e53f7d117400932f3adf95132d6301fe212ff7cf899",
   "recorded_tables": {
     "ecephys": "https://dandiarchive.org/dandiset/001637/draft/files",
     "mesoscope": "https://dandiarchive.org/dandiset/001768/draft/files"

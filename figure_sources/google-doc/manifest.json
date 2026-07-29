@@ -9,39 +9,63 @@
       "filename": "figure-01-graphical-abstract.png",
       "label": "fig-graphical-abstract",
       "alt": "Predictive processing across brain-wide, local-circuit, and single-cell scales.",
-      "caption": "Graphical overview of predictive processing across spatial scales.",
+      "caption": "Predictive processing across spatial scales. A visual sequence establishes an expectation (blue), whereas an unexpected oddball produces a prediction-error signal (red). Predictions and errors may be expressed through reciprocal brain-wide pathways, within local cortical populations, and across the dendritic and somatic compartments of individual neurons. The multimodal dataset samples these nested scales to test whether mismatch responses reflect a shared computation or scale- and circuit-specific mechanisms.",
       "status": "draft",
       "supplementary_number": null,
       "path": "images/figures/imported/figure-01-graphical-abstract.png",
-      "sha256": "9cc826d6d03eb5336803aa1af26f1e00c513499ebd8620599697533fb1bafcb9",
-      "source_kind": "google-doc-rendered-png",
-      "editable_source_url": null
+      "sha256": "fca60447dea035cdb349f9ac8d834982d744211168973b8fbe52a146c1867735",
+      "source_kind": "google-doc-derived-crop",
+      "editable_source_url": null,
+      "replacement_source_path": "figure_sources/derived/figure-01-graphical-abstract-cropped.png",
+      "crop_box_px": [
+        340,
+        190,
+        1340,
+        960
+      ],
+      "replaces_google_doc_source": "image12.png"
     },
     {
       "source_name": "image10.png",
       "filename": "figure-02-experimental-design.png",
       "label": "fig-experimental-design",
       "alt": "Experimental workflow, recording cohorts, four mismatch contexts, and shared control blocks.",
-      "caption": "Experimental design across cohorts, recording modalities, mismatch contexts, and control blocks.",
+      "caption": "Experimental design and shared stimulus architecture. **A,** Animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels, or SLAP2. **B,** Motor- and sequence-habituated cohorts experienced the same four recording contexts in cohort-specific orders; open squares denote training without mismatches and colored squares denote recording sessions with mismatches. **C,** Every recording used the same block order: standard control, context-specific mismatch, repeat standard control, sequential control, duration-jitter control, open-loop playback, receptive-field mapping, and zebra movie. **D,** Context panels summarize standard oddball, sensorimotor, sequence, and duration violations; control panels show the matched stimulus sets used for tuning, normalization, and cross-context comparison.",
       "status": "draft",
       "supplementary_number": null,
       "path": "images/figures/imported/figure-02-experimental-design.png",
-      "sha256": "0bcff274658a86b01e196770db9cc69676d75aca63140c579bbd5150b88eca20",
-      "source_kind": "google-doc-rendered-png",
-      "editable_source_url": null
+      "sha256": "d0572a6e3b37b72b4fd70400db3ac1487cc2afc63a71cc6077f0b8d9483aa5cf",
+      "source_kind": "google-doc-derived-crop",
+      "editable_source_url": null,
+      "replacement_source_path": "figure_sources/derived/figure-02-experimental-design-cropped.png",
+      "crop_box_px": [
+        20,
+        55,
+        2040,
+        835
+      ],
+      "replaces_google_doc_source": "image10.png"
     },
     {
       "source_name": "image8.png",
       "filename": "figure-03-multimodal-pipelines.png",
       "label": "fig-multimodal-pipelines",
-      "alt": "Neuropixels, mesoscope, and SLAP2 pipelines from behavioral cohort through neuronal traces.",
-      "caption": "Multimodal experimental pipelines for Neuropixels, mesoscope, and SLAP2 recordings.",
+      "alt": "Neuropixels, mesoscope, and SLAP2 pipelines from behavioral cohort through rig geometry, mouse platform, and brain targeting.",
+      "caption": "Multimodal experimental pipelines. Rows summarize Neuropixels, mesoscope two-photon calcium imaging, and SLAP2 dendritic imaging. Colored blocks indicate the cohort-specific order of predictive contexts across recording days. The central columns show each rig and head-fixed mouse platform. Brain-targeting schematics show six acute Neuropixels trajectories spanning cortical and subcortical structures, eight chronic mesoscope planes across VISp and VISlm, and dual-plane SLAP2 sampling of proximal and apical dendritic compartments in a layer II/III pyramidal neuron.",
       "status": "draft",
       "supplementary_number": null,
       "path": "images/figures/imported/figure-03-multimodal-pipelines.png",
-      "sha256": "370900971d88de69ab1f8da98ab7d0ab319d8e2c49a8b0d6489c8555032d1b87",
-      "source_kind": "google-doc-rendered-png",
-      "editable_source_url": null
+      "sha256": "4d73a4857369b4c0b5364b925345e0441ae1964c3b21db5aaf42ef3d1b2d70df",
+      "source_kind": "google-doc-derived-crop",
+      "editable_source_url": null,
+      "replacement_source_path": "figure_sources/derived/figure-04-multimodal-pipelines-no-traces.png",
+      "crop_box_px": [
+        45,
+        70,
+        1600,
+        965
+      ],
+      "replaces_google_doc_source": "image8.png"
     },
     {
       "source_name": "image5.png",
@@ -156,8 +180,8 @@
       "label": "fig-supp-neuropixels-visual-responses",
       "alt": "Visually responsive fractions, firing-rate traces, and receptive fields across Neuropixels probes.",
       "caption": "Example visually evoked Neuropixels responses and receptive fields.",
-      "status": "supplementary",
-      "supplementary_number": 4,
+      "status": "removed",
+      "supplementary_number": null,
       "path": "images/figures/imported/supplementary-neuropixels-visual-responses.png",
       "sha256": "f08bf83b21f6b12ed0ad13c519896f4d9777e1fc839d02b62ec772b9588f3f4b",
       "source_kind": "google-doc-rendered-png",

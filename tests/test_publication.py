@@ -3,6 +3,7 @@ import hashlib
 import json
 import re
 import runpy
+import struct
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -10,6 +11,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 def file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def png_dimensions(path: Path) -> tuple[int, int]:
+    data = path.read_bytes()[:24]
+    assert data[:8] == b"\x89PNG\r\n\x1a\n"
+    return struct.unpack(">II", data[16:24])
 
 
 def test_imported_figure_manifest_matches_files() -> None:
@@ -41,7 +48,18 @@ def test_imported_figure_manifest_matches_files() -> None:
     assert implant["replaces_google_doc_source"] == "image14.png"
 
     removed = {asset["source_name"] for asset in manifest["assets"] if asset["status"] == "removed"}
-    assert removed == {"image1.png", "image2.png"}
+    assert removed == {"image1.png", "image2.png", "image7.png"}
+
+    expected_crops = {
+        "figure-01-graphical-abstract.png": ([340, 190, 1340, 960], (1000, 770)),
+        "figure-02-experimental-design.png": ([20, 55, 2040, 835], (2020, 780)),
+        "figure-03-multimodal-pipelines.png": ([45, 70, 1600, 965], (1555, 895)),
+    }
+    for filename, (crop_box, dimensions) in expected_crops.items():
+        asset = next(asset for asset in manifest["assets"] if asset["filename"] == filename)
+        assert asset["source_kind"] == "google-doc-derived-crop"
+        assert asset["crop_box_px"] == crop_box
+        assert png_dimensions(REPO_ROOT / asset["path"]) == dimensions
 
 
 def test_manuscript_local_assets_and_figure_metadata() -> None:
@@ -57,8 +75,8 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
-    assert len(figures) == 11
-    assert manuscript.count(":::{figure} ./images/figures/imported/") == 11
+    assert len(figures) == 10
+    assert manuscript.count(":::{figure} ./images/figures/imported/") == 10
     assert manuscript.count(":::{figure} ./images/figures/generated/") == 0
     for options in figures:
         assert ":label:" in options
@@ -96,7 +114,10 @@ def test_mesoscope_laser_power_is_structured_data() -> None:
     assert "| 250-300 | 110 | 170 |" in manuscript
     assert "supplementary-mesoscope-depth-power.svg" not in manuscript
     assert manuscript.count("(#table-mesoscope-laser-power)") == 1
-    assert "Depth-dependent laser-power ranges are provided" in manuscript
+    assert "Laser power was selected from the [depth-dependent lookup ranges]" in manuscript
+    assert "table-hover-source" in manuscript
+    supplementary = manuscript[manuscript.index("## Supplementary figures") :]
+    assert "mesoscope laser-power lookup table" not in supplementary
 
 
 def test_glossary_is_an_expandable_final_section() -> None:
@@ -145,14 +166,15 @@ def test_supplementary_studies_table_is_complete() -> None:
 def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
-    for number in range(1, 5):
+    for number in range(1, 4):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
-    assert manuscript.count(":enumerated: false\n:width: 100%") >= 4
+    assert manuscript.count(":enumerated: false\n:width: 100%") >= 3
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
     assert "supplementary-neuropixels-targeting.png" in manuscript
     assert "figure-11-analysis-framework.png" not in manuscript
     assert "fig-supp-power-simulation-trials" not in manuscript
     assert "fig-supp-power-simulation-sessions" not in manuscript
+    assert "fig-supp-neuropixels-visual-responses" not in manuscript
     assert "Simulation of responsive-neuron detection rate" not in manuscript
 
 
@@ -188,8 +210,32 @@ def test_imported_data_tables_have_body_cells() -> None:
         assert "data-full-value" in table
 
     assert manuscript.count("interactive/data-explorer.html") == 1
-    assert '<details class="static-table-fallback">' in manuscript
-    assert "View grouped static summary tables" in manuscript
+    assert '<div class="publication-data-source" hidden aria-hidden="true">' in manuscript
+    assert "View grouped static summary tables" not in manuscript
+
+
+def test_figure_captions_and_interactive_placement() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+
+    assert "A visual sequence establishes an expectation" in manuscript
+    assert "**A,** Animals progressed from surgery" in manuscript
+    assert "Rows summarize Neuropixels, mesoscope two-photon" in manuscript
+    assert "Interactive record-level inventory of 39 mice and 164 recording sessions" in manuscript
+
+    figure_2 = manuscript.index(":label: fig-experimental-design")
+    explanation = manuscript.index("The four distinct session contexts")
+    viewer = manuscript.index(":label: fig-interactive-experimental-design")
+    assert figure_2 < explanation < viewer
+
+
+def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:
+    stylesheet = (REPO_ROOT / "styles.css").read_text(encoding="utf-8")
+
+    assert ".myst-primary-sidebar" in stylesheet
+    assert "display: none !important" in stylesheet
+    assert "minmax(10ch, 20ch)" in stylesheet
+    assert "#fig-graphical-abstract" in stylesheet
+    assert "#fig-experimental-design" in stylesheet
 
 
 def test_docx_text_formatting_artifacts_are_normalized() -> None:

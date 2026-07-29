@@ -9,8 +9,13 @@ from openscope_p3_publication.figures import (
     ANIMAL_RECORDS_PROVENANCE_PATH,
     BLOCKS,
     SESSIONS,
+    STIMULUS_EXCERPT_PROVENANCE_PATH,
     STIMULUS_SOURCES_PATH,
+    ZEBRA_MOVIE_SOURCE,
+    ZEBRA_POSTER_SOURCE,
     load_publication_table_data,
+    load_shared_stimulus_table_excerpts,
+    load_stimulus_table_excerpts,
     total_duration_minutes,
     write_data_explorer_html,
     write_interactive_html,
@@ -28,10 +33,39 @@ def test_stimulus_sources_are_pinned() -> None:
     sources = json.loads(STIMULUS_SOURCES_PATH.read_text(encoding="utf-8"))
 
     assert sources["upstream_revision"] == "0365ae32f0f0473320ed202b7c5d2bce6cf5df6b"
+    assert sources["zebra_movie_sha256"] == (
+        "3ee4d88356dba7220eb67e53f7d117400932f3adf95132d6301fe212ff7cf899"
+    )
     assert len(sources["sessions"]) == 4
     for source in sources["sessions"]:
         assert source["example_table_url"].endswith("_example.csv")
         assert len(source["sha256"]) == 64
+
+
+def test_stimulus_excerpts_preserve_pinned_source_order() -> None:
+    sources = json.loads(STIMULUS_SOURCES_PATH.read_text(encoding="utf-8"))
+    provenance = json.loads(
+        STIMULUS_EXCERPT_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    contexts = load_stimulus_table_excerpts(sources)
+    shared = load_shared_stimulus_table_excerpts(sources)
+
+    assert provenance["upstream_revision"] == sources["upstream_revision"]
+    assert set(contexts) == {"1", "2", "3", "4"}
+    assert set(shared) == {"0", "2", "3", "4", "5", "7"}
+    assert contexts["1"]["firstMismatchTrial"] == 572
+    assert contexts["2"]["firstMismatchTrial"] == 1070
+    assert contexts["1"]["rows"][0]["trialNumber"] == 560
+    assert contexts["1"]["rows"][0]["sourceRow"] == 561
+    assert contexts["1"]["rows"][12]["trialNumber"] == 572
+    assert [row["orientation"] for row in shared["0"]["rows"][:4]] == [
+        45.0,
+        45.0,
+        247.5,
+        90.0,
+    ]
+    assert shared["7"]["rows"][0]["diameterX"] == 20.0
+    assert shared["0"]["rows"][0]["sourceRow"] == 2
 
 
 def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
@@ -53,12 +87,40 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert "setInterval" in html
     assert "Standard oddball" in html
     assert "Duration mismatch" in html
+    assert 'width="480" height="380"' in html
+    assert "stimulusTableExcerpts" in html
+    assert "sharedTableExcerpts" in html
+    assert '"trialNumber":572' in html
+    assert "pinned table (source order)" in html
+    assert "angularDistanceDegrees" in html
+    assert "normalizedX * 120 / 2" in html
+    assert "normalizedY * 95 / 2" in html
+    assert "zebra-stimulus-excerpt.m4v" in html
+    assert "zebra-stimulus-poster.png" in html
+    assert 'id="sync-square"' not in html
+    assert "drawZebraFallback" not in html
+    for removed_function in (
+        "oddballSpec",
+        "sensorimotorSpec",
+        "sequenceSpec",
+        "durationSpec",
+        "standardControlSpec",
+        "receptiveFieldSpec",
+    ):
+        assert removed_function not in html
     assert 'id="mock-mouse"' not in html
     assert 'id="event-log"' not in html
     assert 'id="trigger-mismatch"' not in html
     assert "__SIMULATOR_" not in html
     assert 'role="img"' in svg
     assert "Session 4" in svg
+
+    assert hashlib.sha256(
+        (tmp_path / ZEBRA_MOVIE_SOURCE.name).read_bytes()
+    ).hexdigest() == hashlib.sha256(ZEBRA_MOVIE_SOURCE.read_bytes()).hexdigest()
+    assert hashlib.sha256(
+        (tmp_path / ZEBRA_POSTER_SOURCE.name).read_bytes()
+    ).hexdigest() == hashlib.sha256(ZEBRA_POSTER_SOURCE.read_bytes()).hexdigest()
 
     first_render = html
     write_interactive_html(html_path)

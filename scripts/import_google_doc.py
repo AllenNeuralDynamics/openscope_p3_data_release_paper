@@ -32,6 +32,9 @@ SLIDE_15_SOURCE_PATH = (
     / "slide-15-neuropixels-implant.png"
 )
 SLIDE_15_PROVENANCE_PATH = SLIDE_15_SOURCE_PATH.with_suffix(".provenance.json")
+DERIVED_FIGURE_PROVENANCE_PATH = (
+    REPO_ROOT / "figure_sources" / "derived" / "cropped-figures.provenance.json"
+)
 
 
 @dataclass(frozen=True)
@@ -51,7 +54,16 @@ FIGURE_ASSETS = (
         "figure-01-graphical-abstract.png",
         "fig-graphical-abstract",
         "Predictive processing across brain-wide, local-circuit, and single-cell scales.",
-        "Graphical overview of predictive processing across spatial scales.",
+        (
+            "Predictive processing across spatial scales. A visual sequence "
+            "establishes an expectation (blue), whereas an unexpected oddball "
+            "produces a prediction-error signal (red). Predictions and errors may "
+            "be expressed through reciprocal brain-wide pathways, within local "
+            "cortical populations, and across the dendritic and somatic compartments "
+            "of individual neurons. The multimodal dataset samples these nested "
+            "scales to test whether mismatch responses reflect a shared computation "
+            "or scale- and circuit-specific mechanisms."
+        ),
     ),
     FigureAsset(
         "image10.png",
@@ -62,8 +74,19 @@ FIGURE_ASSETS = (
             "and shared control blocks."
         ),
         (
-            "Experimental design across cohorts, recording modalities, mismatch "
-            "contexts, and control blocks."
+            "Experimental design and shared stimulus architecture. **A,** Animals "
+            "progressed from surgery through intrinsic-signal-imaging mapping and "
+            "habituation before recording with mesoscope two-photon imaging, "
+            "Neuropixels, or SLAP2. **B,** Motor- and sequence-habituated cohorts "
+            "experienced the same four recording contexts in cohort-specific orders; "
+            "open squares denote training without mismatches and colored squares "
+            "denote recording sessions with mismatches. **C,** Every recording used "
+            "the same block order: standard control, context-specific mismatch, "
+            "repeat standard control, sequential control, duration-jitter control, "
+            "open-loop playback, receptive-field mapping, and zebra movie. **D,** "
+            "Context panels summarize standard oddball, sensorimotor, sequence, and "
+            "duration violations; control panels show the matched stimulus sets used "
+            "for tuning, normalization, and cross-context comparison."
         ),
     ),
     FigureAsset(
@@ -72,9 +95,19 @@ FIGURE_ASSETS = (
         "fig-multimodal-pipelines",
         (
             "Neuropixels, mesoscope, and SLAP2 pipelines from behavioral cohort "
-            "through neuronal traces."
+            "through rig geometry, mouse platform, and brain targeting."
         ),
-        "Multimodal experimental pipelines for Neuropixels, mesoscope, and SLAP2 recordings.",
+        (
+            "Multimodal experimental pipelines. Rows summarize Neuropixels, "
+            "mesoscope two-photon calcium imaging, and SLAP2 dendritic imaging. "
+            "Colored blocks indicate the cohort-specific order of predictive "
+            "contexts across recording days. The central columns show each rig and "
+            "head-fixed mouse platform. Brain-targeting schematics show six acute "
+            "Neuropixels trajectories spanning cortical and subcortical structures, "
+            "eight chronic mesoscope planes across VISp and VISlm, and dual-plane "
+            "SLAP2 sampling of proximal and apical dendritic compartments in a "
+            "layer II/III pyramidal neuron."
+        ),
     ),
     FigureAsset(
         "image5.png",
@@ -163,8 +196,7 @@ FIGURE_ASSETS = (
             "across Neuropixels probes."
         ),
         "Example visually evoked Neuropixels responses and receptive fields.",
-        "supplementary",
-        4,
+        "removed",
     ),
     FigureAsset(
         "image2.png",
@@ -207,7 +239,13 @@ INTERACTIVE_DESIGN_BLOCK = """:::{iframe} ./interactive/experimental-design.html
 :title: Predictive-processing stimulus viewer
 :placeholder: ./images/figures/generated/experimental-design.svg
 
-Playable stimulus viewer for the four predictive-processing recording contexts.
+Interactive reconstruction of the four recording contexts and shared control
+blocks. Context playback follows contiguous rows from the pinned generated
+stimulus tables in their source (pseudo-randomized) order, with the source trial
+number shown for each frame. The Movie block plays an excerpt of the canonical
+zebra stimulus, and receptive-field mapping uses the stated 120° × 95° angular
+projection. Source links resolve to the pinned generator, Bonsai workflow,
+example tables, and public NWB intervals.
 :::"""
 
 STIMULUS_REVISION = "0365ae32f0f0473320ed202b7c5d2bce6cf5df6b"
@@ -240,15 +278,14 @@ DATA_EXPLORER_BLOCK = """:::{iframe} ./interactive/data-explorer.html
 :width: 100%
 :title: Interactive explorer for experimental animals and recording sessions
 
-Filterable explorer for experimental animals, recording modalities, contexts,
-and session identifiers.
+Interactive record-level inventory of 39 mice and 164 recording sessions. The
+Animals tab reports one row per mouse with modality, sex, quality-control status,
+and expandable genotype, viral, surgical, and study-inclusion metadata. The
+Sessions tab reports one row per session with its mouse, acquisition date,
+recording modality, and predictive context. Search and filters update both the
+visible-row count and downloadable CSV, allowing the displayed subset to be
+exported without collapsing individual records into manuscript summary groups.
 :::"""
-
-SUPPLEMENTARY_DEPTH_REFERENCE = (
-    "**Mesoscope imaging depth.** Depth-dependent laser-power ranges are provided "
-    "in the [mesoscope laser-power lookup table](#table-mesoscope-laser-power) "
-    "in Methods."
-)
 
 FRONTMATTER = """---
 title: OpenScope Predictive Processing Community Project - Data Release
@@ -355,6 +392,9 @@ def copy_assets(extracted: dict[str, Path], export_date: str) -> None:
     output_dir = REPO_ROOT / "images" / "figures" / "imported"
     output_dir.mkdir(parents=True, exist_ok=True)
     manifest_assets = []
+    derived = json.loads(
+        DERIVED_FIGURE_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )["assets"]
 
     for asset in FIGURE_ASSETS:
         destination = output_dir / asset.filename
@@ -362,6 +402,23 @@ def copy_assets(extracted: dict[str, Path], export_date: str) -> None:
         source_kind = "google-doc-rendered-png"
         editable_source_url = None
         source_metadata = {}
+        if asset.source_name in derived:
+            crop = derived[asset.source_name]
+            if sha256(source) != crop["source_sha256"]:
+                raise RuntimeError(
+                    f"{asset.source_name} checksum changed; regenerate its approved crop."
+                )
+            source = REPO_ROOT / crop["output_path"]
+            if sha256(source) != crop["sha256"]:
+                raise RuntimeError(
+                    f"Derived crop checksum mismatch for {asset.source_name}."
+                )
+            source_kind = "google-doc-derived-crop"
+            source_metadata = {
+                "replacement_source_path": crop["output_path"],
+                "crop_box_px": crop["crop_box_px"],
+                "replaces_google_doc_source": asset.source_name,
+            }
         if asset.source_name == "image14.png":
             provenance = json.loads(SLIDE_15_PROVENANCE_PATH.read_text(encoding="utf-8"))
             if sha256(SLIDE_15_SOURCE_PATH) != provenance["sha256"]:
@@ -424,8 +481,6 @@ def render_figure(source_name: str) -> str:
         f"{caption}\n"
         ":::"
     )
-    if source_name == "image10.png":
-        return f"{figure}\n\n{INTERACTIVE_DESIGN_BLOCK}"
     return figure
 
 
@@ -434,10 +489,15 @@ def render_mesoscope_laser_power_table() -> str:
         rows = list(csv.DictReader(stream))
 
     lines = [
+        (
+            "Laser power was selected from the "
+            "[depth-dependent lookup ranges](#table-mesoscope-laser-power)."
+        ),
+        "",
         ":::{table} Mesoscope laser power lookup ranges by imaging depth.",
         ":label: table-mesoscope-laser-power",
         ":enumerated: false",
-        ":class: table-accent table-compact table-laser-power",
+        ":class: table-accent table-compact table-laser-power table-hover-source",
         "",
         "| Depth from surface (µm) | Minimum power (mW) | Maximum power (mW) |",
         "| ---: | ---: | ---: |",
@@ -765,26 +825,14 @@ def wrap_publication_data_tables(markdown: str) -> str:
         [
             DATA_EXPLORER_BLOCK,
             "",
-            '<details class="static-table-fallback">',
-            "<summary>View grouped static summary tables</summary>",
+            '<div class="publication-data-source" hidden aria-hidden="true">',
             "",
             static_tables,
             "",
-            "</details>",
+            "</div>",
         ]
     )
     return f"{markdown[:start]}{replacement}{markdown[end:]}"
-
-
-def add_supplementary_depth_reference(markdown: str) -> str:
-    heading = "## Supplementary figures"
-    if markdown.count(heading) != 1:
-        raise RuntimeError("Expected one Supplementary figures heading.")
-    return markdown.replace(
-        heading,
-        f"{heading}\n\n{SUPPLEMENTARY_DEPTH_REFERENCE}",
-        1,
-    )
 
 
 def relocate_supplementary_implant_figure(markdown: str) -> str:
@@ -846,9 +894,19 @@ def move_glossary_to_end(markdown: str) -> str:
 def build_index(markdown: str) -> str:
     markdown = replace_images(markdown)
     markdown = normalize_known_export_artifacts(markdown)
-    markdown = add_supplementary_depth_reference(markdown)
     markdown = relocate_supplementary_implant_figure(markdown)
     markdown = move_glossary_to_end(markdown)
+    interactive_anchor = (
+        "The order of stimuli blocks (deviant vs control blocks) were maintained "
+        "across all sessions."
+    )
+    if markdown.count(interactive_anchor) != 1:
+        raise RuntimeError("Expected interactive viewer placement anchor was not found.")
+    markdown = markdown.replace(
+        interactive_anchor,
+        f"{interactive_anchor}\n\n{INTERACTIVE_DESIGN_BLOCK}",
+        1,
+    )
     background_heading = "# Background & Rationale"
     if background_heading not in markdown:
         raise RuntimeError("Expected Background & Rationale heading was not found.")

@@ -65,6 +65,8 @@ jobs:
         run: |
           test -f _build/html/interactive/experimental-design.html
           test -f _build/html/interactive/data-explorer.html
+          test -f _build/html/interactive/zebra-stimulus-excerpt.m4v
+          test -f _build/html/interactive/zebra-stimulus-poster.png
 
       - name: Configure Pages
         if: github.event_name != 'pull_request'

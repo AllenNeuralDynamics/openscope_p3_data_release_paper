@@ -4,6 +4,7 @@ import csv
 import hashlib
 import json
 import re
+import shutil
 import xml.etree.ElementTree as ET
 from dataclasses import asdict, dataclass
 from html import escape
@@ -13,11 +14,17 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = REPO_ROOT / "figure_sources" / "data"
 JAVASCRIPT_DIR = REPO_ROOT / "figure_sources" / "javascript"
 STIMULUS_SOURCES_PATH = DATA_DIR / "stimulus-viewer-sources.json"
+STIMULUS_EXCERPT_DIR = DATA_DIR / "stimulus-table-excerpts"
+STIMULUS_EXCERPT_PROVENANCE_PATH = STIMULUS_EXCERPT_DIR / "provenance.json"
 ANIMAL_RECORDS_PATH = DATA_DIR / "experimental-animals.csv"
 ANIMAL_RECORDS_PROVENANCE_PATH = DATA_DIR / "experimental-animals.provenance.json"
 INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "experimental-design.html"
 DATA_EXPLORER_OUTPUT = REPO_ROOT / "interactive" / "data-explorer.html"
 STATIC_OUTPUT = REPO_ROOT / "images" / "figures" / "generated" / "experimental-design.svg"
+MEDIA_DIR = REPO_ROOT / "figure_sources" / "media"
+ZEBRA_MOVIE_SOURCE = MEDIA_DIR / "zebra-stimulus-excerpt.m4v"
+ZEBRA_POSTER_SOURCE = MEDIA_DIR / "zebra-stimulus-poster.png"
+ZEBRA_PROVENANCE_PATH = MEDIA_DIR / "zebra-stimulus-excerpt.provenance.json"
 
 
 @dataclass(frozen=True)
@@ -81,14 +88,159 @@ def total_duration_minutes() -> float:
     return sum(block.duration_minutes for block in BLOCKS)
 
 
+def stimulus_row_is_mismatch(session_number: int, trial_type: str) -> bool:
+    if session_number == 1:
+        return trial_type != "standard"
+    if session_number == 2:
+        return trial_type.startswith("motor_")
+    if session_number == 3:
+        return trial_type in {"orientation_45", "orientation_90", "halt", "omission"}
+    return trial_type in {"jitter", "omission"}
+
+
+def normalize_stimulus_rows(
+    source_rows: list[dict[str, str]], session_number: int | None = None
+) -> tuple[list[dict], float]:
+    rows = []
+    elapsed = 0.0
+    for source_row in source_rows:
+        duration = float(source_row["Duration"] or 0)
+        delay = float(source_row["Delay"] or 0)
+        row_duration = duration + delay
+        rows.append(
+            {
+                "contrast": float(source_row["Contrast"] or 0),
+                "delay": delay,
+                "diameterX": float(source_row["DiameterX"] or 0),
+                "diameterY": float(source_row["DiameterY"] or 0),
+                "duration": duration,
+                "end": elapsed + row_duration,
+                "isMismatch": (
+                    stimulus_row_is_mismatch(
+                        session_number, source_row["Trial_Type"]
+                    )
+                    if session_number is not None
+                    else False
+                ),
+                "orientation": float(source_row["Orientation"] or 0),
+                "phase": source_row["Phase"],
+                "sequenceNumber": int(source_row["Sequence_Number"] or 0),
+                "sourceRow": int(source_row["Source_Row"]),
+                "spatialFrequency": float(source_row["Spatial_Frequency"] or 0),
+                "start": elapsed,
+                "temporalFrequency": float(
+                    source_row["Temporal_Frequency"] or 0
+                ),
+                "trialInSequence": int(source_row["Trial_In_Sequence"] or 0),
+                "trialNumber": int(source_row["Trial_Number"]),
+                "trialType": source_row["Trial_Type"],
+                "x": float(source_row["X"] or 0),
+                "y": float(source_row["Y"] or 0),
+            }
+        )
+        elapsed += row_duration
+    return rows, elapsed
+
+
+def load_stimulus_table_excerpts(sources: dict) -> dict[str, dict]:
+    provenance = json.loads(
+        STIMULUS_EXCERPT_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    if provenance["upstream_revision"] != sources["upstream_revision"]:
+        raise RuntimeError("Stimulus excerpt and source revisions do not match.")
+    provenance_by_name = {
+        table["filename"]: table for table in provenance["tables"]
+    }
+    excerpts = {}
+    for source in sources["sessions"]:
+        filename = source["example_table_url"].rsplit("/", maxsplit=1)[-1]
+        metadata = provenance_by_name[filename]
+        path = STIMULUS_EXCERPT_DIR / filename
+        checksum = hashlib.sha256(path.read_bytes()).hexdigest()
+        if checksum != metadata["vendored_sha256"]:
+            raise RuntimeError(f"Stimulus excerpt checksum mismatch: {filename}")
+        if source["sha256"] != metadata["source_sha256"]:
+            raise RuntimeError(f"Stimulus source checksum mismatch: {filename}")
+        with path.open(newline="", encoding="utf-8-sig") as stream:
+            source_rows = list(csv.DictReader(stream))
+        if len(source_rows) != metadata["rows"]:
+            raise RuntimeError(f"Stimulus excerpt row-count mismatch: {filename}")
+
+        rows, elapsed = normalize_stimulus_rows(source_rows, source["number"])
+        excerpts[str(source["number"])] = {
+            "durationSeconds": elapsed,
+            "firstMismatchTrial": metadata["first_mismatch_trial"],
+            "rows": rows,
+            "shuffledOrderPreserved": metadata["shuffled_order_preserved"],
+            "sourceTrialEnd": metadata["source_trial_end"],
+            "sourceTrialStart": metadata["source_trial_start"],
+        }
+    return excerpts
+
+
+def load_shared_stimulus_table_excerpts(sources: dict) -> dict[str, dict]:
+    provenance = json.loads(
+        STIMULUS_EXCERPT_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    metadata = provenance["shared_blocks"]
+    source = sources["sessions"][0]
+    if source["sha256"] != metadata["source_sha256"]:
+        raise RuntimeError("Shared stimulus source checksum mismatch.")
+    path = STIMULUS_EXCERPT_DIR / metadata["filename"]
+    if hashlib.sha256(path.read_bytes()).hexdigest() != metadata["vendored_sha256"]:
+        raise RuntimeError("Shared stimulus excerpt checksum mismatch.")
+    with path.open(newline="", encoding="utf-8-sig") as stream:
+        source_rows = list(csv.DictReader(stream))
+    metadata_by_index = {
+        str(block["viewer_block_index"]): block for block in metadata["blocks"]
+    }
+    excerpts = {}
+    for block_index, block_metadata in metadata_by_index.items():
+        block_rows = [
+            row for row in source_rows if row["Viewer_Block_Index"] == block_index
+        ]
+        if len(block_rows) != block_metadata["rows"]:
+            raise RuntimeError(f"Shared block row-count mismatch: {block_index}")
+        rows, elapsed = normalize_stimulus_rows(block_rows)
+        excerpts[block_index] = {
+            "durationSeconds": elapsed,
+            "rows": rows,
+            "sourceOrderPreserved": block_metadata["source_order_preserved"],
+            "sourceTrialEnd": block_metadata["source_trial_end"],
+            "sourceTrialStart": block_metadata["source_trial_start"],
+        }
+    return excerpts
+
+
+def copy_zebra_media(output_dir: Path, sources: dict) -> None:
+    provenance = json.loads(ZEBRA_PROVENANCE_PATH.read_text(encoding="utf-8"))
+    if provenance["upstream_revision"] != sources["upstream_revision"]:
+        raise RuntimeError("Zebra movie and stimulus source revisions do not match.")
+    if provenance["source_sha256"] != sources["zebra_movie_sha256"]:
+        raise RuntimeError("Zebra movie source checksums do not match.")
+    checks = (
+        (ZEBRA_MOVIE_SOURCE, provenance["excerpt_sha256"]),
+        (ZEBRA_POSTER_SOURCE, provenance["poster_sha256"]),
+    )
+    for path, expected in checks:
+        if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+            raise RuntimeError(f"Zebra media checksum mismatch: {path.name}")
+        shutil.copy2(path, output_dir / path.name)
+
+
 def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     sources = json.loads(STIMULUS_SOURCES_PATH.read_text(encoding="utf-8"))
+    sources["zebra_movie_asset"] = f"./{ZEBRA_MOVIE_SOURCE.name}"
+    sources["zebra_movie_poster_asset"] = f"./{ZEBRA_POSTER_SOURCE.name}"
+    copy_zebra_media(output.parent, sources)
     payload = {
         "blocks": [asdict(block) for block in BLOCKS],
         "playback_duration_seconds": 24,
         "sessions": [asdict(session) for session in SESSIONS],
+        "sharedTableExcerpts": load_shared_stimulus_table_excerpts(sources),
         "sources": sources,
+        "stimulusTableExcerpts": load_stimulus_table_excerpts(sources),
     }
     template = (JAVASCRIPT_DIR / "stimulus-viewer.html").read_text(encoding="utf-8")
     stylesheet = (JAVASCRIPT_DIR / "stimulus-viewer.css").read_text(encoding="utf-8")

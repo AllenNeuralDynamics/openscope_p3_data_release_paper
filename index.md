@@ -16,7 +16,7 @@ title: OpenScope Predictive Processing Community Project - Data Release
 :alt: Predictive processing across brain-wide, local-circuit, and single-cell scales.
 :width: 100%
 
-Graphical overview of predictive processing across spatial scales.
+Predictive processing across spatial scales. A visual sequence establishes an expectation (blue), whereas an unexpected oddball produces a prediction-error signal (red). Predictions and errors may be expressed through reciprocal brain-wide pathways, within local cortical populations, and across the dendritic and somatic compartments of individual neurons. The multimodal dataset samples these nested scales to test whether mismatch responses reflect a shared computation or scale- and circuit-specific mechanisms.
 :::
 
 ## The challenge of predictive processing research
@@ -78,8 +78,10 @@ In both cohorts, the session that matched the habituation context was presented 
 :alt: Experimental workflow, recording cohorts, four mismatch contexts, and shared control blocks.
 :width: 100%
 
-Experimental design across cohorts, recording modalities, mismatch contexts, and control blocks.
+Experimental design and shared stimulus architecture. **A,** Animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels, or SLAP2. **B,** Motor- and sequence-habituated cohorts experienced the same four recording contexts in cohort-specific orders; open squares denote training without mismatches and colored squares denote recording sessions with mismatches. **C,** Every recording used the same block order: standard control, context-specific mismatch, repeat standard control, sequential control, duration-jitter control, open-loop playback, receptive-field mapping, and zebra movie. **D,** Context panels summarize standard oddball, sensorimotor, sequence, and duration violations; control panels show the matched stimulus sets used for tuning, normalization, and cross-context comparison.
 :::
+
+The four distinct session contexts each targeted a different aspect of predictive processing. For all 4 contexts, the stimuli table containing both recurring and deviant trials were created at the onset of each session. The resulting tables were then subsequently shuffled so that the mouse could not predict the exact occurrence of deviants (pseudo-random). The order of stimuli blocks (deviant vs control blocks) were maintained across all sessions.
 
 :::{iframe} ./interactive/experimental-design.html
 :label: fig-interactive-experimental-design
@@ -87,10 +89,14 @@ Experimental design across cohorts, recording modalities, mismatch contexts, and
 :title: Predictive-processing stimulus viewer
 :placeholder: ./images/figures/generated/experimental-design.svg
 
-Playable stimulus viewer for the four predictive-processing recording contexts.
+Interactive reconstruction of the four recording contexts and shared control
+blocks. Context playback follows contiguous rows from the pinned generated
+stimulus tables in their source (pseudo-randomized) order, with the source trial
+number shown for each frame. The Movie block plays an excerpt of the canonical
+zebra stimulus, and receptive-field mapping uses the stated 120° × 95° angular
+projection. Source links resolve to the pinned generator, Bonsai workflow,
+example tables, and public NWB intervals.
 :::
-
-The four distinct session contexts each targeted a different aspect of predictive processing. For all 4 contexts, the stimuli table containing both recurring and deviant trials were created at the onset of each session. The resulting tables were then subsequently shuffled so that the mouse could not predict the exact occurrence of deviants (pseudo-random). The order of stimuli blocks (deviant vs control blocks) were maintained across all sessions.
 
 #### Session type 1: Standard oddball.
 
@@ -136,10 +142,10 @@ All animal procedures were approved by the Institutional Animal Care and Use Com
 
 :::{figure} ./images/figures/imported/figure-03-multimodal-pipelines.png
 :label: fig-multimodal-pipelines
-:alt: Neuropixels, mesoscope, and SLAP2 pipelines from behavioral cohort through neuronal traces.
+:alt: Neuropixels, mesoscope, and SLAP2 pipelines from behavioral cohort through rig geometry, mouse platform, and brain targeting.
 :width: 100%
 
-Multimodal experimental pipelines for Neuropixels, mesoscope, and SLAP2 recordings.
+Multimodal experimental pipelines. Rows summarize Neuropixels, mesoscope two-photon calcium imaging, and SLAP2 dendritic imaging. Colored blocks indicate the cohort-specific order of predictive contexts across recording days. The central columns show each rig and head-fixed mouse platform. Brain-targeting schematics show six acute Neuropixels trajectories spanning cortical and subcortical structures, eight chronic mesoscope planes across VISp and VISlm, and dual-plane SLAP2 sampling of proximal and apical dendritic compartments in a layer II/III pyramidal neuron.
 :::
 
 To systematically collect physiological data, we used standardized data collection and processing pipelines that were previously introduced [(de Vries et al. 2020; Groblewski et al. 2020; Durand et al. 2023; Bennett et al. 2024; Siegle et al. 2021)](https://paperpile.com/c/tTM80k/1eyg+Yunn+PAsB+xhvZ+yxs4). The data collection workflow progressed from surgical headpost implantation and craniotomy to retinotopic mapping of cortical areas using intrinsic signal imaging, in vivo recording of neuronal activity using various modalities (Neuropixels, Mesoscope two photon imaging, SLAP2 dendritic two-photon imaging), brain fixation and brain histology (see **Figure 2**). We describe each one of those steps in the dedicated sections below. As part of this workflow, all mice were trained on one of two possible cohorts: A motor cohort and a sequence cohort. Details of each cohort is described in the behavioral training section below. Both behavioral cohorts were recorded with the Neuropixels and Mesoscope recording modality. Only the motor cohort was used for SLAP2 experiments. Each modality (Neuropixels, Mesoscope, SLAP2) was recorded with separate mice as they had different, modality-specific brain implants.
@@ -369,10 +375,12 @@ For subsequent imaging sessions, previously defined imaging fields were re-ident
 
 After stabilizing the imaging plane, PMT gain and laser power were adjusted to maximize signal-to-noise ratio and dynamic range while limiting saturation (\<1000 saturated pixels per frame). A predefined power lookup table guided parameter selection. Signal intensity between planes was balanced by adjusting beam power while monitoring pixel intensity histograms.
 
+Laser power was selected from the [depth-dependent lookup ranges](#table-mesoscope-laser-power).
+
 :::{table} Mesoscope laser power lookup ranges by imaging depth.
 :label: table-mesoscope-laser-power
 :enumerated: false
-:class: table-accent table-compact table-laser-power
+:class: table-accent table-compact table-laser-power table-hover-source
 
 | Depth from surface (µm) | Minimum power (mW) | Maximum power (mW) |
 | ---: | ---: | ---: |
@@ -555,12 +563,16 @@ A secondary pipeline, also run on the CodeOcean platform, took the output spike 
 :width: 100%
 :title: Interactive explorer for experimental animals and recording sessions
 
-Filterable explorer for experimental animals, recording modalities, contexts,
-and session identifiers.
+Interactive record-level inventory of 39 mice and 164 recording sessions. The
+Animals tab reports one row per mouse with modality, sex, quality-control status,
+and expandable genotype, viral, surgical, and study-inclusion metadata. The
+Sessions tab reports one row per session with its mouse, acquisition date,
+recording modality, and predictive context. Search and filters update both the
+visible-row count and downloadable CSV, allowing the displayed subset to be
+exported without collapsing individual records into manuscript summary groups.
 :::
 
-<details class="static-table-fallback">
-<summary>View grouped static summary tables</summary>
+<div class="publication-data-source" hidden aria-hidden="true">
 
 <table class="publication-data-table table-animals" data-table-kind="animals">
   <colgroup>
@@ -836,7 +848,7 @@ and session identifiers.
   </tbody>
 </table>
 
-</details>
+</div>
 
 ## NWB file contents
 
@@ -1280,8 +1292,6 @@ Importantly, if the outlined paradigms show the same essential distribution of f
 **Supplementary Figure 1.** Neuropixels implant geometry and planned probe trajectories. **A,** Six trajectories (A-F) through the Allen Mouse Brain Common Coordinate Framework. **B,** Atlas structures intersected by each trajectory. **C,** Anteroposterior and mediolateral coordinates relative to bregma with implant-hole diameters D1 and D2. **D,** Top view of the implant with labeled probe-access holes.
 :::
 
-**Mesoscope imaging depth.** Depth-dependent laser-power ranges are provided in the [mesoscope laser-power lookup table](#table-mesoscope-laser-power) in Methods.
-
 :::{figure} ./images/figures/imported/supplementary-neuropixels-targeting.png
 :label: fig-supp-neuropixels-targeting
 :alt: Neuropixels implant hole positions, stereotaxic coordinates, diameters, and targets.
@@ -1298,15 +1308,6 @@ Importantly, if the outlined paradigms show the same essential distribution of f
 :width: 100%
 
 **Supplementary Figure 3.** Example Neuropixels unit yield across recording days.
-:::
-
-:::{figure} ./images/figures/imported/supplementary-neuropixels-visual-responses.png
-:label: fig-supp-neuropixels-visual-responses
-:alt: Visually responsive fractions, firing-rate traces, and receptive fields across Neuropixels probes.
-:enumerated: false
-:width: 100%
-
-**Supplementary Figure 4.** Example visually evoked Neuropixels responses and receptive fields.
 :::
 
 # Supplementary Text 1: Published oddball paradigms and sampling ranges

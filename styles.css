@@ -1,11 +1,30 @@
 #fig-interactive-experimental-design .relative.inline-block {
-  height: 665px;
+  height: 1020px;
   padding-bottom: 0 !important;
+}
+
+#fig-graphical-abstract,
+#fig-experimental-design {
+  grid-column: body-outset-start / body-outset-end;
+}
+
+figure.table-hover-source {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.publication-data-source {
+  display: none !important;
 }
 
 @media (max-width: 640px) {
   #fig-interactive-experimental-design .relative.inline-block {
-    height: 455px;
+    height: 500px;
   }
 }
 
@@ -188,31 +207,32 @@ article table.table-other-studies td:first-child {
   padding-bottom: 0 !important;
 }
 
-.static-table-fallback {
-  box-sizing: border-box;
-  max-width: 100%;
-  margin: 0.75rem 0 1.25rem;
-  overflow: hidden;
-  border: 1px solid #cbd8d3;
-  border-radius: 5px;
-  background: #f7faf8;
-}
+@media (min-width: 1280px) {
+  .myst-primary-sidebar {
+    display: none !important;
+  }
 
-.static-table-fallback > summary {
-  padding: 0.72rem 0.85rem;
-  cursor: pointer;
-  color: #225d57;
-  font-size: 0.84rem;
-  font-weight: 650;
-}
-
-.static-table-fallback[open] > summary {
-  border-bottom: 1px solid #cbd8d3;
-}
-
-.static-table-fallback > .overflow-auto,
-.static-table-fallback > table {
-  margin: 0;
+  main.article-grid,
+  article.article-grid {
+    grid-template-columns:
+      [screen-start] 0.5rem
+      [screen-inset-start] 1fr
+      [page-start] 1rem
+      [page-inset-start body-outset-start] minmax(0, 2rem)
+      [body-start gutter-left-start] 1rem
+      [body-inset-start] minmax(10ch, 20ch)
+      [middle-start] minmax(10ch, 20ch)
+      [gutter-left-end] minmax(10ch, 20ch) minmax(10ch, 20ch)
+      [gutter-right-start] minmax(10ch, 20ch)
+      [middle-end] minmax(10ch, 20ch)
+      [body-inset-end] 1rem
+      [body-end gutter-right-end] 2rem
+      [body-outset-end] minmax(12rem, 16rem)
+      [page-inset-end] 1rem
+      [page-end] 1fr
+      [screen-inset-end] 0.5rem
+      [screen-end];
+  }
 }
 
 @media (max-width: 640px) {

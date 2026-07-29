@@ -20,9 +20,8 @@ __SIMULATOR_CSS__
       </header>
 
       <div class="monitor-frame" id="screen-toggle">
-        <canvas id="stimulus-canvas" width="480" height="300" role="img" aria-label="Reconstructed visual stimulus"></canvas>
-        <video id="stimulus-video" muted loop playsinline preload="metadata" hidden aria-label="Canonical zebra movie stimulus"></video>
-        <span class="sync-square" id="sync-square" aria-label="Photodiode synchronization square"></span>
+        <canvas id="stimulus-canvas" width="480" height="380" role="img" aria-label="Reconstructed visual stimulus"></canvas>
+        <video id="stimulus-video" muted loop playsinline preload="auto" poster="./zebra-stimulus-poster.png" hidden aria-label="Canonical zebra movie stimulus"></video>
         <span class="mismatch-badge" id="mismatch-badge" hidden>Mismatch</span>
         <button class="play-overlay" id="play-toggle" type="button" aria-label="Play stimulus" title="Play stimulus">
           <span id="play-icon" aria-hidden="true">&#9654;</span>

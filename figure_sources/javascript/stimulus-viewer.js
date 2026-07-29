@@ -18,7 +18,6 @@
     sessionSelector: document.getElementById("session-selector"),
     sessionTitle: document.getElementById("session-title"),
     stimulusVideo: document.getElementById("stimulus-video"),
-    syncSquare: document.getElementById("sync-square"),
     tableSource: document.getElementById("table-source"),
     trialLabel: document.getElementById("trial-label"),
     workflowSource: document.getElementById("workflow-source"),
@@ -126,7 +125,9 @@
     elements.tableSource.href = movieSelected
       ? protocol.sources.zebra_movie_url
       : sessionSource.example_table_url;
-    elements.tableSource.textContent = movieSelected ? "movie" : "example table";
+    elements.tableSource.textContent = movieSelected
+      ? "canonical movie"
+      : "pinned table (source order)";
     elements.generatorSource.href = protocol.sources.generator_url;
     elements.workflowSource.href = protocol.sources.workflow_url;
     elements.ecephysSource.href = protocol.sources.recorded_tables.ecephys;
@@ -159,15 +160,13 @@
     const pixelCount = canvas.width * canvas.height;
     const azimuth = new Float32Array(pixelCount);
     const altitude = new Float32Array(pixelCount);
-    const horizontalScale = Math.tan((120 / 2) * Math.PI / 180);
-    const verticalScale = Math.tan((95 / 2) * Math.PI / 180);
     let index = 0;
     for (let y = 0; y < canvas.height; y += 1) {
       const normalizedY = 1 - ((y + 0.5) / canvas.height) * 2;
-      const altitudeDegrees = Math.atan(normalizedY * verticalScale) * 180 / Math.PI;
+      const altitudeDegrees = normalizedY * 95 / 2;
       for (let x = 0; x < canvas.width; x += 1) {
         const normalizedX = ((x + 0.5) / canvas.width) * 2 - 1;
-        azimuth[index] = Math.atan(normalizedX * horizontalScale) * 180 / Math.PI;
+        azimuth[index] = normalizedX * 120 / 2;
         altitude[index] = altitudeDegrees;
         index += 1;
       }
@@ -176,223 +175,66 @@
     gratingImage = context.createImageData(canvas.width, canvas.height);
   }
 
-  function oddballSpec() {
-    const trialDuration = 0.686;
-    const trialIndex = Math.floor(state.elapsed / trialDuration);
-    const withinTrial = state.elapsed % trialDuration;
-    const mismatch = trialIndex > 0 && trialIndex % 16 === 0;
-    const variants = [
-      { kind: "orientation", label: "45 deg orientation deviant", orientation: 45 },
-      { kind: "orientation", label: "90 deg orientation deviant", orientation: 90 },
-      { kind: "halt", label: "Motion halt" },
-      { kind: "omission", label: "Stimulus omission" },
-    ];
-    const variant = variants[Math.floor(trialIndex / 16 - 1) % variants.length];
-    const visible = withinTrial < 0.343;
-    const spec = {
-      contrast: visible ? 1 : 0,
-      label: "Frequent standard 0 deg",
-      mismatch,
-      orientation: 0,
-      phaseCycles: -state.elapsed * 2,
-      spatialFrequency: 0.04,
-    };
-    if (mismatch && visible) {
-      spec.label = variant.label;
-      if (variant.kind === "orientation") {
-        spec.orientation = variant.orientation;
-      } else if (variant.kind === "halt") {
-        spec.phaseCycles = -trialIndex * trialDuration * 2;
-      } else {
-        spec.contrast = 0;
-      }
-    }
-    return spec;
-  }
-
   function representativeWheelPhase(seconds) {
     return seconds * 1.25 + 0.2 * Math.sin(seconds * 0.8) + 0.07 * Math.sin(seconds * 2.7);
   }
 
-  function sensorimotorSpec() {
-    const eventInterval = 11;
-    const eventNumber = Math.floor(state.elapsed / eventInterval);
-    const withinEvent = state.elapsed % eventInterval;
-    const mismatch = eventNumber > 0 && withinEvent < 0.343;
-    const variants = [
-      { kind: "halt", label: "Visuomotor halt" },
-      { kind: "omission", label: "Visuomotor omission" },
-      { kind: "orientation", label: "45 deg visuomotor deviant", orientation: 45 },
-      { kind: "orientation", label: "90 deg visuomotor deviant", orientation: 90 },
-    ];
-    const variant = variants[Math.max(0, eventNumber - 1) % variants.length];
-    const spec = {
-      contrast: 1,
-      label: "Closed-loop optic flow",
-      mismatch,
-      orientation: 0,
-      phaseCycles: representativeWheelPhase(state.elapsed),
-      spatialFrequency: 0.04,
-    };
-    if (mismatch) {
-      spec.label = variant.label;
-      if (variant.kind === "halt") {
-        spec.phaseCycles = representativeWheelPhase(eventNumber * eventInterval);
-      } else if (variant.kind === "omission") {
-        spec.contrast = 0;
-      } else {
-        spec.orientation = variant.orientation;
-        spec.phaseCycles = -state.elapsed * 2;
-      }
+  function sourceTableSpec() {
+    const contextSelected = state.blockIndex === 1;
+    const excerpt = contextSelected
+      ? protocol.stimulusTableExcerpts[String(currentSession().number)]
+      : protocol.sharedTableExcerpts[String(state.blockIndex)];
+    const excerptTime = state.elapsed % excerpt.durationSeconds;
+    let low = 0;
+    let high = excerpt.rows.length - 1;
+    while (low < high) {
+      const middle = Math.floor((low + high) / 2);
+      if (excerpt.rows[middle].end <= excerptTime) low = middle + 1;
+      else high = middle;
     }
-    return spec;
-  }
-
-  function sequenceSpec() {
-    const elementDuration = 0.25;
-    const elementsPerSequence = 5;
-    const elementCount = Math.floor(state.elapsed / elementDuration);
-    const sequenceNumber = Math.floor(elementCount / elementsPerSequence);
-    const elementIndex = elementCount % elementsPerSequence;
-    const sequence = [
-      { name: "A", orientation: 90, contrast: 1 },
-      { name: "B", orientation: 45, contrast: 1 },
-      { name: "C", orientation: 0, contrast: 1 },
-      { name: "D", orientation: 45, contrast: 1 },
-      { name: "Gray", orientation: 0, contrast: 0 },
-    ];
-    const variants = [
-      { label: "C becomes B", orientation: 45, contrast: 1, halt: false },
-      { label: "Novel 90 deg element", orientation: 90, contrast: 1, halt: false },
-      { label: "Stationary sequence element", orientation: 0, contrast: 1, halt: true },
-      { label: "Sequence omission", orientation: 0, contrast: 0, halt: false },
-    ];
-    const mismatch = sequenceNumber > 0 && sequenceNumber % 9 === 0 && elementIndex === 2;
-    const element = sequence[elementIndex];
-    const variant = variants[Math.max(0, Math.floor(sequenceNumber / 9) - 1) % variants.length];
-    return {
-      contrast: mismatch ? variant.contrast : element.contrast,
-      label: mismatch ? variant.label : `Sequence ${element.name}`,
-      mismatch,
-      orientation: mismatch ? variant.orientation : element.orientation,
-      phaseCycles: mismatch && variant.halt ? -sequenceNumber * 1.25 * 2 : -state.elapsed * 2,
-      spatialFrequency: 0.04,
-    };
-  }
-
-  function durationSpec() {
-    const trials = [0.343, 0.343, 0.343, 0.15, 0.343, 0.343, 0.5, 0.343, 1.0];
-    let localTime = state.elapsed;
-    let trialIndex = 0;
-    while (localTime >= trials[trialIndex % trials.length] + 0.343) {
-      localTime -= trials[trialIndex % trials.length] + 0.343;
-      trialIndex += 1;
+    const row = excerpt.rows[low];
+    const withinRow = excerptTime - row.start;
+    const visible = withinRow < row.duration;
+    const numericPhase = Number(row.phase);
+    let phaseCycles = Number.isFinite(numericPhase) ? numericPhase : 0;
+    if (row.phase === "wheel" && row.temporalFrequency === 0) {
+      phaseCycles = representativeWheelPhase(state.elapsed);
+    } else {
+      phaseCycles -= withinRow * row.temporalFrequency;
     }
-    const duration = trials[trialIndex % trials.length];
-    const mismatch = duration !== 0.343;
+    const trialType = row.trialType.replaceAll("_", " ");
+    const patch = row.diameterX > 0 && row.diameterX < 360
+      ? {
+          altitude: row.y,
+          azimuth: row.x,
+          radius: Math.min(row.diameterX, row.diameterY) / 2,
+        }
+      : undefined;
     return {
-      contrast: localTime < duration ? 1 : 0,
-      label: mismatch ? `${Math.round(duration * 1000)} ms duration` : "343 ms duration",
-      mismatch,
-      orientation: 0,
-      phaseCycles: -state.elapsed * 2,
-      spatialFrequency: 0.04,
-    };
-  }
-
-  function standardControlSpec() {
-    const orientations = [45, 247.5, 90, 135, 22.5, 315, 180, 67.5, 270, 0, 225, 112.5, 292.5, 157.5];
-    const trialDuration = 0.686;
-    const trialIndex = Math.floor(state.elapsed / trialDuration);
-    const visible = state.elapsed % trialDuration < 0.343;
-    const orientation = orientations[trialIndex % orientations.length];
-    return {
-      contrast: visible ? 1 : 0,
-      label: `Control ${orientation} deg`,
-      mismatch: false,
-      orientation,
-      phaseCycles: -state.elapsed * 2,
-      spatialFrequency: 0.04,
-    };
-  }
-
-  function sequentialControlSpec() {
-    const orientations = [90, 0, 45, 270, 135, 45, 180, 22.5, 315, 67.5];
-    const orientation = orientations[Math.floor(state.elapsed / 0.25) % orientations.length];
-    return {
-      contrast: 1,
-      label: `Shuffled ${orientation} deg`,
-      mismatch: false,
-      orientation,
-      phaseCycles: -state.elapsed * 2,
-      spatialFrequency: 0.04,
-    };
-  }
-
-  function jitterControlSpec() {
-    const durations = [0.15, 0.343, 0.5, 0.75, 1.0, 1.5, 0.914];
-    let localTime = state.elapsed;
-    let trialIndex = 0;
-    while (localTime >= durations[trialIndex % durations.length] + 0.343) {
-      localTime -= durations[trialIndex % durations.length] + 0.343;
-      trialIndex += 1;
-    }
-    const duration = durations[trialIndex % durations.length];
-    return {
-      contrast: localTime < duration ? 1 : 0,
-      label: `${Math.round(duration * 1000)} ms control`,
-      mismatch: false,
-      orientation: 0,
-      phaseCycles: -state.elapsed * 2,
-      spatialFrequency: 0.04,
-    };
-  }
-
-  function openLoopSpec() {
-    return {
-      contrast: 1,
-      label: "Prerecorded visual flow",
-      mismatch: false,
-      orientation: 0,
-      phaseCycles: representativeWheelPhase(state.elapsed + 13.7),
-      spatialFrequency: 0.04,
-    };
-  }
-
-  function receptiveFieldSpec() {
-    const positionIndex = Math.floor(state.elapsed / 0.25) % 81;
-    const column = positionIndex % 9;
-    const row = Math.floor(positionIndex / 9);
-    const orientation = [0, 45, 90][Math.floor(state.elapsed / (0.25 * 81)) % 3];
-    return {
-      contrast: 0.8,
-      label: `RF ${orientation} deg at (${column - 4}, ${4 - row})`,
-      mismatch: false,
-      orientation,
-      patch: { altitude: (4 - row) * 10, azimuth: (column - 4) * 10, radius: 10 },
-      phaseCycles: -state.elapsed * 4,
-      spatialFrequency: 0.08,
+      contrast: visible ? row.contrast : 0,
+      label: `T${row.trialNumber} · ${trialType} · ${contextSelected ? "shuffled " : ""}source`,
+      mismatch: row.isMismatch,
+      orientation: row.orientation,
+      patch,
+      phaseCycles,
+      sourceRow: row.sourceRow,
+      spatialFrequency: row.spatialFrequency,
     };
   }
 
   function stimulusSpec() {
-    const blockName = currentBlock().name;
-    if (blockName === "Standard control" || blockName === "Standard control repeat") {
-      return standardControlSpec();
-    }
-    if (blockName === "Sequential control") {
-      return sequentialControlSpec();
-    }
-    if (blockName === "Jitter control") {
-      return jitterControlSpec();
-    }
-    if (blockName === "Open-loop playback") {
-      return openLoopSpec();
-    }
-    if (blockName === "Receptive field mapping") {
-      return receptiveFieldSpec();
-    }
-    return [oddballSpec, sensorimotorSpec, sequenceSpec, durationSpec][state.sessionIndex]();
+    if (currentBlock().name === "Natural movie") return undefined;
+    return sourceTableSpec();
+  }
+
+  function angularDistanceDegrees(azimuthA, altitudeA, azimuthB, altitudeB) {
+    const radians = Math.PI / 180;
+    const sinHalfAltitude = Math.sin((altitudeA - altitudeB) * radians / 2);
+    const sinHalfAzimuth = Math.sin((azimuthA - azimuthB) * radians / 2);
+    const haversine = sinHalfAltitude ** 2
+      + Math.cos(altitudeA * radians) * Math.cos(altitudeB * radians)
+      * sinHalfAzimuth ** 2;
+    return 2 * Math.asin(Math.min(1, Math.sqrt(haversine))) / radians;
   }
 
   function drawSphericalGrating(spec) {
@@ -406,9 +248,11 @@
     for (let index = 0; index < angularCoordinates.azimuth.length; index += 1) {
       const azimuth = angularCoordinates.azimuth[index];
       const altitude = angularCoordinates.altitude[index];
-      const insidePatch = !spec.patch || Math.hypot(
-        azimuth - spec.patch.azimuth,
-        altitude - spec.patch.altitude,
+      const insidePatch = !spec.patch || angularDistanceDegrees(
+        azimuth,
+        altitude,
+        spec.patch.azimuth,
+        spec.patch.altitude,
       ) <= spec.patch.radius;
       let luminance = 0.5;
       if (insidePatch && spec.contrast > 0) {
@@ -428,33 +272,14 @@
     context.putImageData(gratingImage, 0, 0);
   }
 
-  function drawZebraFallback() {
-    context.fillStyle = "#bfc3b8";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.save();
-    context.translate(-35 + ((state.elapsed * 16) % 70), 0);
-    for (let stripe = -2; stripe < 11; stripe += 1) {
-      context.beginPath();
-      for (let y = -10; y <= canvas.height + 10; y += 8) {
-        const x = stripe * 58 + Math.sin(y * 0.045 + state.elapsed * 0.7 + stripe) * 19;
-        if (y === -10) context.moveTo(x, y);
-        else context.lineTo(x, y);
-      }
-      context.lineWidth = 25 + (stripe % 3) * 4;
-      context.strokeStyle = stripe % 2 === 0 ? "#202520" : "#eeede4";
-      context.stroke();
-    }
-    context.restore();
-  }
-
   function updateMediaState() {
     const movieSelected = currentBlock().name === "Natural movie";
     if (movieSelected && !elements.stimulusVideo.src) {
-      elements.stimulusVideo.src = protocol.sources.zebra_movie_url;
+      elements.stimulusVideo.src = protocol.sources.zebra_movie_asset;
       elements.stimulusVideo.load();
     }
-    elements.stimulusVideo.hidden = !(movieSelected && state.movieReady);
-    canvas.hidden = movieSelected && state.movieReady;
+    elements.stimulusVideo.hidden = !movieSelected;
+    canvas.hidden = movieSelected;
     if (!movieSelected) {
       elements.stimulusVideo.pause();
     } else if (state.playing && state.movieReady) {
@@ -464,8 +289,7 @@
 
   function drawFrame() {
     if (currentBlock().name === "Natural movie") {
-      if (!state.movieReady) drawZebraFallback();
-      elements.trialLabel.textContent = "Canonical zebra movie";
+      elements.trialLabel.textContent = "Canonical zebra movie · real source excerpt";
       elements.mismatchBadge.hidden = true;
     } else {
       const spec = stimulusSpec();
@@ -473,7 +297,6 @@
       elements.trialLabel.textContent = spec.label;
       elements.mismatchBadge.hidden = !spec.mismatch;
     }
-    elements.syncSquare.classList.toggle("dark", Math.floor(state.elapsed) % 2 === 0);
   }
 
   function updatePlaybackUi() {
@@ -492,8 +315,6 @@
     });
     elements.stimulusVideo.addEventListener("error", () => {
       state.movieReady = false;
-      elements.stimulusVideo.hidden = true;
-      canvas.hidden = false;
     });
     document.addEventListener("keydown", (event) => {
       if (event.code === "Space") {

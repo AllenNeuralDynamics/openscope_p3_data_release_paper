@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "upstream_revision": "0365ae32f0f0473320ed202b7c5d2bce6cf5df6b",
+  "source_url": "https://raw.githubusercontent.com/AllenNeuralDynamics/openscope-community-predictive-processing/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/movies/zebra_allen_screen_tscale_30_scale_10.mp4",
+  "source_sha256": "3ee4d88356dba7220eb67e53f7d117400932f3adf95132d6301fe212ff7cf899",
+  "source_size_bytes": 79457255,
+  "excerpt_sha256": "84f162256170ad583d4441936d38dac0f064bb6356213c53f6492d39c28b886b",
+  "excerpt_size_bytes": 6926581,
+  "poster_sha256": "aff65b8e5db4991ac42b931585207a4e8c260a931b0903472de4bcf5f5782d2f",
+  "poster_dimensions_px": [604, 480],
+  "start_seconds": 0,
+  "duration_seconds": 24,
+  "conversion": "macOS avconvert PresetAppleM4V480pSD with metadata filtering disabled",
+  "retrieved_date": "2026-07-29",
+  "notes": "A web-sized excerpt of the canonical pinned zebra movie. Pixel content is sourced from the real upstream movie; no procedural fallback is used in the publication viewer."
+}

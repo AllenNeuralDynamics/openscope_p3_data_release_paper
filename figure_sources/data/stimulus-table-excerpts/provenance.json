@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "upstream_revision": "0365ae32f0f0473320ed202b7c5d2bce6cf5df6b",
+  "selection": "Contiguous 24-second context-block window with approximately 8 seconds before the first true mismatch. Source row order is preserved.",
+  "tables": [
+    {
+      "filename": "visual_mismatch_example.csv",
+      "source_sha256": "f5e60af027b30cc1fbd9675d799d0191abe1ee8d6f09f57eb3b2eafad2d0dbdb",
+      "vendored_sha256": "0b05f19e4a7fe5f5ab17dadb5f72ca892b1ea2fc4731d7de28c9cc380814b16a",
+      "context_block_type": "standard_oddball",
+      "source_row_start": 561,
+      "source_row_end": 595,
+      "source_trial_start": 560,
+      "source_trial_end": 594,
+      "first_mismatch_trial": 572,
+      "rows": 35,
+      "duration_seconds": 24.01,
+      "shuffled_order_preserved": true
+    },
+    {
+      "filename": "sensorimotor_mismatch_example.csv",
+      "source_sha256": "94e410338d20071363f234a049acaad67d60a9dafa975f343a58725f67a01df3",
+      "vendored_sha256": "c2f48f851e201ecafcac17477e9290f61aca099e0d4298afc267225767ae78e7",
+      "context_block_type": "motor_oddball",
+      "source_row_start": 830,
+      "source_row_end": 1540,
+      "source_trial_start": 829,
+      "source_trial_end": 1539,
+      "first_mismatch_trial": 1070,
+      "rows": 711,
+      "duration_seconds": 24.009667,
+      "shuffled_order_preserved": true
+    },
+    {
+      "filename": "sequence_mismatch_example.csv",
+      "source_sha256": "05cdc5246288ff11b1800f11e2c5aa3e9ff6a819ab08a010455ccbba97d31301",
+      "vendored_sha256": "9df66884848d52397beab0c36141134df11f55439f9f8ad240f4ac892739b34f",
+      "context_block_type": "sequential_oddball",
+      "source_row_start": 551,
+      "source_row_end": 646,
+      "source_trial_start": 550,
+      "source_trial_end": 645,
+      "first_mismatch_trial": 582,
+      "rows": 96,
+      "duration_seconds": 24.0,
+      "shuffled_order_preserved": true
+    },
+    {
+      "filename": "duration_mismatch_example.csv",
+      "source_sha256": "eb3ea87207998c2939734e9c581ed56327927e7381db66e1fdc33b2fef3b223e",
+      "vendored_sha256": "78fa772253935b7538fd048faa129ed8d35fb37c0d56f9c378586622c2fa0ce4",
+      "context_block_type": "jitter_oddball",
+      "source_row_start": 546,
+      "source_row_end": 581,
+      "source_trial_start": 545,
+      "source_trial_end": 580,
+      "first_mismatch_trial": 550,
+      "rows": 36,
+      "duration_seconds": 24.317,
+      "shuffled_order_preserved": true
+    }
+  ],
+  "shared_blocks": {
+    "filename": "shared_blocks_example.csv",
+    "source_filename": "visual_mismatch_example.csv",
+    "source_sha256": "f5e60af027b30cc1fbd9675d799d0191abe1ee8d6f09f57eb3b2eafad2d0dbdb",
+    "vendored_sha256": "765cd0b318d5a535c47196a84ab97c25ea2f73d158240ea4577817aadf26e6e5",
+    "blocks": [
+      {
+        "viewer_block_index": 0,
+        "block_number": 1,
+        "block_type": "standard_control",
+        "source_row_start": 2,
+        "source_row_end": 36,
+        "source_trial_start": 1,
+        "source_trial_end": 35,
+        "rows": 35,
+        "duration_seconds": 24.01,
+        "source_order_preserved": true
+      },
+      {
+        "viewer_block_index": 2,
+        "block_number": 3,
+        "block_type": "standard_control",
+        "source_row_start": 2820,
+        "source_row_end": 2854,
+        "source_trial_start": 2819,
+        "source_trial_end": 2853,
+        "rows": 35,
+        "duration_seconds": 24.01,
+        "source_order_preserved": true
+      },
+      {
+        "viewer_block_index": 3,
+        "block_number": 4,
+        "block_type": "sequential_control_block",
+        "source_row_start": 3364,
+        "source_row_end": 3459,
+        "source_trial_start": 3363,
+        "source_trial_end": 3458,
+        "rows": 96,
+        "duration_seconds": 24.0,
+        "source_order_preserved": true
+      },
+      {
+        "viewer_block_index": 4,
+        "block_number": 5,
+        "block_type": "jitter_control",
+        "source_row_start": 4484,
+        "source_row_end": 4530,
+        "source_trial_start": 4483,
+        "source_trial_end": 4529,
+        "rows": 47,
+        "duration_seconds": 24.194,
+        "source_order_preserved": true
+      },
+      {
+        "viewer_block_index": 5,
+        "block_number": 6,
+        "block_type": "open_loop_prerecorded",
+        "source_row_start": 5040,
+        "source_row_end": 5732,
+        "source_trial_start": 5039,
+        "source_trial_end": 5731,
+        "rows": 693,
+        "duration_seconds": 24.029,
+        "source_order_preserved": true
+      },
+      {
+        "viewer_block_index": 7,
+        "block_number": 9,
+        "block_type": "rf_mapping",
+        "source_row_start": 16563,
+        "source_row_end": 16658,
+        "source_trial_start": 16562,
+        "source_trial_end": 16657,
+        "rows": 96,
+        "duration_seconds": 24.0,
+        "source_order_preserved": true
+      }
+    ]
+  }
+}
