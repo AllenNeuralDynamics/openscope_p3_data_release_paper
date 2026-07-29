@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>OpenScope data explorer</title>
+  <style>
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Source+Sans+3:wght@400;500;600;700&display=swap");
+
+:root {
+  color-scheme: light;
+  --ink: #26342e;
+  --muted: #65736d;
+  --line: #cbd8d3;
+  --soft-line: #dce5e1;
+  --paper: #fff;
+  --wash: #f2f7f5;
+  --teal: #225d57;
+  --teal-dark: #174641;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-width: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Source Sans 3", "Avenir Next", sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.explorer {
+  width: 100%;
+  min-height: 100vh;
+  padding: 14px;
+}
+
+.explorer-header {
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+  background: #f8faf9;
+}
+
+.dataset-tabs {
+  min-height: 48px;
+  display: flex;
+  align-items: end;
+  gap: 2px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dataset-tab {
+  position: relative;
+  min-height: 47px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.dataset-tab::after {
+  position: absolute;
+  right: 12px;
+  bottom: -1px;
+  left: 12px;
+  height: 3px;
+  background: transparent;
+  content: "";
+}
+
+.dataset-tab.active {
+  color: var(--teal-dark);
+}
+
+.dataset-tab.active::after {
+  background: var(--teal);
+}
+
+.dataset-tab span {
+  margin-left: 0.3rem;
+  color: #87948e;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+}
+
+.dataset-tab:focus-visible {
+  outline: 3px solid rgba(34, 93, 87, 0.18);
+  outline-offset: -3px;
+}
+
+.table-tools {
+  min-height: 58px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(130px, auto) minmax(130px, auto) auto auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.table-tools input,
+.table-tools select,
+.table-tools a {
+  min-height: 36px;
+  border: 1px solid #b8c9c3;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.table-tools input,
+.table-tools select {
+  min-width: 0;
+  padding: 6px 9px;
+}
+
+.table-tools input:focus,
+.table-tools select:focus,
+.table-tools a:focus-visible {
+  border-color: var(--teal);
+  outline: 3px solid rgba(34, 93, 87, 0.16);
+  outline-offset: 1px;
+}
+
+#row-count {
+  min-width: 58px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+#download-csv {
+  padding: 5px 9px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: #e8f2ef;
+  color: var(--teal);
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+#download-csv:hover {
+  background: #d8e8e3;
+}
+
+.table-shell {
+  max-height: 515px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 0 0 5px 5px;
+  background: #fff;
+}
+
+table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+th,
+td {
+  padding: 10px 11px;
+  border-right: 1px solid var(--soft-line);
+  border-bottom: 1px solid var(--soft-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+th:last-child,
+td:last-child {
+  border-right: 0;
+}
+
+thead th {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  background: var(--teal);
+  color: #fff;
+  font-weight: 650;
+}
+
+tbody tr:nth-child(even) td {
+  background: var(--wash);
+}
+
+tbody tr:hover td {
+  background: #e5f0ec;
+}
+
+tbody td:first-child {
+  font-weight: 650;
+}
+
+tr.modality-mesoscope td:first-child {
+  border-left: 4px solid #2b83ba;
+}
+
+tr.modality-neuropixels td:first-child {
+  border-left: 4px solid #d06b4f;
+}
+
+tr.modality-slap2 td:first-child {
+  border-left: 4px solid #7b6fa8;
+}
+
+.id-disclosure {
+  min-width: 100px;
+}
+
+.id-disclosure summary {
+  width: max-content;
+  cursor: pointer;
+  color: #286b64;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.metadata-list {
+  max-width: 340px;
+  margin-top: 7px;
+  padding: 8px;
+  border-left: 3px solid #91b8ae;
+  background: #f4f8f6;
+  color: #47564f;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.metadata-list dt {
+  margin-top: 0.38rem;
+  color: #65736d;
+  font-size: 0.64rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.metadata-list dt:first-child {
+  margin-top: 0;
+}
+
+.metadata-list dd {
+  margin: 0.08rem 0 0;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 2rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .explorer {
+    padding: 8px;
+  }
+
+  .table-tools {
+    grid-template-columns: 1fr 1fr auto;
+  }
+
+  #table-search {
+    grid-column: 1 / -1;
+  }
+
+  #row-count {
+    text-align: left;
+  }
+
+  .table-shell {
+    max-height: 610px;
+  }
+}
+  </style>
+</head>
+<body>
+  <main class="explorer" id="data-explorer">
+    <header class="explorer-header">
+      <nav class="dataset-tabs" id="dataset-tabs" aria-label="Choose a data table"></nav>
+      <div class="table-tools" role="search">
+        <input id="table-search" type="search" placeholder="Search animals" aria-label="Search table">
+        <select id="modality-filter" aria-label="Filter by recording modality"></select>
+        <select id="context-filter" aria-label="Filter by secondary category"></select>
+        <output id="row-count" aria-live="polite"></output>
+        <a id="download-csv" href="#" download title="Download visible rows as CSV" aria-label="Download visible rows as CSV">&#8595; CSV</a>
+      </div>
+    </header>
+
+    <section class="table-shell" aria-live="polite">
+      <table id="explorer-table">
+        <thead><tr id="table-headers"></tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <p class="empty-state" id="empty-state" hidden>No matching rows.</p>
+    </section>
+  </main>
+
+  <script id="explorer-data" type="application/json">{"tables":{"animals":{"csvHeaders":["Mouse id","Modality","QC (true/false)","Sex","Transgenic details","Virus(es)","Birth date","Surgery date(s)","Notes","Included in grouped manuscript table"],"detailsColumn":4,"headers":["Mouse ID","Modality","Sex","QC","Metadata"],"rows":[{"context":"","csvValues":["776270","SLAP2","","Female","wt/wt","(pHp.eB) 5E12 ExP32222-hSyn-Flex-iGluSnFR4.v9601.NGR + 1E12 AAB.pHp.eB-CAG.Flex.NES.JRGECO1a.WPRE.SV40 + 6E8 AAV9-CaMKII0.4-Cre-SV40","9/10/24","12/2/24","","Yes"],"details":[{"label":"Genotype / preparation","value":"wt/wt"},{"label":"Virus(es)","value":"(pHp.eB) 5E12 ExP32222-hSyn-Flex-iGluSnFR4.v9601.NGR + 1E12 AAB.pHp.eB-CAG.Flex.NES.JRGECO1a.WPRE.SV40 + 6E8 AAV9-CaMKII0.4-Cre-SV40"},{"label":"Birth date","value":"9/10/24"},{"label":"Surgery date(s)","value":"12/2/24"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"slap2","qc":"not marked","values":["776270","SLAP2","Female","Not marked",""]},{"context":"","csvValues":["794237","SLAP2","TRUE","Male","wt/wt","(pHp.eB) 5E12 ExP32222-hSyn-Flex-iGluSnFR4.v9601.NGR + 1E12 AAB.pHp.eB-CAG.Flex.NES.JRGECO1a.WPRE.SV40 + 6E8 AAV.php.eB-CamKII0.4.Cre.SV40","1/7/25","3/12/25","","Yes"],"details":[{"label":"Genotype / preparation","value":"wt/wt"},{"label":"Virus(es)","value":"(pHp.eB) 5E12 ExP32222-hSyn-Flex-iGluSnFR4.v9601.NGR + 1E12 AAB.pHp.eB-CAG.Flex.NES.JRGECO1a.WPRE.SV40 + 6E8 AAV.php.eB-CamKII0.4.Cre.SV40"},{"label":"Birth date","value":"1/7/25"},{"label":"Surgery date(s)","value":"3/12/25"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"slap2","qc":"pass","values":["794237","SLAP2","Male","TRUE",""]},{"context":"","csvValues":["796630","SLAP2","TRUE","Male","wt/wt","4E12 ExP32222-hSyn-Flex-iGluSnFR4.v9601.NGR + 2E12 pAAV.CAG.Flex.RCAMP3.WPRE.SV40 + 6E8 AAV9-CamKII0.4-Cre-SV40","1/21/25","4/1/25","","Yes"],"details":[{"label":"Genotype / preparation","value":"wt/wt"},{"label":"Virus(es)","value":"4E12 ExP32222-hSyn-Flex-iGluSnFR4.v9601.NGR + 2E12 pAAV.CAG.Flex.RCAMP3.WPRE.SV40 + 6E8 AAV9-CamKII0.4-Cre-SV40"},{"label":"Birth date","value":"1/21/25"},{"label":"Surgery date(s)","value":"4/1/25"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"slap2","qc":"pass","values":["796630","SLAP2","Male","TRUE",""]},{"context":"","csvValues":["801381","SLAP2","TRUE","Male","wt/wt","(pHp.eB) 5E12 ExP32222-hSyn-Flex-iGluSnFR4.v9601.NGR +1.8E12 pAAV.CAG.Flex.RCAMP3.WPRE.SV40 + 4.12E8 AAV.php.eB-CamKII0.4.Cre.SV40","2/18/25","4/29/25","","Yes"],"details":[{"label":"Genotype / preparation","value":"wt/wt"},{"label":"Virus(es)","value":"(pHp.eB) 5E12 ExP32222-hSyn-Flex-iGluSnFR4.v9601.NGR +1.8E12 pAAV.CAG.Flex.RCAMP3.WPRE.SV40 + 4.12E8 AAV.php.eB-CamKII0.4.Cre.SV40"},{"label":"Birth date","value":"2/18/25"},{"label":"Surgery date(s)","value":"4/29/25"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"slap2","qc":"pass","values":["801381","SLAP2","Male","TRUE",""]},{"context":"","csvValues":["803496","SLAP2","","Female","VIP-IRES-Cre","GluSNF4 with viruses; Exp32222-hSyn-Flex-iGluSnFR4.v9601.NGR virus injected","4/22/25","6/10/25","","Yes"],"details":[{"label":"Genotype / preparation","value":"VIP-IRES-Cre"},{"label":"Virus(es)","value":"GluSNF4 with viruses; Exp32222-hSyn-Flex-iGluSnFR4.v9601.NGR virus injected"},{"label":"Birth date","value":"4/22/25"},{"label":"Surgery date(s)","value":"6/10/25"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"slap2","qc":"not marked","values":["803496","SLAP2","Female","Not marked",""]},{"context":"","csvValues":["820454","EPHYS","TRUE (4 sessions)","Male","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","7/27/25","9/18/25; 11/7/25","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"7/27/25"},{"label":"Surgery date(s)","value":"9/18/25; 11/7/25"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"pass","values":["820454","Neuropixels","Male","TRUE (4 sessions)",""]},{"context":"","csvValues":["820459","EPHYS","TRUE (2 seesions)","Female","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","7/27/25","9/30/25; 11/14/25","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"7/27/25"},{"label":"Surgery date(s)","value":"9/30/25; 11/14/25"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"pass","values":["820459","Neuropixels","Female","TRUE (2 seesions)",""]},{"context":"","csvValues":["828408","SLAP2","","Male","wt/wt","iGluSnFR4f and rCAMP3 both with viruses","7/22/25","10/1/25","","Yes"],"details":[{"label":"Genotype / preparation","value":"wt/wt"},{"label":"Virus(es)","value":"iGluSnFR4f and rCAMP3 both with viruses"},{"label":"Birth date","value":"7/22/25"},{"label":"Surgery date(s)","value":"10/1/25"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"slap2","qc":"not marked","values":["828408","SLAP2","Male","Not marked",""]},{"context":"","csvValues":["828409","SLAP2","","Male","wt/wt","iGluSnFR4f and rCAMP3 both with viruses","7/22/25","10/1/25","","Yes"],"details":[{"label":"Genotype / preparation","value":"wt/wt"},{"label":"Virus(es)","value":"iGluSnFR4f and rCAMP3 both with viruses"},{"label":"Birth date","value":"7/22/25"},{"label":"Surgery date(s)","value":"10/1/25"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"slap2","qc":"not marked","values":["828409","SLAP2","Male","Not marked",""]},{"context":"","csvValues":["829704","SLAP2","TRUE","Male","wt/wt","(pHp.eB) 5E12 ExP32222-hSyn-Flex-iGluSnFR4.v9601.NGR +1.8E12 pAAV.CAG.Flex.RCAMP3.WPRE.SV40 + 4.12E8 AAV.php.eB-CamKII0.4.Cre.SV40","7/29/25","10/7/25","","Yes"],"details":[{"label":"Genotype / preparation","value":"wt/wt"},{"label":"Virus(es)","value":"(pHp.eB) 5E12 ExP32222-hSyn-Flex-iGluSnFR4.v9601.NGR +1.8E12 pAAV.CAG.Flex.RCAMP3.WPRE.SV40 + 4.12E8 AAV.php.eB-CamKII0.4.Cre.SV40"},{"label":"Birth date","value":"7/29/25"},{"label":"Surgery date(s)","value":"10/7/25"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"slap2","qc":"pass","values":["829704","SLAP2","Male","TRUE",""]},{"context":"","csvValues":["830794","EPHYS","","Male","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","9/24/25","12/9/26; 1/30/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"9/24/25"},{"label":"Surgery date(s)","value":"12/9/26; 1/30/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["830794","Neuropixels","Male","Not marked",""]},{"context":"","csvValues":["830795","EPHYS","","Male","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","9/24/25","1/13/26; 2/20/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"9/24/25"},{"label":"Surgery date(s)","value":"1/13/26; 2/20/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["830795","Neuropixels","Male","Not marked",""]},{"context":"","csvValues":["830846","EPHYS","","Male","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","9/25/25","1/26/26; 3/6/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"9/25/25"},{"label":"Surgery date(s)","value":"1/26/26; 3/6/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["830846","Neuropixels","Male","Not marked",""]},{"context":"","csvValues":["830847","EPHYS","","Male","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","9/25/25","1/27/26; 3/6/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"9/25/25"},{"label":"Surgery date(s)","value":"1/27/26; 3/6/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["830847","Neuropixels","Male","Not marked",""]},{"context":"","csvValues":["830848","EPHYS","","Female","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","9/25/25","1/20/26; 2/27/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"9/25/25"},{"label":"Surgery date(s)","value":"1/20/26; 2/27/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["830848","Neuropixels","Female","Not marked",""]},{"context":"","csvValues":["830849","EPHYS","","Female","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","9/25/25","1/21/26; 2/27/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"9/25/25"},{"label":"Surgery date(s)","value":"1/21/26; 2/27/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["830849","Neuropixels","Female","Not marked",""]},{"context":"","csvValues":["830851","EPHYS","","Female","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","9/25/25","1/12/26; 3/13/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"9/25/25"},{"label":"Surgery date(s)","value":"1/12/26; 3/13/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["830851","Neuropixels","Female","Not marked",""]},{"context":"","csvValues":["830852","EPHYS","","Female","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","9/25/25","1/15/26; 2/20/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"9/25/25"},{"label":"Surgery date(s)","value":"1/15/26; 2/20/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["830852","Neuropixels","Female","Not marked",""]},{"context":"","csvValues":["832691","EPHYS","","Female","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","10/5/25","2/11/26; 3/20/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"10/5/25"},{"label":"Surgery date(s)","value":"2/11/26; 3/20/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["832691","Neuropixels","Female","Not marked",""]},{"context":"","csvValues":["832700","MESO","","Male","Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt","None","10/5/25","12/3/25","Found dead after complete data collection before mFISH","Yes"],"details":[{"label":"Genotype / preparation","value":"Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"10/5/25"},{"label":"Surgery date(s)","value":"12/3/25"},{"label":"Notes","value":"Found dead after complete data collection before mFISH"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"mesoscope","qc":"not marked","values":["832700","Two-photon mesoscope","Male","Not marked",""]},{"context":"","csvValues":["834686","EPHYS","","Male","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","10/18/25","2/10/26; 3/20/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"10/18/25"},{"label":"Surgery date(s)","value":"2/10/26; 3/20/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["834686","Neuropixels","Male","Not marked",""]},{"context":"","csvValues":["834687","EPHYS","","Male","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","10/18/25","1/8/26; 3/13/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"10/18/25"},{"label":"Surgery date(s)","value":"1/8/26; 3/13/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["834687","Neuropixels","Male","Not marked",""]},{"context":"","csvValues":["834691","EPHYS","","Female","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","10/18/25","1/7/26; 2/20/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"10/18/25"},{"label":"Surgery date(s)","value":"1/7/26; 2/20/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["834691","Neuropixels","Female","Not marked",""]},{"context":"","csvValues":["837568","MESO","","Male","Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt","None","11/4/25","1/5/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"11/4/25"},{"label":"Surgery date(s)","value":"1/5/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"mesoscope","qc":"not marked","values":["837568","Two-photon mesoscope","Male","Not marked",""]},{"context":"","csvValues":["839909","MESO","","Male","Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt","None","11/17/25","1/12/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"11/17/25"},{"label":"Surgery date(s)","value":"1/12/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"mesoscope","qc":"not marked","values":["839909","Two-photon mesoscope","Male","Not marked",""]},{"context":"","csvValues":["841191","SLAP2","","Male","wt/wt","1E12 PHP.eB-hSyn-DIO-ASAP7y + 1E12 PHP.eB-hSyn-FLEX-HaloTag-WPRE + 1.2E8 PHP.eB-CamKII0.4.Cre.SV40","10/7/25","12/8/25","","Yes"],"details":[{"label":"Genotype / preparation","value":"wt/wt"},{"label":"Virus(es)","value":"1E12 PHP.eB-hSyn-DIO-ASAP7y + 1E12 PHP.eB-hSyn-FLEX-HaloTag-WPRE + 1.2E8 PHP.eB-CamKII0.4.Cre.SV40"},{"label":"Birth date","value":"10/7/25"},{"label":"Surgery date(s)","value":"12/8/25"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"slap2","qc":"not marked","values":["841191","SLAP2","Male","Not marked",""]},{"context":"","csvValues":["841193","SLAP2","FAILED","?","wt/wt","?","12/01/25","?","Mouse had a lot of issues. Stress, slap2 stopping mid-way. Some of the behavior stopped. We decided to delete the data. ","No"],"details":[{"label":"Genotype / preparation","value":"wt/wt"},{"label":"Virus(es)","value":"?"},{"label":"Birth date","value":"12/01/25"},{"label":"Surgery date(s)","value":"?"},{"label":"Notes","value":"Mouse had a lot of issues. Stress, slap2 stopping mid-way. Some of the behavior stopped. We decided to delete the data."},{"label":"Included in grouped manuscript table","value":"No"}],"modality":"slap2","qc":"failed","values":["841193","SLAP2","Unknown","FAILED",""]},{"context":"","csvValues":["842971","MESO","","Female","Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt","None","12/5/25","2/10/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"12/5/25"},{"label":"Surgery date(s)","value":"2/10/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"mesoscope","qc":"not marked","values":["842971","Two-photon mesoscope","Female","Not marked",""]},{"context":"","csvValues":["843000","MESO","","Male","Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt","None","12/5/25","1/26/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"12/5/25"},{"label":"Surgery date(s)","value":"1/26/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"mesoscope","qc":"not marked","values":["843000","Two-photon mesoscope","Male","Not marked",""]},{"context":"","csvValues":["843001","MESO","","Male","Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt","None","12/5/25","2/5/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"12/5/25"},{"label":"Surgery date(s)","value":"2/5/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"mesoscope","qc":"not marked","values":["843001","Two-photon mesoscope","Male","Not marked",""]},{"context":"","csvValues":["845207","SLAP2","","Male","wt/wt","1E12 PHP.eB-hSyn-DIO-ASAP7y + 1E12 PHP.eB-hSyn-FLEX-HaloTag-WPRE + 1.2E8 PHP.eB-CamKII0.4.Cre.SV40","11/4/25","1/13/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"wt/wt"},{"label":"Virus(es)","value":"1E12 PHP.eB-hSyn-DIO-ASAP7y + 1E12 PHP.eB-hSyn-FLEX-HaloTag-WPRE + 1.2E8 PHP.eB-CamKII0.4.Cre.SV40"},{"label":"Birth date","value":"11/4/25"},{"label":"Surgery date(s)","value":"1/13/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"slap2","qc":"not marked","values":["845207","SLAP2","Male","Not marked",""]},{"context":"","csvValues":["845342","MESO","","Male","Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt","None","12/24/25","2/19/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"12/24/25"},{"label":"Surgery date(s)","value":"2/19/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"mesoscope","qc":"not marked","values":["845342","Two-photon mesoscope","Male","Not marked",""]},{"context":"","csvValues":["846289","MESO","","Male","Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt","None","12/30/25","3/4/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"12/30/25"},{"label":"Surgery date(s)","value":"3/4/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"mesoscope","qc":"not marked","values":["846289","Two-photon mesoscope","Male","Not marked",""]},{"context":"","csvValues":["848387","EPHYS","","Male","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","1/9/26","3/24/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"1/9/26"},{"label":"Surgery date(s)","value":"3/24/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["848387","Neuropixels","Male","Not marked",""]},{"context":"","csvValues":["848390","EPHYS","","Female","Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt","None","1/9/26","3/26/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"1/9/26"},{"label":"Surgery date(s)","value":"3/26/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"neuropixels","qc":"not marked","values":["848390","Neuropixels","Female","Not marked",""]},{"context":"","csvValues":["850399","MESO","","Male","Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt","None","1/22/26","3/23/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"1/22/26"},{"label":"Surgery date(s)","value":"3/23/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"mesoscope","qc":"not marked","values":["850399","Two-photon mesoscope","Male","Not marked",""]},{"context":"","csvValues":["851452","SLAP2","False (1 session)","Male","wt/wt","1E12 PHP.eB-hSyn-DIO-ASAP7y + 1E12 PHP.eB-hSyn-FLEX-HaloTag-WPRE + 1.2E8 PHP.eB-CamKII0.4.Cre.SV40","12/9/25","2/10/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"wt/wt"},{"label":"Virus(es)","value":"1E12 PHP.eB-hSyn-DIO-ASAP7y + 1E12 PHP.eB-hSyn-FLEX-HaloTag-WPRE + 1.2E8 PHP.eB-CamKII0.4.Cre.SV40"},{"label":"Birth date","value":"12/9/25"},{"label":"Surgery date(s)","value":"2/10/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"slap2","qc":"failed","values":["851452","SLAP2","Male","False (1 session)",""]},{"context":"","csvValues":["851453","SLAP2","True(3 sessions)","Male","wt/wt","1E12 PHP.eB-hSyn-DIO-ASAP7y + 1E12 PHP.eB-hSyn-FLEX-HaloTag-WPRE + 1.2E8 PHP.eB-CamKII0.4.Cre.SV40","12/9/25","2/10/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"wt/wt"},{"label":"Virus(es)","value":"1E12 PHP.eB-hSyn-DIO-ASAP7y + 1E12 PHP.eB-hSyn-FLEX-HaloTag-WPRE + 1.2E8 PHP.eB-CamKII0.4.Cre.SV40"},{"label":"Birth date","value":"12/9/25"},{"label":"Surgery date(s)","value":"2/10/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"slap2","qc":"pass","values":["851453","SLAP2","Male","True(3 sessions)",""]},{"context":"","csvValues":["853137","MESO","","Female","Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt","None","2/7/26","4/28/26","","Yes"],"details":[{"label":"Genotype / preparation","value":"Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt"},{"label":"Virus(es)","value":"None"},{"label":"Birth date","value":"2/7/26"},{"label":"Surgery date(s)","value":"4/28/26"},{"label":"Included in grouped manuscript table","value":"Yes"}],"modality":"mesoscope","qc":"not marked","values":["853137","Two-photon mesoscope","Female","Not marked",""]}]},"sessions":{"csvHeaders":["Session ID","Mouse ID","Date","Modality","Context"],"detailsColumn":null,"headers":["Session ID","Mouse ID","Date","Modality","Context"],"rows":[{"context":"standard oddball","csvValues":["794237_2025-04-03","794237","2025-04-03","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["794237_2025-04-03","794237","2025-04-03","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"standard oddball","csvValues":["794237_2025-04-24","794237","2025-04-24","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["794237_2025-04-24","794237","2025-04-24","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"standard oddball","csvValues":["794237_2025-05-08","794237","2025-05-08","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["794237_2025-05-08","794237","2025-05-08","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"standard oddball","csvValues":["801381_2025-05-29","801381","2025-05-29","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["801381_2025-05-29","801381","2025-05-29","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"standard oddball","csvValues":["801381_2025-06-05","801381","2025-06-05","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["801381_2025-06-05","801381","2025-06-05","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"standard oddball","csvValues":["776270_2025-07-02","776270","2025-07-02","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["776270_2025-07-02","776270","2025-07-02","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"standard oddball","csvValues":["803496_2025-07-02","803496","2025-07-02","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["803496_2025-07-02","803496","2025-07-02","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"standard oddball","csvValues":["796630_2025-08-25","796630","2025-08-25","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["796630_2025-08-25","796630","2025-08-25","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"standard oddball","csvValues":["796630_2025-08-28","796630","2025-08-28","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["796630_2025-08-28","796630","2025-08-28","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"standard oddball","csvValues":["796630_2025-09-26","796630","2025-09-26","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["796630_2025-09-26","796630","2025-09-26","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"standard oddball","csvValues":["801381_2025-09-26","801381","2025-09-26","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["801381_2025-09-26","801381","2025-09-26","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"standard oddball","csvValues":["796630_2025-10-01","796630","2025-10-01","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["796630_2025-10-01","796630","2025-10-01","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"standard oddball","csvValues":["801381_2025-10-02","801381","2025-10-02","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["801381_2025-10-02","801381","2025-10-02","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"sensorimotor","csvValues":["820454_2025-11-04","820454","2025-11-04","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["820454_2025-11-04","820454","2025-11-04","Neuropixels","Sensorimotor"]},{"context":"standard oddball","csvValues":["820454_2025-11-05","820454","2025-11-05","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["820454_2025-11-05","820454","2025-11-05","Neuropixels","Standard oddball"]},{"context":"sequence","csvValues":["820454_2025-11-06","820454","2025-11-06","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["820454_2025-11-06","820454","2025-11-06","Neuropixels","Sequence"]},{"context":"duration","csvValues":["820454_2025-11-07","820454","2025-11-07","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["820454_2025-11-07","820454","2025-11-07","Neuropixels","Duration"]},{"context":"sensorimotor","csvValues":["820459_2025-11-10","820459","2025-11-10","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["820459_2025-11-10","820459","2025-11-10","Neuropixels","Sensorimotor"]},{"context":"sensorimotor","csvValues":["828409_2025-11-11","828409","2025-11-11","SLAP2 dendritic imaging (glutamate + calcium)","Sensorimotor"],"details":[],"modality":"slap2","qc":"","values":["828409_2025-11-11","828409","2025-11-11","SLAP2 dendritic imaging (glutamate + calcium)","Sensorimotor"]},{"context":"sequence","csvValues":["820459_2025-11-12","820459","2025-11-12","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["820459_2025-11-12","820459","2025-11-12","Neuropixels","Sequence"]},{"context":"sensorimotor","csvValues":["828408_2025-11-13","828408","2025-11-13","SLAP2 dendritic imaging (glutamate + calcium)","Sensorimotor"],"details":[],"modality":"slap2","qc":"","values":["828408_2025-11-13","828408","2025-11-13","SLAP2 dendritic imaging (glutamate + calcium)","Sensorimotor"]},{"context":"standard oddball","csvValues":["828408_2025-11-18","828408","2025-11-18","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["828408_2025-11-18","828408","2025-11-18","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"sequence","csvValues":["828408_2025-11-19","828408","2025-11-19","SLAP2 dendritic imaging (glutamate + calcium)","Sequence"],"details":[],"modality":"slap2","qc":"","values":["828408_2025-11-19","828408","2025-11-19","SLAP2 dendritic imaging (glutamate + calcium)","Sequence"]},{"context":"standard oddball","csvValues":["828409_2025-11-19","828409","2025-11-19","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["828409_2025-11-19","828409","2025-11-19","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"duration","csvValues":["828408_2025-11-20","828408","2025-11-20","SLAP2 dendritic imaging (glutamate + calcium)","Duration"],"details":[],"modality":"slap2","qc":"","values":["828408_2025-11-20","828408","2025-11-20","SLAP2 dendritic imaging (glutamate + calcium)","Duration"]},{"context":"sequence","csvValues":["828409_2025-11-20","828409","2025-11-20","SLAP2 dendritic imaging (glutamate + calcium)","Sequence"],"details":[],"modality":"slap2","qc":"","values":["828409_2025-11-20","828409","2025-11-20","SLAP2 dendritic imaging (glutamate + calcium)","Sequence"]},{"context":"duration","csvValues":["828409_2025-11-21","828409","2025-11-21","SLAP2 dendritic imaging (glutamate + calcium)","Duration"],"details":[],"modality":"slap2","qc":"","values":["828409_2025-11-21","828409","2025-11-21","SLAP2 dendritic imaging (glutamate + calcium)","Duration"]},{"context":"sensorimotor","csvValues":["829704_2025-12-10","829704","2025-12-10","SLAP2 dendritic imaging (glutamate + calcium)","Sensorimotor"],"details":[],"modality":"slap2","qc":"","values":["829704_2025-12-10","829704","2025-12-10","SLAP2 dendritic imaging (glutamate + calcium)","Sensorimotor"]},{"context":"standard oddball","csvValues":["829704_2025-12-11","829704","2025-12-11","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"],"details":[],"modality":"slap2","qc":"","values":["829704_2025-12-11","829704","2025-12-11","SLAP2 dendritic imaging (glutamate + calcium)","Standard oddball"]},{"context":"sequence","csvValues":["829704_2025-12-16","829704","2025-12-16","SLAP2 dendritic imaging (glutamate + calcium)","Sequence"],"details":[],"modality":"slap2","qc":"","values":["829704_2025-12-16","829704","2025-12-16","SLAP2 dendritic imaging (glutamate + calcium)","Sequence"]},{"context":"duration","csvValues":["829704_2025-12-18","829704","2025-12-18","SLAP2 dendritic imaging (glutamate + calcium)","Duration"],"details":[],"modality":"slap2","qc":"","values":["829704_2025-12-18","829704","2025-12-18","SLAP2 dendritic imaging (glutamate + calcium)","Duration"]},{"context":"sensorimotor","csvValues":["832700_2026-01-24","832700","2026-01-24","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["832700_2026-01-24","832700","2026-01-24","Two-photon mesoscope","Sensorimotor"]},{"context":"sensorimotor","csvValues":["830794_2026-01-26","830794","2026-01-26","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["830794_2026-01-26","830794","2026-01-26","Neuropixels","Sensorimotor"]},{"context":"standard oddball","csvValues":["830794_2026-01-27","830794","2026-01-27","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["830794_2026-01-27","830794","2026-01-27","Neuropixels","Standard oddball"]},{"context":"sequence","csvValues":["830794_2026-01-28","830794","2026-01-28","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["830794_2026-01-28","830794","2026-01-28","Neuropixels","Sequence"]},{"context":"duration","csvValues":["830794_2026-01-29","830794","2026-01-29","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["830794_2026-01-29","830794","2026-01-29","Neuropixels","Duration"]},{"context":"sensorimotor","csvValues":["832700_2026-01-29","832700","2026-01-29","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["832700_2026-01-29","832700","2026-01-29","Two-photon mesoscope","Sensorimotor"]},{"context":"standard oddball","csvValues":["832700_2026-01-30","832700","2026-01-30","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["832700_2026-01-30","832700","2026-01-30","Two-photon mesoscope","Standard oddball"]},{"context":"standard oddball","csvValues":["832700_2026-01-31","832700","2026-01-31","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["832700_2026-01-31","832700","2026-01-31","Two-photon mesoscope","Standard oddball"]},{"context":"sequence","csvValues":["832700_2026-02-06","832700","2026-02-06","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["832700_2026-02-06","832700","2026-02-06","Two-photon mesoscope","Sequence"]},{"context":"sequence","csvValues":["832700_2026-02-07","832700","2026-02-07","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["832700_2026-02-07","832700","2026-02-07","Two-photon mesoscope","Sequence"]},{"context":"duration","csvValues":["832700_2026-02-12","832700","2026-02-12","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["832700_2026-02-12","832700","2026-02-12","Two-photon mesoscope","Duration"]},{"context":"duration","csvValues":["832700_2026-02-13","832700","2026-02-13","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["832700_2026-02-13","832700","2026-02-13","Two-photon mesoscope","Duration"]},{"context":"sequence","csvValues":["837568_2026-02-13","837568","2026-02-13","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["837568_2026-02-13","837568","2026-02-13","Two-photon mesoscope","Sequence"]},{"context":"sensorimotor","csvValues":["834691_2026-02-16","834691","2026-02-16","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["834691_2026-02-16","834691","2026-02-16","Neuropixels","Sensorimotor"]},{"context":"sequence","csvValues":["837568_2026-02-16","837568","2026-02-16","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["837568_2026-02-16","837568","2026-02-16","Two-photon mesoscope","Sequence"]},{"context":"standard oddball","csvValues":["834691_2026-02-17","834691","2026-02-17","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["834691_2026-02-17","834691","2026-02-17","Neuropixels","Standard oddball"]},{"context":"duration","csvValues":["837568_2026-02-17","837568","2026-02-17","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["837568_2026-02-17","837568","2026-02-17","Two-photon mesoscope","Duration"]},{"context":"duration","csvValues":["837568_2026-02-19","837568","2026-02-19","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["837568_2026-02-19","837568","2026-02-19","Two-photon mesoscope","Duration"]},{"context":"standard oddball","csvValues":["837568_2026-02-20","837568","2026-02-20","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["837568_2026-02-20","837568","2026-02-20","Two-photon mesoscope","Standard oddball"]},{"context":"sensorimotor","csvValues":["839909_2026-02-20","839909","2026-02-20","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["839909_2026-02-20","839909","2026-02-20","Two-photon mesoscope","Sensorimotor"]},{"context":"sensorimotor","csvValues":["830795_2026-02-23","830795","2026-02-23","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["830795_2026-02-23","830795","2026-02-23","Neuropixels","Sensorimotor"]},{"context":"sensorimotor","csvValues":["830852_2026-02-23","830852","2026-02-23","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["830852_2026-02-23","830852","2026-02-23","Neuropixels","Sensorimotor"]},{"context":"standard oddball","csvValues":["837568_2026-02-23","837568","2026-02-23","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["837568_2026-02-23","837568","2026-02-23","Two-photon mesoscope","Standard oddball"]},{"context":"standard oddball","csvValues":["830795_2026-02-24","830795","2026-02-24","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["830795_2026-02-24","830795","2026-02-24","Neuropixels","Standard oddball"]},{"context":"standard oddball","csvValues":["830852_2026-02-24","830852","2026-02-24","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["830852_2026-02-24","830852","2026-02-24","Neuropixels","Standard oddball"]},{"context":"sensorimotor","csvValues":["837568_2026-02-24","837568","2026-02-24","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["837568_2026-02-24","837568","2026-02-24","Two-photon mesoscope","Sensorimotor"]},{"context":"sequence","csvValues":["830795_2026-02-25","830795","2026-02-25","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["830795_2026-02-25","830795","2026-02-25","Neuropixels","Sequence"]},{"context":"sequence","csvValues":["830852_2026-02-25","830852","2026-02-25","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["830852_2026-02-25","830852","2026-02-25","Neuropixels","Sequence"]},{"context":"duration","csvValues":["830795_2026-02-26","830795","2026-02-26","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["830795_2026-02-26","830795","2026-02-26","Neuropixels","Duration"]},{"context":"duration","csvValues":["830852_2026-02-26","830852","2026-02-26","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["830852_2026-02-26","830852","2026-02-26","Neuropixels","Duration"]},{"context":"sensorimotor","csvValues":["837568_2026-02-26","837568","2026-02-26","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["837568_2026-02-26","837568","2026-02-26","Two-photon mesoscope","Sensorimotor"]},{"context":"sensorimotor","csvValues":["839909_2026-02-26","839909","2026-02-26","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["839909_2026-02-26","839909","2026-02-26","Two-photon mesoscope","Sensorimotor"]},{"context":"standard oddball","csvValues":["839909_2026-02-27","839909","2026-02-27","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["839909_2026-02-27","839909","2026-02-27","Two-photon mesoscope","Standard oddball"]},{"context":"other/pilot","csvValues":["845207_2026-02-27","845207","2026-02-27","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["845207_2026-02-27","845207","2026-02-27","SLAP2 dendritic imaging (voltage)","Other/pilot"]},{"context":"sequence","csvValues":["830848_2026-03-02","830848","2026-03-02","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["830848_2026-03-02","830848","2026-03-02","Neuropixels","Sequence"]},{"context":"duration","csvValues":["830848_2026-03-03","830848","2026-03-03","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["830848_2026-03-03","830848","2026-03-03","Neuropixels","Duration"]},{"context":"sequence","csvValues":["843000_2026-03-03","843000","2026-03-03","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["843000_2026-03-03","843000","2026-03-03","Two-photon mesoscope","Sequence"]},{"context":"standard oddball","csvValues":["830848_2026-03-04","830848","2026-03-04","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["830848_2026-03-04","830848","2026-03-04","Neuropixels","Standard oddball"]},{"context":"sequence","csvValues":["830849_2026-03-04","830849","2026-03-04","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["830849_2026-03-04","830849","2026-03-04","Neuropixels","Sequence"]},{"context":"sequence","csvValues":["843000_2026-03-04","843000","2026-03-04","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["843000_2026-03-04","843000","2026-03-04","Two-photon mesoscope","Sequence"]},{"context":"sensorimotor","csvValues":["830848_2026-03-05","830848","2026-03-05","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["830848_2026-03-05","830848","2026-03-05","Neuropixels","Sensorimotor"]},{"context":"duration","csvValues":["830849_2026-03-05","830849","2026-03-05","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["830849_2026-03-05","830849","2026-03-05","Neuropixels","Duration"]},{"context":"standard oddball","csvValues":["837568_2026-03-05","837568","2026-03-05","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["837568_2026-03-05","837568","2026-03-05","Two-photon mesoscope","Standard oddball"]},{"context":"standard oddball","csvValues":["839909_2026-03-05","839909","2026-03-05","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["839909_2026-03-05","839909","2026-03-05","Two-photon mesoscope","Standard oddball"]},{"context":"standard oddball","csvValues":["830849_2026-03-06","830849","2026-03-06","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["830849_2026-03-06","830849","2026-03-06","Neuropixels","Standard oddball"]},{"context":"standard oddball","csvValues":["837568_2026-03-06","837568","2026-03-06","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["837568_2026-03-06","837568","2026-03-06","Two-photon mesoscope","Standard oddball"]},{"context":"sequence","csvValues":["839909_2026-03-06","839909","2026-03-06","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["839909_2026-03-06","839909","2026-03-06","Two-photon mesoscope","Sequence"]},{"context":"sensorimotor","csvValues":["830849_2026-03-07","830849","2026-03-07","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["830849_2026-03-07","830849","2026-03-07","Neuropixels","Sensorimotor"]},{"context":"sequence","csvValues":["830846_2026-03-09","830846","2026-03-09","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["830846_2026-03-09","830846","2026-03-09","Neuropixels","Sequence"]},{"context":"sequence","csvValues":["830847_2026-03-09","830847","2026-03-09","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["830847_2026-03-09","830847","2026-03-09","Neuropixels","Sequence"]},{"context":"sensorimotor","csvValues":["837568_2026-03-09","837568","2026-03-09","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["837568_2026-03-09","837568","2026-03-09","Two-photon mesoscope","Sensorimotor"]},{"context":"duration","csvValues":["830846_2026-03-10","830846","2026-03-10","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["830846_2026-03-10","830846","2026-03-10","Neuropixels","Duration"]},{"context":"duration","csvValues":["830847_2026-03-10","830847","2026-03-10","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["830847_2026-03-10","830847","2026-03-10","Neuropixels","Duration"]},{"context":"duration","csvValues":["843000_2026-03-10","843000","2026-03-10","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["843000_2026-03-10","843000","2026-03-10","Two-photon mesoscope","Duration"]},{"context":"standard oddball","csvValues":["830846_2026-03-11","830846","2026-03-11","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["830846_2026-03-11","830846","2026-03-11","Neuropixels","Standard oddball"]},{"context":"standard oddball","csvValues":["830847_2026-03-11","830847","2026-03-11","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["830847_2026-03-11","830847","2026-03-11","Neuropixels","Standard oddball"]},{"context":"duration","csvValues":["843000_2026-03-11","843000","2026-03-11","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["843000_2026-03-11","843000","2026-03-11","Two-photon mesoscope","Duration"]},{"context":"sensorimotor","csvValues":["843001_2026-03-11","843001","2026-03-11","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["843001_2026-03-11","843001","2026-03-11","Two-photon mesoscope","Sensorimotor"]},{"context":"sensorimotor","csvValues":["830846_2026-03-12","830846","2026-03-12","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["830846_2026-03-12","830846","2026-03-12","Neuropixels","Sensorimotor"]},{"context":"sensorimotor","csvValues":["830847_2026-03-12","830847","2026-03-12","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["830847_2026-03-12","830847","2026-03-12","Neuropixels","Sensorimotor"]},{"context":"sensorimotor","csvValues":["843001_2026-03-12","843001","2026-03-12","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["843001_2026-03-12","843001","2026-03-12","Two-photon mesoscope","Sensorimotor"]},{"context":"sensorimotor","csvValues":["830851_2026-03-16","830851","2026-03-16","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["830851_2026-03-16","830851","2026-03-16","Neuropixels","Sensorimotor"]},{"context":"sequence","csvValues":["834687_2026-03-16","834687","2026-03-16","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["834687_2026-03-16","834687","2026-03-16","Neuropixels","Sequence"]},{"context":"standard oddball","csvValues":["830851_2026-03-17","830851","2026-03-17","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["830851_2026-03-17","830851","2026-03-17","Neuropixels","Standard oddball"]},{"context":"duration","csvValues":["834687_2026-03-17","834687","2026-03-17","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["834687_2026-03-17","834687","2026-03-17","Neuropixels","Duration"]},{"context":"standard oddball","csvValues":["843000_2026-03-17","843000","2026-03-17","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["843000_2026-03-17","843000","2026-03-17","Two-photon mesoscope","Standard oddball"]},{"context":"sequence","csvValues":["830851_2026-03-18","830851","2026-03-18","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["830851_2026-03-18","830851","2026-03-18","Neuropixels","Sequence"]},{"context":"standard oddball","csvValues":["834687_2026-03-18","834687","2026-03-18","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["834687_2026-03-18","834687","2026-03-18","Neuropixels","Standard oddball"]},{"context":"standard oddball","csvValues":["843000_2026-03-18","843000","2026-03-18","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["843000_2026-03-18","843000","2026-03-18","Two-photon mesoscope","Standard oddball"]},{"context":"sensorimotor","csvValues":["843001_2026-03-18","843001","2026-03-18","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["843001_2026-03-18","843001","2026-03-18","Two-photon mesoscope","Sensorimotor"]},{"context":"duration","csvValues":["830851_2026-03-19","830851","2026-03-19","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["830851_2026-03-19","830851","2026-03-19","Neuropixels","Duration"]},{"context":"sensorimotor","csvValues":["834687_2026-03-19","834687","2026-03-19","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["834687_2026-03-19","834687","2026-03-19","Neuropixels","Sensorimotor"]},{"context":"sequence","csvValues":["839909_2026-03-19","839909","2026-03-19","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["839909_2026-03-19","839909","2026-03-19","Two-photon mesoscope","Sequence"]},{"context":"sensorimotor","csvValues":["843000_2026-03-19","843000","2026-03-19","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["843000_2026-03-19","843000","2026-03-19","Two-photon mesoscope","Sensorimotor"]},{"context":"standard oddball","csvValues":["843001_2026-03-19","843001","2026-03-19","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["843001_2026-03-19","843001","2026-03-19","Two-photon mesoscope","Standard oddball"]},{"context":"duration","csvValues":["839909_2026-03-20","839909","2026-03-20","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["839909_2026-03-20","839909","2026-03-20","Two-photon mesoscope","Duration"]},{"context":"sensorimotor","csvValues":["843000_2026-03-20","843000","2026-03-20","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["843000_2026-03-20","843000","2026-03-20","Two-photon mesoscope","Sensorimotor"]},{"context":"standard oddball","csvValues":["843001_2026-03-21","843001","2026-03-21","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["843001_2026-03-21","843001","2026-03-21","Two-photon mesoscope","Standard oddball"]},{"context":"sequence","csvValues":["832691_2026-03-23","832691","2026-03-23","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["832691_2026-03-23","832691","2026-03-23","Neuropixels","Sequence"]},{"context":"sequence","csvValues":["834686_2026-03-23","834686","2026-03-23","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["834686_2026-03-23","834686","2026-03-23","Neuropixels","Sequence"]},{"context":"duration","csvValues":["832691_2026-03-24","832691","2026-03-24","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["832691_2026-03-24","832691","2026-03-24","Neuropixels","Duration"]},{"context":"duration","csvValues":["834686_2026-03-24","834686","2026-03-24","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["834686_2026-03-24","834686","2026-03-24","Neuropixels","Duration"]},{"context":"standard oddball","csvValues":["834686_2026-03-25","834686","2026-03-25","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["834686_2026-03-25","834686","2026-03-25","Neuropixels","Standard oddball"]},{"context":"standard oddball","csvValues":["843001_2026-03-25","843001","2026-03-25","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["843001_2026-03-25","843001","2026-03-25","Two-photon mesoscope","Standard oddball"]},{"context":"sensorimotor","csvValues":["845342_2026-03-25","845342","2026-03-25","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["845342_2026-03-25","845342","2026-03-25","Two-photon mesoscope","Sensorimotor"]},{"context":"sensorimotor","csvValues":["832691_2026-03-26","832691","2026-03-26","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["832691_2026-03-26","832691","2026-03-26","Neuropixels","Sensorimotor"]},{"context":"sensorimotor","csvValues":["834686_2026-03-26","834686","2026-03-26","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["834686_2026-03-26","834686","2026-03-26","Neuropixels","Sensorimotor"]},{"context":"sensorimotor","csvValues":["845342_2026-03-26","845342","2026-03-26","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["845342_2026-03-26","845342","2026-03-26","Two-photon mesoscope","Sensorimotor"]},{"context":"standard oddball","csvValues":["845342_2026-03-27","845342","2026-03-27","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["845342_2026-03-27","845342","2026-03-27","Two-photon mesoscope","Standard oddball"]},{"context":"standard oddball","csvValues":["845342_2026-03-30","845342","2026-03-30","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["845342_2026-03-30","845342","2026-03-30","Two-photon mesoscope","Standard oddball"]},{"context":"sequence","csvValues":["845342_2026-03-31","845342","2026-03-31","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["845342_2026-03-31","845342","2026-03-31","Two-photon mesoscope","Sequence"]},{"context":"sequence","csvValues":["843001_2026-04-01","843001","2026-04-01","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["843001_2026-04-01","843001","2026-04-01","Two-photon mesoscope","Sequence"]},{"context":"sequence","csvValues":["845342_2026-04-01","845342","2026-04-01","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["845342_2026-04-01","845342","2026-04-01","Two-photon mesoscope","Sequence"]},{"context":"sequence","csvValues":["843001_2026-04-02","843001","2026-04-02","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["843001_2026-04-02","843001","2026-04-02","Two-photon mesoscope","Sequence"]},{"context":"duration","csvValues":["845342_2026-04-02","845342","2026-04-02","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["845342_2026-04-02","845342","2026-04-02","Two-photon mesoscope","Duration"]},{"context":"duration","csvValues":["843001_2026-04-03","843001","2026-04-03","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["843001_2026-04-03","843001","2026-04-03","Two-photon mesoscope","Duration"]},{"context":"duration","csvValues":["845342_2026-04-03","845342","2026-04-03","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["845342_2026-04-03","845342","2026-04-03","Two-photon mesoscope","Duration"]},{"context":"other/pilot","csvValues":["845207_2026-04-06","845207","2026-04-06","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["845207_2026-04-06","845207","2026-04-06","SLAP2 dendritic imaging (voltage)","Other/pilot"]},{"context":"duration","csvValues":["843001_2026-04-09","843001","2026-04-09","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["843001_2026-04-09","843001","2026-04-09","Two-photon mesoscope","Duration"]},{"context":"other/pilot","csvValues":["845207_2026-04-09","845207","2026-04-09","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["845207_2026-04-09","845207","2026-04-09","SLAP2 dendritic imaging (voltage)","Other/pilot"]},{"context":"sensorimotor","csvValues":["846289_2026-04-10","846289","2026-04-10","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["846289_2026-04-10","846289","2026-04-10","Two-photon mesoscope","Sensorimotor"]},{"context":"standard oddball","csvValues":["843001_2026-04-11","843001","2026-04-11","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["843001_2026-04-11","843001","2026-04-11","Two-photon mesoscope","Standard oddball"]},{"context":"sensorimotor","csvValues":["846289_2026-04-13","846289","2026-04-13","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["846289_2026-04-13","846289","2026-04-13","Two-photon mesoscope","Sensorimotor"]},{"context":"standard oddball","csvValues":["846289_2026-04-15","846289","2026-04-15","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["846289_2026-04-15","846289","2026-04-15","Two-photon mesoscope","Standard oddball"]},{"context":"sensorimotor","csvValues":["843001_2026-04-16","843001","2026-04-16","Two-photon mesoscope","Sensorimotor"],"details":[],"modality":"mesoscope","qc":"","values":["843001_2026-04-16","843001","2026-04-16","Two-photon mesoscope","Sensorimotor"]},{"context":"standard oddball","csvValues":["846289_2026-04-16","846289","2026-04-16","Two-photon mesoscope","Standard oddball"],"details":[],"modality":"mesoscope","qc":"","values":["846289_2026-04-16","846289","2026-04-16","Two-photon mesoscope","Standard oddball"]},{"context":"sequence","csvValues":["842971_2026-04-18","842971","2026-04-18","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["842971_2026-04-18","842971","2026-04-18","Two-photon mesoscope","Sequence"]},{"context":"sequence","csvValues":["846289_2026-04-20","846289","2026-04-20","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["846289_2026-04-20","846289","2026-04-20","Two-photon mesoscope","Sequence"]},{"context":"sequence","csvValues":["846289_2026-04-21","846289","2026-04-21","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["846289_2026-04-21","846289","2026-04-21","Two-photon mesoscope","Sequence"]},{"context":"duration","csvValues":["839909_2026-04-22","839909","2026-04-22","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["839909_2026-04-22","839909","2026-04-22","Two-photon mesoscope","Duration"]},{"context":"sequence","csvValues":["842971_2026-04-22","842971","2026-04-22","Two-photon mesoscope","Sequence"],"details":[],"modality":"mesoscope","qc":"","values":["842971_2026-04-22","842971","2026-04-22","Two-photon mesoscope","Sequence"]},{"context":"duration","csvValues":["842971_2026-04-23","842971","2026-04-23","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["842971_2026-04-23","842971","2026-04-23","Two-photon mesoscope","Duration"]},{"context":"duration","csvValues":["846289_2026-04-23","846289","2026-04-23","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["846289_2026-04-23","846289","2026-04-23","Two-photon mesoscope","Duration"]},{"context":"duration","csvValues":["842971_2026-04-24","842971","2026-04-24","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["842971_2026-04-24","842971","2026-04-24","Two-photon mesoscope","Duration"]},{"context":"duration","csvValues":["846289_2026-04-27","846289","2026-04-27","Two-photon mesoscope","Duration"],"details":[],"modality":"mesoscope","qc":"","values":["846289_2026-04-27","846289","2026-04-27","Two-photon mesoscope","Duration"]},{"context":"sensorimotor","csvValues":["848387_2026-05-04","848387","2026-05-04","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["848387_2026-05-04","848387","2026-05-04","Neuropixels","Sensorimotor"]},{"context":"sensorimotor","csvValues":["848390_2026-05-04","848390","2026-05-04","Neuropixels","Sensorimotor"],"details":[],"modality":"neuropixels","qc":"","values":["848390_2026-05-04","848390","2026-05-04","Neuropixels","Sensorimotor"]},{"context":"standard oddball","csvValues":["848387_2026-05-05","848387","2026-05-05","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["848387_2026-05-05","848387","2026-05-05","Neuropixels","Standard oddball"]},{"context":"standard oddball","csvValues":["848390_2026-05-05","848390","2026-05-05","Neuropixels","Standard oddball"],"details":[],"modality":"neuropixels","qc":"","values":["848390_2026-05-05","848390","2026-05-05","Neuropixels","Standard oddball"]},{"context":"other/pilot","csvValues":["851452_2026-05-05","851452","2026-05-05","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["851452_2026-05-05","851452","2026-05-05","SLAP2 dendritic imaging (voltage)","Other/pilot"]},{"context":"sequence","csvValues":["848387_2026-05-06","848387","2026-05-06","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["848387_2026-05-06","848387","2026-05-06","Neuropixels","Sequence"]},{"context":"sequence","csvValues":["848390_2026-05-06","848390","2026-05-06","Neuropixels","Sequence"],"details":[],"modality":"neuropixels","qc":"","values":["848390_2026-05-06","848390","2026-05-06","Neuropixels","Sequence"]},{"context":"other/pilot","csvValues":["841191_2026-05-07","841191","2026-05-07","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["841191_2026-05-07","841191","2026-05-07","SLAP2 dendritic imaging (voltage)","Other/pilot"]},{"context":"duration","csvValues":["848387_2026-05-07","848387","2026-05-07","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["848387_2026-05-07","848387","2026-05-07","Neuropixels","Duration"]},{"context":"duration","csvValues":["848390_2026-05-07","848390","2026-05-07","Neuropixels","Duration"],"details":[],"modality":"neuropixels","qc":"","values":["848390_2026-05-07","848390","2026-05-07","Neuropixels","Duration"]},{"context":"other/pilot","csvValues":["841191_2026-05-08","841191","2026-05-08","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["841191_2026-05-08","841191","2026-05-08","SLAP2 dendritic imaging (voltage)","Other/pilot"]},{"context":"other/pilot","csvValues":["845207_2026-05-08","845207","2026-05-08","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["845207_2026-05-08","845207","2026-05-08","SLAP2 dendritic imaging (voltage)","Other/pilot"]},{"context":"other/pilot","csvValues":["841191_2026-05-12","841191","2026-05-12","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["841191_2026-05-12","841191","2026-05-12","SLAP2 dendritic imaging (voltage)","Other/pilot"]},{"context":"other/pilot","csvValues":["841191_2026-05-13","841191","2026-05-13","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["841191_2026-05-13","841191","2026-05-13","SLAP2 dendritic imaging (voltage)","Other/pilot"]},{"context":"other/pilot","csvValues":["845207_2026-05-13","845207","2026-05-13","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["845207_2026-05-13","845207","2026-05-13","SLAP2 dendritic imaging (voltage)","Other/pilot"]},{"context":"other/pilot","csvValues":["851453_2026-06-04","851453","2026-06-04","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["851453_2026-06-04","851453","2026-06-04","SLAP2 dendritic imaging (voltage)","Other/pilot"]},{"context":"other/pilot","csvValues":["851453_2026-06-10","851453","2026-06-10","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["851453_2026-06-10","851453","2026-06-10","SLAP2 dendritic imaging (voltage)","Other/pilot"]},{"context":"other/pilot","csvValues":["851453_2026-06-11","851453","2026-06-11","SLAP2 dendritic imaging (voltage)","Other/pilot"],"details":[],"modality":"slap2","qc":"","values":["851453_2026-06-11","851453","2026-06-11","SLAP2 dendritic imaging (voltage)","Other/pilot"]}]}},"version":2}</script>
+  <script>
+(() => {
+  "use strict";
+
+  const data = JSON.parse(document.getElementById("explorer-data").textContent);
+  const elements = {
+    body: document.getElementById("table-body"),
+    context: document.getElementById("context-filter"),
+    download: document.getElementById("download-csv"),
+    empty: document.getElementById("empty-state"),
+    headers: document.getElementById("table-headers"),
+    modality: document.getElementById("modality-filter"),
+    search: document.getElementById("table-search"),
+    status: document.getElementById("row-count"),
+    tabs: document.getElementById("dataset-tabs"),
+  };
+  const modalityLabels = {
+    mesoscope: "Two-photon",
+    neuropixels: "Neuropixels",
+    slap2: "SLAP2",
+  };
+  const state = { kind: "animals", visibleRows: [] };
+
+  function buildTabs() {
+    ["animals", "sessions"].forEach((kind) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "dataset-tab";
+      button.dataset.kind = kind;
+      const label = kind === "animals" ? "Animals" : "Sessions";
+      button.innerHTML = `${label}<span>${data.tables[kind].rows.length}</span>`;
+      button.addEventListener("click", () => selectTable(kind));
+      elements.tabs.append(button);
+    });
+  }
+
+  function selectTable(kind) {
+    state.kind = kind;
+    elements.search.value = "";
+    elements.search.placeholder = kind === "animals" ? "Search animals" : "Search sessions";
+    elements.tabs.querySelectorAll("button").forEach((button) => {
+      const active = button.dataset.kind === kind;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    populateFilters();
+    renderTable();
+  }
+
+  function populateFilters() {
+    const rows = data.tables[state.kind].rows;
+    setOptions(elements.modality, "All modalities", unique(rows, "modality"), modalityLabels);
+    if (state.kind === "sessions") {
+      setOptions(elements.context, "All contexts", unique(rows, "context"));
+      elements.context.setAttribute("aria-label", "Filter by stimulus context");
+    } else {
+      setOptions(elements.context, "All QC states", unique(rows, "qc"));
+      elements.context.setAttribute("aria-label", "Filter by QC state");
+    }
+  }
+
+  function renderTable() {
+    const table = data.tables[state.kind];
+    const query = normalize(elements.search.value);
+    state.visibleRows = table.rows.filter((row) => {
+      const matchesSearch = !query || normalize(row.csvValues.join(" ")).includes(query);
+      const matchesModality = !elements.modality.value
+        || row.modality === elements.modality.value;
+      const secondaryValue = state.kind === "sessions" ? row.context : row.qc;
+      const matchesContext = !elements.context.value
+        || secondaryValue === elements.context.value;
+      return matchesSearch && matchesModality && matchesContext;
+    });
+
+    elements.headers.replaceChildren();
+    table.headers.forEach((header) => {
+      const cell = document.createElement("th");
+      cell.scope = "col";
+      cell.textContent = header;
+      elements.headers.append(cell);
+    });
+
+    elements.body.replaceChildren();
+    state.visibleRows.forEach((row) => elements.body.append(renderRow(row, table)));
+    elements.status.value = `${state.visibleRows.length} of ${table.rows.length}`;
+    elements.status.textContent = elements.status.value;
+    elements.empty.hidden = state.visibleRows.length !== 0;
+    updateDownloadLink();
+  }
+
+  function renderRow(row, table) {
+    const tableRow = document.createElement("tr");
+    tableRow.className = `modality-${row.modality}`;
+    row.values.forEach((value, index) => {
+      const cell = document.createElement("td");
+      if (index === table.detailsColumn) {
+        const details = document.createElement("details");
+        details.className = "id-disclosure";
+        const summary = document.createElement("summary");
+        summary.textContent = "View metadata";
+        const list = document.createElement("dl");
+        list.className = "metadata-list";
+        row.details.forEach((detail) => {
+          const term = document.createElement("dt");
+          term.textContent = detail.label;
+          const description = document.createElement("dd");
+          description.textContent = detail.value;
+          list.append(term, description);
+        });
+        details.append(summary, list);
+        cell.append(details);
+      } else {
+        cell.textContent = value;
+      }
+      tableRow.append(cell);
+    });
+    return tableRow;
+  }
+
+  function setOptions(select, allLabel, values, labels = {}) {
+    select.replaceChildren(new Option(allLabel, ""));
+    values.forEach((value) => select.append(new Option(labels[value] ?? titleCase(value), value)));
+  }
+
+  function unique(rows, key) {
+    return Array.from(new Set(rows.map((row) => row[key]).filter(Boolean)));
+  }
+
+  function normalize(value) {
+    return String(value ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+  }
+
+  function titleCase(value) {
+    return value.replace(/\b\w/g, (character) => character.toUpperCase());
+  }
+
+  function updateDownloadLink() {
+    const table = data.tables[state.kind];
+    const csv = [table.csvHeaders, ...state.visibleRows.map((row) => row.csvValues)]
+      .map((row) => row.map(csvCell).join(","))
+      .join("\n");
+    elements.download.href = `data:text/csv;charset=utf-8,%EF%BB%BF${encodeURIComponent(csv)}`;
+    elements.download.download = `openscope-predictive-processing-${state.kind}.csv`;
+  }
+
+  function csvCell(value) {
+    return `"${String(value).replaceAll('"', '""')}"`;
+  }
+
+  elements.search.addEventListener("input", renderTable);
+  elements.modality.addEventListener("change", renderTable);
+  elements.context.addEventListener("change", renderTable);
+  buildTabs();
+  selectTable("animals");
+})();
+  </script>
+</body>
+</html>

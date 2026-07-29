@@ -127,3 +127,69 @@ article table.table-laser-power th:first-child,
 article table.table-laser-power td:first-child {
   text-align: left !important;
 }
+
+.id-disclosure {
+  min-width: 8.5rem;
+}
+
+.id-disclosure summary {
+  width: max-content;
+  cursor: pointer;
+  color: #286b64;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.id-disclosure summary:hover {
+  color: #174641;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.id-list {
+  margin-top: 0.45rem;
+  padding: 0.55rem;
+  border-left: 3px solid #91b8ae;
+  background: #f4f8f6;
+  color: #47564f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.74rem;
+  font-weight: 400;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+#table-data-explorer .relative.inline-block {
+  height: 650px;
+  padding-bottom: 0 !important;
+}
+
+.static-table-fallback {
+  margin: 0.75rem 0 1.25rem;
+  border: 1px solid #cbd8d3;
+  border-radius: 5px;
+  background: #f7faf8;
+}
+
+.static-table-fallback > summary {
+  padding: 0.72rem 0.85rem;
+  cursor: pointer;
+  color: #225d57;
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
+.static-table-fallback[open] > summary {
+  border-bottom: 1px solid #cbd8d3;
+}
+
+.static-table-fallback > .overflow-auto,
+.static-table-fallback > table {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  #table-data-explorer .relative.inline-block {
+    height: 830px;
+  }
+}

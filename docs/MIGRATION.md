@@ -10,6 +10,7 @@
 - Added an installable Python package, tests, and the first playable JavaScript figure with an SVG fallback.
 - Added source, generated-asset, and contribution conventions.
 - Replaced the mesoscope laser-power screenshot with a structured, CSV-backed table.
+- Added a filterable explorer with 39 individual mice, 164 individual sessions, metadata disclosure, and CSV export.
 
 ## Inputs still needed from the team
 

@@ -51,7 +51,9 @@ jobs:
           node-version: "22"
 
       - name: Check JavaScript figure sources
-        run: node --check figure_sources/javascript/stimulus-viewer.js
+        run: |
+          node --check figure_sources/javascript/stimulus-viewer.js
+          node --check figure_sources/javascript/data-explorer.js
 
       - name: Install MyST
         run: npm install --global mystmd@1.10.1
@@ -60,7 +62,9 @@ jobs:
         run: myst build --html
 
       - name: Check interactive site assets
-        run: test -f _build/html/interactive/experimental-design.html
+        run: |
+          test -f _build/html/interactive/experimental-design.html
+          test -f _build/html/interactive/data-explorer.html
 
       - name: Configure Pages
         if: github.event_name != 'pull_request'

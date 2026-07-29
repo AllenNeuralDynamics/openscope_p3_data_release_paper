@@ -33,7 +33,10 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     assert "media/media/" not in manuscript
 
-    local_paths = re.findall(r"(?:\./)(images/[^\s]+|interactive/[^\s]+)", manuscript)
+    local_paths = re.findall(
+        r"(?:\./)(images/[^\s\"']+|interactive/[^\s\"']+)",
+        manuscript,
+    )
     assert local_paths
     for relative_path in local_paths:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
@@ -78,13 +81,23 @@ def test_mesoscope_laser_power_is_structured_data() -> None:
 
 def test_imported_data_tables_have_body_cells() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
-    tables = re.findall(r'<table class="publication-data-table">.*?</table>', manuscript, re.DOTALL)
+    tables = re.findall(
+        r'<table class="publication-data-table [^"]+".*?</table>',
+        manuscript,
+        re.DOTALL,
+    )
 
     assert len(tables) == 2
     for table in tables:
         assert "<tbody>" in table
         assert "<td" in table
         assert "<thead>" in table
+        assert "id-disclosure" in table
+        assert "data-full-value" in table
+
+    assert manuscript.count("interactive/data-explorer.html") == 1
+    assert '<details class="static-table-fallback">' in manuscript
+    assert "View grouped static summary tables" in manuscript
 
 
 def test_interactive_figure_has_static_fallback() -> None:

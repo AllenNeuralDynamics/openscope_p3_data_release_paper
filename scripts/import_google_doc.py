@@ -207,6 +207,15 @@ STIMULUS_PROVENANCE_BLOCK = "\n".join(
     ]
 )
 
+DATA_EXPLORER_BLOCK = """:::{iframe} ./interactive/data-explorer.html
+:label: table-data-explorer
+:width: 100%
+:title: Interactive explorer for experimental animals and recording sessions
+
+Filterable explorer for experimental animals, recording modalities, contexts,
+and session identifiers.
+:::"""
+
 FRONTMATTER = """---
 title: OpenScope Predictive Processing Community Project - Data Release
 ---"""
@@ -370,7 +379,9 @@ def normalize_imported_html_table(table_html: str) -> str:
     if "Predictive processing experiment tables" not in table_text:
         return table_html
 
-    table.set("class", "publication-data-table")
+    table_kind = "sessions" if "List of sessions" in table_text else "animals"
+    table.set("class", f"publication-data-table table-{table_kind}")
+    table.set("data-table-kind", table_kind)
     head = table.find("thead")
     body = table.find("tbody")
     if head is None:
@@ -382,20 +393,45 @@ def normalize_imported_html_table(table_html: str) -> str:
     for row in rows[2:]:
         head.remove(row)
         first_cell_text = " ".join("".join(row[0].itertext()).lower().split())
+        modality = "other"
         if "two-photon" in first_cell_text or "mesoscope" in first_cell_text:
+            modality = "mesoscope"
             row.set("class", "modality-mesoscope")
         elif "neuropixels" in first_cell_text:
+            modality = "neuropixels"
             row.set("class", "modality-neuropixels")
         elif "slap2" in first_cell_text:
+            modality = "slap2"
             row.set("class", "modality-slap2")
+        row.set("data-modality", modality)
+        if table_kind == "sessions":
+            context = " ".join("".join(row[1].itertext()).lower().split())
+            row.set("data-context", context)
         for cell in row:
             if cell.tag == "th":
                 cell.tag = "td"
             cell.set("style", "text-align: left;")
+        collapse_identifier_cell(row[-1], table_kind)
         body.append(row)
 
     ET.indent(table, space="  ")
     return ET.tostring(table, encoding="unicode", method="xml")
+
+
+def collapse_identifier_cell(cell: ET.Element, table_kind: str) -> None:
+    full_value = " ".join("".join(cell.itertext()).split())
+    identifiers = [value.strip() for value in full_value.split(",") if value.strip()]
+    label = "mouse IDs" if table_kind == "animals" else "sessions"
+    cell.set("data-full-value", full_value)
+    cell.text = None
+    for child in list(cell):
+        cell.remove(child)
+
+    details = ET.SubElement(cell, "details", {"class": "id-disclosure"})
+    summary = ET.SubElement(details, "summary")
+    summary.text = f"{len(identifiers)} {label}"
+    identifier_list = ET.SubElement(details, "div", {"class": "id-list"})
+    identifier_list.text = full_value
 
 
 def replace_images(markdown: str) -> str:
@@ -448,6 +484,7 @@ def normalize_known_export_artifacts(markdown: str) -> str:
         lambda match: normalize_imported_html_table(match.group()),
         markdown,
     )
+    markdown = wrap_publication_data_tables(markdown)
 
     table_marker = "| Publication |\n|----|"
     table_warning = """:::{warning} Supplementary table needs a source export
@@ -461,6 +498,32 @@ Table 1. Replace this shell with a CSV or another structured source before submi
     markdown = "\n".join(line.rstrip() for line in markdown.splitlines())
     markdown = re.sub(r"\n{3,}", "\n\n", markdown)
     return markdown.strip() + "\n"
+
+
+def wrap_publication_data_tables(markdown: str) -> str:
+    pattern = re.compile(
+        r'<table class="publication-data-table table-[^"]+".*?</table>',
+        re.DOTALL,
+    )
+    matches = list(pattern.finditer(markdown))
+    if len(matches) != 2:
+        raise RuntimeError(f"Expected two publication data tables, found {len(matches)}.")
+    start = matches[0].start()
+    end = matches[-1].end()
+    static_tables = markdown[start:end]
+    replacement = "\n".join(
+        [
+            DATA_EXPLORER_BLOCK,
+            "",
+            '<details class="static-table-fallback">',
+            "<summary>View grouped static summary tables</summary>",
+            "",
+            static_tables,
+            "",
+            "</details>",
+        ]
+    )
+    return f"{markdown[:start]}{replacement}{markdown[end:]}"
 
 
 def build_index(markdown: str) -> str:

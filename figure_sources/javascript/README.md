@@ -10,6 +10,14 @@ The stimulus viewer is split into:
 - `stimulus-viewer.css`: responsive, screen-focused layout.
 - `stimulus-viewer.js`: deterministic stimulus rendering and playback state.
 
+The data explorer follows the same generated-asset pattern:
+
+- `data-explorer.html`: accessible Animals/Sessions explorer structure.
+- `data-explorer.css`: compact filters, sticky headers, and responsive table styling.
+- `data-explorer.js`: tabs, search, filters, ID disclosure, and CSV export.
+
+The explorer normalizes grouped manuscript rows into individual records: mouse metadata comes from the versioned worksheet snapshot in `figure_sources/data/experimental-animals.csv`, while individual session rows are expanded from the grouped session IDs in the manuscript.
+
 Build the committed HTML and static SVG fallback with:
 
 ```bash

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>OpenScope data explorer</title>
+  <style>
+__DATA_EXPLORER_CSS__
+  </style>
+</head>
+<body>
+  <main class="explorer" id="data-explorer">
+    <header class="explorer-header">
+      <nav class="dataset-tabs" id="dataset-tabs" aria-label="Choose a data table"></nav>
+      <div class="table-tools" role="search">
+        <input id="table-search" type="search" placeholder="Search animals" aria-label="Search table">
+        <select id="modality-filter" aria-label="Filter by recording modality"></select>
+        <select id="context-filter" aria-label="Filter by secondary category"></select>
+        <output id="row-count" aria-live="polite"></output>
+        <a id="download-csv" href="#" download title="Download visible rows as CSV" aria-label="Download visible rows as CSV">&#8595; CSV</a>
+      </div>
+    </header>
+
+    <section class="table-shell" aria-live="polite">
+      <table id="explorer-table">
+        <thead><tr id="table-headers"></tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <p class="empty-state" id="empty-state" hidden>No matching rows.</p>
+    </section>
+  </main>
+
+  <script id="explorer-data" type="application/json">__DATA_EXPLORER_DATA__</script>
+  <script>
+__DATA_EXPLORER_JS__
+  </script>
+</body>
+</html>

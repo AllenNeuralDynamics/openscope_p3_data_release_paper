@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "source_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/edit?gid=520414570#gid=520414570",
+  "export_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/export?format=csv&gid=520414570",
+  "retrieved_date": "2026-07-28",
+  "source_sha256": "37dca73fd42f18950aa194bc58799177092936dc537290494cecf1a26922e213",
+  "vendored_sha256": "b8f307bde3515e7df0c9a486a62b9983be17639a1de0c9faae5283178f3b1a07",
+  "rows": 39,
+  "notes": "Vendored content is the same 39 parsed records as the source export, normalized to LF line endings. Snapshot includes mouse 841193, marked FAILED with deleted data; that mouse is absent from the grouped manuscript summary."
+}

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
+import re
+import xml.etree.ElementTree as ET
 from dataclasses import asdict, dataclass
 from html import escape
 from pathlib import Path
@@ -10,7 +13,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = REPO_ROOT / "figure_sources" / "data"
 JAVASCRIPT_DIR = REPO_ROOT / "figure_sources" / "javascript"
 STIMULUS_SOURCES_PATH = DATA_DIR / "stimulus-viewer-sources.json"
+ANIMAL_RECORDS_PATH = DATA_DIR / "experimental-animals.csv"
+ANIMAL_RECORDS_PROVENANCE_PATH = DATA_DIR / "experimental-animals.provenance.json"
 INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "experimental-design.html"
+DATA_EXPLORER_OUTPUT = REPO_ROOT / "interactive" / "data-explorer.html"
 STATIC_OUTPUT = REPO_ROOT / "images" / "figures" / "generated" / "experimental-design.svg"
 
 
@@ -99,6 +105,181 @@ def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
     return output
 
 
+def write_data_explorer_html(output: Path = DATA_EXPLORER_OUTPUT) -> Path:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    payload = load_publication_table_data()
+    template = (JAVASCRIPT_DIR / "data-explorer.html").read_text(encoding="utf-8")
+    stylesheet = (JAVASCRIPT_DIR / "data-explorer.css").read_text(encoding="utf-8")
+    javascript = (JAVASCRIPT_DIR / "data-explorer.js").read_text(encoding="utf-8")
+    html = (
+        template.replace("__DATA_EXPLORER_CSS__", stylesheet)
+        .replace(
+            "__DATA_EXPLORER_DATA__",
+            json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
+        )
+        .replace("__DATA_EXPLORER_JS__", javascript)
+    )
+    output.write_text(html, encoding="utf-8")
+    return output
+
+
+def load_publication_table_data(manuscript_path: Path = REPO_ROOT / "index.md") -> dict:
+    manuscript = manuscript_path.read_text(encoding="utf-8")
+    pattern = re.compile(
+        r'<table class="publication-data-table table-(?P<kind>animals|sessions)".*?'
+        r'</table>',
+        re.DOTALL,
+    )
+    grouped_tables = {}
+    for match in pattern.finditer(manuscript):
+        kind = match.group("kind")
+        table = ET.fromstring(match.group())
+        header_rows = table.findall("./thead/tr")
+        headers = [" ".join("".join(cell.itertext()).split()) for cell in header_rows[-1]]
+        rows = []
+        for row in table.findall("./tbody/tr"):
+            values = [
+                cell.attrib.get("data-full-value")
+                or " ".join("".join(cell.itertext()).split())
+                for cell in row
+            ]
+            rows.append(
+                {
+                    "context": row.attrib.get("data-context", ""),
+                    "modality": row.attrib.get("data-modality", "other"),
+                    "values": values,
+                }
+            )
+        grouped_tables[kind] = {"headers": headers, "rows": rows}
+    if set(grouped_tables) != {"animals", "sessions"}:
+        raise RuntimeError("Expected animals and sessions tables in manuscript.")
+
+    summary_mouse_ids = split_grouped_identifiers(grouped_tables["animals"], count_index=4)
+    animal_table = load_individual_animal_table(summary_mouse_ids)
+    session_table = expand_individual_session_table(grouped_tables["sessions"])
+    return {
+        "tables": {"animals": animal_table, "sessions": session_table},
+        "version": 2,
+    }
+
+
+def split_grouped_identifiers(table: dict, count_index: int) -> set[str]:
+    identifiers = []
+    for row in table["rows"]:
+        row_ids = [value.strip() for value in row["values"][-1].split(",") if value.strip()]
+        declared_count = int(row["values"][count_index].split()[0])
+        if declared_count != len(row_ids):
+            raise RuntimeError(
+                f"Declared count {declared_count} does not match {len(row_ids)} identifiers."
+            )
+        identifiers.extend(row_ids)
+    if len(identifiers) != len(set(identifiers)):
+        raise RuntimeError("Grouped table contains duplicate identifiers.")
+    return set(identifiers)
+
+
+def load_individual_animal_table(summary_mouse_ids: set[str]) -> dict:
+    modality_lookup = {
+        "MESO": ("mesoscope", "Two-photon mesoscope"),
+        "EPHYS": ("neuropixels", "Neuropixels"),
+        "SLAP2": ("slap2", "SLAP2"),
+    }
+    provenance = json.loads(ANIMAL_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8"))
+    checksum = hashlib.sha256(ANIMAL_RECORDS_PATH.read_bytes()).hexdigest()
+    if checksum != provenance["vendored_sha256"]:
+        raise RuntimeError("Animal worksheet checksum does not match its provenance record.")
+    with ANIMAL_RECORDS_PATH.open(newline="", encoding="utf-8") as stream:
+        source_rows = list(csv.DictReader(stream))
+    if len(source_rows) != provenance["rows"]:
+        raise RuntimeError("Animal worksheet row count does not match its provenance record.")
+
+    rows = []
+    for source in source_rows:
+        mouse_id = source["Mouse id"].strip()
+        modality, modality_label = modality_lookup[source["Modality"].strip()]
+        qc_value = source["QC (true/false)"].strip() or "Not marked"
+        sex = source["Sex"].strip()
+        if not sex or sex == "?":
+            sex = "Unknown"
+        included = "Yes" if mouse_id in summary_mouse_ids else "No"
+        details = [
+            {"label": "Genotype / preparation", "value": source["Transgenic details"].strip()},
+            {"label": "Virus(es)", "value": source["Virus(es)"].strip()},
+            {"label": "Birth date", "value": source["Birth date"].strip()},
+            {"label": "Surgery date(s)", "value": source["Surgery date(s)"].strip()},
+            {"label": "Notes", "value": source["Notes"].strip()},
+            {"label": "Included in grouped manuscript table", "value": included},
+        ]
+        details = [detail for detail in details if detail["value"]]
+        csv_values = [source[header] for header in source]
+        csv_values.append(included)
+        rows.append(
+            {
+                "context": "",
+                "csvValues": csv_values,
+                "details": details,
+                "modality": modality,
+                "qc": normalize_qc(qc_value),
+                "values": [mouse_id, modality_label, sex, qc_value, ""],
+            }
+        )
+
+    rows.sort(key=lambda row: int(row["values"][0]))
+    mouse_ids = [row["values"][0] for row in rows]
+    if len(mouse_ids) != len(set(mouse_ids)):
+        raise RuntimeError("Animal worksheet contains duplicate mouse IDs.")
+    if not summary_mouse_ids.issubset(mouse_ids):
+        missing = sorted(summary_mouse_ids - set(mouse_ids))
+        raise RuntimeError(f"Animal worksheet is missing manuscript mouse IDs: {missing}")
+    return {
+        "csvHeaders": [*source_rows[0].keys(), "Included in grouped manuscript table"],
+        "detailsColumn": 4,
+        "headers": ["Mouse ID", "Modality", "Sex", "QC", "Metadata"],
+        "rows": rows,
+    }
+
+
+def normalize_qc(value: str) -> str:
+    normalized = value.lower()
+    if normalized.startswith("true"):
+        return "pass"
+    if normalized.startswith("false") or "failed" in normalized:
+        return "failed"
+    return "not marked"
+
+
+def expand_individual_session_table(grouped_table: dict) -> dict:
+    rows = []
+    session_ids = split_grouped_identifiers(grouped_table, count_index=2)
+    for group in grouped_table["rows"]:
+        modality_label, context_label = group["values"][:2]
+        for session_id in [
+            value.strip() for value in group["values"][-1].split(",") if value.strip()
+        ]:
+            mouse_id, session_date = session_id.split("_", maxsplit=1)
+            values = [session_id, mouse_id, session_date, modality_label, context_label]
+            rows.append(
+                {
+                    "context": group["context"],
+                    "csvValues": values,
+                    "details": [],
+                    "modality": group["modality"],
+                    "qc": "",
+                    "values": values,
+                }
+            )
+    rows.sort(key=lambda row: (row["values"][2], row["values"][0]))
+    if {row["values"][0] for row in rows} != session_ids:
+        raise RuntimeError("Expanded session IDs do not match grouped session IDs.")
+    headers = ["Session ID", "Mouse ID", "Date", "Modality", "Context"]
+    return {
+        "csvHeaders": headers,
+        "detailsColumn": None,
+        "headers": headers,
+        "rows": rows,
+    }
+
+
 def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     width = 1200
@@ -175,8 +356,10 @@ def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
 
 def main() -> None:
     html_path = write_interactive_html()
+    data_explorer_path = write_data_explorer_html()
     svg_path = write_static_svg()
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
 
 
