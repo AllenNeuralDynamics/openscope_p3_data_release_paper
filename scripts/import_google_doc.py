@@ -721,21 +721,31 @@ def move_glossary_to_end(markdown: str) -> str:
     if match is None:
         raise RuntimeError("Expected Glossary section before Data validation.")
 
-    body = match.group("body").strip().replace(
-        "#### NWB Files",
-        "**NWB file contents**",
-        1,
-    )
-    without_glossary = (
-        f"{markdown[: match.start()]}\n# Data validation\n{markdown[match.end() :]}"
+    body = match.group("body").strip()
+    records_heading = "#### NWB Files"
+    if body.count(records_heading) != 1:
+        raise RuntimeError("Expected one NWB Files subsection in the Glossary export.")
+    terms, records = body.split(records_heading, maxsplit=1)
+    without_glossary = "\n".join(
+        [
+            markdown[: match.start()].rstrip(),
+            "",
+            "## NWB file contents",
+            "",
+            records.strip(),
+            "",
+            "# Data validation",
+            "",
+            markdown[match.end() :].lstrip(),
+        ]
     )
     glossary = "\n".join(
         [
             "# Glossary",
             "",
-            ":::{dropdown} Terms, abbreviations, and NWB file contents",
+            ":::{dropdown} Terms and abbreviations",
             "",
-            body,
+            terms.strip(),
             ":::",
         ]
     )

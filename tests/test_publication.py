@@ -89,10 +89,29 @@ def test_glossary_is_an_expandable_final_section() -> None:
 
     assert "## Glossary" not in manuscript
     assert manuscript.count("# Glossary") == 1
-    assert ":::{dropdown} Terms, abbreviations, and NWB file contents" in manuscript
-    assert "**NWB file contents**" in manuscript
+    assert ":::{dropdown} Terms and abbreviations" in manuscript
     assert manuscript.index("# Glossary") > manuscript.index("# Supplementary Text 1")
     assert manuscript.rstrip().endswith(":::")
+
+    glossary = manuscript[manuscript.index("# Glossary") :]
+    assert "**Receptive Field**" in glossary
+    assert "Shared across modalities:" not in glossary
+    assert "Mesoscope NWB files" not in glossary
+
+
+def test_nwb_file_contents_are_in_data_records() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+
+    records_start = manuscript.index("# Data records")
+    nwb_contents = manuscript.index("## NWB file contents")
+    validation_start = manuscript.index("# Data validation")
+    glossary_start = manuscript.index("# Glossary")
+    assert records_start < nwb_contents < validation_start < glossary_start
+
+    records = manuscript[nwb_contents:validation_start]
+    assert "Shared across modalities:" in records
+    assert "Neuropixels NWB files" in records
+    assert "Mesoscope NWB files" in records
 
 
 def test_imported_data_tables_have_body_cells() -> None:
