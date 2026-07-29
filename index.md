@@ -369,12 +369,25 @@ For subsequent imaging sessions, previously defined imaging fields were re-ident
 
 After stabilizing the imaging plane, PMT gain and laser power were adjusted to maximize signal-to-noise ratio and dynamic range while limiting saturation (\<1000 saturated pixels per frame). A predefined power lookup table guided parameter selection. Signal intensity between planes was balanced by adjusting beam power while monitoring pixel intensity histograms.
 
-:::{figure} ./images/figures/imported/mesoscope-laser-power-table.png
-:label: fig-mesoscope-laser-power
-:alt: Mesoscope laser power ranges by imaging depth from the cortical surface.
-:width: 100%
+:::{table} Mesoscope laser power lookup ranges by imaging depth.
+:label: table-mesoscope-laser-power
+:enumerated: false
+:class: table-accent table-compact table-laser-power
 
-Mesoscope laser power lookup table by imaging depth.
+| Depth from surface (µm) | Minimum power (mW) | Maximum power (mW) |
+| ---: | ---: | ---: |
+| 0-50 | 0 | 30 |
+| 50-100 | 25 | 50 |
+| 100-150 | 50 | 80 |
+| 150-200 | 70 | 100 |
+| 200-250 | 90 | 125 |
+| 250-300 | 110 | 170 |
+| 300-350 | 150 | 180 |
+| 350-400 | 160 | 190 |
+| 400-450 | 200 | 240 |
+| 450-500 | 200 | 240 |
+| 500-550 | 200 | 240 |
+| 550-600 | 200 | 240 |
 :::
 
 Two-photon imaging data (512 × 512 pixels; 11 Hz per plane for multi-plane acquisitions), eye tracking (30 Hz), and behavioral video (30 Hz) were recorded simultaneously and continuously monitored. Recording sessions were approximately 60 minutes in duration, with total imaging sessions lasting up to 75 minutes including setup and calibration. Sessions were terminated early if animals exhibited signs of stress (e.g., excessive periocular secretion, abnormal posture) or if data quality was compromised by technical issues, including loss of synchronization between data streams, photomultiplier tube (PMT) signal instability, or dropped imaging frames.
@@ -557,179 +570,193 @@ A secondary pipeline, also run on the CodeOcean platform, took the output spike 
 
 ## Data tables
 
-<table>
-<colgroup>
-<col style="width: 17%" />
-<col style="width: 9%" />
-<col style="width: 13%" />
-<col style="width: 19%" />
-<col style="width: 14%" />
-<col style="width: 25%" />
-</colgroup>
-<thead>
-<tr>
-<th colspan="6" style="text-align: center;"><p><strong>Table 1 -</strong> List of experimental animals per modality</p>
-<p><a href="https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/edit?gid=520414570#gid=520414570"><u>Predictive processing experiment tables</u></a></p></th>
-</tr>
-<tr>
-<th style="text-align: center;">Recording modality</th>
-<th style="text-align: center;">Rig(s)</th>
-<th style="text-align: center;">Mouse line / preparation</th>
-<th style="text-align: center;">Virus / indicator</th>
-<th style="text-align: center;">Mice (M/F)</th>
-<th style="text-align: center;">Mouse IDs</th>
-</tr>
-<tr>
-<th style="text-align: center;">Two-photon mesoscope (calcium)</th>
-<th style="text-align: center;">MESO1, MESO2</th>
-<th style="text-align: center;">Snap25-IRES2-Cre;Oi4(jGCaMP8s)</th>
-<th style="text-align: center;">Transgenic pan-neuronal jGCaMP8s (calcium); no virus</th>
-<th style="text-align: center;">10 (8M / 2F)</th>
-<th style="text-align: center;">832700, 837568, 839909, 842971, 843000, 843001, 845342, 846289, 850399, 853137</th>
-</tr>
-<tr>
-<th style="text-align: center;">Neuropixels (electrophysiology)</th>
-<th style="text-align: center;">NP1</th>
-<th style="text-align: center;">Sst-IRES-Cre;Ai32(ChR2-EYFP)</th>
-<th style="text-align: center;">Transgenic ChR2-EYFP in SST+ interneurons for opto-tagging; no virus</th>
-<th style="text-align: center;">16 (8M / 8F)</th>
-<th style="text-align: center;">820454, 820459, 830794, 830795, 830846, 830847, 830848, 830849, 830851, 830852, 832691, 834686, 834687, 834691, 848387, 848390</th>
-</tr>
-<tr>
-<th style="text-align: center;">SLAP2 dendritic imaging (glutamate + calcium)</th>
-<th style="text-align: center;">SLAP2</th>
-<th style="text-align: center;">C57BL/6J (wt) + AAV, sparse CaMKII-Cre</th>
-<th style="text-align: center;">AAV: iGluSnFR4f (glutamate) + RCaMP3 or jRGECO1a (calcium)</th>
-<th style="text-align: center;">8 (6M / 2F)</th>
-<th style="text-align: center;">776270, 794237, 796630, 801381, 803496, 828408, 828409, 829704</th>
-</tr>
-<tr>
-<th style="text-align: center;">SLAP2 dendritic imaging (voltage)</th>
-<th style="text-align: center;">SLAP2</th>
-<th style="text-align: center;">C57BL/6J (wt) + AAV, sparse CaMKII-Cre</th>
-<th style="text-align: center;">AAV: ASAP7 (voltage) + HaloTag</th>
-<th style="text-align: center;">4 (4M / 0F)</th>
-<th style="text-align: center;">841191, 845207, 851452, 851453</th>
-</tr>
-</thead>
-<tbody>
-</tbody>
+<table class="publication-data-table">
+  <colgroup>
+    <col style="width: 17%" />
+    <col style="width: 9%" />
+    <col style="width: 13%" />
+    <col style="width: 19%" />
+    <col style="width: 14%" />
+    <col style="width: 25%" />
+  </colgroup>
+  <thead>
+    <tr>
+      <th colspan="6" style="text-align: center;">
+        <p>
+          <strong>Table 1 -</strong> List of experimental animals per modality</p>
+        <p>
+          <a href="https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/edit?gid=520414570#gid=520414570">
+            <u>Predictive processing experiment tables</u>
+          </a>
+        </p>
+      </th>
+    </tr>
+    <tr>
+      <th style="text-align: center;">Recording modality</th>
+      <th style="text-align: center;">Rig(s)</th>
+      <th style="text-align: center;">Mouse line / preparation</th>
+      <th style="text-align: center;">Virus / indicator</th>
+      <th style="text-align: center;">Mice (M/F)</th>
+      <th style="text-align: center;">Mouse IDs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="modality-mesoscope">
+      <td style="text-align: left;">Two-photon mesoscope (calcium)</td>
+      <td style="text-align: left;">MESO1, MESO2</td>
+      <td style="text-align: left;">Snap25-IRES2-Cre;Oi4(jGCaMP8s)</td>
+      <td style="text-align: left;">Transgenic pan-neuronal jGCaMP8s (calcium); no virus</td>
+      <td style="text-align: left;">10 (8M / 2F)</td>
+      <td style="text-align: left;">832700, 837568, 839909, 842971, 843000, 843001, 845342, 846289, 850399, 853137</td>
+    </tr>
+    <tr class="modality-neuropixels">
+      <td style="text-align: left;">Neuropixels (electrophysiology)</td>
+      <td style="text-align: left;">NP1</td>
+      <td style="text-align: left;">Sst-IRES-Cre;Ai32(ChR2-EYFP)</td>
+      <td style="text-align: left;">Transgenic ChR2-EYFP in SST+ interneurons for opto-tagging; no virus</td>
+      <td style="text-align: left;">16 (8M / 8F)</td>
+      <td style="text-align: left;">820454, 820459, 830794, 830795, 830846, 830847, 830848, 830849, 830851, 830852, 832691, 834686, 834687, 834691, 848387, 848390</td>
+    </tr>
+    <tr class="modality-slap2">
+      <td style="text-align: left;">SLAP2 dendritic imaging (glutamate + calcium)</td>
+      <td style="text-align: left;">SLAP2</td>
+      <td style="text-align: left;">C57BL/6J (wt) + AAV, sparse CaMKII-Cre</td>
+      <td style="text-align: left;">AAV: iGluSnFR4f (glutamate) + RCaMP3 or jRGECO1a (calcium)</td>
+      <td style="text-align: left;">8 (6M / 2F)</td>
+      <td style="text-align: left;">776270, 794237, 796630, 801381, 803496, 828408, 828409, 829704</td>
+    </tr>
+    <tr class="modality-slap2">
+      <td style="text-align: left;">SLAP2 dendritic imaging (voltage)</td>
+      <td style="text-align: left;">SLAP2</td>
+      <td style="text-align: left;">C57BL/6J (wt) + AAV, sparse CaMKII-Cre</td>
+      <td style="text-align: left;">AAV: ASAP7 (voltage) + HaloTag</td>
+      <td style="text-align: left;">4 (4M / 0F)</td>
+      <td style="text-align: left;">841191, 845207, 851452, 851453</td>
+    </tr>
+  </tbody>
 </table>
 
-<table>
-<colgroup>
-<col style="width: 16%" />
-<col style="width: 12%" />
-<col style="width: 9%" />
-<col style="width: 7%" />
-<col style="width: 54%" />
-</colgroup>
-<thead>
-<tr>
-<th colspan="5" style="text-align: center;"><p><strong>Table 2 -</strong> List of sessions</p>
-<p><a href="https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/edit?usp=sharing"><u>Predictive processing experiment tables</u></a></p></th>
-</tr>
-<tr>
-<th style="text-align: center;">Recording modality</th>
-<th style="text-align: center;">Context</th>
-<th style="text-align: center;">N sessions</th>
-<th style="text-align: center;">N mice</th>
-<th style="text-align: center;">Session IDs</th>
-</tr>
-<tr>
-<th style="text-align: center;">Two-photon mesoscope</th>
-<th style="text-align: center;">Standard oddball</th>
-<th style="text-align: center;">18</th>
-<th style="text-align: center;">7</th>
-<th style="text-align: center;">832700_2026-01-30, 832700_2026-01-31, 837568_2026-02-20, 837568_2026-02-23, 837568_2026-03-05, 837568_2026-03-06, 839909_2026-02-27, 839909_2026-03-05, 843000_2026-03-17, 843000_2026-03-18, 843001_2026-03-19, 843001_2026-03-21, 843001_2026-03-25, 843001_2026-04-11, 845342_2026-03-27, 845342_2026-03-30, 846289_2026-04-15, 846289_2026-04-16</th>
-</tr>
-<tr>
-<th style="text-align: center;">Two-photon mesoscope</th>
-<th style="text-align: center;">Sensorimotor</th>
-<th style="text-align: center;">17</th>
-<th style="text-align: center;">7</th>
-<th style="text-align: center;">832700_2026-01-24, 832700_2026-01-29, 837568_2026-02-24, 837568_2026-02-26, 837568_2026-03-09, 839909_2026-02-20, 839909_2026-02-26, 843000_2026-03-19, 843000_2026-03-20, 843001_2026-03-11, 843001_2026-03-12, 843001_2026-03-18, 843001_2026-04-16, 845342_2026-03-25, 845342_2026-03-26, 846289_2026-04-10, 846289_2026-04-13</th>
-</tr>
-<tr>
-<th style="text-align: center;">Two-photon mesoscope</th>
-<th style="text-align: center;">Sequence</th>
-<th style="text-align: center;">16</th>
-<th style="text-align: center;">8</th>
-<th style="text-align: center;">832700_2026-02-06, 832700_2026-02-07, 837568_2026-02-13, 837568_2026-02-16, 839909_2026-03-06, 839909_2026-03-19, 842971_2026-04-18, 842971_2026-04-22, 843000_2026-03-03, 843000_2026-03-04, 843001_2026-04-01, 843001_2026-04-02, 845342_2026-03-31, 845342_2026-04-01, 846289_2026-04-20, 846289_2026-04-21</th>
-</tr>
-<tr>
-<th style="text-align: center;">Two-photon mesoscope</th>
-<th style="text-align: center;">Duration</th>
-<th style="text-align: center;">16</th>
-<th style="text-align: center;">8</th>
-<th style="text-align: center;">832700_2026-02-12, 832700_2026-02-13, 837568_2026-02-17, 837568_2026-02-19, 839909_2026-03-20, 839909_2026-04-22, 842971_2026-04-23, 842971_2026-04-24, 843000_2026-03-10, 843000_2026-03-11, 843001_2026-04-03, 843001_2026-04-09, 845342_2026-04-02, 845342_2026-04-03, 846289_2026-04-23, 846289_2026-04-27</th>
-</tr>
-<tr>
-<th style="text-align: center;">Neuropixels</th>
-<th style="text-align: center;">Standard oddball</th>
-<th style="text-align: center;">14</th>
-<th style="text-align: center;">14</th>
-<th style="text-align: center;">820454_2025-11-05, 830794_2026-01-27, 830795_2026-02-24, 830846_2026-03-11, 830847_2026-03-11, 830848_2026-03-04, 830849_2026-03-06, 830851_2026-03-17, 830852_2026-02-24, 834686_2026-03-25, 834687_2026-03-18, 834691_2026-02-17, 848387_2026-05-05, 848390_2026-05-05</th>
-</tr>
-<tr>
-<th style="text-align: center;">Neuropixels</th>
-<th style="text-align: center;">Sensorimotor</th>
-<th style="text-align: center;">16</th>
-<th style="text-align: center;">16</th>
-<th style="text-align: center;">820454_2025-11-04, 820459_2025-11-10, 830794_2026-01-26, 830795_2026-02-23, 830846_2026-03-12, 830847_2026-03-12, 830848_2026-03-05, 830849_2026-03-07, 830851_2026-03-16, 830852_2026-02-23, 832691_2026-03-26, 834686_2026-03-26, 834687_2026-03-19, 834691_2026-02-16, 848387_2026-05-04, 848390_2026-05-04</th>
-</tr>
-<tr>
-<th style="text-align: center;">Neuropixels</th>
-<th style="text-align: center;">Sequence</th>
-<th style="text-align: center;">15</th>
-<th style="text-align: center;">15</th>
-<th style="text-align: center;">820454_2025-11-06, 820459_2025-11-12, 830794_2026-01-28, 830795_2026-02-25, 830846_2026-03-09, 830847_2026-03-09, 830848_2026-03-02, 830849_2026-03-04, 830851_2026-03-18, 830852_2026-02-25, 832691_2026-03-23, 834686_2026-03-23, 834687_2026-03-16, 848387_2026-05-06, 848390_2026-05-06</th>
-</tr>
-<tr>
-<th style="text-align: center;">Neuropixels</th>
-<th style="text-align: center;">Duration</th>
-<th style="text-align: center;">14</th>
-<th style="text-align: center;">14</th>
-<th style="text-align: center;">820454_2025-11-07, 830794_2026-01-29, 830795_2026-02-26, 830846_2026-03-10, 830847_2026-03-10, 830848_2026-03-03, 830849_2026-03-05, 830851_2026-03-19, 830852_2026-02-26, 832691_2026-03-24, 834686_2026-03-24, 834687_2026-03-17, 848387_2026-05-07, 848390_2026-05-07</th>
-</tr>
-<tr>
-<th style="text-align: center;">SLAP2 dendritic imaging (glutamate + calcium)</th>
-<th style="text-align: center;">Standard oddball</th>
-<th style="text-align: center;">16</th>
-<th style="text-align: center;">8</th>
-<th style="text-align: center;">776270_2025-07-02, 794237_2025-04-03, 794237_2025-04-24, 794237_2025-05-08, 796630_2025-08-25, 796630_2025-08-28, 796630_2025-09-26, 796630_2025-10-01, 801381_2025-05-29, 801381_2025-06-05, 801381_2025-09-26, 801381_2025-10-02, 803496_2025-07-02, 828408_2025-11-18, 828409_2025-11-19, 829704_2025-12-11</th>
-</tr>
-<tr>
-<th style="text-align: center;">SLAP2 dendritic imaging (glutamate + calcium)</th>
-<th style="text-align: center;">Sensorimotor</th>
-<th style="text-align: center;">3</th>
-<th style="text-align: center;">3</th>
-<th style="text-align: center;">828408_2025-11-13, 828409_2025-11-11, 829704_2025-12-10</th>
-</tr>
-<tr>
-<th style="text-align: center;">SLAP2 dendritic imaging (glutamate + calcium)</th>
-<th style="text-align: center;">Sequence</th>
-<th style="text-align: center;">3</th>
-<th style="text-align: center;">3</th>
-<th style="text-align: center;">828408_2025-11-19, 828409_2025-11-20, 829704_2025-12-16</th>
-</tr>
-<tr>
-<th style="text-align: center;">SLAP2 dendritic imaging (glutamate + calcium)</th>
-<th style="text-align: center;">Duration</th>
-<th style="text-align: center;">3</th>
-<th style="text-align: center;">3</th>
-<th style="text-align: center;">828408_2025-11-20, 828409_2025-11-21, 829704_2025-12-18</th>
-</tr>
-<tr>
-<th style="text-align: center;">SLAP2 dendritic imaging (voltage)</th>
-<th style="text-align: center;">Other/pilot</th>
-<th style="text-align: center;">13</th>
-<th style="text-align: center;">4</th>
-<th style="text-align: center;">841191_2026-05-07, 841191_2026-05-08, 841191_2026-05-12, 841191_2026-05-13, 845207_2026-02-27, 845207_2026-04-06, 845207_2026-04-09, 845207_2026-05-08, 845207_2026-05-13, 851452_2026-05-05, 851453_2026-06-04, 851453_2026-06-10, 851453_2026-06-11</th>
-</tr>
-</thead>
-<tbody>
-</tbody>
+<table class="publication-data-table">
+  <colgroup>
+    <col style="width: 16%" />
+    <col style="width: 12%" />
+    <col style="width: 9%" />
+    <col style="width: 7%" />
+    <col style="width: 54%" />
+  </colgroup>
+  <thead>
+    <tr>
+      <th colspan="5" style="text-align: center;">
+        <p>
+          <strong>Table 2 -</strong> List of sessions</p>
+        <p>
+          <a href="https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/edit?usp=sharing">
+            <u>Predictive processing experiment tables</u>
+          </a>
+        </p>
+      </th>
+    </tr>
+    <tr>
+      <th style="text-align: center;">Recording modality</th>
+      <th style="text-align: center;">Context</th>
+      <th style="text-align: center;">N sessions</th>
+      <th style="text-align: center;">N mice</th>
+      <th style="text-align: center;">Session IDs</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="modality-mesoscope">
+      <td style="text-align: left;">Two-photon mesoscope</td>
+      <td style="text-align: left;">Standard oddball</td>
+      <td style="text-align: left;">18</td>
+      <td style="text-align: left;">7</td>
+      <td style="text-align: left;">832700_2026-01-30, 832700_2026-01-31, 837568_2026-02-20, 837568_2026-02-23, 837568_2026-03-05, 837568_2026-03-06, 839909_2026-02-27, 839909_2026-03-05, 843000_2026-03-17, 843000_2026-03-18, 843001_2026-03-19, 843001_2026-03-21, 843001_2026-03-25, 843001_2026-04-11, 845342_2026-03-27, 845342_2026-03-30, 846289_2026-04-15, 846289_2026-04-16</td>
+    </tr>
+    <tr class="modality-mesoscope">
+      <td style="text-align: left;">Two-photon mesoscope</td>
+      <td style="text-align: left;">Sensorimotor</td>
+      <td style="text-align: left;">17</td>
+      <td style="text-align: left;">7</td>
+      <td style="text-align: left;">832700_2026-01-24, 832700_2026-01-29, 837568_2026-02-24, 837568_2026-02-26, 837568_2026-03-09, 839909_2026-02-20, 839909_2026-02-26, 843000_2026-03-19, 843000_2026-03-20, 843001_2026-03-11, 843001_2026-03-12, 843001_2026-03-18, 843001_2026-04-16, 845342_2026-03-25, 845342_2026-03-26, 846289_2026-04-10, 846289_2026-04-13</td>
+    </tr>
+    <tr class="modality-mesoscope">
+      <td style="text-align: left;">Two-photon mesoscope</td>
+      <td style="text-align: left;">Sequence</td>
+      <td style="text-align: left;">16</td>
+      <td style="text-align: left;">8</td>
+      <td style="text-align: left;">832700_2026-02-06, 832700_2026-02-07, 837568_2026-02-13, 837568_2026-02-16, 839909_2026-03-06, 839909_2026-03-19, 842971_2026-04-18, 842971_2026-04-22, 843000_2026-03-03, 843000_2026-03-04, 843001_2026-04-01, 843001_2026-04-02, 845342_2026-03-31, 845342_2026-04-01, 846289_2026-04-20, 846289_2026-04-21</td>
+    </tr>
+    <tr class="modality-mesoscope">
+      <td style="text-align: left;">Two-photon mesoscope</td>
+      <td style="text-align: left;">Duration</td>
+      <td style="text-align: left;">16</td>
+      <td style="text-align: left;">8</td>
+      <td style="text-align: left;">832700_2026-02-12, 832700_2026-02-13, 837568_2026-02-17, 837568_2026-02-19, 839909_2026-03-20, 839909_2026-04-22, 842971_2026-04-23, 842971_2026-04-24, 843000_2026-03-10, 843000_2026-03-11, 843001_2026-04-03, 843001_2026-04-09, 845342_2026-04-02, 845342_2026-04-03, 846289_2026-04-23, 846289_2026-04-27</td>
+    </tr>
+    <tr class="modality-neuropixels">
+      <td style="text-align: left;">Neuropixels</td>
+      <td style="text-align: left;">Standard oddball</td>
+      <td style="text-align: left;">14</td>
+      <td style="text-align: left;">14</td>
+      <td style="text-align: left;">820454_2025-11-05, 830794_2026-01-27, 830795_2026-02-24, 830846_2026-03-11, 830847_2026-03-11, 830848_2026-03-04, 830849_2026-03-06, 830851_2026-03-17, 830852_2026-02-24, 834686_2026-03-25, 834687_2026-03-18, 834691_2026-02-17, 848387_2026-05-05, 848390_2026-05-05</td>
+    </tr>
+    <tr class="modality-neuropixels">
+      <td style="text-align: left;">Neuropixels</td>
+      <td style="text-align: left;">Sensorimotor</td>
+      <td style="text-align: left;">16</td>
+      <td style="text-align: left;">16</td>
+      <td style="text-align: left;">820454_2025-11-04, 820459_2025-11-10, 830794_2026-01-26, 830795_2026-02-23, 830846_2026-03-12, 830847_2026-03-12, 830848_2026-03-05, 830849_2026-03-07, 830851_2026-03-16, 830852_2026-02-23, 832691_2026-03-26, 834686_2026-03-26, 834687_2026-03-19, 834691_2026-02-16, 848387_2026-05-04, 848390_2026-05-04</td>
+    </tr>
+    <tr class="modality-neuropixels">
+      <td style="text-align: left;">Neuropixels</td>
+      <td style="text-align: left;">Sequence</td>
+      <td style="text-align: left;">15</td>
+      <td style="text-align: left;">15</td>
+      <td style="text-align: left;">820454_2025-11-06, 820459_2025-11-12, 830794_2026-01-28, 830795_2026-02-25, 830846_2026-03-09, 830847_2026-03-09, 830848_2026-03-02, 830849_2026-03-04, 830851_2026-03-18, 830852_2026-02-25, 832691_2026-03-23, 834686_2026-03-23, 834687_2026-03-16, 848387_2026-05-06, 848390_2026-05-06</td>
+    </tr>
+    <tr class="modality-neuropixels">
+      <td style="text-align: left;">Neuropixels</td>
+      <td style="text-align: left;">Duration</td>
+      <td style="text-align: left;">14</td>
+      <td style="text-align: left;">14</td>
+      <td style="text-align: left;">820454_2025-11-07, 830794_2026-01-29, 830795_2026-02-26, 830846_2026-03-10, 830847_2026-03-10, 830848_2026-03-03, 830849_2026-03-05, 830851_2026-03-19, 830852_2026-02-26, 832691_2026-03-24, 834686_2026-03-24, 834687_2026-03-17, 848387_2026-05-07, 848390_2026-05-07</td>
+    </tr>
+    <tr class="modality-slap2">
+      <td style="text-align: left;">SLAP2 dendritic imaging (glutamate + calcium)</td>
+      <td style="text-align: left;">Standard oddball</td>
+      <td style="text-align: left;">16</td>
+      <td style="text-align: left;">8</td>
+      <td style="text-align: left;">776270_2025-07-02, 794237_2025-04-03, 794237_2025-04-24, 794237_2025-05-08, 796630_2025-08-25, 796630_2025-08-28, 796630_2025-09-26, 796630_2025-10-01, 801381_2025-05-29, 801381_2025-06-05, 801381_2025-09-26, 801381_2025-10-02, 803496_2025-07-02, 828408_2025-11-18, 828409_2025-11-19, 829704_2025-12-11</td>
+    </tr>
+    <tr class="modality-slap2">
+      <td style="text-align: left;">SLAP2 dendritic imaging (glutamate + calcium)</td>
+      <td style="text-align: left;">Sensorimotor</td>
+      <td style="text-align: left;">3</td>
+      <td style="text-align: left;">3</td>
+      <td style="text-align: left;">828408_2025-11-13, 828409_2025-11-11, 829704_2025-12-10</td>
+    </tr>
+    <tr class="modality-slap2">
+      <td style="text-align: left;">SLAP2 dendritic imaging (glutamate + calcium)</td>
+      <td style="text-align: left;">Sequence</td>
+      <td style="text-align: left;">3</td>
+      <td style="text-align: left;">3</td>
+      <td style="text-align: left;">828408_2025-11-19, 828409_2025-11-20, 829704_2025-12-16</td>
+    </tr>
+    <tr class="modality-slap2">
+      <td style="text-align: left;">SLAP2 dendritic imaging (glutamate + calcium)</td>
+      <td style="text-align: left;">Duration</td>
+      <td style="text-align: left;">3</td>
+      <td style="text-align: left;">3</td>
+      <td style="text-align: left;">828408_2025-11-20, 828409_2025-11-21, 829704_2025-12-18</td>
+    </tr>
+    <tr class="modality-slap2">
+      <td style="text-align: left;">SLAP2 dendritic imaging (voltage)</td>
+      <td style="text-align: left;">Other/pilot</td>
+      <td style="text-align: left;">13</td>
+      <td style="text-align: left;">4</td>
+      <td style="text-align: left;">841191_2026-05-07, 841191_2026-05-08, 841191_2026-05-12, 841191_2026-05-13, 845207_2026-02-27, 845207_2026-04-06, 845207_2026-04-09, 845207_2026-05-08, 845207_2026-05-13, 851452_2026-05-05, 851453_2026-06-04, 851453_2026-06-10, 851453_2026-06-11</td>
+    </tr>
+  </tbody>
 </table>
 
 ## Glossary

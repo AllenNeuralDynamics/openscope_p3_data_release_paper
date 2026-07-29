@@ -106,7 +106,7 @@
       "label": "fig-mesoscope-laser-power",
       "alt": "Mesoscope laser power ranges by imaging depth from the cortical surface.",
       "caption": "Mesoscope laser power lookup table by imaging depth.",
-      "status": "draft",
+      "status": "source-only",
       "path": "images/figures/imported/mesoscope-laser-power-table.png",
       "sha256": "57d5e994005dc7bf0650ef3ef3b98b8e93647bd374c23a28d0f28de6e8cba7c9",
       "source_kind": "google-doc-rendered-png",

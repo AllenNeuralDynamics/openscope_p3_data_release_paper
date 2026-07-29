@@ -8,3 +8,122 @@
     height: 455px;
   }
 }
+
+/* Publication tables */
+article table {
+  width: 100%;
+  margin: 1rem 0;
+  overflow: hidden;
+  border: 1px solid #cbd8d3;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 5px;
+  background: #fff;
+  color: #26342e;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+article table.publication-data-table {
+  min-width: 860px;
+}
+
+article table th,
+article table td {
+  padding: 0.62rem 0.72rem;
+  border-right: 1px solid #dbe4e0;
+  border-bottom: 1px solid #dbe4e0;
+  vertical-align: top;
+}
+
+article table th:last-child,
+article table td:last-child {
+  border-right: 0;
+}
+
+article table tr:last-child td {
+  border-bottom: 0;
+}
+
+article table th {
+  background: #225d57;
+  color: #fff;
+  font-weight: 650;
+  text-align: left !important;
+}
+
+article table tr:first-child th[colspan] {
+  padding-top: 0.72rem;
+  padding-bottom: 0.72rem;
+  background: #174641;
+  font-size: 0.9rem;
+}
+
+article table tr:first-child th[colspan] p {
+  margin: 0.12rem 0;
+}
+
+article table tr:first-child th[colspan] a {
+  color: #c8eee7;
+}
+
+article table.publication-data-table tr:nth-child(2) th {
+  background: #dceae6;
+  color: #20322c;
+  border-bottom: 2px solid #91b8ae;
+}
+
+article table tbody td {
+  text-align: left !important;
+}
+
+article table tbody tr:nth-child(even) td {
+  background: #f2f7f5;
+}
+
+article table tbody tr:nth-child(odd) td {
+  background: #fff;
+}
+
+article table tbody tr:hover td {
+  background: #e8f2ef;
+}
+
+article table tbody td:first-child {
+  font-weight: 600;
+}
+
+article table tr.modality-mesoscope td:first-child {
+  border-left: 4px solid #2b83ba;
+}
+
+article table tr.modality-neuropixels td:first-child {
+  border-left: 4px solid #d06b4f;
+}
+
+article table tr.modality-slap2 td:first-child {
+  border-left: 4px solid #7b6fa8;
+}
+
+article .table-laser-power table,
+article table.table-laser-power {
+  max-width: 650px;
+  min-width: 0;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+article .table-laser-power table th,
+article .table-laser-power table td,
+article table.table-laser-power th,
+article table.table-laser-power td {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+}
+
+article .table-laser-power table th:first-child,
+article .table-laser-power table td:first-child,
+article table.table-laser-power th:first-child,
+article table.table-laser-power td:first-child {
+  text-align: left !important;
+}

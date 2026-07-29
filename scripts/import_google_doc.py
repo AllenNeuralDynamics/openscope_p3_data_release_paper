@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import re
@@ -8,6 +9,7 @@ import shutil
 import subprocess
 import tempfile
 import urllib.request
+import xml.etree.ElementTree as ET
 from dataclasses import asdict, dataclass
 from datetime import date
 from pathlib import Path
@@ -18,6 +20,9 @@ GOOGLE_DOC_EXPORT_URL = (
     f"https://docs.google.com/document/d/{GOOGLE_DOC_ID}/export?format=docx"
 )
 REPO_ROOT = Path(__file__).resolve().parents[1]
+MESOSCOPE_LASER_POWER_PATH = (
+    REPO_ROOT / "figure_sources" / "data" / "mesoscope-laser-power.csv"
+)
 
 
 @dataclass(frozen=True)
@@ -109,6 +114,7 @@ FIGURE_ASSETS = (
         "fig-mesoscope-laser-power",
         "Mesoscope laser power ranges by imaging depth from the cortical surface.",
         "Mesoscope laser power lookup table by imaging depth.",
+        "source-only",
     ),
     FigureAsset(
         "image11.png",
@@ -160,6 +166,7 @@ HEADING_IMAGE_PATTERN = re.compile(
     r'(?P<title>.*)$',
     re.IGNORECASE,
 )
+RAW_HTML_TABLE_PATTERN = re.compile(r"<table>.*?</table>", re.DOTALL)
 
 AUTHORSHIP_BLOCK = """:::{authorship-explorer}
 :authors: ./authors.yml
@@ -317,6 +324,9 @@ def copy_assets(extracted: dict[str, Path], export_date: str) -> None:
 
 
 def render_figure(source_name: str) -> str:
+    if source_name == "image9.png":
+        return render_mesoscope_laser_power_table()
+
     asset = ASSET_BY_SOURCE[source_name]
     path = f"./images/figures/imported/{asset.filename}"
     figure = (
@@ -330,6 +340,62 @@ def render_figure(source_name: str) -> str:
     if source_name == "image10.png":
         return f"{figure}\n\n{INTERACTIVE_DESIGN_BLOCK}"
     return figure
+
+
+def render_mesoscope_laser_power_table() -> str:
+    with MESOSCOPE_LASER_POWER_PATH.open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream))
+
+    lines = [
+        ":::{table} Mesoscope laser power lookup ranges by imaging depth.",
+        ":label: table-mesoscope-laser-power",
+        ":enumerated: false",
+        ":class: table-accent table-compact table-laser-power",
+        "",
+        "| Depth from surface (µm) | Minimum power (mW) | Maximum power (mW) |",
+        "| ---: | ---: | ---: |",
+    ]
+    for row in rows:
+        depth = f"{row['depth_min_um']}-{row['depth_max_um']}"
+        lines.append(
+            f"| {depth} | {row['laser_power_min_mw']} | {row['laser_power_max_mw']} |"
+        )
+    lines.append(":::")
+    return "\n".join(lines)
+
+
+def normalize_imported_html_table(table_html: str) -> str:
+    table = ET.fromstring(table_html)
+    table_text = " ".join("".join(table.itertext()).split())
+    if "Predictive processing experiment tables" not in table_text:
+        return table_html
+
+    table.set("class", "publication-data-table")
+    head = table.find("thead")
+    body = table.find("tbody")
+    if head is None:
+        return table_html
+    if body is None:
+        body = ET.SubElement(table, "tbody")
+
+    rows = list(head.findall("tr"))
+    for row in rows[2:]:
+        head.remove(row)
+        first_cell_text = " ".join("".join(row[0].itertext()).lower().split())
+        if "two-photon" in first_cell_text or "mesoscope" in first_cell_text:
+            row.set("class", "modality-mesoscope")
+        elif "neuropixels" in first_cell_text:
+            row.set("class", "modality-neuropixels")
+        elif "slap2" in first_cell_text:
+            row.set("class", "modality-slap2")
+        for cell in row:
+            if cell.tag == "th":
+                cell.tag = "td"
+            cell.set("style", "text-align: left;")
+        body.append(row)
+
+    ET.indent(table, space="  ")
+    return ET.tostring(table, encoding="unicode", method="xml")
 
 
 def replace_images(markdown: str) -> str:
@@ -377,6 +443,11 @@ def normalize_known_export_artifacts(markdown: str) -> str:
     }
     for old, new in replacements.items():
         markdown = markdown.replace(old, new)
+
+    markdown = RAW_HTML_TABLE_PATTERN.sub(
+        lambda match: normalize_imported_html_table(match.group()),
+        markdown,
+    )
 
     table_marker = "| Publication |\n|----|"
     table_warning = """:::{warning} Supplementary table needs a source export

@@ -9,6 +9,7 @@
 - Added the AuthorshipExtractor plugin and an initial contributor record.
 - Added an installable Python package, tests, and the first playable JavaScript figure with an SVG fallback.
 - Added source, generated-asset, and contribution conventions.
+- Replaced the mesoscope laser-power screenshot with a structured, CSV-backed table.
 
 ## Inputs still needed from the team
 
