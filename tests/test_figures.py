@@ -14,6 +14,7 @@ from openscope_p3_publication.figures import (
     total_duration_minutes,
     write_data_explorer_html,
     write_interactive_html,
+    write_mesoscope_depth_power_svg,
     write_static_svg,
 )
 
@@ -77,6 +78,21 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
 
     write_data_explorer_html(explorer_path)
     assert explorer_path.read_text(encoding="utf-8") == html
+
+
+def test_mesoscope_depth_power_figure_is_deterministic(tmp_path: Path) -> None:
+    figure_path = write_mesoscope_depth_power_svg(tmp_path / "depth-power.svg")
+    svg = figure_path.read_text(encoding="utf-8")
+
+    assert 'role="img"' in svg
+    assert "Mesoscope laser power by imaging depth" in svg
+    assert "0–50 µm" in svg
+    assert "550–600 µm" in svg
+    assert "200 mW" in svg
+    assert "240 mW" in svg
+
+    write_mesoscope_depth_power_svg(figure_path)
+    assert figure_path.read_text(encoding="utf-8") == svg
 
 
 def test_publication_table_data() -> None:

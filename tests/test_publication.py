@@ -43,7 +43,9 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
-    assert len(figures) == 13
+    assert len(figures) == 14
+    assert manuscript.count(":::{figure} ./images/figures/imported/") == 13
+    assert manuscript.count(":::{figure} ./images/figures/generated/") == 1
     for options in figures:
         assert ":label:" in options
         assert ":alt:" in options
@@ -78,6 +80,19 @@ def test_mesoscope_laser_power_is_structured_data() -> None:
     assert "Depth from surface (µm)" in manuscript
     assert "mesoscope-laser-power-table.png" not in manuscript
     assert "| 250-300 | 110 | 170 |" in manuscript
+    assert manuscript.count("supplementary-mesoscope-depth-power.svg") == 1
+    assert ":label: fig-supp-mesoscope-depth-power" in manuscript
+
+
+def test_glossary_is_an_expandable_final_section() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+
+    assert "## Glossary" not in manuscript
+    assert manuscript.count("# Glossary") == 1
+    assert ":::{dropdown} Terms, abbreviations, and NWB file contents" in manuscript
+    assert "**NWB file contents**" in manuscript
+    assert manuscript.index("# Glossary") > manuscript.index("# Supplementary Text 1")
+    assert manuscript.rstrip().endswith(":::")
 
 
 def test_imported_data_tables_have_body_cells() -> None:

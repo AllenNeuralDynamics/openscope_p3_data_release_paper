@@ -216,6 +216,26 @@ Filterable explorer for experimental animals, recording modalities, contexts,
 and session identifiers.
 :::"""
 
+SUPPLEMENTARY_DEPTH_FIGURE_BLOCK = "\n".join(
+    [
+        ":::{figure} "
+        "./images/figures/generated/supplementary-mesoscope-depth-power.svg",
+        ":label: fig-supp-mesoscope-depth-power",
+        (
+            ":alt: Minimum and maximum mesoscope laser power ranges for imaging "
+            "depths from the cortical surface to 600 micrometers."
+        ),
+        ":width: 82%",
+        "",
+        (
+            "Mesoscope laser-power lookup ranges used to guide imaging settings "
+            "across cortical depth. Values are generated from the structured CSV "
+            "used by the Methods table."
+        ),
+        ":::",
+    ]
+)
+
 FRONTMATTER = """---
 title: OpenScope Predictive Processing Community Project - Data Release
 ---"""
@@ -681,9 +701,52 @@ def wrap_publication_data_tables(markdown: str) -> str:
     return f"{markdown[:start]}{replacement}{markdown[end:]}"
 
 
+def add_supplementary_depth_figure(markdown: str) -> str:
+    heading = "## Supplementary figures"
+    if markdown.count(heading) != 1:
+        raise RuntimeError("Expected one Supplementary figures heading.")
+    return markdown.replace(
+        heading,
+        f"{heading}\n\n{SUPPLEMENTARY_DEPTH_FIGURE_BLOCK}",
+        1,
+    )
+
+
+def move_glossary_to_end(markdown: str) -> str:
+    pattern = re.compile(
+        r"\n## Glossary\n(?P<body>.*?)\n# Data validation\n",
+        re.DOTALL,
+    )
+    match = pattern.search(markdown)
+    if match is None:
+        raise RuntimeError("Expected Glossary section before Data validation.")
+
+    body = match.group("body").strip().replace(
+        "#### NWB Files",
+        "**NWB file contents**",
+        1,
+    )
+    without_glossary = (
+        f"{markdown[: match.start()]}\n# Data validation\n{markdown[match.end() :]}"
+    )
+    glossary = "\n".join(
+        [
+            "# Glossary",
+            "",
+            ":::{dropdown} Terms, abbreviations, and NWB file contents",
+            "",
+            body,
+            ":::",
+        ]
+    )
+    return f"{without_glossary.rstrip()}\n\n{glossary}\n"
+
+
 def build_index(markdown: str) -> str:
     markdown = replace_images(markdown)
     markdown = normalize_known_export_artifacts(markdown)
+    markdown = add_supplementary_depth_figure(markdown)
+    markdown = move_glossary_to_end(markdown)
     background_heading = "# Background & Rationale"
     if background_heading not in markdown:
         raise RuntimeError("Expected Background & Rationale heading was not found.")

@@ -838,88 +838,6 @@ and session identifiers.
 
 </details>
 
-## Glossary
-
-Abbreviations indicate the relevant modality:
-
-*meso* = mesoscopic 2-photon Ca2+-imaging
-
-*ephys* = electro-physiology (neurophysiology) using Neuropixels probes
-
-ophys = optical-physiology using any *in vivo* fluorescence imaging technique
-
-*slap2 =* SLAP2 glutamate vesicle imaging
-
-**ROI** (*slap2*): Region of interest: a localized candidate location of a synaptic spine.
-
-**(Single) Unit** (*ephys*)**:** A candidate for an isolated single neuron.
-
-**Receptive Field** (*meso*/*ephys*/*slap2*): A region of sensory (here: visual) space where an isolated stimulus evokes a neuronal response (either increases or decreases neuronal activity).
-
-**Orientation Tuning** (*meso*/*ephys*/*slap2*): The selective response of visual neurons to edges or bars at particular angles.
-
-**NWB:** Neurodata Without Borders. Standardized file format specification that stores neuronal physiology data. Used to store data for all modalities in this work.
-
-**DANDI**: The DANDI Archive (Distributed Archives for Neurophysiology Data Integration) is a public repository supported by the US BRAIN Initiative. It allows scientists to store, publish, and access cellular neurophysiology data, such as electrophysiology, optical physiology, and behavioral time-series.
-
-#### NWB Files
-
-All data from this project are packaged as Neurodata Without Borders (NWB) files and deposited on the DANDI Archive. Neuropixels electrophysiology sessions are available at DANDI:001637, and mesoscope two-photon imaging sessions at DANDI:001768. NWB files can be streamed directly from DANDI without downloading using remfile and pynwb in Python. The OpenScope Databook (https://alleninstitute.github.io/openscope_databook) provides companion analysis notebooks that demonstrate how to access and work with these files.
-
-Shared across modalities:
-
-- Subject metadata: species, age, sex, genotype, subject ID
-
-- Session information: session datetime, session ID, institution
-
-- Running: running wheel rotation and computed running speed, synchronized to the session clock
-
-- Eye tracking: pupil, corneal reflection, and eye ellipse fits (position, area, width, height, angle) with a likely-blink indicator
-
-- Stimulus presentation tables (NWB intervals): one table per stimulus block, with each row corresponding to a single stimulus sweep containing, \`start_time\` and \`stop_time\` and all relevant stimulus parameters (orientation, spatial frequency, temporal frequency, contrast, position, phase, trial type, block label, etc.)
-
-- Spontaneous activity epochs: a separate interval table covering gaps between stimulus blocks
-
-Neuropixels NWB files (DANDI:001637):
-
-- Devices: up to six Neuropixels probes, each registered with serial number
-
-- Electrodes table: all recording channels with probe group assignment and relative position on the shank
-
-- Units table: all spike-sorted units with:
-
-  - Spike times
-
-  - Mean and standard deviation waveforms (across 384 channels)
-
-  - Assigned probe, electrode index, and estimated 3D coordinates
-
-  - Quality metrics: firing rate, ISI violation ratio, presence ratio, amplitude cutoff, SNR, d-prime, isolation distance, silhouette score, sliding refractory period violation, and a default QC flag
-
-- LFP: downsampled local field potential per probe (96 channels, ~2,500 Hz)
-
-Mesoscope NWB files (DANDI:001768):
-
-- Device: one mesoscope, registered with rig ID
-
-- Imaging planes: eight simultaneously imaged planes across visual cortical areas (VISp, VISl), each with excitation wavelength, imaging rate, grid spacing, indicator, cortical location, and field-of-view origin coordinates
-
-- Per imaging plane:
-
-  - ROI segmentation masks (512 × 512 px) with dendrite probability score
-
-  - Raw fluorescence traces
-
-  - Neuropil fluorescence traces
-
-  - Neuropil-corrected fluorescence
-
-  - ΔF/F traces
-
-  - Deconvolved event traces
-
-  - Summary images: average projection, max projection, and segmentation mask image
-
 # Data validation
 
 ## Units extraction
@@ -1302,6 +1220,14 @@ Importantly, if the outlined paradigms show the same essential distribution of f
 
 ## Supplementary figures
 
+:::{figure} ./images/figures/generated/supplementary-mesoscope-depth-power.svg
+:label: fig-supp-mesoscope-depth-power
+:alt: Minimum and maximum mesoscope laser power ranges for imaging depths from the cortical surface to 600 micrometers.
+:width: 82%
+
+Mesoscope laser-power lookup ranges used to guide imaging settings across cortical depth. Values are generated from the structured CSV used by the Methods table.
+:::
+
 :::{figure} ./images/figures/imported/supplementary-neuropixels-targeting.png
 :label: fig-supp-neuropixels-targeting
 :alt: Neuropixels implant hole positions, stereotaxic coordinates, diameters, and targets.
@@ -1362,4 +1288,89 @@ Next, we examined how the number of recording sessions (or mice) influences dete
 :width: 100%
 
 Simulation of responsive-neuron detection rate across sessions.
+:::
+
+# Glossary
+
+:::{dropdown} Terms, abbreviations, and NWB file contents
+
+Abbreviations indicate the relevant modality:
+
+*meso* = mesoscopic 2-photon Ca2+-imaging
+
+*ephys* = electro-physiology (neurophysiology) using Neuropixels probes
+
+ophys = optical-physiology using any *in vivo* fluorescence imaging technique
+
+*slap2 =* SLAP2 glutamate vesicle imaging
+
+**ROI** (*slap2*): Region of interest: a localized candidate location of a synaptic spine.
+
+**(Single) Unit** (*ephys*)**:** A candidate for an isolated single neuron.
+
+**Receptive Field** (*meso*/*ephys*/*slap2*): A region of sensory (here: visual) space where an isolated stimulus evokes a neuronal response (either increases or decreases neuronal activity).
+
+**Orientation Tuning** (*meso*/*ephys*/*slap2*): The selective response of visual neurons to edges or bars at particular angles.
+
+**NWB:** Neurodata Without Borders. Standardized file format specification that stores neuronal physiology data. Used to store data for all modalities in this work.
+
+**DANDI**: The DANDI Archive (Distributed Archives for Neurophysiology Data Integration) is a public repository supported by the US BRAIN Initiative. It allows scientists to store, publish, and access cellular neurophysiology data, such as electrophysiology, optical physiology, and behavioral time-series.
+
+**NWB file contents**
+
+All data from this project are packaged as Neurodata Without Borders (NWB) files and deposited on the DANDI Archive. Neuropixels electrophysiology sessions are available at DANDI:001637, and mesoscope two-photon imaging sessions at DANDI:001768. NWB files can be streamed directly from DANDI without downloading using remfile and pynwb in Python. The OpenScope Databook (https://alleninstitute.github.io/openscope_databook) provides companion analysis notebooks that demonstrate how to access and work with these files.
+
+Shared across modalities:
+
+- Subject metadata: species, age, sex, genotype, subject ID
+
+- Session information: session datetime, session ID, institution
+
+- Running: running wheel rotation and computed running speed, synchronized to the session clock
+
+- Eye tracking: pupil, corneal reflection, and eye ellipse fits (position, area, width, height, angle) with a likely-blink indicator
+
+- Stimulus presentation tables (NWB intervals): one table per stimulus block, with each row corresponding to a single stimulus sweep containing, \`start_time\` and \`stop_time\` and all relevant stimulus parameters (orientation, spatial frequency, temporal frequency, contrast, position, phase, trial type, block label, etc.)
+
+- Spontaneous activity epochs: a separate interval table covering gaps between stimulus blocks
+
+Neuropixels NWB files (DANDI:001637):
+
+- Devices: up to six Neuropixels probes, each registered with serial number
+
+- Electrodes table: all recording channels with probe group assignment and relative position on the shank
+
+- Units table: all spike-sorted units with:
+
+  - Spike times
+
+  - Mean and standard deviation waveforms (across 384 channels)
+
+  - Assigned probe, electrode index, and estimated 3D coordinates
+
+  - Quality metrics: firing rate, ISI violation ratio, presence ratio, amplitude cutoff, SNR, d-prime, isolation distance, silhouette score, sliding refractory period violation, and a default QC flag
+
+- LFP: downsampled local field potential per probe (96 channels, ~2,500 Hz)
+
+Mesoscope NWB files (DANDI:001768):
+
+- Device: one mesoscope, registered with rig ID
+
+- Imaging planes: eight simultaneously imaged planes across visual cortical areas (VISp, VISl), each with excitation wavelength, imaging rate, grid spacing, indicator, cortical location, and field-of-view origin coordinates
+
+- Per imaging plane:
+
+  - ROI segmentation masks (512 × 512 px) with dendrite probability score
+
+  - Raw fluorescence traces
+
+  - Neuropil fluorescence traces
+
+  - Neuropil-corrected fluorescence
+
+  - ΔF/F traces
+
+  - Deconvolved event traces
+
+  - Summary images: average projection, max projection, and segmentation mask image
 :::
