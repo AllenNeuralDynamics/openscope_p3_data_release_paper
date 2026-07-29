@@ -456,6 +456,168 @@ def replace_images(markdown: str) -> str:
     return "\n".join(lines)
 
 
+def normalize_text_export_artifacts(markdown: str) -> str:
+    replacements = {
+        (
+            "[<u>(de Vries et al. 2020; Groblewski et al. 2020; "
+            "Durand et al. 2023; Bennett et al. 2024; Siegle et al. 2021</u>]"
+            "(https://paperpile.com/c/tTM80k/1eyg+Yunn+PAsB+xhvZ+yxs4).."
+        ): (
+            "[(de Vries et al. 2020; Groblewski et al. 2020; "
+            "Durand et al. 2023; Bennett et al. 2024; Siegle et al. 2021)]"
+            "(https://paperpile.com/c/tTM80k/1eyg+Yunn+PAsB+xhvZ+yxs4)."
+        ),
+        (
+            "<u>[(](https://paperpile.com/c/tTM80k/ZAyJ)"
+            "[Madisen et al. 2012](https://paperpile.com/c/tTM80k/2W65)</u>, "
+            "<u>[Taniguchi et al. 2011](https://paperpile.com/c/tTM80k/ZAyJ)"
+            "[)](https://paperpile.com/c/tTM80k/2W65)</u>"
+        ): (
+            "([Madisen et al. 2012](https://paperpile.com/c/tTM80k/2W65); "
+            "[Taniguchi et al. 2011](https://paperpile.com/c/tTM80k/ZAyJ))"
+        ),
+        (
+            "[<u>(Siegle et al. 2021; Durand et al. 2023)</u>.]"
+            "(https://paperpile.com/c/tTM80k/yxs4+PAsB)"
+        ): (
+            "[(Siegle et al. 2021; Durand et al. 2023)]"
+            "(https://paperpile.com/c/tTM80k/yxs4+PAsB)."
+        ),
+        (
+            "[L](https://www.sciencedirect.com/topics/neuroscience/"
+            "local-field-potential)ocal Field Potential"
+        ): (
+            "[Local Field Potential](https://www.sciencedirect.com/topics/"
+            "neuroscience/local-field-potential)"
+        ),
+        (
+            "[<u>(aind-ephys-pipeline: AIND pipeline fo...)</u>]"
+            "(https://paperpile.com/c/tTM80k/hLaJ)"
+        ): "[AIND ephys pipeline](https://paperpile.com/c/tTM80k/hLaJ)",
+        r"\autocite{noauthor_allenneuraldynamicsgiant-matlab_2026}": (
+            "[AllenNeuralDynamics/GIAnT-MATLAB (2026)]"
+            "(https://github.com/AllenNeuralDynamics/GIAnT-MATLAB)"
+        ),
+        r"~\autocite{pnevmatikakis_normcorre_2017}": " (Pnevmatikakis & Giovannucci, 2017)",
+        r"~\autocite{lelek_single-molecule_2021, chen_imaging_2025}": (
+            " (Lelek et al., 2021; Chen et al., 2025)"
+        ),
+        r"\$1.33\$~pixels": r"$1.33$ pixels",
+        r"\$\tau = 20\$ms": r"$\tau = 20$ ms",
+        r"\textit{activity image}": "*activity image*",
+        "with with": "with",
+        "Neuropixels node**s**": "Neuropixels nodes",
+        "**Supplementary** **Fig. X**": "**Supplementary Fig. X**",
+        "**Supplementary** **Table 1**": "**Supplementary Table 1**",
+        "**Supplementary Fig. X)**": "**Supplementary Fig. X**",
+        "quality_control.json ,rig.json": "quality_control.json, rig.json",
+        "rig.json,session.json": "rig.json, session.json",
+        "ITI<sub>min</sub> , ITI<sub>max</sub>": "ITI<sub>min</sub>, ITI<sub>max</sub>",
+        "pipeline\n\n(aind-pophys-pipeline v11 and v13;\n\n": (
+            "pipeline (aind-pophys-pipeline v11 and v13; "
+        ),
+        ")\n\nand the same two input files": ") and the same two input files",
+        (
+            r"> i\. R(downward, 90° shift) \> R(45° shift),"
+            "\\\n"
+            "> because this is a bigger change in orientation\n"
+            ">\n"
+            r"> ii\. R(halt) \< R(90°) and R(45°), because the halt involves "
+            "a smaller change in velocity"
+        ): (
+            "  1. R(downward, 90° shift) > R(45° shift), because this is a "
+            "bigger change in orientation\n\n"
+            "  2. R(halt) < R(90°) and R(45°), because the halt involves a "
+            "smaller change in velocity"
+        ),
+    }
+    for old, new in replacements.items():
+        markdown = markdown.replace(old, new)
+
+    markdown = re.sub(
+        r"\[<u>([^\n]*?)</u>\]\(([^\n]+?)\)",
+        r"[\1](\2)",
+        markdown,
+    )
+    markdown = re.sub(
+        r"<u>(https?://[^<\s]+)</u>",
+        r"[\1](\1)",
+        markdown,
+    )
+    markdown = markdown.replace(
+        "\n> The default configuration used Suite2p",
+        "\n  The default configuration used Suite2p",
+    )
+    markdown = re.sub(
+        r"\n\n> (\(\[[^\n]+\]\(https?://[^\n]+\)\))",
+        r" \1",
+        markdown,
+    )
+    markdown = re.sub(r"\n\n(?=\(\[[^\n]+\]\(https?://)", " ", markdown)
+    markdown = re.sub(r"\\\n  (?=\(\[)", " ", markdown)
+    markdown = re.sub(r"\\(?=\n+:::\{figure\})", "", markdown)
+    markdown = re.sub(r"(?m)^-\s*$\n?", "", markdown)
+    markdown = re.sub(r"(?<!\.)\.\.(?!\.)", ".", markdown)
+    return markdown.replace("\u200b", "").replace("\ufeff", "")
+
+
+def move_interrupted_analysis_figure(markdown: str) -> str:
+    pattern = re.compile(
+        r"(?P<before>Simulated models will vary in complexity to evaluate our ability)"
+        r"[ \t]*\n{2,}(?P<figure>:::\{figure\} .*?\n:::)\n{2,}"
+        r"(?P<after>to disentangle mechanisms such as adaptation, E/I balance, "
+        r"and other underlying processes\.)",
+        re.DOTALL,
+    )
+    markdown, count = pattern.subn(
+        r"\g<before> \g<after>\n\n\g<figure>",
+        markdown,
+        count=1,
+    )
+    if count != 1:
+        raise RuntimeError("Expected interrupted Figure 11 paragraph was not found.")
+    return markdown
+
+
+def replace_incomplete_supplementary_table(markdown: str) -> str:
+    pattern = re.compile(r"^\| Publication \|\n(?:^\|.*\|\n?)+", re.MULTILINE)
+    match = pattern.search(markdown)
+    if match is None:
+        raise RuntimeError("Expected incomplete Supplementary Table 1 was not found.")
+
+    fields = []
+    for line in match.group().splitlines():
+        value = line.removeprefix("|").removesuffix("|").strip()
+        if value == "----" or value.startswith("**Supplementary Table 1."):
+            continue
+        fields.append(value)
+
+    warning = "\n".join(
+        [
+            ":::{warning} Supplementary table needs a source export",
+            "The DOCX export retained the row labels but not the study columns for ",
+            "Supplementary Table 1. Replace this shell with a CSV or another structured ",
+            "source before submission.",
+            "",
+            f"Recovered row labels: {'; '.join(fields)}.",
+            ":::",
+        ]
+    )
+    markdown = f"{markdown[: match.start()]}{markdown[match.end() :]}"
+    interrupted_sentence = re.compile(
+        r"(The resulting curve revealed diminishing returns in detection rates beyond)"
+        r"\s*\n+\s*(a certain number of trials)"
+    )
+    markdown, count = interrupted_sentence.subn(r"\1 \2", markdown, count=1)
+    if count != 1:
+        raise RuntimeError("Expected interrupted supplementary paragraph was not found.")
+
+    warning_anchor = "required more repeats."
+    if markdown.count(warning_anchor) != 1:
+        raise RuntimeError("Expected Supplementary Table 1 warning anchor was not found.")
+    return markdown.replace(warning_anchor, f"{warning_anchor}\n\n{warning}", 1)
+
+
 def normalize_known_export_artifacts(markdown: str) -> str:
     replacements = {
         "# Background & Rationale ": "# Background & Rationale",
@@ -480,21 +642,14 @@ def normalize_known_export_artifacts(markdown: str) -> str:
     for old, new in replacements.items():
         markdown = markdown.replace(old, new)
 
+    markdown = normalize_text_export_artifacts(markdown)
+    markdown = move_interrupted_analysis_figure(markdown)
     markdown = RAW_HTML_TABLE_PATTERN.sub(
         lambda match: normalize_imported_html_table(match.group()),
         markdown,
     )
     markdown = wrap_publication_data_tables(markdown)
-
-    table_marker = "| Publication |\n|----|"
-    table_warning = """:::{warning} Supplementary table needs a source export
-The DOCX export retained the row labels but not the study columns for Supplementary
-Table 1. Replace this shell with a CSV or another structured source before submission.
-:::
-
-| Publication |
-|----|"""
-    markdown = markdown.replace(table_marker, table_warning, 1)
+    markdown = replace_incomplete_supplementary_table(markdown)
     markdown = "\n".join(line.rstrip() for line in markdown.splitlines())
     markdown = re.sub(r"\n{3,}", "\n\n", markdown)
     return markdown.strip() + "\n"

@@ -2,6 +2,7 @@ import csv
 import hashlib
 import json
 import re
+import runpy
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -98,6 +99,85 @@ def test_imported_data_tables_have_body_cells() -> None:
     assert manuscript.count("interactive/data-explorer.html") == 1
     assert '<details class="static-table-fallback">' in manuscript
     assert "View grouped static summary tables" in manuscript
+
+
+def test_docx_text_formatting_artifacts_are_normalized() -> None:
+    normalize_text_export_artifacts = runpy.run_path(
+        str(REPO_ROOT / "scripts" / "import_google_doc.py")
+    )["normalize_text_export_artifacts"]
+    markdown = r"""- Cell extraction ([<u>Suite2p</u>](https://suite2p.org))
+
+> The default configuration used Suite2p's sparse detection mode.
+
+- Packaging used aind-eye-tracking-nwb
+
+> ([<u>repository</u>](https://example.org/repository))
+
+> A genuine quotation remains.
+
+> i\. R(downward, 90° shift) \> R(45° shift),\
+> because this is a bigger change in orientation
+>
+> ii\. R(halt) \< R(90°) and R(45°), because the halt involves a smaller change in velocity
+
+Raw \autocite{noauthor_allenneuraldynamicsgiant-matlab_2026} and
+view~\autocite{pnevmatikakis_normcorre_2017} use \textit{activity image} at
+\$1.33\$~pixels. A sentence ends.. Neuropixels node**s** were processed with with care.
+
+Paragraph before figure.\
+
+:::{figure} image.png
+:::
+
+-
+"""
+
+    normalized = normalize_text_export_artifacts(markdown)
+
+    assert "<u>" not in normalized
+    assert "\n  The default configuration used Suite2p" in normalized
+    assert "aind-eye-tracking-nwb ([repository](https://example.org/repository))" in normalized
+    assert "\n> A genuine quotation remains." in normalized
+    assert "  1. R(downward, 90° shift) > R(45° shift)" in normalized
+    assert "  2. R(halt) < R(90°) and R(45°)" in normalized
+    assert "\\autocite" not in normalized
+    assert "\\textit" not in normalized
+    assert "[$1.33$" not in normalized
+    assert "$1.33$ pixels" in normalized
+    assert "ends. Neuropixels nodes were processed with care" in normalized
+    assert "figure.\\" not in normalized
+    assert "\n-\n" not in normalized
+
+
+def test_manuscript_has_no_docx_formatting_artifacts() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    forbidden_patterns = {
+        "empty bullet": r"(?m)^-\s*$",
+        "raw LaTeX command": r"\\(?:autocite|textit)\b|\\\$",
+        "underlined Markdown link": r"\[<u>[^\n]*?</u>\]\(",
+        "split parenthetical link": r"(?m)^\(\[[^\n]+\]\(https?://",
+        "double period": r"(?<!\.)\.\.(?!\.)",
+        "hard break before figure": r"\\\n\n:::\{figure\}",
+        "adjacent JSON filenames": r"\.json,[A-Za-z]",
+    }
+    for label, pattern in forbidden_patterns.items():
+        assert re.search(pattern, manuscript) is None, label
+
+    assert not any(line.startswith(">") for line in manuscript.splitlines())
+    assert "| Publication |" not in manuscript
+    assert "Recovered row labels: Publication; Type of stimulus;" in manuscript
+    assert "Nb of subjects; Session duration; Nb of mismatches" in manuscript
+    assert "detection rates beyond a certain number of trials" in manuscript
+    assert "our ability to disentangle mechanisms" in manuscript
+    assert "our ability\n\n:::{figure}" not in manuscript
+    assert "**Supplementary** **Fig. X**" not in manuscript
+    assert "**Supplementary** **Table 1**" not in manuscript
+    assert "**Supplementary Fig. X)**" not in manuscript
+
+    warning_position = manuscript.index(":::{warning} Supplementary table")
+    first_table_reference = manuscript.index("(see **Supplementary Table 1**)")
+    simulation_figure = manuscript.index(":label: fig-supp-power-simulation-trials")
+    assert first_table_reference < warning_position < simulation_figure
 
 
 def test_interactive_figure_has_static_fallback() -> None:
