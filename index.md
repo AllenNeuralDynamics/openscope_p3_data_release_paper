@@ -1014,17 +1014,10 @@ A key assumption in our analysis is that different types of mismatches may recru
 
 Modeling these responses will be a key integrative effort, facilitating the unification of multi-modal and multi-species datasets. First, analytical metrics derived from real physiological data can be designed and iteratively refined using simulated neuronal activity from cortical models, where the ground truth is known. Second, modeling will enable the multi-modal integration of these datasets by leveraging the relative strengths of various techniques to constrain model parameters. Simulated models will vary in complexity to evaluate our ability to disentangle mechanisms such as adaptation, E/I balance, and other underlying processes.
 
-:::{figure} ./images/figures/imported/figure-11-analysis-framework.png
-:label: fig-analysis-framework
-:alt: Analysis framework connecting four mismatch contexts to functional and structural metrics.
-:width: 100%
-
-General framework for the cross-context analysis plan.
-:::
 
 The analysis can be organized to address three main scientific hypotheses: I) whether mismatch responses are “additive”, “subtractive”, or “multiplicative” in nature; II) whether mismatch responses contain detailed, temporally specific predictions or expectations about the stimulus ensemble; III) whether there exists a common neural mechanism underlying different kinds of mismatch responses. Here, we provide further details about the data analysis and hypothesis testing that this experiment makes possible.
 
-Throughout all hypotheses, we will leverage a shared set of metrics computed on all datasets (see **Figure 11**). **Encoding metrics** should include measures used to evaluate deterministic models, like linear and logistic regressions, such as accuracy, mean square error, and the coefficient of determination R2, or for probabilistic models such as generalized linear models (GLMs). **Decoding metrics** should include measures from pattern clustering and/or classification, for e.g., Mahalanobis distance, confusion matrix (categorical variables) or F1 score, mutual information, or bit rate/latency (for BCIs). In addition, analysis of response distribution across anatomical location and cell types will be used to test all hypotheses.
+Throughout all hypotheses, we will leverage a shared set of metrics computed on all datasets. **Encoding metrics** should include measures used to evaluate deterministic models, like linear and logistic regressions, such as accuracy, mean square error, and the coefficient of determination R2, or for probabilistic models such as generalized linear models (GLMs). **Decoding metrics** should include measures from pattern clustering and/or classification, for e.g., Mahalanobis distance, confusion matrix (categorical variables) or F1 score, mutual information, or bit rate/latency (for BCIs). In addition, analysis of response distribution across anatomical location and cell types will be used to test all hypotheses.
 
 ### I. What kind of information is encoded by mismatch responses?
 
@@ -1278,69 +1271,76 @@ Importantly, if the outlined paradigms show the same essential distribution of f
 
 ## Supplementary figures
 
+:::{figure} ./images/figures/imported/supplementary-neuropixels-implant-trajectories.png
+:label: fig-supp-neuropixels-implant-trajectories
+:alt: Four-panel Neuropixels implant figure showing six planned probe trajectories, atlas structures along each trajectory, stereotaxic coordinates, and implant-hole geometry.
+:enumerated: false
+:width: 100%
+
+**Supplementary Figure 1.** Neuropixels implant geometry and planned probe trajectories. **A,** Six trajectories (A-F) through the Allen Mouse Brain Common Coordinate Framework. **B,** Atlas structures intersected by each trajectory. **C,** Anteroposterior and mediolateral coordinates relative to bregma with implant-hole diameters D1 and D2. **D,** Top view of the implant with labeled probe-access holes.
+:::
+
 **Mesoscope imaging depth.** Depth-dependent laser-power ranges are provided in the [mesoscope laser-power lookup table](#table-mesoscope-laser-power) in Methods.
 
 :::{figure} ./images/figures/imported/supplementary-neuropixels-targeting.png
 :label: fig-supp-neuropixels-targeting
 :alt: Neuropixels implant hole positions, stereotaxic coordinates, diameters, and targets.
+:enumerated: false
 :width: 100%
 
-Neuropixels implant geometry and intended anatomical targets.
+**Supplementary Figure 2.** Neuropixels implant geometry and intended anatomical targets.
 :::
 
 :::{figure} ./images/figures/imported/supplementary-neuropixels-unit-yield.png
 :label: fig-supp-neuropixels-unit-yield
 :alt: Unit yield over four recording days for three Neuropixels probes in six mice.
+:enumerated: false
 :width: 100%
 
-Example Neuropixels unit yield across recording days.
+**Supplementary Figure 3.** Example Neuropixels unit yield across recording days.
 :::
 
 :::{figure} ./images/figures/imported/supplementary-neuropixels-visual-responses.png
 :label: fig-supp-neuropixels-visual-responses
 :alt: Visually responsive fractions, firing-rate traces, and receptive fields across Neuropixels probes.
+:enumerated: false
 :width: 100%
 
-Example visually evoked Neuropixels responses and receptive fields.
+**Supplementary Figure 4.** Example visually evoked Neuropixels responses and receptive fields.
 :::
 
-# Supplementary Text 1: Experimental power analysis for oddball stimuli
+# Supplementary Text 1: Published oddball paradigms and sampling ranges
 
-Understanding the statistical principles underlying experimental design is critical for studying predictive processing in the brain. A key challenge is determining the number of trials required to reliably detect neuronal responses to oddball stimuli. Variability in neuronal responses, background noise, and trial-to-trial adaptation all influence the statistical power needed to detect meaningful activity.
+[Supplementary Table 1](#table-supplementary-oddball-studies) compares five published visual oddball paradigms with respect to stimulus design, timing, sample size, recording method, statistical test, habituation, and sampling.
 
-To address this challenge, we first summarize parameters used in a few oddball studies in mice (see **Supplementary Table 1**). This table highlights a few key convergences and divergences. The oddball rate across these studies ranged between 0.07 to 0.2. Given the session duration in these experiments, the number of oddballs ranged from 10 to 144 per oddball type. Importantly, studies with fewer oddball numbers operated at shorter timescales: Their oddballs could be predicted from more recent stimulus history and were learned more quickly by mice. Studies with larger numbers of repeats typically involved sequential oddballs with longer temporal history. Across these experiments, recording oddball responses depending on more complex long-term sensory relationships required more repeats.
+:::{table} Supplementary Table 1. Published oddball paradigms and sampling parameters.
+:label: table-supplementary-oddball-studies
+:enumerated: false
+:class: table-accent table-other-studies
 
-:::{warning} Supplementary table needs a source export
-The DOCX export retained the row labels but not the study columns for
-Supplementary Table 1. Replace this shell with a CSV or another structured
-source before submission.
-
-Recovered row labels: Publication; Type of stimulus; Type of oddball; Temporal parameters; Spatial parameters; Species; Nb of subjects; Session duration; Nb of mismatches; Recording technique; % responsive neurons; Test of significance; Habituation; Nb of oddball repeats required; Oddball rate (0-1); Time per oddball repeated sequence (s); Total oddball time (s).
+| Publication | Attinger et al 2017 | Homann et al 2022 | Bastos et al 2023 | Knudstrup et al 2025 | Westerberg et al 2025 |
+| --- | --- | --- | --- | --- | --- |
+| Type of stimulus | Drifting gratings coupled to movement | Superimposed Gabor patches in a sequence | Drifting gratings in a sequence | Static gratings in a sequence | Drifting gratings in a sequence |
+| Type of oddball | Drifting gratings decoupled from movement | Final image in sequence replaced with novel image | Deviant grating in sequence of repeated gratings | Second grating in sequence replaced by deviant grating | Local: Final grating in sequence different from preceding ones<br />Global: Final grating in sequence different from established sequence |
+| Temporal parameters | Oddball: 15 sec at random | Sequence: 4 images, 250 or 300 ms ON<br />Oddball: Every 6 seconds | Sequence: Repeated gratings, drifting at 2 cycles/sec., 500 ms ON, 1 sec OFF<br />Oddball: 12.5% of gratings | Sequence: Repeated gratings, 75 ms to 2 sec ON, 0 or 1.5 sec OFF<br />Oddball: Different frequencies and spacings tested | Sequence: 4 gratings, drifting at 4 cycles/sec., 500ms ON, 500 ms OFF, 4500 ms per sequence |
+| Spatial parameters | Vertical, full screen gratings, 0.04 cycles/deg. | Each image: 100 superimposed Gabor patches, 10-20 deg. in size with random orientation and phase. | Full field gratings, 8 grating orientations, 0.08 cycles/deg. | 4 grating orientations, 0.5 cycles/deg. | Full screen gratings, 0.04 cycles/deg. |
+| Species | Mouse | Mouse | Mouse | Mouse | Mouse and primate |
+| Nb of subjects | 3-6 per group | 5 | 4-9 per group | 14 | 7-9 per group |
+| Session duration | 3x 500s | 10min-1h | 6 min | 10 min | 2h |
+| Nb of mismatches | 3x 33 | 100 per condition | 10 per condition | 450 standard, 50 deviant | 100 (global) |
+| Recording technique | Two-photon | Two-photon | Two-photon | LFP | Neuropixels |
+| % responsive neurons | 26-40% | 77% | 10% (PYR) | N/A | 50-62 % (local oddball), 3-9% (global oddball) |
+| Test of significance | Mann-Whitney U test between average in response window vs. randomized window | Z-score significance test on change in response to novelty | Paired two-tailed t-test between control and oddball | Non-parametric test on a bootstrapped distribution | Cluster-based permutation test. against control |
+| Habituation | 6 sessions, 2h/day | 0 sessions | 3 sessions | 0 sessions | 5 sessions |
+| Nb of oddball repeats required | 33 | 100 | 10 | 50 | 144 |
+| Oddball rate (0-1) | 0.07 | 0.1666666667 | 0.125 | 0.1 | 0.2 |
+| Time per oddball repeated sequence (s) | 495 | 600 | 160 | 400 | 3600 |
+| Total oddball time (s) | 495 | 600 | 1440 | 400 | 3600 |
 :::
 
-:::{figure} ./images/figures/imported/supplementary-figure-02-power-simulation-trials.png
-:label: fig-supp-power-simulation-trials
-:alt: Measured and simulated response distributions and detection power across trial counts.
-:width: 100%
+The paradigms span visuomotor decoupling and local or global deviations in visual sequences. Three studies used two-photon calcium imaging, one used local field potentials, and one used Neuropixels recordings.
 
-Simulation of responsive-neuron detection rate across trials.
-:::
-
-Based on these observations, we developed a simulation framework to calculate the statistical requirements for optimizing trial numbers in oddball experiments. Neuronal responses can be recorded using methods such as calcium imaging or electrophysiology. In both cases, a measure of cellular responsiveness is compared to background noise fluctuations. These simulations had biologically relevant features, including trial-dependent adaptation and noise, providing a robust approach for estimating the necessary trial counts to achieve reliable detection of neuronal responses. The underlying code can be accessed here: [https://colab.research.google.com/drive/1Lnd4kP7pgH9tMW6fySOfCHgsgsrSpKqa?usp=sharing](https://colab.research.google.com/drive/1Lnd4kP7pgH9tMW6fySOfCHgsgsrSpKqa?usp=sharing)
-
-We simulated a distributed population of neurons with stimulus-evoked responses that followed a log-normal distribution. This distribution captures the presence of a few units with large, easily detected responses and many more units with weaker responses. We qualitatively compared our simulated distribution (see **Supplementary Figure 1B**) with the measured distribution from two-photon imaging experiments (see **Supplementary Figure 1A**).
-
-Using this distribution, we modeled neuronal response decay across repeated trials within the population (gray), reflecting physiological adaptation and reduced sensitivity to repeated oddball stimuli. We then quantified the percentage of neurons detected as responsive as a function of trial number. Detection was assessed using a simple statistical t-test against the null distribution. The resulting curve revealed diminishing returns in detection rates beyond a certain number of trials, highlighting the importance of balancing data collection efforts with statistical power constraints (see **Supplementary Figure 1C-D**).
-
-Next, we examined how the number of recording sessions (or mice) influences detection power. Aggregating data across multiple sessions increased the measure of the percentage of detected neurons (**Supplementary Figure 3**), demonstrating a trade-off between the number of trials per session and the overall sample size. Together, these simulations provide a principled approach for determining the optimal number of trials and sessions needed to reliably detect oddball responses in cortical neurons. Different oddball types might recruit different proportions of neurons with variable effect size. Each oddball type can then be simulated separately by varying input parameters into the model.
-
-:::{figure} ./images/figures/imported/supplementary-figure-03-power-simulation-sessions.png
-:label: fig-supp-power-simulation-sessions
-:alt: Responsive-neuron detection rate by trial count for one to twenty simulated sessions.
-:width: 100%
-
-Simulation of responsive-neuron detection rate across sessions.
-:::
+Reported oddball probabilities ranged from 0.07 to 0.20, the reported number of oddball repeats required ranged from 10 to 144, and session durations ranged from 6 minutes to 2 hours. These values provide literature context for trial-count and session-duration choices in the present dataset; differences in stimuli, response definitions, and significance tests should be considered when comparing responsive-neuron fractions across studies.
 
 # Glossary
 

@@ -128,6 +128,30 @@ article table.table-laser-power td:first-child {
   text-align: left !important;
 }
 
+article .table-other-studies table,
+article table.table-other-studies {
+  width: 1500px;
+  min-width: 1500px;
+  font-size: 0.78rem;
+}
+
+article figure.table-other-studies {
+  max-width: 100%;
+}
+
+article figure.table-other-studies > .overflow-auto {
+  max-width: 100%;
+  overflow-x: auto !important;
+  overscroll-behavior-inline: contain;
+}
+
+article .table-other-studies table th:first-child,
+article .table-other-studies table td:first-child,
+article table.table-other-studies th:first-child,
+article table.table-other-studies td:first-child {
+  min-width: 13rem;
+}
+
 .id-disclosure {
   min-width: 8.5rem;
 }

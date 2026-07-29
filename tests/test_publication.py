@@ -29,6 +29,20 @@ def test_imported_figure_manifest_matches_files() -> None:
     )
     assert laser_power_source["status"] == "source-only"
 
+    implant = next(
+        asset for asset in manifest["assets"]
+        if asset["filename"] == "supplementary-neuropixels-implant-trajectories.png"
+    )
+    assert implant["source_kind"] == "google-slides-rendered-png"
+    assert implant["supplementary_number"] == 1
+    assert implant["sha256"] == (
+        "e705404cc2d3bef0cbe5f76aaeef89bdee619f996304552b137eb26761555f33"
+    )
+    assert implant["replaces_google_doc_source"] == "image14.png"
+
+    removed = {asset["source_name"] for asset in manifest["assets"] if asset["status"] == "removed"}
+    assert removed == {"image1.png", "image2.png"}
+
 
 def test_manuscript_local_assets_and_figure_metadata() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
@@ -43,8 +57,8 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
-    assert len(figures) == 13
-    assert manuscript.count(":::{figure} ./images/figures/imported/") == 13
+    assert len(figures) == 11
+    assert manuscript.count(":::{figure} ./images/figures/imported/") == 11
     assert manuscript.count(":::{figure} ./images/figures/generated/") == 0
     for options in figures:
         assert ":label:" in options
@@ -98,6 +112,48 @@ def test_glossary_is_an_expandable_final_section() -> None:
     assert "**Receptive Field**" in glossary
     assert "Shared across modalities:" not in glossary
     assert "Mesoscope NWB files" not in glossary
+
+
+def test_supplementary_studies_table_is_complete() -> None:
+    data_path = REPO_ROOT / "figure_sources" / "data" / "other-oddball-studies.csv"
+    provenance_path = data_path.with_suffix(".provenance.json")
+    with data_path.open(newline="", encoding="utf-8-sig") as stream:
+        rows = list(csv.reader(stream))
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+
+    assert len(rows) == 17
+    assert {len(row) for row in rows} == {6}
+    assert rows[0] == [
+        "Publication",
+        "Attinger et al 2017",
+        "Homann et al 2022",
+        "Bastos et al 2023",
+        "Knudstrup et al 2025",
+        "Westerberg et al 2025",
+    ]
+    assert rows[14][1:] == ["0.07", "0.1666666667", "0.125", "0.1", "0.2"]
+    assert file_sha256(data_path) == provenance["vendored_sha256"]
+
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    assert ":label: table-supplementary-oddball-studies" in manuscript
+    assert "Supplementary Text 1: Published oddball paradigms" in manuscript
+    assert "Attinger et al 2017" in manuscript
+    assert "Westerberg et al 2025" in manuscript
+    assert "Reported oddball probabilities ranged from 0.07 to 0.20" in manuscript
+
+
+def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+
+    for number in range(1, 5):
+        assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
+    assert manuscript.count(":enumerated: false\n:width: 100%") >= 4
+    assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
+    assert "supplementary-neuropixels-targeting.png" in manuscript
+    assert "figure-11-analysis-framework.png" not in manuscript
+    assert "fig-supp-power-simulation-trials" not in manuscript
+    assert "fig-supp-power-simulation-sessions" not in manuscript
+    assert "Simulation of responsive-neuron detection rate" not in manuscript
 
 
 def test_nwb_file_contents_are_in_data_records() -> None:
@@ -199,20 +255,15 @@ def test_manuscript_has_no_docx_formatting_artifacts() -> None:
         assert re.search(pattern, manuscript) is None, label
 
     assert not any(line.startswith(">") for line in manuscript.splitlines())
-    assert "| Publication |" not in manuscript
-    assert "Recovered row labels: Publication; Type of stimulus;" in manuscript
-    assert "Nb of subjects; Session duration; Nb of mismatches" in manuscript
-    assert "detection rates beyond a certain number of trials" in manuscript
+    assert "| Publication |\n|----|" not in manuscript
     assert "our ability to disentangle mechanisms" in manuscript
     assert "our ability\n\n:::{figure}" not in manuscript
     assert "**Supplementary** **Fig. X**" not in manuscript
     assert "**Supplementary** **Table 1**" not in manuscript
     assert "**Supplementary Fig. X)**" not in manuscript
 
-    warning_position = manuscript.index(":::{warning} Supplementary table")
-    first_table_reference = manuscript.index("(see **Supplementary Table 1**)")
-    simulation_figure = manuscript.index(":label: fig-supp-power-simulation-trials")
-    assert first_table_reference < warning_position < simulation_figure
+    assert ":::{warning} Supplementary table" not in manuscript
+    assert "Recovered row labels:" not in manuscript
 
 
 def test_interactive_figure_has_static_fallback() -> None:

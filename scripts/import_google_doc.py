@@ -23,6 +23,15 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 MESOSCOPE_LASER_POWER_PATH = (
     REPO_ROOT / "figure_sources" / "data" / "mesoscope-laser-power.csv"
 )
+OTHER_STUDIES_PATH = REPO_ROOT / "figure_sources" / "data" / "other-oddball-studies.csv"
+OTHER_STUDIES_PROVENANCE_PATH = OTHER_STUDIES_PATH.with_suffix(".provenance.json")
+SLIDE_15_SOURCE_PATH = (
+    REPO_ROOT
+    / "figure_sources"
+    / "google-slides"
+    / "slide-15-neuropixels-implant.png"
+)
+SLIDE_15_PROVENANCE_PATH = SLIDE_15_SOURCE_PATH.with_suffix(".provenance.json")
 
 
 @dataclass(frozen=True)
@@ -33,6 +42,7 @@ class FigureAsset:
     alt: str
     caption: str
     status: str = "draft"
+    supplementary_number: int | None = None
 
 
 FIGURE_ASSETS = (
@@ -100,13 +110,23 @@ FIGURE_ASSETS = (
     ),
     FigureAsset(
         "image14.png",
-        "figure-11-analysis-framework.png",
-        "fig-analysis-framework",
+        "supplementary-neuropixels-implant-trajectories.png",
+        "fig-supp-neuropixels-implant-trajectories",
         (
-            "Analysis framework connecting four mismatch contexts to functional "
-            "and structural metrics."
+            "Four-panel Neuropixels implant figure showing six planned probe "
+            "trajectories, atlas structures along each trajectory, stereotaxic "
+            "coordinates, and implant-hole geometry."
         ),
-        "General framework for the cross-context analysis plan.",
+        (
+            "Neuropixels implant geometry and planned probe trajectories. "
+            "**A,** Six trajectories (A-F) through the Allen Mouse Brain Common "
+            "Coordinate Framework. **B,** Atlas structures intersected by each "
+            "trajectory. **C,** Anteroposterior and mediolateral coordinates "
+            "relative to bregma with implant-hole diameters D1 and D2. **D,** Top "
+            "view of the implant with labeled probe-access holes."
+        ),
+        "supplementary",
+        1,
     ),
     FigureAsset(
         "image9.png",
@@ -122,6 +142,8 @@ FIGURE_ASSETS = (
         "fig-supp-neuropixels-targeting",
         "Neuropixels implant hole positions, stereotaxic coordinates, diameters, and targets.",
         "Neuropixels implant geometry and intended anatomical targets.",
+        "supplementary",
+        2,
     ),
     FigureAsset(
         "image13.png",
@@ -129,6 +151,8 @@ FIGURE_ASSETS = (
         "fig-supp-neuropixels-unit-yield",
         "Unit yield over four recording days for three Neuropixels probes in six mice.",
         "Example Neuropixels unit yield across recording days.",
+        "supplementary",
+        3,
     ),
     FigureAsset(
         "image7.png",
@@ -139,6 +163,8 @@ FIGURE_ASSETS = (
             "across Neuropixels probes."
         ),
         "Example visually evoked Neuropixels responses and receptive fields.",
+        "supplementary",
+        4,
     ),
     FigureAsset(
         "image2.png",
@@ -146,6 +172,7 @@ FIGURE_ASSETS = (
         "fig-supp-power-simulation-trials",
         "Measured and simulated response distributions and detection power across trial counts.",
         "Simulation of responsive-neuron detection rate across trials.",
+        "removed",
     ),
     FigureAsset(
         "image1.png",
@@ -153,6 +180,7 @@ FIGURE_ASSETS = (
         "fig-supp-power-simulation-sessions",
         "Responsive-neuron detection rate by trial count for one to twenty simulated sessions.",
         "Simulation of responsive-neuron detection rate across sessions.",
+        "removed",
     ),
 )
 ASSET_BY_SOURCE = {asset.source_name: asset for asset in FIGURE_ASSETS}
@@ -306,6 +334,23 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def load_other_studies_rows() -> list[list[str]]:
+    provenance = json.loads(
+        OTHER_STUDIES_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    if sha256(OTHER_STUDIES_PATH) != provenance["vendored_sha256"]:
+        raise RuntimeError("Other-studies table checksum does not match its provenance.")
+    with OTHER_STUDIES_PATH.open(newline="", encoding="utf-8-sig") as stream:
+        rows = list(csv.reader(stream))
+    if len(rows) != provenance["rows"]:
+        raise RuntimeError("Other-studies table row count does not match its provenance.")
+    if not rows or any(len(row) != provenance["columns"] for row in rows):
+        raise RuntimeError("Other-studies table column count does not match its provenance.")
+    if rows[0][0] != "Publication":
+        raise RuntimeError("Other-studies table must begin with a Publication header.")
+    return rows
+
+
 def copy_assets(extracted: dict[str, Path], export_date: str) -> None:
     output_dir = REPO_ROOT / "images" / "figures" / "imported"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -313,14 +358,31 @@ def copy_assets(extracted: dict[str, Path], export_date: str) -> None:
 
     for asset in FIGURE_ASSETS:
         destination = output_dir / asset.filename
-        shutil.copy2(extracted[asset.source_name], destination)
+        source = extracted[asset.source_name]
+        source_kind = "google-doc-rendered-png"
+        editable_source_url = None
+        source_metadata = {}
+        if asset.source_name == "image14.png":
+            provenance = json.loads(SLIDE_15_PROVENANCE_PATH.read_text(encoding="utf-8"))
+            if sha256(SLIDE_15_SOURCE_PATH) != provenance["sha256"]:
+                raise RuntimeError("Slide 15 checksum does not match its provenance record.")
+            source = SLIDE_15_SOURCE_PATH
+            source_kind = "google-slides-rendered-png"
+            editable_source_url = provenance["source_url"]
+            source_metadata = {
+                "replacement_source_path": source.relative_to(REPO_ROOT).as_posix(),
+                "replacement_export_url": provenance["export_url"],
+                "replaces_google_doc_source": asset.source_name,
+            }
+        shutil.copy2(source, destination)
         manifest_assets.append(
             {
                 **asdict(asset),
                 "path": destination.relative_to(REPO_ROOT).as_posix(),
                 "sha256": sha256(destination),
-                "source_kind": "google-doc-rendered-png",
-                "editable_source_url": None,
+                "source_kind": source_kind,
+                "editable_source_url": editable_source_url,
+                **source_metadata,
             }
         )
 
@@ -343,13 +405,23 @@ def render_figure(source_name: str) -> str:
         return render_mesoscope_laser_power_table()
 
     asset = ASSET_BY_SOURCE[source_name]
+    if asset.status == "removed":
+        return ""
     path = f"./images/figures/imported/{asset.filename}"
+    supplementary_option = ""
+    caption = asset.caption
+    if asset.supplementary_number is not None:
+        supplementary_option = ":enumerated: false\n"
+        caption = (
+            f"**Supplementary Figure {asset.supplementary_number}.** {asset.caption}"
+        )
     figure = (
         f":::{'{'}figure{'}'} {path}\n"
         f":label: {asset.label}\n"
         f":alt: {asset.alt}\n"
+        f"{supplementary_option}"
         ":width: 100%\n\n"
-        f"{asset.caption}\n"
+        f"{caption}\n"
         ":::"
     )
     if source_name == "image10.png":
@@ -375,6 +447,26 @@ def render_mesoscope_laser_power_table() -> str:
         lines.append(
             f"| {depth} | {row['laser_power_min_mw']} | {row['laser_power_max_mw']} |"
         )
+    lines.append(":::")
+    return "\n".join(lines)
+
+
+def render_other_studies_table() -> str:
+    rows = load_other_studies_rows()
+
+    def cell(value: str) -> str:
+        return value.replace("|", r"\|").replace("\n", "<br />")
+
+    lines = [
+        ":::{table} Supplementary Table 1. Published oddball paradigms and sampling parameters.",
+        ":label: table-supplementary-oddball-studies",
+        ":enumerated: false",
+        ":class: table-accent table-other-studies",
+        "",
+        f"| {' | '.join(cell(value) for value in rows[0])} |",
+        f"| {' | '.join('---' for _ in rows[0])} |",
+    ]
+    lines.extend(f"| {' | '.join(cell(value) for value in row)} |" for row in rows[1:])
     lines.append(":::")
     return "\n".join(lines)
 
@@ -585,43 +677,39 @@ def move_interrupted_analysis_figure(markdown: str) -> str:
     return markdown
 
 
-def replace_incomplete_supplementary_table(markdown: str) -> str:
-    pattern = re.compile(r"^\| Publication \|\n(?:^\|.*\|\n?)+", re.MULTILINE)
-    match = pattern.search(markdown)
-    if match is None:
-        raise RuntimeError("Expected incomplete Supplementary Table 1 was not found.")
-
-    fields = []
-    for line in match.group().splitlines():
-        value = line.removeprefix("|").removesuffix("|").strip()
-        if value == "----" or value.startswith("**Supplementary Table 1."):
-            continue
-        fields.append(value)
-
-    warning = "\n".join(
+def replace_supplementary_text(markdown: str) -> str:
+    pattern = re.compile(r"# Supplementary Text 1:.*\Z", re.DOTALL)
+    if pattern.search(markdown) is None:
+        raise RuntimeError("Expected Supplementary Text 1 was not found.")
+    table = render_other_studies_table()
+    replacement = "\n\n".join(
         [
-            ":::{warning} Supplementary table needs a source export",
-            "The DOCX export retained the row labels but not the study columns for ",
-            "Supplementary Table 1. Replace this shell with a CSV or another structured ",
-            "source before submission.",
-            "",
-            f"Recovered row labels: {'; '.join(fields)}.",
-            ":::",
+            "# Supplementary Text 1: Published oddball paradigms and sampling ranges",
+            (
+                "[Supplementary Table 1](#table-supplementary-oddball-studies) "
+                "compares five published visual oddball paradigms with respect to "
+                "stimulus design, timing, sample size, recording method, statistical "
+                "test, habituation, and sampling."
+            ),
+            table,
+            (
+                "The paradigms span visuomotor decoupling and local or global "
+                "deviations in visual sequences. Three studies used two-photon "
+                "calcium imaging, one used local field potentials, and one used "
+                "Neuropixels recordings."
+            ),
+            (
+                "Reported oddball probabilities ranged from 0.07 to 0.20, the "
+                "reported number of oddball repeats required ranged from 10 to 144, "
+                "and session durations ranged from 6 minutes to 2 hours. These values "
+                "provide literature context for trial-count and session-duration "
+                "choices in the present dataset; differences in stimuli, response "
+                "definitions, and significance tests should be considered when "
+                "comparing responsive-neuron fractions across studies."
+            ),
         ]
     )
-    markdown = f"{markdown[: match.start()]}{markdown[match.end() :]}"
-    interrupted_sentence = re.compile(
-        r"(The resulting curve revealed diminishing returns in detection rates beyond)"
-        r"\s*\n+\s*(a certain number of trials)"
-    )
-    markdown, count = interrupted_sentence.subn(r"\1 \2", markdown, count=1)
-    if count != 1:
-        raise RuntimeError("Expected interrupted supplementary paragraph was not found.")
-
-    warning_anchor = "required more repeats."
-    if markdown.count(warning_anchor) != 1:
-        raise RuntimeError("Expected Supplementary Table 1 warning anchor was not found.")
-    return markdown.replace(warning_anchor, f"{warning_anchor}\n\n{warning}", 1)
+    return pattern.sub(replacement, markdown, count=1)
 
 
 def normalize_known_export_artifacts(markdown: str) -> str:
@@ -641,6 +729,7 @@ def normalize_known_export_artifacts(markdown: str) -> str:
         ),
         "SUPP figures": "## Supplementary figures",
         "shared below.Four predictive contexts": "shared below.\n\n**Four predictive contexts**",
+        " (see **Figure 11**)": "",
         "\nDescription of the multi-modal animal experimentation pipelines\n": "\n",
         "\n## \n": "\n",
         "\n\\\n=\n": "\n",
@@ -655,7 +744,7 @@ def normalize_known_export_artifacts(markdown: str) -> str:
         markdown,
     )
     markdown = wrap_publication_data_tables(markdown)
-    markdown = replace_incomplete_supplementary_table(markdown)
+    markdown = replace_supplementary_text(markdown)
     markdown = "\n".join(line.rstrip() for line in markdown.splitlines())
     markdown = re.sub(r"\n{3,}", "\n\n", markdown)
     return markdown.strip() + "\n"
@@ -696,6 +785,22 @@ def add_supplementary_depth_reference(markdown: str) -> str:
         f"{heading}\n\n{SUPPLEMENTARY_DEPTH_REFERENCE}",
         1,
     )
+
+
+def relocate_supplementary_implant_figure(markdown: str) -> str:
+    pattern = re.compile(
+        r"\n(?P<figure>:::\{figure\} [^\n]+\n"
+        r":label: fig-supp-neuropixels-implant-trajectories\n.*?\n:::)\n",
+        re.DOTALL,
+    )
+    match = pattern.search(markdown)
+    if match is None:
+        raise RuntimeError("Expected slide 15 implant figure was not found.")
+    markdown = f"{markdown[: match.start()]}\n{markdown[match.end() :]}"
+    heading = "## Supplementary figures"
+    if markdown.count(heading) != 1:
+        raise RuntimeError("Expected one Supplementary figures heading.")
+    return markdown.replace(heading, f"{heading}\n\n{match.group('figure')}", 1)
 
 
 def move_glossary_to_end(markdown: str) -> str:
@@ -742,6 +847,7 @@ def build_index(markdown: str) -> str:
     markdown = replace_images(markdown)
     markdown = normalize_known_export_artifacts(markdown)
     markdown = add_supplementary_depth_reference(markdown)
+    markdown = relocate_supplementary_implant_figure(markdown)
     markdown = move_glossary_to_end(markdown)
     background_heading = "# Background & Rationale"
     if background_heading not in markdown:

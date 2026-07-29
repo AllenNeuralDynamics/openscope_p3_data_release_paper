@@ -1,0 +1,21 @@
+Publication,Attinger et al 2017,Homann et al 2022,Bastos et al 2023,Knudstrup et al 2025,Westerberg et al 2025
+Type of stimulus,Drifting gratings coupled to movement,Superimposed Gabor patches in a sequence,Drifting gratings in a sequence,Static gratings in a sequence,Drifting gratings in a sequence
+Type of oddball,Drifting gratings decoupled from movement,Final image in sequence replaced with novel image,Deviant grating in sequence of repeated gratings,Second grating in sequence replaced by deviant grating,"Local: Final grating in sequence different from preceding ones
+Global: Final grating in sequence different from established sequence"
+Temporal parameters,Oddball: 15 sec at random,"Sequence: 4 images, 250 or 300 ms ON
+Oddball: Every 6 seconds","Sequence: Repeated gratings, drifting at 2 cycles/sec., 500 ms ON, 1 sec OFF
+Oddball: 12.5% of gratings","Sequence: Repeated gratings, 75 ms to 2 sec ON, 0 or 1.5 sec OFF
+Oddball: Different frequencies and spacings tested","Sequence: 4 gratings, drifting at 4 cycles/sec., 500ms ON, 500 ms OFF, 4500 ms per sequence"
+Spatial parameters,"Vertical, full screen gratings, 0.04 cycles/deg.","Each image: 100 superimposed Gabor patches, 10-20 deg. in size with random orientation and phase.","Full field gratings, 8 grating orientations, 0.08 cycles/deg.","4 grating orientations, 0.5 cycles/deg.","Full screen gratings, 0.04 cycles/deg."
+Species,Mouse,Mouse,Mouse,Mouse,Mouse and primate
+Nb of subjects,3-6 per group,5,4-9 per group,14,7-9 per group
+Session duration,3x 500s,10min-1h,6 min,10 min,2h
+Nb of mismatches,3x 33,100 per condition,10 per condition,"450 standard, 50 deviant",100 (global)
+Recording technique,Two-photon,Two-photon,Two-photon,LFP,Neuropixels
+% responsive neurons,26-40%,77%,10% (PYR),N/A,"50-62 % (local oddball), 3-9% (global oddball)"
+Test of significance,Mann-Whitney U test between average in response window vs. randomized window,Z-score significance test on change in response to novelty,Paired two-tailed t-test between control and oddball,Non-parametric test on a bootstrapped distribution,Cluster-based permutation test. against control
+Habituation,"6 sessions, 2h/day",0 sessions,3 sessions,0 sessions,5 sessions
+Nb of oddball repeats required,33,100,10,50,144
+Oddball rate (0-1),0.07,0.1666666667,0.125,0.1,0.2
+Time per oddball repeated sequence (s),495,600,160,400,3600
+Total oddball time (s),495,600,1440,400,3600

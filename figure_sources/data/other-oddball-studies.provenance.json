@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "source_url": "https://docs.google.com/spreadsheets/d/14bAIDKWhGoaChgNZcpjMdwpUbywmbCYXqlQCooG3PbQ/edit?usp=sharing",
+  "export_url": "https://docs.google.com/spreadsheets/d/14bAIDKWhGoaChgNZcpjMdwpUbywmbCYXqlQCooG3PbQ/export?format=csv&gid=0",
+  "sheet_gid": 0,
+  "retrieved_date": "2026-07-29",
+  "source_sha256": "a3e05fa3ac424f24c65eb47928f3d1d442574d5aa41441aa9f3490886f8f32cb",
+  "vendored_sha256": "a3e05fa3ac424f24c65eb47928f3d1d442574d5aa41441aa9f3490886f8f32cb",
+  "rows": 17,
+  "columns": 6,
+  "notes": "Full table of five published oddball studies supplied to replace the incomplete one-column DOCX export."
+}
