@@ -35,6 +35,12 @@ SLIDE_15_PROVENANCE_PATH = SLIDE_15_SOURCE_PATH.with_suffix(".provenance.json")
 DERIVED_FIGURE_PROVENANCE_PATH = (
     REPO_ROOT / "figure_sources" / "derived" / "cropped-figures.provenance.json"
 )
+FIGURE_1_PROVENANCE_PATH = (
+    REPO_ROOT
+    / "figure_sources"
+    / "illustrator"
+    / "figure-01-predictive-processing.provenance.json"
+)
 
 
 @dataclass(frozen=True)
@@ -131,7 +137,7 @@ FIGURE_ASSETS = (
         "fig-behavior-tracking-plan",
         "Placeholder slide titled Behavior tracking across all modalities.",
         "Placeholder for behavior tracking across recording modalities.",
-        "placeholder",
+        "source-only",
     ),
     FigureAsset(
         "image4.png",
@@ -175,8 +181,7 @@ FIGURE_ASSETS = (
         "fig-supp-neuropixels-targeting",
         "Neuropixels implant hole positions, stereotaxic coordinates, diameters, and targets.",
         "Neuropixels implant geometry and intended anatomical targets.",
-        "supplementary",
-        2,
+        "removed",
     ),
     FigureAsset(
         "image13.png",
@@ -185,7 +190,7 @@ FIGURE_ASSETS = (
         "Unit yield over four recording days for three Neuropixels probes in six mice.",
         "Example Neuropixels unit yield across recording days.",
         "supplementary",
-        3,
+        2,
     ),
     FigureAsset(
         "image7.png",
@@ -286,6 +291,57 @@ recording modality, and predictive context. Search and filters update both the
 visible-row count and downloadable CSV, allowing the displayed subset to be
 exported without collapsing individual records into manuscript summary groups.
 :::"""
+
+OTHER_STUDIES_BLOCK = """:::{iframe} ./interactive/literature-comparison.html
+:label: table-supplementary-oddball-studies
+:width: 100%
+:title: Supplementary Table 1. Published oddball paradigms and sampling parameters.
+
+Compare one paradigm parameter across all studies or inspect the complete
+profile of one study. Search filters the visible records in either view, and
+CSV export contains exactly the displayed subset.
+:::"""
+
+BEHAVIOR_VIEWER_BLOCK = """:::{iframe} ./interactive/behavior-viewer.html
+:label: fig-behavior-tracking
+:width: 100%
+:title: Synchronized behavior, locomotion, and visual stimuli across recording modalities
+
+Event-centered excerpts from real Neuropixels, mesoscope, and SLAP2 recording
+sessions. Behavior-camera video is range-streamed from the public
+`aind-open-data` S3 bucket. The wheel trace and visual-stimulus state use the
+same session clock. Neuropixels and mesoscope camera frames are mapped from
+100-kHz exposure/readout edges in each sync file, including reported dropped
+frames; SLAP2 uses per-frame Harp timestamps. Camera and source selectors expose
+the underlying public data without bundling multi-gigabyte videos into the
+publication.
+:::"""
+
+BEHAVIOR_ANALYSIS_DESCRIPTION = """## Behavioral data analysis across modalities
+
+For sessions with camera acquisition, the release includes continuous raw
+behavioral videos together with synchronized running-wheel signals, processed
+eye-tracking outputs, and stimulus-presentation intervals. Depending on the
+recording platform, the available views include body or behavior, face, eye,
+and nose cameras. The synchronized multimodal examples in
+[](#fig-behavior-tracking) show these streams alongside the wheel signal and
+current stimulus state. Existing NWB products provide wheel rotation and
+running speed, plus pupil, corneal-reflection, and eye-ellipse fits with
+likely-blink flags. The underlying videos remain available so investigators can
+derive additional behavioral measurements while preserving alignment to the
+stimulus and neural or imaging data.
+
+These synchronized videos are therefore open to more sophisticated reanalysis,
+including markerless pose and keypoint tracking with
+[DeepLabCut](https://github.com/DeepLabCut/DeepLabCut),
+[SLEAP](https://sleap.ai/), [Lightning Pose](https://lightning-pose.readthedocs.io/),
+or other computer-vision methods. Potential derived features include facial and
+body motion energy, posture, grooming, locomotor state, pupil dynamics, and
+trial-resolved behavioral responses. Camera frames are tied to the acquisition
+clock through 100-kHz exposure or readout edges for Neuropixels and mesoscope
+sessions and per-frame Harp timestamps for SLAP2, allowing newly derived
+features to be registered to wheel, stimulus, electrophysiology, and imaging
+signals."""
 
 FRONTMATTER = """---
 title: OpenScope Predictive Processing Community Project - Data Release
@@ -402,7 +458,25 @@ def copy_assets(extracted: dict[str, Path], export_date: str) -> None:
         source_kind = "google-doc-rendered-png"
         editable_source_url = None
         source_metadata = {}
-        if asset.source_name in derived:
+        if asset.source_name == "image12.png":
+            provenance = json.loads(
+                FIGURE_1_PROVENANCE_PATH.read_text(encoding="utf-8")
+            )
+            illustrator_source = REPO_ROOT / provenance["source_path"]
+            source = REPO_ROOT / provenance["rendered_path"]
+            if sha256(illustrator_source) != provenance["source_sha256"]:
+                raise RuntimeError("Figure 1 Illustrator checksum mismatch.")
+            if sha256(source) != provenance["rendered_sha256"]:
+                raise RuntimeError("Figure 1 rendered checksum mismatch.")
+            source_kind = "illustrator-rendered-png"
+            editable_source_url = provenance["source_url"]
+            source_metadata = {
+                "replacement_source_path": provenance["rendered_path"],
+                "source_asset_path": provenance["source_path"],
+                "source_asset_sha256": provenance["source_sha256"],
+                "replaces_google_doc_source": asset.source_name,
+            }
+        elif asset.source_name in derived:
             crop = derived[asset.source_name]
             if sha256(source) != crop["source_sha256"]:
                 raise RuntimeError(
@@ -460,6 +534,8 @@ def copy_assets(extracted: dict[str, Path], export_date: str) -> None:
 def render_figure(source_name: str) -> str:
     if source_name == "image9.png":
         return render_mesoscope_laser_power_table()
+    if source_name == "image6.png":
+        return BEHAVIOR_VIEWER_BLOCK
 
     asset = ASSET_BY_SOURCE[source_name]
     if asset.status == "removed":
@@ -507,26 +583,6 @@ def render_mesoscope_laser_power_table() -> str:
         lines.append(
             f"| {depth} | {row['laser_power_min_mw']} | {row['laser_power_max_mw']} |"
         )
-    lines.append(":::")
-    return "\n".join(lines)
-
-
-def render_other_studies_table() -> str:
-    rows = load_other_studies_rows()
-
-    def cell(value: str) -> str:
-        return value.replace("|", r"\|").replace("\n", "<br />")
-
-    lines = [
-        ":::{table} Supplementary Table 1. Published oddball paradigms and sampling parameters.",
-        ":label: table-supplementary-oddball-studies",
-        ":enumerated: false",
-        ":class: table-accent table-other-studies",
-        "",
-        f"| {' | '.join(cell(value) for value in rows[0])} |",
-        f"| {' | '.join('---' for _ in rows[0])} |",
-    ]
-    lines.extend(f"| {' | '.join(cell(value) for value in row)} |" for row in rows[1:])
     lines.append(":::")
     return "\n".join(lines)
 
@@ -741,7 +797,7 @@ def replace_supplementary_text(markdown: str) -> str:
     pattern = re.compile(r"# Supplementary Text 1:.*\Z", re.DOTALL)
     if pattern.search(markdown) is None:
         raise RuntimeError("Expected Supplementary Text 1 was not found.")
-    table = render_other_studies_table()
+    load_other_studies_rows()
     replacement = "\n\n".join(
         [
             "# Supplementary Text 1: Published oddball paradigms and sampling ranges",
@@ -751,7 +807,7 @@ def replace_supplementary_text(markdown: str) -> str:
                 "stimulus design, timing, sample size, recording method, statistical "
                 "test, habituation, and sampling."
             ),
-            table,
+            OTHER_STUDIES_BLOCK,
             (
                 "The paradigms span visuomotor decoupling and local or global "
                 "deviations in visual sequences. Three studies used two-photon "
@@ -891,9 +947,23 @@ def move_glossary_to_end(markdown: str) -> str:
     return f"{without_glossary.rstrip()}\n\n{glossary}\n"
 
 
+def replace_behavior_analysis_text(markdown: str) -> str:
+    draft = """## Behavioral data analysis across modalities
+
+- Running
+
+- Pupil
+
+- Motion energy of the face?"""
+    if markdown.count(draft) != 1:
+        raise RuntimeError("Expected one draft behavioral-analysis section.")
+    return markdown.replace(draft, BEHAVIOR_ANALYSIS_DESCRIPTION, 1)
+
+
 def build_index(markdown: str) -> str:
     markdown = replace_images(markdown)
     markdown = normalize_known_export_artifacts(markdown)
+    markdown = replace_behavior_analysis_text(markdown)
     markdown = relocate_supplementary_implant_figure(markdown)
     markdown = move_glossary_to_end(markdown)
     interactive_anchor = (

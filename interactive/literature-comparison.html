@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Published oddball paradigms comparison</title>
+  <style>
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Source+Sans+3:wght@400;500;600;700&display=swap");
+
+:root {
+  color-scheme: light;
+  --ink: #303536;
+  --muted: #6e7472;
+  --line: #d0d4d2;
+  --soft-line: #e4e6e5;
+  --paper: #fff;
+  --wash: #f6f7f7;
+  --accent: #496375;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  min-width: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Source Sans 3", "Avenir Next", sans-serif;
+}
+
+button,
+input,
+select { font: inherit; }
+
+.viewer {
+  width: 100%;
+  min-height: 100vh;
+  padding: 12px;
+}
+
+.viewer-header {
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+  background: #f7f8f8;
+}
+
+.mode-tabs {
+  min-height: 46px;
+  display: flex;
+  align-items: end;
+  gap: 3px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mode-tab {
+  position: relative;
+  min-height: 45px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.mode-tab::after {
+  position: absolute;
+  right: 12px;
+  bottom: -1px;
+  left: 12px;
+  height: 3px;
+  background: transparent;
+  content: "";
+}
+
+.mode-tab.active { color: var(--ink); }
+.mode-tab.active::after { background: var(--accent); }
+.mode-tab:focus-visible { outline: 3px solid rgba(73, 99, 117, 0.18); outline-offset: -3px; }
+
+.viewer-tools {
+  min-height: 58px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr) minmax(180px, 0.8fr) auto auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.select-label {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.viewer-tools select,
+.viewer-tools input,
+.viewer-tools a {
+  min-height: 36px;
+  border: 1px solid #c6cbca;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.viewer-tools select,
+.viewer-tools input { min-width: 0; padding: 6px 9px; }
+.viewer-tools select:focus,
+.viewer-tools input:focus,
+.viewer-tools a:focus-visible { border-color: var(--accent); outline: 3px solid rgba(73, 99, 117, 0.16); outline-offset: 1px; }
+
+#row-count { min-width: 54px; color: var(--muted); font-size: 0.76rem; text-align: right; white-space: nowrap; }
+
+#download-csv {
+  padding: 5px 9px;
+  display: grid;
+  place-items: center;
+  background: #f0f2f2;
+  color: var(--accent);
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  text-decoration: none;
+}
+#download-csv:hover { background: #e6e9e8; }
+
+.table-shell {
+  max-height: 470px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 0 0 5px 5px;
+  background: #fff;
+}
+
+table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.84rem; line-height: 1.4; }
+th,
+td { padding: 10px 12px; border-right: 1px solid var(--soft-line); border-bottom: 1px solid var(--soft-line); text-align: left; vertical-align: top; }
+th:last-child,
+td:last-child { border-right: 0; }
+thead th { position: sticky; z-index: 2; top: 0; background: #4b5052; color: #fff; font-weight: 600; }
+tbody tr:nth-child(even) td { background: var(--wash); }
+tbody tr:hover td { background: #ecefee; }
+tbody td:first-child { width: 26%; min-width: 170px; font-weight: 600; }
+.empty-state { margin: 0; padding: 2rem; color: var(--muted); text-align: center; }
+
+@media (max-width: 640px) {
+  .viewer { padding: 8px; }
+  .mode-tab { padding-right: 9px; padding-left: 9px; font-size: 0.8rem; }
+  .viewer-tools { grid-template-columns: auto 1fr auto; }
+  .select-label { grid-column: 1; }
+  #dimension-select { grid-column: 2 / -1; }
+  #row-search { grid-column: 1 / -1; }
+  #row-count { text-align: left; }
+  .table-shell { max-height: 590px; }
+  tbody td:first-child { min-width: 120px; }
+}
+
+  </style>
+</head>
+<body>
+  <main class="viewer" id="literature-comparison">
+    <header class="viewer-header">
+      <nav class="mode-tabs" id="mode-tabs" aria-label="Comparison mode">
+        <button type="button" class="mode-tab active" data-mode="parameter" aria-pressed="true">Compare parameter</button>
+        <button type="button" class="mode-tab" data-mode="study" aria-pressed="false">Study profile</button>
+      </nav>
+      <div class="viewer-tools" role="search">
+        <label class="select-label" for="dimension-select" id="dimension-label">Parameter</label>
+        <select id="dimension-select" aria-labelledby="dimension-label"></select>
+        <input id="row-search" type="search" placeholder="Filter studies" aria-label="Filter visible rows">
+        <output id="row-count" aria-live="polite"></output>
+        <a id="download-csv" href="#" download title="Download visible rows as CSV" aria-label="Download visible rows as CSV">&#8595; CSV</a>
+      </div>
+    </header>
+    <section class="table-shell" aria-live="polite">
+      <table id="comparison-table">
+        <thead><tr id="table-headers"></tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <p class="empty-state" id="empty-state" hidden>No matching rows.</p>
+    </section>
+  </main>
+  <script id="literature-data" type="application/json">{"studies":["Attinger et al 2017","Homann et al 2022","Bastos et al 2023","Knudstrup et al 2025","Westerberg et al 2025"],"parameters":["Type of stimulus","Type of oddball","Temporal parameters","Spatial parameters","Species","Nb of subjects","Session duration","Nb of mismatches","Recording technique","% responsive neurons","Test of significance","Habituation","Nb of oddball repeats required","Oddball rate (0-1)","Time per oddball repeated sequence (s)","Total oddball time (s)"],"values":[["Drifting gratings coupled to movement","Superimposed Gabor patches in a sequence","Drifting gratings in a sequence","Static gratings in a sequence","Drifting gratings in a sequence"],["Drifting gratings decoupled from movement","Final image in sequence replaced with novel image","Deviant grating in sequence of repeated gratings","Second grating in sequence replaced by deviant grating","Local: Final grating in sequence different from preceding ones\nGlobal: Final grating in sequence different from established sequence"],["Oddball: 15 sec at random","Sequence: 4 images, 250 or 300 ms ON\nOddball: Every 6 seconds","Sequence: Repeated gratings, drifting at 2 cycles/sec., 500 ms ON, 1 sec OFF\nOddball: 12.5% of gratings","Sequence: Repeated gratings, 75 ms to 2 sec ON, 0 or 1.5 sec OFF\nOddball: Different frequencies and spacings tested","Sequence: 4 gratings, drifting at 4 cycles/sec., 500ms ON, 500 ms OFF, 4500 ms per sequence"],["Vertical, full screen gratings, 0.04 cycles/deg.","Each image: 100 superimposed Gabor patches, 10-20 deg. in size with random orientation and phase.","Full field gratings, 8 grating orientations, 0.08 cycles/deg.","4 grating orientations, 0.5 cycles/deg.","Full screen gratings, 0.04 cycles/deg."],["Mouse","Mouse","Mouse","Mouse","Mouse and primate"],["3-6 per group","5","4-9 per group","14","7-9 per group"],["3x 500s","10min-1h","6 min","10 min","2h"],["3x 33","100 per condition","10 per condition","450 standard, 50 deviant","100 (global)"],["Two-photon","Two-photon","Two-photon","LFP","Neuropixels"],["26-40%","77%","10% (PYR)","N/A","50-62 % (local oddball), 3-9% (global oddball)"],["Mann-Whitney U test between average in response window vs. randomized window","Z-score significance test on change in response to novelty","Paired two-tailed t-test between control and oddball","Non-parametric test on a bootstrapped distribution","Cluster-based permutation test. against control"],["6 sessions, 2h/day","0 sessions","3 sessions","0 sessions","5 sessions"],["33","100","10","50","144"],["0.07","0.1666666667","0.125","0.1","0.2"],["495","600","160","400","3600"],["495","600","1440","400","3600"]]}</script>
+  <script>
+(() => {
+  "use strict";
+
+  const data = JSON.parse(document.getElementById("literature-data").textContent);
+  const elements = {
+    body: document.getElementById("table-body"),
+    dimension: document.getElementById("dimension-select"),
+    dimensionLabel: document.getElementById("dimension-label"),
+    download: document.getElementById("download-csv"),
+    empty: document.getElementById("empty-state"),
+    headers: document.getElementById("table-headers"),
+    rowCount: document.getElementById("row-count"),
+    search: document.getElementById("row-search"),
+    tabs: document.getElementById("mode-tabs"),
+  };
+  const state = { mode: "parameter", visibleRows: [] };
+
+  function normalize(value) {
+    return String(value ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+  }
+
+  function csvCell(value) {
+    return `"${String(value).replaceAll('"', '""')}"`;
+  }
+
+  function setOptions() {
+    elements.dimension.replaceChildren();
+    const values = state.mode === "parameter" ? data.parameters : data.studies;
+    values.forEach((value) => elements.dimension.append(new Option(value, value)));
+    elements.dimensionLabel.textContent = state.mode === "parameter" ? "Parameter" : "Study";
+    elements.search.placeholder = state.mode === "parameter" ? "Filter studies" : "Filter parameters";
+  }
+
+  function rowsForMode() {
+    if (state.mode === "parameter") {
+      const parameterIndex = data.parameters.indexOf(elements.dimension.value);
+      return data.studies.map((study, studyIndex) => [
+        study,
+        data.values[parameterIndex][studyIndex],
+      ]);
+    }
+    const studyIndex = data.studies.indexOf(elements.dimension.value);
+    return data.parameters.map((parameter, parameterIndex) => [
+      parameter,
+      data.values[parameterIndex][studyIndex],
+    ]);
+  }
+
+  function headersForMode() {
+    return state.mode === "parameter"
+      ? ["Publication", elements.dimension.value]
+      : ["Parameter", elements.dimension.value];
+  }
+
+  function render() {
+    const query = normalize(elements.search.value);
+    const rows = rowsForMode();
+    state.visibleRows = rows.filter((row) => !query || normalize(row.join(" ")).includes(query));
+
+    elements.headers.replaceChildren();
+    headersForMode().forEach((header) => {
+      const cell = document.createElement("th");
+      cell.scope = "col";
+      cell.textContent = header;
+      elements.headers.append(cell);
+    });
+
+    elements.body.replaceChildren();
+    state.visibleRows.forEach((row) => {
+      const tableRow = document.createElement("tr");
+      row.forEach((value) => {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        tableRow.append(cell);
+      });
+      elements.body.append(tableRow);
+    });
+
+    elements.rowCount.textContent = `${state.visibleRows.length} of ${rows.length}`;
+    elements.empty.hidden = state.visibleRows.length !== 0;
+    const csv = [headersForMode(), ...state.visibleRows]
+      .map((row) => row.map(csvCell).join(","))
+      .join("\n");
+    elements.download.href = `data:text/csv;charset=utf-8,%EF%BB%BF${encodeURIComponent(csv)}`;
+    elements.download.download = `openscope-oddball-studies-${state.mode}.csv`;
+  }
+
+  function selectMode(mode) {
+    state.mode = mode;
+    elements.search.value = "";
+    elements.tabs.querySelectorAll("button").forEach((button) => {
+      const active = button.dataset.mode === mode;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    setOptions();
+    render();
+  }
+
+  elements.tabs.querySelectorAll("button").forEach((button) => {
+    button.addEventListener("click", () => selectMode(button.dataset.mode));
+  });
+  elements.dimension.addEventListener("change", render);
+  elements.search.addEventListener("input", render);
+  selectMode("parameter");
+})();
+
+  </script>
+</body>
+</html>

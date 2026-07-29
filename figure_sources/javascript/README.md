@@ -20,10 +20,25 @@ The data explorer follows the same generated-asset pattern:
 
 The explorer normalizes grouped manuscript rows into individual records: mouse metadata comes from the versioned worksheet snapshot in `figure_sources/data/experimental-animals.csv`, while individual session rows are expanded from the grouped session IDs in the manuscript.
 
+The synchronized behavior viewer is split into:
+
+- `behavior-viewer.html`: modality, camera, video, stimulus, and wheel-trace structure.
+- `behavior-viewer.css`: publication-width and mobile layouts.
+- `behavior-viewer.js`: S3 video seeking, shared playback state, stimulus reconstruction, and trace rendering.
+
+`figure_sources/data/behavior-excerpts.json` contains compact event-centered traces and stimulus rows for one real Neuropixels, mesoscope, and SLAP2 session. Camera MP4 files are not copied into the repository; the viewer range-streams them from the public `aind-open-data` bucket. Neuropixels and mesoscope use 100-kHz camera exposure/readout edges from each raw sync file; reported dropped frame IDs are removed before hardware frame indices are mapped to the MP4 60-fps presentation timeline. SLAP2 uses the per-frame `CameraFrameTime` Harp timestamps and maps those frame indices to the MP4 30-fps timeline. Source URLs, NWB SHA-256 values, camera ETags, and small-source SHA-256 values are included in the payload.
+
+Regenerate the behavior payload from its public sources with:
+
+```bash
+uv run --no-project --with h5py --with harp-python==0.4.1 --with numpy --with remfile \
+	python scripts/extract_behavior_excerpts.py
+```
+
 Build the committed HTML and static SVG fallback with:
 
 ```bash
 uv run build-publication-figures
 ```
 
-Do not edit `interactive/experimental-design.html` directly; it is generated and checked for drift in CI.
+Do not edit files under `interactive/` directly; they are generated and checked for drift in CI.

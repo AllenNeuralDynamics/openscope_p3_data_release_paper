@@ -974,18 +974,43 @@ Draft plan for basic stimulus characterization across recording modalities.
 
 ## Behavioral data analysis across modalities
 
-- Running
+For sessions with camera acquisition, the release includes continuous raw
+behavioral videos together with synchronized running-wheel signals, processed
+eye-tracking outputs, and stimulus-presentation intervals. Depending on the
+recording platform, the available views include body or behavior, face, eye,
+and nose cameras. The synchronized multimodal examples in
+[](#fig-behavior-tracking) show these streams alongside the wheel signal and
+current stimulus state. Existing NWB products provide wheel rotation and
+running speed, plus pupil, corneal-reflection, and eye-ellipse fits with
+likely-blink flags. The underlying videos remain available so investigators can
+derive additional behavioral measurements while preserving alignment to the
+stimulus and neural or imaging data.
 
-- Pupil
+These synchronized videos are therefore open to more sophisticated reanalysis,
+including markerless pose and keypoint tracking with
+[DeepLabCut](https://github.com/DeepLabCut/DeepLabCut),
+[SLEAP](https://sleap.ai/), [Lightning Pose](https://lightning-pose.readthedocs.io/),
+or other computer-vision methods. Potential derived features include facial and
+body motion energy, posture, grooming, locomotor state, pupil dynamics, and
+trial-resolved behavioral responses. Camera frames are tied to the acquisition
+clock through 100-kHz exposure or readout edges for Neuropixels and mesoscope
+sessions and per-frame Harp timestamps for SLAP2, allowing newly derived
+features to be registered to wheel, stimulus, electrophysiology, and imaging
+signals.
 
-- Motion energy of the face?
-
-:::{figure} ./images/figures/imported/figure-06-behavior-tracking-plan.png
-:label: fig-behavior-tracking-plan
-:alt: Placeholder slide titled Behavior tracking across all modalities.
+:::{iframe} ./interactive/behavior-viewer.html
+:label: fig-behavior-tracking
 :width: 100%
+:title: Synchronized behavior, locomotion, and visual stimuli across recording modalities
 
-Placeholder for behavior tracking across recording modalities.
+Event-centered excerpts from real Neuropixels, mesoscope, and SLAP2 recording
+sessions. Behavior-camera video is range-streamed from the public
+`aind-open-data` S3 bucket. The wheel trace and visual-stimulus state use the
+same session clock. Neuropixels and mesoscope camera frames are mapped from
+100-kHz exposure/readout edges in each sync file, including reported dropped
+frames; SLAP2 uses per-frame Harp timestamps. Camera and source selectors expose
+the underlying public data without bundling multi-gigabyte videos into the
+publication.
 :::
 
 ## Stimulus-evoked responses: oddball across modalities
@@ -1292,51 +1317,27 @@ Importantly, if the outlined paradigms show the same essential distribution of f
 **Supplementary Figure 1.** Neuropixels implant geometry and planned probe trajectories. **A,** Six trajectories (A-F) through the Allen Mouse Brain Common Coordinate Framework. **B,** Atlas structures intersected by each trajectory. **C,** Anteroposterior and mediolateral coordinates relative to bregma with implant-hole diameters D1 and D2. **D,** Top view of the implant with labeled probe-access holes.
 :::
 
-:::{figure} ./images/figures/imported/supplementary-neuropixels-targeting.png
-:label: fig-supp-neuropixels-targeting
-:alt: Neuropixels implant hole positions, stereotaxic coordinates, diameters, and targets.
-:enumerated: false
-:width: 100%
-
-**Supplementary Figure 2.** Neuropixels implant geometry and intended anatomical targets.
-:::
-
 :::{figure} ./images/figures/imported/supplementary-neuropixels-unit-yield.png
 :label: fig-supp-neuropixels-unit-yield
 :alt: Unit yield over four recording days for three Neuropixels probes in six mice.
 :enumerated: false
 :width: 100%
 
-**Supplementary Figure 3.** Example Neuropixels unit yield across recording days.
+**Supplementary Figure 2.** Example Neuropixels unit yield across recording days.
 :::
 
 # Supplementary Text 1: Published oddball paradigms and sampling ranges
 
 [Supplementary Table 1](#table-supplementary-oddball-studies) compares five published visual oddball paradigms with respect to stimulus design, timing, sample size, recording method, statistical test, habituation, and sampling.
 
-:::{table} Supplementary Table 1. Published oddball paradigms and sampling parameters.
+:::{iframe} ./interactive/literature-comparison.html
 :label: table-supplementary-oddball-studies
-:enumerated: false
-:class: table-accent table-other-studies
+:width: 100%
+:title: Supplementary Table 1. Published oddball paradigms and sampling parameters.
 
-| Publication | Attinger et al 2017 | Homann et al 2022 | Bastos et al 2023 | Knudstrup et al 2025 | Westerberg et al 2025 |
-| --- | --- | --- | --- | --- | --- |
-| Type of stimulus | Drifting gratings coupled to movement | Superimposed Gabor patches in a sequence | Drifting gratings in a sequence | Static gratings in a sequence | Drifting gratings in a sequence |
-| Type of oddball | Drifting gratings decoupled from movement | Final image in sequence replaced with novel image | Deviant grating in sequence of repeated gratings | Second grating in sequence replaced by deviant grating | Local: Final grating in sequence different from preceding ones<br />Global: Final grating in sequence different from established sequence |
-| Temporal parameters | Oddball: 15 sec at random | Sequence: 4 images, 250 or 300 ms ON<br />Oddball: Every 6 seconds | Sequence: Repeated gratings, drifting at 2 cycles/sec., 500 ms ON, 1 sec OFF<br />Oddball: 12.5% of gratings | Sequence: Repeated gratings, 75 ms to 2 sec ON, 0 or 1.5 sec OFF<br />Oddball: Different frequencies and spacings tested | Sequence: 4 gratings, drifting at 4 cycles/sec., 500ms ON, 500 ms OFF, 4500 ms per sequence |
-| Spatial parameters | Vertical, full screen gratings, 0.04 cycles/deg. | Each image: 100 superimposed Gabor patches, 10-20 deg. in size with random orientation and phase. | Full field gratings, 8 grating orientations, 0.08 cycles/deg. | 4 grating orientations, 0.5 cycles/deg. | Full screen gratings, 0.04 cycles/deg. |
-| Species | Mouse | Mouse | Mouse | Mouse | Mouse and primate |
-| Nb of subjects | 3-6 per group | 5 | 4-9 per group | 14 | 7-9 per group |
-| Session duration | 3x 500s | 10min-1h | 6 min | 10 min | 2h |
-| Nb of mismatches | 3x 33 | 100 per condition | 10 per condition | 450 standard, 50 deviant | 100 (global) |
-| Recording technique | Two-photon | Two-photon | Two-photon | LFP | Neuropixels |
-| % responsive neurons | 26-40% | 77% | 10% (PYR) | N/A | 50-62 % (local oddball), 3-9% (global oddball) |
-| Test of significance | Mann-Whitney U test between average in response window vs. randomized window | Z-score significance test on change in response to novelty | Paired two-tailed t-test between control and oddball | Non-parametric test on a bootstrapped distribution | Cluster-based permutation test. against control |
-| Habituation | 6 sessions, 2h/day | 0 sessions | 3 sessions | 0 sessions | 5 sessions |
-| Nb of oddball repeats required | 33 | 100 | 10 | 50 | 144 |
-| Oddball rate (0-1) | 0.07 | 0.1666666667 | 0.125 | 0.1 | 0.2 |
-| Time per oddball repeated sequence (s) | 495 | 600 | 160 | 400 | 3600 |
-| Total oddball time (s) | 495 | 600 | 1440 | 400 | 3600 |
+Compare one paradigm parameter across all studies or inspect the complete
+profile of one study. Search filters the visible records in either view, and
+CSV export contains exactly the displayed subset.
 :::
 
 The paradigms span visuomotor decoupling and local or global deviations in visual sequences. Three studies used two-photon calcium imaging, one used local field potentials, and one used Neuropixels recordings.

@@ -36,6 +36,12 @@ def test_imported_figure_manifest_matches_files() -> None:
     )
     assert laser_power_source["status"] == "source-only"
 
+    behavior_source = next(
+        asset for asset in manifest["assets"]
+        if asset["filename"] == "figure-06-behavior-tracking-plan.png"
+    )
+    assert behavior_source["status"] == "source-only"
+
     implant = next(
         asset for asset in manifest["assets"]
         if asset["filename"] == "supplementary-neuropixels-implant-trajectories.png"
@@ -48,10 +54,22 @@ def test_imported_figure_manifest_matches_files() -> None:
     assert implant["replaces_google_doc_source"] == "image14.png"
 
     removed = {asset["source_name"] for asset in manifest["assets"] if asset["status"] == "removed"}
-    assert removed == {"image1.png", "image2.png", "image7.png"}
+    assert removed == {"image1.png", "image2.png", "image7.png", "image11.png"}
+
+    figure_one = next(
+        asset for asset in manifest["assets"]
+        if asset["filename"] == "figure-01-graphical-abstract.png"
+    )
+    assert figure_one["source_kind"] == "illustrator-rendered-png"
+    assert figure_one["source_asset_sha256"] == (
+        "85306f647bee704c66332cc26924a0b7e77b99449016bd7271b94d072e5112be"
+    )
+    assert figure_one["sha256"] == (
+        "40ee64ef312cd9b2915ac7bcc8b748cdeee8e455edbf94c334bbfc3e50fba334"
+    )
+    assert png_dimensions(REPO_ROOT / figure_one["path"]) == (3200, 2400)
 
     expected_crops = {
-        "figure-01-graphical-abstract.png": ([340, 190, 1340, 960], (1000, 770)),
         "figure-02-experimental-design.png": ([20, 55, 2040, 835], (2020, 780)),
         "figure-03-multimodal-pipelines.png": ([45, 70, 1600, 965], (1555, 895)),
     }
@@ -75,8 +93,8 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
-    assert len(figures) == 10
-    assert manuscript.count(":::{figure} ./images/figures/imported/") == 10
+    assert len(figures) == 8
+    assert manuscript.count(":::{figure} ./images/figures/imported/") == 8
     assert manuscript.count(":::{figure} ./images/figures/generated/") == 0
     for options in figures:
         assert ":label:" in options
@@ -157,20 +175,27 @@ def test_supplementary_studies_table_is_complete() -> None:
 
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     assert ":label: table-supplementary-oddball-studies" in manuscript
+    assert "./interactive/literature-comparison.html" in manuscript
     assert "Supplementary Text 1: Published oddball paradigms" in manuscript
-    assert "Attinger et al 2017" in manuscript
-    assert "Westerberg et al 2025" in manuscript
     assert "Reported oddball probabilities ranged from 0.07 to 0.20" in manuscript
+
+    comparison = (REPO_ROOT / "interactive" / "literature-comparison.html").read_text(
+        encoding="utf-8"
+    )
+    assert "Attinger et al 2017" in comparison
+    assert "Westerberg et al 2025" in comparison
+    assert "Compare parameter" in comparison
+    assert "Study profile" in comparison
 
 
 def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
-    for number in range(1, 4):
+    for number in range(1, 3):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
-    assert manuscript.count(":enumerated: false\n:width: 100%") >= 3
+    assert manuscript.count(":enumerated: false\n:width: 100%") >= 2
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
-    assert "supplementary-neuropixels-targeting.png" in manuscript
+    assert "supplementary-neuropixels-targeting.png" not in manuscript
     assert "figure-11-analysis-framework.png" not in manuscript
     assert "fig-supp-power-simulation-trials" not in manuscript
     assert "fig-supp-power-simulation-sessions" not in manuscript
@@ -221,6 +246,17 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "**A,** Animals progressed from surgery" in manuscript
     assert "Rows summarize Neuropixels, mesoscope two-photon" in manuscript
     assert "Interactive record-level inventory of 39 mice and 164 recording sessions" in manuscript
+    assert "./interactive/behavior-viewer.html" in manuscript
+    assert "Event-centered excerpts from real Neuropixels" in manuscript
+    assert "figure-06-behavior-tracking-plan.png" not in manuscript
+    assert "continuous raw\nbehavioral videos" in manuscript
+    assert "[](#fig-behavior-tracking) show these streams" in manuscript
+    assert "DeepLabCut" in manuscript
+    assert "SLEAP" in manuscript
+    assert "Lightning Pose" in manuscript
+    assert "facial and\nbody motion energy" in manuscript
+    assert "per-frame Harp timestamps for SLAP2" in manuscript
+    assert "- Motion energy of the face?" not in manuscript
 
     figure_2 = manuscript.index(":label: fig-experimental-design")
     explanation = manuscript.index("The four distinct session contexts")
@@ -236,6 +272,9 @@ def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:
     assert "minmax(10ch, 20ch)" in stylesheet
     assert "#fig-graphical-abstract" in stylesheet
     assert "#fig-experimental-design" in stylesheet
+    assert "article > figure.table-hover-source" in stylesheet
+    assert ".hover-card-content:has(.table-hover-source) .hover-document" in stylesheet
+    assert "max-height: min(460px, calc(100vh - 2rem))" in stylesheet
 
 
 def test_docx_text_formatting_artifacts_are_normalized() -> None:

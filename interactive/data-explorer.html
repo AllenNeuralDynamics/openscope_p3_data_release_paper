@@ -10,14 +10,14 @@
 
 :root {
   color-scheme: light;
-  --ink: #26342e;
-  --muted: #65736d;
-  --line: #cbd8d3;
-  --soft-line: #dce5e1;
+  --ink: #303536;
+  --muted: #6e7472;
+  --line: #d0d4d2;
+  --soft-line: #e4e6e5;
   --paper: #fff;
-  --wash: #f2f7f5;
-  --teal: #225d57;
-  --teal-dark: #174641;
+  --wash: #f6f7f7;
+  --teal: #496375;
+  --teal-dark: #30383c;
 }
 
 * {
@@ -49,7 +49,7 @@ select {
   border: 1px solid var(--line);
   border-bottom: 0;
   border-radius: 5px 5px 0 0;
-  background: #f8faf9;
+  background: #f7f8f8;
 }
 
 .dataset-tabs {
@@ -98,7 +98,7 @@ select {
 }
 
 .dataset-tab:focus-visible {
-  outline: 3px solid rgba(34, 93, 87, 0.18);
+  outline: 3px solid rgba(73, 99, 117, 0.18);
   outline-offset: -3px;
 }
 
@@ -115,7 +115,7 @@ select {
 .table-tools select,
 .table-tools a {
   min-height: 36px;
-  border: 1px solid #b8c9c3;
+  border: 1px solid #c6cbca;
   border-radius: 4px;
   background: #fff;
   color: var(--ink);
@@ -132,7 +132,7 @@ select {
 .table-tools select:focus,
 .table-tools a:focus-visible {
   border-color: var(--teal);
-  outline: 3px solid rgba(34, 93, 87, 0.16);
+  outline: 3px solid rgba(73, 99, 117, 0.16);
   outline-offset: 1px;
 }
 
@@ -149,7 +149,7 @@ select {
   display: grid;
   place-items: center;
   cursor: pointer;
-  background: #e8f2ef;
+  background: #f0f2f2;
   color: var(--teal);
   font-family: "IBM Plex Mono", monospace;
   font-weight: 600;
@@ -157,7 +157,7 @@ select {
 }
 
 #download-csv:hover {
-  background: #d8e8e3;
+  background: #e6e9e8;
 }
 
 .table-shell {
@@ -195,7 +195,7 @@ thead th {
   position: sticky;
   z-index: 2;
   top: 0;
-  background: var(--teal);
+  background: #4b5052;
   color: #fff;
   font-weight: 650;
 }
@@ -205,7 +205,7 @@ tbody tr:nth-child(even) td {
 }
 
 tbody tr:hover td {
-  background: #e5f0ec;
+  background: #ecefee;
 }
 
 tbody td:first-child {
@@ -213,15 +213,15 @@ tbody td:first-child {
 }
 
 tr.modality-mesoscope td:first-child {
-  border-left: 4px solid #2b83ba;
+  border-left: 4px solid #9ea5a2;
 }
 
 tr.modality-neuropixels td:first-child {
-  border-left: 4px solid #d06b4f;
+  border-left: 4px solid #9ea5a2;
 }
 
 tr.modality-slap2 td:first-child {
-  border-left: 4px solid #7b6fa8;
+  border-left: 4px solid #9ea5a2;
 }
 
 .id-disclosure {
@@ -231,7 +231,7 @@ tr.modality-slap2 td:first-child {
 .id-disclosure summary {
   width: max-content;
   cursor: pointer;
-  color: #286b64;
+  color: #496375;
   font-weight: 650;
   white-space: nowrap;
 }
@@ -240,9 +240,9 @@ tr.modality-slap2 td:first-child {
   max-width: 340px;
   margin-top: 7px;
   padding: 8px;
-  border-left: 3px solid #91b8ae;
-  background: #f4f8f6;
-  color: #47564f;
+  border-left: 3px solid #b5bab8;
+  background: #f7f8f8;
+  color: #4d5351;
   font-size: 0.72rem;
   font-weight: 400;
   line-height: 1.5;
@@ -251,7 +251,7 @@ tr.modality-slap2 td:first-child {
 
 .metadata-list dt {
   margin-top: 0.38rem;
-  color: #65736d;
+  color: #707674;
   font-size: 0.64rem;
   font-weight: 650;
   letter-spacing: 0.03em;

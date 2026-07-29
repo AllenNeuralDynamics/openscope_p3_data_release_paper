@@ -25,7 +25,7 @@
 
   const sessionLabels = ["Oddball", "Sensorimotor", "Sequence", "Duration"];
   const blockLabels = ["C1", "Context", "C1", "C2", "C3", "C4", "Movie", "RF"];
-  const blockColors = ["#dceaf3", "#dceee9", "#dceaf3", "#ececec", "#f5e6d9", "#e4e3f5", "#e7eadf", "#f2f2c8"];
+  const blockColors = ["#ffffff", "#202322", "#ffffff", "#eeeeee", "#d7d9d8", "#bfc3c1", "#8d9390", "#f5f5f5"];
   const state = {
     blockIndex: 1,
     elapsed: 0,
@@ -195,10 +195,15 @@
     const row = excerpt.rows[low];
     const withinRow = excerptTime - row.start;
     const visible = withinRow < row.duration;
-    const numericPhase = Number(row.phase);
-    let phaseCycles = Number.isFinite(numericPhase) ? numericPhase : 0;
+    let phaseCycles = row.phaseCycles ?? 0;
     if (row.phase === "wheel" && row.temporalFrequency === 0) {
       phaseCycles = representativeWheelPhase(state.elapsed);
+    } else if (row.trialType === "prerecorded") {
+      const nextRow = excerpt.rows[Math.min(low + 1, excerpt.rows.length - 1)];
+      const fraction = row.duration > 0
+        ? Math.min(1, withinRow / row.duration)
+        : 0;
+      phaseCycles += ((nextRow.phaseCycles ?? phaseCycles) - phaseCycles) * fraction;
     } else {
       phaseCycles -= withinRow * row.temporalFrequency;
     }
@@ -210,9 +215,12 @@
           radius: Math.min(row.diameterX, row.diameterY) / 2,
         }
       : undefined;
+    const label = row.trialType === "prerecorded"
+      ? `Open-loop playback · source T${excerpt.sourceTrialStart}–${excerpt.sourceTrialEnd}`
+      : `T${row.trialNumber} · ${trialType} · ${contextSelected ? "shuffled " : ""}source`;
     return {
       contrast: visible ? row.contrast : 0,
-      label: `T${row.trialNumber} · ${trialType} · ${contextSelected ? "shuffled " : ""}source`,
+      label,
       mismatch: row.isMismatch,
       orientation: row.orientation,
       patch,
@@ -289,7 +297,7 @@
 
   function drawFrame() {
     if (currentBlock().name === "Natural movie") {
-      elements.trialLabel.textContent = "Canonical zebra movie · real source excerpt";
+      elements.trialLabel.textContent = "Canonical zebra-noise movie · real source excerpt";
       elements.mismatchBadge.hidden = true;
     } else {
       const spec = stimulusSpec();

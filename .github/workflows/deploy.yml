@@ -54,6 +54,8 @@ jobs:
         run: |
           node --check figure_sources/javascript/stimulus-viewer.js
           node --check figure_sources/javascript/data-explorer.js
+          node --check figure_sources/javascript/literature-comparison.js
+          node --check figure_sources/javascript/behavior-viewer.js
 
       - name: Install MyST
         run: npm install --global mystmd@1.10.1
@@ -65,6 +67,8 @@ jobs:
         run: |
           test -f _build/html/interactive/experimental-design.html
           test -f _build/html/interactive/data-explorer.html
+          test -f _build/html/interactive/literature-comparison.html
+          test -f _build/html/interactive/behavior-viewer.html
           test -f _build/html/interactive/zebra-stimulus-excerpt.m4v
           test -f _build/html/interactive/zebra-stimulus-poster.png
 

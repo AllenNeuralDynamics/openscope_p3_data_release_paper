@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Synchronized behavior across recording modalities</title>
+  <style>
+__BEHAVIOR_CSS__
+  </style>
+</head>
+<body>
+  <main class="viewer" id="behavior-viewer">
+    <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
+
+    <header class="session-header">
+      <div class="session-identity">
+        <p class="context-label" id="context-label"></p>
+        <h1 id="session-title"></h1>
+        <p class="alignment-label" id="alignment-label"></p>
+      </div>
+      <div class="source-links" id="source-links" aria-label="Data sources"></div>
+    </header>
+
+    <section class="media-grid" aria-label="Synchronized recording excerpt">
+      <div class="camera-panel">
+        <div class="camera-tabs" id="camera-selector" aria-label="Behavior camera"></div>
+        <div class="video-stage">
+          <video id="behavior-video" muted playsinline preload="metadata" aria-label="Recorded behavior video"></video>
+          <div class="video-overlay video-overlay-top">
+            <span id="camera-label"></span>
+            <span class="stream-status" id="stream-status" role="status">Loading S3 stream</span>
+          </div>
+          <div class="video-unavailable" id="video-unavailable" hidden>
+            <strong>Video stream unavailable</strong>
+            <span>The synchronized trace and stimulus remain active.</span>
+          </div>
+          <span class="event-badge" id="event-badge" hidden>Mismatch</span>
+          <button class="stage-play" id="stage-play" type="button" aria-label="Play synchronized excerpt" title="Play">
+            <span aria-hidden="true">&#9654;</span>
+          </button>
+        </div>
+      </div>
+
+      <aside class="stimulus-panel" aria-labelledby="stimulus-heading">
+        <div class="panel-heading">
+          <h2 id="stimulus-heading">Stimulus</h2>
+          <span id="trial-type"></span>
+        </div>
+        <canvas id="stimulus-canvas" width="360" height="225" role="img" aria-label="Reconstructed visual stimulus at the current recording time"></canvas>
+        <dl class="stimulus-details">
+          <div><dt>Trial</dt><dd id="trial-number">-</dd></div>
+          <div><dt>Orientation</dt><dd id="orientation-value">-</dd></div>
+          <div><dt>Spatial freq.</dt><dd id="spatial-frequency">-</dd></div>
+          <div><dt>Temporal freq.</dt><dd id="temporal-frequency">-</dd></div>
+        </dl>
+      </aside>
+    </section>
+
+    <section class="transport" aria-label="Playback controls">
+      <button id="play-toggle" type="button" aria-label="Play synchronized excerpt" title="Play">
+        <span id="play-icon" aria-hidden="true">&#9654;</span>
+      </button>
+      <input id="timeline" type="range" min="0" max="16" step="0.01" value="0" aria-label="Excerpt time">
+      <time id="playback-time">00:00.0 / 00:16.0</time>
+    </section>
+
+    <section class="trace-panel" aria-labelledby="trace-heading">
+      <div class="panel-heading trace-heading">
+        <div>
+          <h2 id="trace-heading">Running speed</h2>
+          <span id="trace-unit"></span>
+        </div>
+        <output id="trace-value" aria-live="off"></output>
+      </div>
+      <canvas id="trace-canvas" width="1200" height="190" role="img" aria-label="Wheel recording trace with synchronized playback cursor"></canvas>
+      <div class="event-key">
+        <span class="event-line" aria-hidden="true"></span>
+        <span id="event-label"></span>
+      </div>
+    </section>
+  </main>
+
+  <script id="behavior-data" type="application/json">__BEHAVIOR_DATA__</script>
+  <script>
+__BEHAVIOR_JS__
+  </script>
+</body>
+</html>

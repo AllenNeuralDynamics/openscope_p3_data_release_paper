@@ -2,15 +2,6 @@
   "version": 1,
   "derived_date": "2026-07-29",
   "assets": {
-    "image12.png": {
-      "output_path": "figure_sources/derived/figure-01-graphical-abstract-cropped.png",
-      "source_sha256": "9cc826d6d03eb5336803aa1af26f1e00c513499ebd8620599697533fb1bafcb9",
-      "sha256": "fca60447dea035cdb349f9ac8d834982d744211168973b8fbe52a146c1867735",
-      "crop_box_px": [340, 190, 1340, 960],
-      "source_dimensions_px": [2048, 1024],
-      "output_dimensions_px": [1000, 770],
-      "purpose": "Remove the embedded slide title and surrounding whitespace while retaining the scientific graphical abstract."
-    },
     "image10.png": {
       "output_path": "figure_sources/derived/figure-02-experimental-design-cropped.png",
       "source_sha256": "0bcff274658a86b01e196770db9cc69676d75aca63140c579bbd5150b88eca20",

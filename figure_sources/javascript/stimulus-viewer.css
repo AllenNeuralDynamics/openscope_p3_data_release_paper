@@ -141,6 +141,11 @@ input {
   object-fit: cover;
 }
 
+#stimulus-canvas[hidden],
+#stimulus-video[hidden] {
+  display: none !important;
+}
+
 .mismatch-badge {
   position: absolute;
   top: 12px;
@@ -235,11 +240,16 @@ input {
 }
 
 .block-tab.context {
-  background: color-mix(in srgb, var(--accent) 20%, white);
+  background: var(--accent);
+  color: #fff;
 }
 
 .block-tab.active::after {
-  background: var(--accent);
+  background: #111;
+}
+
+.block-tab.context.active::after {
+  background: #fff;
 }
 
 .block-tab:hover,

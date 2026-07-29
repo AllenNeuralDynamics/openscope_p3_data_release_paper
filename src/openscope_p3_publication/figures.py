@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 import re
 import shutil
 import xml.etree.ElementTree as ET
@@ -20,6 +21,11 @@ ANIMAL_RECORDS_PATH = DATA_DIR / "experimental-animals.csv"
 ANIMAL_RECORDS_PROVENANCE_PATH = DATA_DIR / "experimental-animals.provenance.json"
 INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "experimental-design.html"
 DATA_EXPLORER_OUTPUT = REPO_ROOT / "interactive" / "data-explorer.html"
+LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
+BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
+BEHAVIOR_EXCERPTS_PATH = DATA_DIR / "behavior-excerpts.json"
+OTHER_STUDIES_PATH = DATA_DIR / "other-oddball-studies.csv"
+OTHER_STUDIES_PROVENANCE_PATH = OTHER_STUDIES_PATH.with_suffix(".provenance.json")
 STATIC_OUTPUT = REPO_ROOT / "images" / "figures" / "generated" / "experimental-design.svg"
 MEDIA_DIR = REPO_ROOT / "figure_sources" / "media"
 ZEBRA_MOVIE_SOURCE = MEDIA_DIR / "zebra-stimulus-excerpt.m4v"
@@ -103,10 +109,27 @@ def normalize_stimulus_rows(
 ) -> tuple[list[dict], float]:
     rows = []
     elapsed = 0.0
+    previous_phase = None
+    unwrapped_phase = 0.0
     for source_row in source_rows:
         duration = float(source_row["Duration"] or 0)
         delay = float(source_row["Delay"] or 0)
         row_duration = duration + delay
+        try:
+            numeric_phase = float(source_row["Phase"])
+        except ValueError:
+            phase_cycles = None
+        else:
+            if previous_phase is None:
+                unwrapped_phase = numeric_phase
+            else:
+                delta = math.atan2(
+                    math.sin(numeric_phase - previous_phase),
+                    math.cos(numeric_phase - previous_phase),
+                )
+                unwrapped_phase += delta
+            previous_phase = numeric_phase
+            phase_cycles = unwrapped_phase / (2 * math.pi)
         rows.append(
             {
                 "contrast": float(source_row["Contrast"] or 0),
@@ -124,6 +147,7 @@ def normalize_stimulus_rows(
                 ),
                 "orientation": float(source_row["Orientation"] or 0),
                 "phase": source_row["Phase"],
+                "phaseCycles": phase_cycles,
                 "sequenceNumber": int(source_row["Sequence_Number"] or 0),
                 "sourceRow": int(source_row["Source_Row"]),
                 "spatialFrequency": float(source_row["Spatial_Frequency"] or 0),
@@ -270,6 +294,104 @@ def write_data_explorer_html(output: Path = DATA_EXPLORER_OUTPUT) -> Path:
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
         )
         .replace("__DATA_EXPLORER_JS__", javascript)
+    )
+    output.write_text(html, encoding="utf-8")
+    return output
+
+
+def write_literature_comparison_html(
+    output: Path = LITERATURE_COMPARISON_OUTPUT,
+) -> Path:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    provenance = json.loads(OTHER_STUDIES_PROVENANCE_PATH.read_text(encoding="utf-8"))
+    checksum = hashlib.sha256(OTHER_STUDIES_PATH.read_bytes()).hexdigest()
+    if checksum != provenance["vendored_sha256"]:
+        raise RuntimeError("Other-studies table checksum does not match its provenance.")
+    with OTHER_STUDIES_PATH.open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.reader(stream))
+    if len(rows) != provenance["rows"]:
+        raise RuntimeError("Other-studies table row count does not match its provenance.")
+    if not rows or {len(row) for row in rows} != {provenance["columns"]}:
+        raise RuntimeError("Other-studies table column count does not match its provenance.")
+    payload = {
+        "studies": rows[0][1:],
+        "parameters": [row[0] for row in rows[1:]],
+        "values": [row[1:] for row in rows[1:]],
+    }
+    template = (JAVASCRIPT_DIR / "literature-comparison.html").read_text(
+        encoding="utf-8"
+    )
+    stylesheet = (JAVASCRIPT_DIR / "literature-comparison.css").read_text(
+        encoding="utf-8"
+    )
+    javascript = (JAVASCRIPT_DIR / "literature-comparison.js").read_text(
+        encoding="utf-8"
+    )
+    html = (
+        template.replace("__LITERATURE_CSS__", stylesheet)
+        .replace(
+            "__LITERATURE_DATA__",
+            json.dumps(payload, ensure_ascii=True, separators=(",", ":")),
+        )
+        .replace("__LITERATURE_JS__", javascript)
+    )
+    output.write_text(html, encoding="utf-8")
+    return output
+
+
+def load_behavior_excerpts(path: Path = BEHAVIOR_EXCERPTS_PATH) -> dict:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("version") != 1 or payload.get("durationSeconds") != 16.0:
+        raise RuntimeError("Behavior excerpt schema or duration is not supported.")
+    sessions = payload.get("sessions", [])
+    if [session.get("id") for session in sessions] != [
+        "neuropixels",
+        "mesoscope",
+        "slap2",
+    ]:
+        raise RuntimeError("Behavior excerpts must contain the three modalities in order.")
+    for session in sessions:
+        trace = session.get("trace", [])
+        event_time = session.get("event", {}).get("time")
+        if not trace or trace[0][0] != 0.0 or trace[-1][0] != 16.0:
+            raise RuntimeError(f"Behavior trace does not cover its excerpt: {session['id']}")
+        if event_time != 5.0 or not any(
+            row["start"] <= event_time <= row["end"]
+            for row in session.get("stimulus", [])
+        ):
+            raise RuntimeError(f"Behavior event is not covered by stimulus data: {session['id']}")
+        if not session.get("cameras") or not session.get("sources"):
+            raise RuntimeError(f"Behavior excerpt lacks source records: {session['id']}")
+        for camera in session["cameras"]:
+            time_map = camera.get("timeMap", [])
+            if (
+                len(time_map) < 2
+                or time_map[0][0] > 0
+                or time_map[-1][0] < payload["durationSeconds"]
+                or any(
+                    current[0] <= previous[0] or current[1] <= previous[1]
+                    for previous, current in zip(time_map[:-1], time_map[1:], strict=True)
+                )
+            ):
+                raise RuntimeError(
+                    f"Behavior camera frame map is invalid: {session['id']}/{camera['id']}"
+                )
+    return payload
+
+
+def write_behavior_viewer_html(output: Path = BEHAVIOR_VIEWER_OUTPUT) -> Path:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    payload = load_behavior_excerpts()
+    template = (JAVASCRIPT_DIR / "behavior-viewer.html").read_text(encoding="utf-8")
+    stylesheet = (JAVASCRIPT_DIR / "behavior-viewer.css").read_text(encoding="utf-8")
+    javascript = (JAVASCRIPT_DIR / "behavior-viewer.js").read_text(encoding="utf-8")
+    html = (
+        template.replace("__BEHAVIOR_CSS__", stylesheet)
+        .replace(
+            "__BEHAVIOR_DATA__",
+            json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
+        )
+        .replace("__BEHAVIOR_JS__", javascript)
     )
     output.write_text(html, encoding="utf-8")
     return output
@@ -509,9 +631,13 @@ def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
 def main() -> None:
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
+    literature_comparison_path = write_literature_comparison_html()
+    behavior_viewer_path = write_behavior_viewer_html()
     svg_path = write_static_svg()
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {literature_comparison_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {behavior_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
 
 

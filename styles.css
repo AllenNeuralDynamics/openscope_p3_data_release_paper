@@ -8,14 +8,20 @@
   grid-column: body-outset-start / body-outset-end;
 }
 
-figure.table-hover-source {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
+article > figure.table-hover-source {
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
   padding: 0 !important;
   overflow: hidden !important;
+  opacity: 0;
+  pointer-events: none;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+.hover-card-content:has(.table-hover-source) .hover-document {
+  max-height: min(460px, calc(100vh - 2rem));
 }
 
 .publication-data-source {
@@ -33,12 +39,12 @@ article table {
   width: 100%;
   margin: 1rem 0;
   overflow: hidden;
-  border: 1px solid #cbd8d3;
+  border: 1px solid #d0d4d2;
   border-collapse: separate;
   border-spacing: 0;
   border-radius: 5px;
   background: #fff;
-  color: #26342e;
+  color: #303536;
   font-size: 0.86rem;
   line-height: 1.35;
 }
@@ -50,8 +56,8 @@ article table.publication-data-table {
 article table th,
 article table td {
   padding: 0.62rem 0.72rem;
-  border-right: 1px solid #dbe4e0;
-  border-bottom: 1px solid #dbe4e0;
+  border-right: 1px solid #e2e4e3;
+  border-bottom: 1px solid #e2e4e3;
   vertical-align: top;
 }
 
@@ -65,7 +71,7 @@ article table tr:last-child td {
 }
 
 article table th {
-  background: #225d57;
+  background: #4b5052;
   color: #fff;
   font-weight: 650;
   text-align: left !important;
@@ -74,7 +80,7 @@ article table th {
 article table tr:first-child th[colspan] {
   padding-top: 0.72rem;
   padding-bottom: 0.72rem;
-  background: #174641;
+  background: #383d3f;
   font-size: 0.9rem;
 }
 
@@ -83,13 +89,13 @@ article table tr:first-child th[colspan] p {
 }
 
 article table tr:first-child th[colspan] a {
-  color: #c8eee7;
+  color: #e4e9eb;
 }
 
 article table.publication-data-table tr:nth-child(2) th {
-  background: #dceae6;
-  color: #20322c;
-  border-bottom: 2px solid #91b8ae;
+  background: #eceeee;
+  color: #303536;
+  border-bottom: 2px solid #c3c8c6;
 }
 
 article table tbody td {
@@ -97,7 +103,7 @@ article table tbody td {
 }
 
 article table tbody tr:nth-child(even) td {
-  background: #f2f7f5;
+  background: #f6f7f7;
 }
 
 article table tbody tr:nth-child(odd) td {
@@ -105,7 +111,7 @@ article table tbody tr:nth-child(odd) td {
 }
 
 article table tbody tr:hover td {
-  background: #e8f2ef;
+  background: #ecefee;
 }
 
 article table tbody td:first-child {
@@ -113,15 +119,15 @@ article table tbody td:first-child {
 }
 
 article table tr.modality-mesoscope td:first-child {
-  border-left: 4px solid #2b83ba;
+  border-left: 4px solid #9ea5a2;
 }
 
 article table tr.modality-neuropixels td:first-child {
-  border-left: 4px solid #d06b4f;
+  border-left: 4px solid #9ea5a2;
 }
 
 article table tr.modality-slap2 td:first-child {
-  border-left: 4px solid #7b6fa8;
+  border-left: 4px solid #9ea5a2;
 }
 
 article .table-laser-power table,
@@ -147,30 +153,6 @@ article table.table-laser-power td:first-child {
   text-align: left !important;
 }
 
-article .table-other-studies table,
-article table.table-other-studies {
-  width: 1500px;
-  min-width: 1500px;
-  font-size: 0.78rem;
-}
-
-article figure.table-other-studies {
-  max-width: 100%;
-}
-
-article figure.table-other-studies > .overflow-auto {
-  max-width: 100%;
-  overflow-x: auto !important;
-  overscroll-behavior-inline: contain;
-}
-
-article .table-other-studies table th:first-child,
-article .table-other-studies table td:first-child,
-article table.table-other-studies th:first-child,
-article table.table-other-studies td:first-child {
-  min-width: 13rem;
-}
-
 .id-disclosure {
   min-width: 8.5rem;
 }
@@ -178,13 +160,13 @@ article table.table-other-studies td:first-child {
 .id-disclosure summary {
   width: max-content;
   cursor: pointer;
-  color: #286b64;
+  color: #496375;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .id-disclosure summary:hover {
-  color: #174641;
+  color: #30383c;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -192,9 +174,9 @@ article table.table-other-studies td:first-child {
 .id-list {
   margin-top: 0.45rem;
   padding: 0.55rem;
-  border-left: 3px solid #91b8ae;
-  background: #f4f8f6;
-  color: #47564f;
+  border-left: 3px solid #b5bab8;
+  background: #f7f8f8;
+  color: #4d5351;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.74rem;
   font-weight: 400;
@@ -204,6 +186,16 @@ article table.table-other-studies td:first-child {
 
 #table-data-explorer .relative.inline-block {
   height: 650px;
+  padding-bottom: 0 !important;
+}
+
+#table-supplementary-oddball-studies .relative.inline-block {
+  height: 590px;
+  padding-bottom: 0 !important;
+}
+
+#fig-behavior-tracking .relative.inline-block {
+  height: 980px;
   padding-bottom: 0 !important;
 }
 
@@ -242,5 +234,13 @@ article table.table-other-studies td:first-child {
 
   #table-data-explorer .relative.inline-block {
     height: 830px;
+  }
+
+  #table-supplementary-oddball-studies .relative.inline-block {
+    height: 700px;
+  }
+
+  #fig-behavior-tracking .relative.inline-block {
+    height: 1120px;
   }
 }
