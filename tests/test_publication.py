@@ -43,9 +43,9 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
-    assert len(figures) == 14
+    assert len(figures) == 13
     assert manuscript.count(":::{figure} ./images/figures/imported/") == 13
-    assert manuscript.count(":::{figure} ./images/figures/generated/") == 1
+    assert manuscript.count(":::{figure} ./images/figures/generated/") == 0
     for options in figures:
         assert ":label:" in options
         assert ":alt:" in options
@@ -80,8 +80,9 @@ def test_mesoscope_laser_power_is_structured_data() -> None:
     assert "Depth from surface (µm)" in manuscript
     assert "mesoscope-laser-power-table.png" not in manuscript
     assert "| 250-300 | 110 | 170 |" in manuscript
-    assert manuscript.count("supplementary-mesoscope-depth-power.svg") == 1
-    assert ":label: fig-supp-mesoscope-depth-power" in manuscript
+    assert "supplementary-mesoscope-depth-power.svg" not in manuscript
+    assert manuscript.count("(#table-mesoscope-laser-power)") == 1
+    assert "Depth-dependent laser-power ranges are provided" in manuscript
 
 
 def test_glossary_is_an_expandable_final_section() -> None:

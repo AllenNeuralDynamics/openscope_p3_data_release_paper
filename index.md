@@ -1278,13 +1278,7 @@ Importantly, if the outlined paradigms show the same essential distribution of f
 
 ## Supplementary figures
 
-:::{figure} ./images/figures/generated/supplementary-mesoscope-depth-power.svg
-:label: fig-supp-mesoscope-depth-power
-:alt: Minimum and maximum mesoscope laser power ranges for imaging depths from the cortical surface to 600 micrometers.
-:width: 82%
-
-Mesoscope laser-power lookup ranges used to guide imaging settings across cortical depth. Values are generated from the structured CSV used by the Methods table.
-:::
+**Mesoscope imaging depth.** Depth-dependent laser-power ranges are provided in the [mesoscope laser-power lookup table](#table-mesoscope-laser-power) in Methods.
 
 :::{figure} ./images/figures/imported/supplementary-neuropixels-targeting.png
 :label: fig-supp-neuropixels-targeting

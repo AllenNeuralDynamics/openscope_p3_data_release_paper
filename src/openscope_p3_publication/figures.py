@@ -15,17 +15,9 @@ JAVASCRIPT_DIR = REPO_ROOT / "figure_sources" / "javascript"
 STIMULUS_SOURCES_PATH = DATA_DIR / "stimulus-viewer-sources.json"
 ANIMAL_RECORDS_PATH = DATA_DIR / "experimental-animals.csv"
 ANIMAL_RECORDS_PROVENANCE_PATH = DATA_DIR / "experimental-animals.provenance.json"
-MESOSCOPE_LASER_POWER_PATH = DATA_DIR / "mesoscope-laser-power.csv"
 INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "experimental-design.html"
 DATA_EXPLORER_OUTPUT = REPO_ROOT / "interactive" / "data-explorer.html"
 STATIC_OUTPUT = REPO_ROOT / "images" / "figures" / "generated" / "experimental-design.svg"
-MESOSCOPE_DEPTH_POWER_OUTPUT = (
-    REPO_ROOT
-    / "images"
-    / "figures"
-    / "generated"
-    / "supplementary-mesoscope-depth-power.svg"
-)
 
 
 @dataclass(frozen=True)
@@ -288,105 +280,6 @@ def expand_individual_session_table(grouped_table: dict) -> dict:
     }
 
 
-def load_mesoscope_laser_power_rows(
-    path: Path = MESOSCOPE_LASER_POWER_PATH,
-) -> tuple[dict[str, int], ...]:
-    columns = (
-        "depth_min_um",
-        "depth_max_um",
-        "laser_power_min_mw",
-        "laser_power_max_mw",
-    )
-    with path.open(newline="", encoding="utf-8") as stream:
-        rows = tuple(
-            {column: int(row[column]) for column in columns}
-            for row in csv.DictReader(stream)
-        )
-
-    for index, row in enumerate(rows):
-        if row["depth_min_um"] >= row["depth_max_um"]:
-            raise RuntimeError("Mesoscope depth intervals must be increasing.")
-        if row["laser_power_min_mw"] > row["laser_power_max_mw"]:
-            raise RuntimeError("Mesoscope minimum power cannot exceed maximum power.")
-        if index and rows[index - 1]["depth_max_um"] != row["depth_min_um"]:
-            raise RuntimeError("Mesoscope depth intervals must be contiguous.")
-    return rows
-
-
-def write_mesoscope_depth_power_svg(
-    output: Path = MESOSCOPE_DEPTH_POWER_OUTPUT,
-) -> Path:
-    output.parent.mkdir(parents=True, exist_ok=True)
-    rows = load_mesoscope_laser_power_rows()
-    width = 900
-    table_x = 50
-    table_y = 118
-    table_width = 800
-    header_height = 46
-    row_height = 39
-    height = table_y + header_height + len(rows) * row_height + 58
-    columns = (
-        ("Imaging depth", 70),
-        ("Minimum power", 465),
-        ("Maximum power", 680),
-    )
-
-    svg = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
-        f'viewBox="0 0 {width} {height}" role="img" '
-        'aria-labelledby="title description">',
-        '<title id="title">Mesoscope laser power by imaging depth</title>',
-        '<desc id="description">Minimum and maximum laser power lookup ranges for '
-        'twelve contiguous 50 micrometer imaging-depth intervals from the cortical '
-        'surface to 600 micrometers.</desc>',
-        f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
-        '<text x="50" y="48" font-family="IBM Plex Sans, sans-serif" font-size="27" '
-        'font-weight="600" fill="#172126">Mesoscope laser power by imaging depth</text>',
-        '<text x="50" y="77" font-family="IBM Plex Sans, sans-serif" font-size="15" '
-        'fill="#52615A">Lookup ranges used to guide two-photon imaging settings</text>',
-        f'<rect x="{table_x}" y="{table_y}" width="{table_width}" '
-        f'height="{header_height}" rx="5" fill="#174641"/>',
-    ]
-    for label, x in columns:
-        svg.append(
-            f'<text x="{x}" y="{table_y + 29}" '
-            'font-family="IBM Plex Sans, sans-serif" font-size="15" font-weight="600" '
-            f'fill="#FFFFFF">{label}</text>'
-        )
-
-    for index, row in enumerate(rows):
-        y = table_y + header_height + index * row_height
-        fill = "#F2F7F5" if index % 2 else "#FFFFFF"
-        depth = f'{row["depth_min_um"]}–{row["depth_max_um"]} µm'
-        minimum = f'{row["laser_power_min_mw"]} mW'
-        maximum = f'{row["laser_power_max_mw"]} mW'
-        svg.extend(
-            [
-                f'<rect x="{table_x}" y="{y}" width="{table_width}" '
-                f'height="{row_height}" fill="{fill}" stroke="#D7E2DE"/>',
-                f'<rect x="{table_x}" y="{y}" width="5" height="{row_height}" '
-                'fill="#2B83BA"/>',
-                f'<text x="70" y="{y + 25}" font-family="IBM Plex Sans, sans-serif" '
-                f'font-size="14" font-weight="600" fill="#26342E">{depth}</text>',
-                f'<text x="500" y="{y + 25}" font-family="IBM Plex Sans, sans-serif" '
-                f'font-size="14" fill="#26342E">{minimum}</text>',
-                f'<text x="720" y="{y + 25}" font-family="IBM Plex Sans, sans-serif" '
-                f'font-size="14" fill="#26342E">{maximum}</text>',
-            ]
-        )
-
-    svg.extend(
-        [
-            f'<text x="50" y="{height - 20}" font-family="IBM Plex Sans, sans-serif" '
-            'font-size="12" fill="#64736C">Source: '
-            'figure_sources/data/mesoscope-laser-power.csv</text>',
-            "</svg>",
-        ]
-    )
-    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
-    return output
-
-
 def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     width = 1200
@@ -465,11 +358,9 @@ def main() -> None:
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
     svg_path = write_static_svg()
-    depth_power_path = write_mesoscope_depth_power_svg()
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
-    print(f"Wrote {depth_power_path.relative_to(REPO_ROOT)}")
 
 
 if __name__ == "__main__":

@@ -216,24 +216,10 @@ Filterable explorer for experimental animals, recording modalities, contexts,
 and session identifiers.
 :::"""
 
-SUPPLEMENTARY_DEPTH_FIGURE_BLOCK = "\n".join(
-    [
-        ":::{figure} "
-        "./images/figures/generated/supplementary-mesoscope-depth-power.svg",
-        ":label: fig-supp-mesoscope-depth-power",
-        (
-            ":alt: Minimum and maximum mesoscope laser power ranges for imaging "
-            "depths from the cortical surface to 600 micrometers."
-        ),
-        ":width: 82%",
-        "",
-        (
-            "Mesoscope laser-power lookup ranges used to guide imaging settings "
-            "across cortical depth. Values are generated from the structured CSV "
-            "used by the Methods table."
-        ),
-        ":::",
-    ]
+SUPPLEMENTARY_DEPTH_REFERENCE = (
+    "**Mesoscope imaging depth.** Depth-dependent laser-power ranges are provided "
+    "in the [mesoscope laser-power lookup table](#table-mesoscope-laser-power) "
+    "in Methods."
 )
 
 FRONTMATTER = """---
@@ -701,13 +687,13 @@ def wrap_publication_data_tables(markdown: str) -> str:
     return f"{markdown[:start]}{replacement}{markdown[end:]}"
 
 
-def add_supplementary_depth_figure(markdown: str) -> str:
+def add_supplementary_depth_reference(markdown: str) -> str:
     heading = "## Supplementary figures"
     if markdown.count(heading) != 1:
         raise RuntimeError("Expected one Supplementary figures heading.")
     return markdown.replace(
         heading,
-        f"{heading}\n\n{SUPPLEMENTARY_DEPTH_FIGURE_BLOCK}",
+        f"{heading}\n\n{SUPPLEMENTARY_DEPTH_REFERENCE}",
         1,
     )
 
@@ -755,7 +741,7 @@ def move_glossary_to_end(markdown: str) -> str:
 def build_index(markdown: str) -> str:
     markdown = replace_images(markdown)
     markdown = normalize_known_export_artifacts(markdown)
-    markdown = add_supplementary_depth_figure(markdown)
+    markdown = add_supplementary_depth_reference(markdown)
     markdown = move_glossary_to_end(markdown)
     background_heading = "# Background & Rationale"
     if background_heading not in markdown:
