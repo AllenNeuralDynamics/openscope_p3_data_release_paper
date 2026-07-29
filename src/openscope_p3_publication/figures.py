@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import csv
-from dataclasses import dataclass
+import json
+from dataclasses import asdict, dataclass
 from html import escape
 from pathlib import Path
 
-import plotly.graph_objects as go
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = REPO_ROOT / "figure_sources" / "data"
+JAVASCRIPT_DIR = REPO_ROOT / "figure_sources" / "javascript"
+STIMULUS_SOURCES_PATH = DATA_DIR / "stimulus-viewer-sources.json"
 INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "experimental-design.html"
 STATIC_OUTPUT = REPO_ROOT / "images" / "figures" / "generated" / "experimental-design.svg"
 
@@ -74,102 +75,27 @@ def total_duration_minutes() -> float:
     return sum(block.duration_minutes for block in BLOCKS)
 
 
-def build_interactive_figure() -> go.Figure:
-    figure = go.Figure()
-    offset = 0.0
-    shared_index = 0
-
-    for block in BLOCKS:
-        colors = []
-        hover_details = []
-        for session in SESSIONS:
-            if block.category == "context":
-                colors.append(session.color)
-                hover_details.append(session.mismatch)
-            else:
-                colors.append(SHARED_COLORS[shared_index])
-                hover_details.append("Shared across all four sessions")
-
-        legend_name = (
-            "Context block (color by session)" if block.category == "context" else "Shared blocks"
-        )
-        figure.add_trace(
-            go.Bar(
-                x=[block.duration_minutes] * len(SESSIONS),
-                y=[f"S{session.number}<br>{session.name.split()[0]}" for session in SESSIONS],
-                base=[offset] * len(SESSIONS),
-                orientation="h",
-                name=legend_name,
-                showlegend=block.category == "context" or shared_index == 0,
-                marker={"color": colors, "line": {"color": "#FFFFFF", "width": 1}},
-                customdata=[
-                    [
-                        f"Session {session.number}: {session.name}",
-                        block.name,
-                        block.duration_minutes,
-                        detail,
-                    ]
-                    for session, detail in zip(SESSIONS, hover_details, strict=True)
-                ],
-                hovertemplate=(
-                    "<b>%{customdata[0]}</b><br>%{customdata[1]}<br>"
-                    "%{customdata[2]:.1f} min<br>%{customdata[3]}<extra></extra>"
-                ),
-            )
-        )
-        offset += block.duration_minutes
-        if block.category == "shared":
-            shared_index += 1
-
-    figure.update_layout(
-        title={
-            "text": "Shared session structure",
-            "x": 0,
-            "xanchor": "left",
-            "font": {"size": 21},
-        },
-        barmode="overlay",
-        bargap=0.28,
-        font={"family": "IBM Plex Sans, sans-serif", "color": "#172126", "size": 12},
-        paper_bgcolor="#FFFFFF",
-        plot_bgcolor="#FFFFFF",
-        margin={"l": 105, "r": 15, "t": 78, "b": 78},
-        height=460,
-        legend={
-            "orientation": "h",
-            "yanchor": "top",
-            "y": -0.19,
-            "xanchor": "left",
-            "x": 0,
-            "font": {"size": 12},
-        },
-        hoverlabel={"font": {"family": "IBM Plex Sans, sans-serif"}},
-    )
-    figure.update_xaxes(
-        title="Minutes from session start",
-        range=[0, total_duration_minutes()],
-        showgrid=True,
-        gridcolor="#E7EAEC",
-        zeroline=False,
-        ticksuffix=" min",
-    )
-    figure.update_yaxes(autorange="reversed", showgrid=False, tickfont={"size": 11})
-    return figure
-
-
 def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
-    build_interactive_figure().write_html(
-        output,
-        include_plotlyjs="cdn",
-        full_html=True,
-        div_id="experimental-design-plot",
-        config={
-            "displaylogo": False,
-            "responsive": True,
-            "modeBarButtonsToRemove": ["lasso2d", "select2d"],
-        },
+    sources = json.loads(STIMULUS_SOURCES_PATH.read_text(encoding="utf-8"))
+    payload = {
+        "blocks": [asdict(block) for block in BLOCKS],
+        "playback_duration_seconds": 24,
+        "sessions": [asdict(session) for session in SESSIONS],
+        "sources": sources,
+    }
+    template = (JAVASCRIPT_DIR / "stimulus-viewer.html").read_text(encoding="utf-8")
+    stylesheet = (JAVASCRIPT_DIR / "stimulus-viewer.css").read_text(encoding="utf-8")
+    javascript = (JAVASCRIPT_DIR / "stimulus-viewer.js").read_text(encoding="utf-8")
+    html = (
+        template.replace("__SIMULATOR_CSS__", stylesheet)
+        .replace(
+            "__SIMULATOR_DATA__",
+            json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
+        )
+        .replace("__SIMULATOR_JS__", javascript)
     )
+    output.write_text(html, encoding="utf-8")
     return output
 
 

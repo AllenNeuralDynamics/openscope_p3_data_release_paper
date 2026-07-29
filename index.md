@@ -84,11 +84,10 @@ Experimental design across cohorts, recording modalities, mismatch contexts, and
 :::{iframe} ./interactive/experimental-design.html
 :label: fig-interactive-experimental-design
 :width: 100%
-:title: Interactive timeline of the four predictive-processing recording sessions
+:title: Predictive-processing stimulus viewer
 :placeholder: ./images/figures/generated/experimental-design.svg
 
-Interactive timeline showing the context-specific mismatch block and shared control
-blocks in each recording session.
+Playable stimulus viewer for the four predictive-processing recording contexts.
 :::
 
 The four distinct session contexts each targeted a different aspect of predictive processing. For all 4 contexts, the stimuli table containing both recurring and deviant trials were created at the onset of each session. The resulting tables were then subsequently shuffled so that the mouse could not predict the exact occurrence of deviants (pseudo-random). The order of stimuli blocks (deviant vs control blocks) were maintained across all sessions.
@@ -234,6 +233,21 @@ The habituation protocol included two cohorts of mice. (1) The **sequence cohort
 All visual stimuli were generated using BonVision [<u>(Lopes et al. 2021)</u>](https://paperpile.com/c/tTM80k/VGSr), an open-source visual environment package running within the Bonsai reactive programming framework [<u>(Lopes et al. 2015)</u>](https://paperpile.com/c/tTM80k/REuq). For behavior training, Neuropixels recordings and mesoscope imaging, stimuli were rendered at 60 Hz and displayed on a gamma-calibrated ASUS PA248Q LCD monitor (1920 × 1200 pixels, 55.7 cm wide, 60 Hz refresh rate) positioned 15 cm from the animal's right eye (see **Figure 2**). A spherical warping correction (BonVision SphereMapping) was applied to all stimuli to compensate for the close viewing distance and flat display geometry, ensuring that apparent size, speed, and spatial frequency were constant across the visual field as seen from the mouse's perspective. The monitor subtended 120° × 95° of visual space. Mean luminance was 50 cd/m². Stimulus timing was synchronized to neural recordings via a photodiode placed on a sync square region of the monitor that alternated between black and white every 60 frames, and via digital synchronization pulses sent to a National Instruments digital board. The full stimulus code, Bonsai workflow, and parameter files are available on the project's GitHub repository ([<u>https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing</u>](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing)). <span class="mark">For SLAP2 recordings, the stimulation screen was smaller to account for physical constraints of the SLAP2 rig. SLAP2 stimuli were rendered at 60 Hz and displayed on a gamma-calibrated XXXX LCD monitor (XXXX × XXXX pixels, XX cm wide, 60 Hz refresh rate) also positioned 15 cm from the animal's right eye (see **Figure 2**). The monitor subtended XX° × XX° of visual space.</span>
 
 For each session, a stimulus table (CSV file) was generated programmatically by a Python script (generate_experiment_csv.py) using a session-specific random seed derived from the session UUID and timestamp, ensuring unique trial sequences across sessions while maintaining reproducibility. This CSV table specified all trial parameters (orientation, spatial frequency, temporal frequency, contrast, duration, delay, position, phase, trial type, and block membership) and was read by the Bonsai workflow (generic_oddball.bonsai) to drive stimulus presentation in sequence.
+
+:::{note} Stimulus table and presentation sources
+Pinned generated example tables are available for
+[standard oddball](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples/visual_mismatch_example.csv),
+[sensorimotor mismatch](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples/sensorimotor_mismatch_example.csv),
+[sequence mismatch](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples/sequence_mismatch_example.csv), and
+[duration mismatch](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples/duration_mismatch_example.csv),
+together with the [table generator](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generate_experiment_csv.py)
+ and [Bonsai presentation workflow](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generic_oddball.bonsai).
+Exact synchronized tables for recorded sessions are stored as NWB `TimeIntervals`
+in the public [electrophysiology](https://dandiarchive.org/dandiset/001637/draft/files)
+and [mesoscope](https://dandiarchive.org/dandiset/001768/draft/files) Dandisets.
+The example CSVs define the protocol and schema; they are not a replay of a
+particular recorded session.
+:::
 
 In the sensorimotor mismatch context, the phase of the drifting grating was coupled to the angular position of the running disc via a rotary encoder. The wheel-to-visual coupling was computed as: phase (radians) = 2π × R × θ / tan(1/f × π/180), where R is the wheel radius-to-screen ratio (0.36), θ is the wheel angle in degrees, and f is the spatial frequency (0.04 cpd). This coupling was calibrated so that the resulting visual flow approximated the optic flow a freely moving mouse would experience during forward locomotion.
 

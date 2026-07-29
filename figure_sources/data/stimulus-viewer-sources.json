@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "upstream_revision": "0365ae32f0f0473320ed202b7c5d2bce6cf5df6b",
+  "generator_url": "https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generate_experiment_csv.py",
+  "workflow_url": "https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generic_oddball.bonsai",
+  "zebra_movie_url": "https://raw.githubusercontent.com/AllenNeuralDynamics/openscope-community-predictive-processing/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/movies/zebra_allen_screen_tscale_30_scale_10.mp4",
+  "recorded_tables": {
+    "ecephys": "https://dandiarchive.org/dandiset/001637/draft/files",
+    "mesoscope": "https://dandiarchive.org/dandiset/001768/draft/files"
+  },
+  "sessions": [
+    {
+      "number": 1,
+      "example_table_url": "https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples/visual_mismatch_example.csv",
+      "sha256": "f5e60af027b30cc1fbd9675d799d0191abe1ee8d6f09f57eb3b2eafad2d0dbdb"
+    },
+    {
+      "number": 2,
+      "example_table_url": "https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples/sensorimotor_mismatch_example.csv",
+      "sha256": "94e410338d20071363f234a049acaad67d60a9dafa975f343a58725f67a01df3"
+    },
+    {
+      "number": 3,
+      "example_table_url": "https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples/sequence_mismatch_example.csv",
+      "sha256": "05cdc5246288ff11b1800f11e2c5aa3e9ff6a819ab08a010455ccbba97d31301"
+    },
+    {
+      "number": 4,
+      "example_table_url": "https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples/duration_mismatch_example.csv",
+      "sha256": "eb3ea87207998c2939734e9c581ed56327927e7381db66e1fdc33b2fef3b223e"
+    }
+  ]
+}

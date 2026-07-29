@@ -7,7 +7,7 @@
 - Imported the full manuscript and all 14 embedded media files.
 - Assigned semantic asset names, stable MyST labels, alt text, and SHA-256 checksums.
 - Added the AuthorshipExtractor plugin and an initial contributor record.
-- Added an installable Python package, tests, and the first Plotly figure with an SVG fallback.
+- Added an installable Python package, tests, and the first playable JavaScript figure with an SVG fallback.
 - Added source, generated-asset, and contribution conventions.
 
 ## Inputs still needed from the team

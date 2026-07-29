@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Predictive-processing stimulus viewer</title>
+  <style>
+__SIMULATOR_CSS__
+  </style>
+</head>
+<body>
+  <main class="viewer" id="stimulus-viewer">
+    <nav class="session-tabs" id="session-selector" aria-label="Stimulus session"></nav>
+
+    <section class="screen-section" aria-labelledby="session-title">
+      <header class="screen-heading">
+        <h1 id="session-title">Standard oddball</h1>
+        <span id="trial-label">Frequent standard 0 deg</span>
+      </header>
+
+      <div class="monitor-frame" id="screen-toggle">
+        <canvas id="stimulus-canvas" width="480" height="300" role="img" aria-label="Reconstructed visual stimulus"></canvas>
+        <video id="stimulus-video" muted loop playsinline preload="metadata" hidden aria-label="Canonical zebra movie stimulus"></video>
+        <span class="sync-square" id="sync-square" aria-label="Photodiode synchronization square"></span>
+        <span class="mismatch-badge" id="mismatch-badge" hidden>Mismatch</span>
+        <button class="play-overlay" id="play-toggle" type="button" aria-label="Play stimulus" title="Play stimulus">
+          <span id="play-icon" aria-hidden="true">&#9654;</span>
+        </button>
+      </div>
+
+      <footer class="playback-bar">
+        <div class="block-track" id="block-track" aria-label="Session blocks"></div>
+        <div class="playback-meta">
+          <time id="playback-time">00:00 / 00:24</time>
+          <span class="source-links">
+            Source:
+            <a id="table-source" href="#" target="_blank" rel="noopener">example table</a>
+            <span aria-hidden="true">&#183;</span>
+            <a id="generator-source" href="#" target="_blank" rel="noopener">generator</a>
+            <span aria-hidden="true">&#183;</span>
+            <a id="workflow-source" href="#" target="_blank" rel="noopener">workflow</a>
+            <span aria-hidden="true">&#183;</span>
+            NWB
+            <a id="ecephys-source" href="#" target="_blank" rel="noopener">ephys</a>/<a id="mesoscope-source" href="#" target="_blank" rel="noopener">2P</a>
+          </span>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <script id="simulator-data" type="application/json">__SIMULATOR_DATA__</script>
+  <script>
+__SIMULATOR_JS__
+  </script>
+</body>
+</html>

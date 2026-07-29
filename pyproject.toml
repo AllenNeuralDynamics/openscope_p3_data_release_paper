@@ -8,9 +8,7 @@ version = "0.1.0"
 description = "Reproducible figure and publication tooling for the OpenScope predictive processing data release"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = [
-  "plotly>=6.0,<7",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [

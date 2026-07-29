@@ -169,12 +169,36 @@ AUTHORSHIP_BLOCK = """:::{authorship-explorer}
 INTERACTIVE_DESIGN_BLOCK = """:::{iframe} ./interactive/experimental-design.html
 :label: fig-interactive-experimental-design
 :width: 100%
-:title: Interactive timeline of the four predictive-processing recording sessions
+:title: Predictive-processing stimulus viewer
 :placeholder: ./images/figures/generated/experimental-design.svg
 
-Interactive timeline showing the context-specific mismatch block and shared control
-blocks in each recording session.
+Playable stimulus viewer for the four predictive-processing recording contexts.
 :::"""
+
+STIMULUS_REVISION = "0365ae32f0f0473320ed202b7c5d2bce6cf5df6b"
+STIMULUS_BLOB_ROOT = (
+    "https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/"
+    f"blob/{STIMULUS_REVISION}/code/stimulus-control/src/Mindscope"
+)
+STIMULUS_EXAMPLE_ROOT = f"{STIMULUS_BLOB_ROOT}/examples"
+STIMULUS_PROVENANCE_BLOCK = "\n".join(
+    [
+        ":::{note} Stimulus table and presentation sources",
+        "Pinned generated example tables are available for",
+        f"[standard oddball]({STIMULUS_EXAMPLE_ROOT}/visual_mismatch_example.csv),",
+        f"[sensorimotor mismatch]({STIMULUS_EXAMPLE_ROOT}/sensorimotor_mismatch_example.csv),",
+        f"[sequence mismatch]({STIMULUS_EXAMPLE_ROOT}/sequence_mismatch_example.csv), and",
+        f"[duration mismatch]({STIMULUS_EXAMPLE_ROOT}/duration_mismatch_example.csv),",
+        f"together with the [table generator]({STIMULUS_BLOB_ROOT}/generate_experiment_csv.py)",
+        f" and [Bonsai presentation workflow]({STIMULUS_BLOB_ROOT}/generic_oddball.bonsai).",
+        "Exact synchronized tables for recorded sessions are stored as NWB `TimeIntervals`",
+        "in the public [electrophysiology](https://dandiarchive.org/dandiset/001637/draft/files)",
+        "and [mesoscope](https://dandiarchive.org/dandiset/001768/draft/files) Dandisets.",
+        "The example CSVs define the protocol and schema; they are not a replay of a",
+        "particular recorded session.",
+        ":::"
+    ]
+)
 
 FRONTMATTER = """---
 title: OpenScope Predictive Processing Community Project - Data Release
@@ -377,6 +401,17 @@ def build_index(markdown: str) -> str:
     markdown = markdown.replace(
         background_heading,
         f"{AUTHORSHIP_BLOCK}\n\n{background_heading}",
+        1,
+    )
+    stimulus_paragraph_end = (
+        "was read by the Bonsai workflow (generic_oddball.bonsai) to drive stimulus "
+        "presentation in sequence."
+    )
+    if stimulus_paragraph_end not in markdown:
+        raise RuntimeError("Expected stimulus table paragraph was not found.")
+    markdown = markdown.replace(
+        stimulus_paragraph_end,
+        f"{stimulus_paragraph_end}\n\n{STIMULUS_PROVENANCE_BLOCK}",
         1,
     )
     return f"{FRONTMATTER}\n\n{markdown}"

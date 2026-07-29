@@ -50,6 +50,9 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Check JavaScript figure sources
+        run: node --check figure_sources/javascript/stimulus-viewer.js
+
       - name: Install MyST
         run: npm install --global mystmd@1.10.1
 
