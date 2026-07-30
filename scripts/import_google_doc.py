@@ -309,12 +309,13 @@ BEHAVIOR_VIEWER_BLOCK = """:::{iframe} ./interactive/behavior-viewer.html
 
 Event-centered excerpts from real Neuropixels, mesoscope, and SLAP2 recording
 sessions. Behavior-camera video is range-streamed from the public
-`aind-open-data` S3 bucket. The wheel trace and visual-stimulus state use the
-same session clock. Neuropixels and mesoscope camera frames are mapped from
-100-kHz exposure/readout edges in each sync file, including reported dropped
-frames; SLAP2 uses per-frame Harp timestamps. Camera and source selectors expose
-the underlying public data without bundling multi-gigabyte videos into the
-publication.
+`aind-open-data` S3 bucket. For Neuropixels and mesoscope sessions, NWB running
+speed and stimulus rows share the sync-file clock with 100-kHz camera
+exposure/readout edges; reported dropped frames are removed before mapping
+hardware frame indices to MP4 presentation time. SLAP2 camera frames use
+per-frame Harp timestamps on the acquisition clock. Camera and source selectors
+expose the underlying public data without bundling multi-gigabyte videos into
+the publication.
 :::"""
 
 BEHAVIOR_ANALYSIS_DESCRIPTION = """## Behavioral data analysis across modalities

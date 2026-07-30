@@ -109,13 +109,6 @@ html.is-embedded .viewer { min-height: 0; }
   line-height: 1.25;
 }
 
-.alignment-label {
-  margin: 3px 0 0;
-  color: var(--muted);
-  font-size: 0.72rem;
-  line-height: 1.3;
-}
-
 .source-links {
   display: flex;
   flex-wrap: wrap;
@@ -417,7 +410,6 @@ html.is-embedded .viewer { min-height: 0; }
       <div class="session-identity">
         <p class="context-label" id="context-label"></p>
         <h1 id="session-title"></h1>
-        <p class="alignment-label" id="alignment-label"></p>
       </div>
       <div class="source-links" id="source-links" aria-label="Data sources"></div>
     </header>
@@ -488,7 +480,6 @@ html.is-embedded .viewer { min-height: 0; }
 
   const protocol = JSON.parse(document.getElementById("behavior-data").textContent);
   const elements = {
-    alignmentLabel: document.getElementById("alignment-label"),
     cameraLabel: document.getElementById("camera-label"),
     cameraSelector: document.getElementById("camera-selector"),
     contextLabel: document.getElementById("context-label"),
@@ -515,7 +506,6 @@ html.is-embedded .viewer { min-height: 0; }
     trialType: document.getElementById("trial-type"),
     video: document.getElementById("behavior-video"),
     videoUnavailable: document.getElementById("video-unavailable"),
-    viewer: document.getElementById("behavior-viewer"),
   };
   const state = {
     cameraIndex: 0,
@@ -528,29 +518,6 @@ html.is-embedded .viewer { min-height: 0; }
     "Sensorimotor mismatch": "#3157b7",
     "Standard oddball": "#008f80",
   };
-
-  function enableEmbeddedAutoHeight() {
-    if (window.self === window.top) return;
-
-    let wrapper;
-    try {
-      wrapper = window.frameElement?.parentElement;
-    } catch {
-      return;
-    }
-    if (!wrapper) return;
-
-    document.documentElement.classList.add("is-embedded");
-    const syncHeight = () => {
-      const height = Math.ceil(elements.viewer.getBoundingClientRect().height);
-      if (height > 0) wrapper.style.height = `${height}px`;
-    };
-    const resizeObserver = new ResizeObserver(syncHeight);
-    resizeObserver.observe(elements.viewer);
-    window.addEventListener("resize", syncHeight);
-    window.addEventListener("load", syncHeight, { once: true });
-    syncHeight();
-  }
 
   function currentSession() {
     return protocol.sessions[state.sessionIndex];
@@ -668,7 +635,6 @@ html.is-embedded .viewer { min-height: 0; }
     });
     elements.contextLabel.textContent = session.context;
     elements.sessionTitle.textContent = `Mouse ${session.subject} · ${session.session}`;
-    elements.alignmentLabel.textContent = session.alignment;
     elements.traceHeading.textContent = session.traceLabel;
     elements.traceUnit.textContent = session.traceUnit;
     elements.eventLabel.textContent = `${session.event.label} · ${formatTime(session.event.time)}`;
@@ -919,7 +885,35 @@ html.is-embedded .viewer { min-height: 0; }
   elements.timeline.max = protocol.durationSeconds;
   buildModalityTabs();
   selectSession(0);
-  enableEmbeddedAutoHeight();
+})();
+  </script>
+  <script>
+(() => {
+  "use strict";
+
+  const root = document.querySelector("body > main");
+  if (!root || window.self === window.top) return;
+
+  let wrapper;
+  try {
+    wrapper = window.frameElement?.parentElement;
+  } catch {
+    return;
+  }
+  if (!wrapper) return;
+
+  document.documentElement.classList.add("is-embedded");
+  document.documentElement.style.overflow = "hidden";
+  document.body.style.overflow = "hidden";
+  const syncHeight = () => {
+    const height = Math.ceil(root.getBoundingClientRect().height);
+    if (height > 0) wrapper.style.height = `${height}px`;
+  };
+  const resizeObserver = new ResizeObserver(syncHeight);
+  resizeObserver.observe(root);
+  window.addEventListener("resize", syncHeight);
+  window.addEventListener("load", syncHeight, { once: true });
+  syncHeight();
 })();
   </script>
 </body>

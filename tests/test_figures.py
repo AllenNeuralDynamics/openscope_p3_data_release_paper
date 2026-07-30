@@ -126,6 +126,9 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert 'id="mock-mouse"' not in html
     assert 'id="event-log"' not in html
     assert 'id="trigger-mismatch"' not in html
+    assert 'document.querySelector("body > main")' in html
+    assert 'classList.add("is-embedded")' in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
     assert "__SIMULATOR_" not in html
     assert 'role="img"' in svg
     assert "Session 4" in svg
@@ -151,6 +154,9 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
     assert "Two-photon mesoscope" in html
     assert "832700_2026-01-30" in html
     assert "841193" in html
+    assert 'document.querySelector("body > main")' in html
+    assert 'classList.add("is-embedded")' in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
 
     write_data_explorer_html(explorer_path)
     assert explorer_path.read_text(encoding="utf-8") == html
@@ -168,6 +174,9 @@ def test_literature_comparison_is_deterministic(tmp_path: Path) -> None:
     assert "Attinger et al 2017" in html
     assert "Westerberg et al 2025" in html
     assert "Download visible rows as CSV" in html
+    assert 'document.querySelector("body > main")' in html
+    assert 'classList.add("is-embedded")' in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
     assert "__LITERATURE_" not in html
 
     write_literature_comparison_html(comparison_path)
@@ -282,11 +291,14 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "Wheel recording trace with synchronized playback cursor" in html
     assert "videoTimeAt" in html
     assert "localTimeAt" in html
-    assert "enableEmbeddedAutoHeight" in html
+    assert 'document.querySelector("body > main")' in html
     assert 'classList.add("is-embedded")' in html
+    assert 'document.documentElement.style.overflow = "hidden"' in html
     assert 'addEventListener("resize", syncHeight)' in html
     assert "@media (max-width: 560px)" in html
+    assert 'id="alignment-label"' not in html
     assert "offsetSeconds" not in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
     assert "__BEHAVIOR_" not in html
 
     write_behavior_viewer_html(viewer_path)

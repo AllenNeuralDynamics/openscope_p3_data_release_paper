@@ -32,6 +32,8 @@ select { font: inherit; }
   padding: 12px;
 }
 
+html.is-embedded .viewer { min-height: 0; }
+
 .viewer-header {
   border: 1px solid var(--line);
   border-bottom: 0;

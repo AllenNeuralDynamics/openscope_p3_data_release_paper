@@ -101,13 +101,6 @@ html.is-embedded .viewer { min-height: 0; }
   line-height: 1.25;
 }
 
-.alignment-label {
-  margin: 3px 0 0;
-  color: var(--muted);
-  font-size: 0.72rem;
-  line-height: 1.3;
-}
-
 .source-links {
   display: flex;
   flex-wrap: wrap;

@@ -251,6 +251,9 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "figure-06-behavior-tracking-plan.png" not in manuscript
     assert "continuous raw\nbehavioral videos" in manuscript
     assert "[](#fig-behavior-tracking) show these streams" in manuscript
+    assert "NWB running\nspeed and stimulus rows share the sync-file clock" in manuscript
+    assert "reported dropped frames are removed before mapping" in manuscript
+    assert "per-frame Harp timestamps on the acquisition clock" in manuscript
     assert "DeepLabCut" in manuscript
     assert "SLEAP" in manuscript
     assert "Lightning Pose" in manuscript

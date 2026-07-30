@@ -252,6 +252,10 @@ def copy_zebra_media(output_dir: Path, sources: dict) -> None:
         shutil.copy2(path, output_dir / path.name)
 
 
+def load_embed_auto_height() -> str:
+    return (JAVASCRIPT_DIR / "embed-auto-height.js").read_text(encoding="utf-8")
+
+
 def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     sources = json.loads(STIMULUS_SOURCES_PATH.read_text(encoding="utf-8"))
@@ -276,6 +280,7 @@ def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
         )
         .replace("__SIMULATOR_JS__", javascript)
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
     output.write_text(html, encoding="utf-8")
     return output
@@ -294,6 +299,7 @@ def write_data_explorer_html(output: Path = DATA_EXPLORER_OUTPUT) -> Path:
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
         )
         .replace("__DATA_EXPLORER_JS__", javascript)
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
     output.write_text(html, encoding="utf-8")
     return output
@@ -334,6 +340,7 @@ def write_literature_comparison_html(
             json.dumps(payload, ensure_ascii=True, separators=(",", ":")),
         )
         .replace("__LITERATURE_JS__", javascript)
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
     output.write_text(html, encoding="utf-8")
     return output
@@ -392,6 +399,7 @@ def write_behavior_viewer_html(output: Path = BEHAVIOR_VIEWER_OUTPUT) -> Path:
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
         )
         .replace("__BEHAVIOR_JS__", javascript)
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
     output.write_text(html, encoding="utf-8")
     return output

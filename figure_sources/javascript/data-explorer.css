@@ -37,6 +37,8 @@ select {
   padding: 14px;
 }
 
+html.is-embedded .explorer { min-height: 0; }
+
 .explorer-header {
   border: 1px solid var(--line);
   border-bottom: 0;

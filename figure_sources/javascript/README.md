@@ -2,6 +2,8 @@
 
 This folder contains the reviewable source for interactive publication figures. The Python publication package injects structured protocol data and inlines these files into the generated artifact under `interactive/`.
 
+`embed-auto-height.js` is shared by every generated embed. On the same-origin published site, it keeps each MyST iframe wrapper equal to the interactive root's responsive content height and updates that height when controls or tables change.
+
 `figure_sources/data/stimulus-viewer-sources.json` pins the upstream stimulus repository revision, canonical example CSVs, generator, Bonsai workflow, movie, checksums, and DANDI locations. Compact excerpts under `figure_sources/data/stimulus-table-excerpts/` preserve contiguous source rows and their generated pseudo-random order for every displayed context and control block. The viewer renders those rows directly; recorded synchronized tables remain inside each public NWB file.
 
 The Movie block uses the real pinned zebra stimulus excerpt and poster under `figure_sources/media/`, with source and conversion checksums recorded in `zebra-stimulus-excerpt.provenance.json`.
