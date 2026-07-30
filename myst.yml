@@ -2,6 +2,8 @@ version: 1
 project:
   id: 9e0bb0f4-9aa0-43a6-bf48-519953bb4d5c
   title: OpenScope Predictive Processing Community Project - Data Release
+  bibliography:
+    - references.bib
   plugins:
     - https://github.com/AllenNeuralDynamics/AuthorshipExtractor/releases/latest/download/authorship-plugin.mjs
   github: https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper

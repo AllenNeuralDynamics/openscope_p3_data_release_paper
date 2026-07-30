@@ -101,6 +101,18 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert ":alt:" in options
 
 
+def test_bibliography_uses_resolved_myst_citations() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    bibliography = (REPO_ROOT / "references.bib").read_text(encoding="utf-8")
+
+    assert not re.search(r"paperpile[.]com", manuscript)
+    assert " and others" not in bibliography
+    citation_keys = set(re.findall(r"@([A-Za-z0-9][A-Za-z0-9_-]*)", manuscript))
+    bibliography_keys = set(re.findall(r"^@\w+\{([^,]+),", bibliography, re.MULTILINE))
+    assert citation_keys
+    assert citation_keys == bibliography_keys
+
+
 def test_mesoscope_laser_power_is_structured_data() -> None:
     data_path = REPO_ROOT / "figure_sources" / "data" / "mesoscope-laser-power.csv"
     with data_path.open(newline="", encoding="utf-8") as stream:
