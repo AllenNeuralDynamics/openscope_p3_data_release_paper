@@ -69,7 +69,7 @@ To investigate whether prior experience with a specific predictive context influ
 
   4.  Sensorimotor mismatch.
 
-In both cohorts, the session that matched the habituation context was presented first, ensuring maximal learned expectation for the primary mismatch type. The remaining three sessions were presented in a counterbalanced order across cohorts. Each session was run in immediate succession: once for Neuropixels electrophysiology and twice for mesoscope two-photon calcium imaging, resulting in four or eight total recording sessions per animal. Given a limited throughput, experiments with the SLAP2 platform focused on the motor cohort. Each platform was used in a way that leverage their respective strengths: Experiments using the Mesoscope modality aimed to target the same exact population of neurons across all sessions types twice for a total of 8 cell-matched sessions; experiments using the Neuropixels modality were new probe insertions each day and aimed to record from the same areas (but not the same units) across all 4 types exactly once; experiments on the SLAP2 modality aimed to record the same neuron across all 4 sessions types exactly once. Across all modalities, those goals were met with pass/failure rates that are shared below.
+In both cohorts, the session that matched the habituation context was presented first, ensuring maximal learned expectation for the primary mismatch type. The remaining three sessions were presented in a counterbalanced order across cohorts. Each session was run in immediate succession: once for Neuropixels electrophysiology and twice for mesoscope two-photon calcium imaging, resulting in four or eight total recording sessions per animal. Given a limited throughput, experiments with the SLAP2 platform focused on the motor cohort. Each platform was used in a way that leverage their respective strengths: Experiments using the Mesoscope modality aimed to target the same exact population of neurons across all sessions types twice for a total of 8 cell-matched sessions; experiments using the Neuropixels modality were new probe insertions each day and aimed to record from the same areas (but not the same units) across all 4 types exactly once; experiments on the SLAP2 modality aimed to record the same neuron across all 4 sessions types exactly once. Across all modalities, those goals were met with pass/failure rates that are shared below. QC-passing unit yields across the four Neuropixels recording days are summarized in [Supplementary Figure 2](#fig-supp-neuropixels-unit-yield).
 
 **Four predictive contexts**
 
@@ -946,7 +946,7 @@ Draft plan for unit extraction and signal-to-noise analysis across recording mod
 
 - Quality control
 
-- To allow successful repetitive target insertions, each day the entry point in the brain for each probe was moved slightly from the previous day, while avoiding blood vessels and refraining to deviate too much from the targets. It is likely that because the entry points were close, it led to some decrease in units yield over the 4 days. (example of 6 mice with probe C and E. These numbers are units/day)
+- To support repeated targeting while avoiding blood vessels, each probe's entry point was shifted slightly from its position on the previous day. Across 60 unit-bearing sessions from 16 mice, mean QC-passing unit yield per recorded probe declined from 100% of the day-1 baseline to 80.9% on day 4 ([Supplementary Figure 2](#fig-supp-neuropixels-unit-yield)).
 
 ### Mesoscope two photon imaging
 

@@ -269,7 +269,7 @@ tbody a:hover { text-decoration: underline; text-underline-offset: 2px; }
       <a id="download-csv" href="#" download title="Download visible session data as CSV" aria-label="Download visible session data as CSV">↓ CSV</a>
     </section>
     <section class="chart-shell" aria-label="Interactive unit-yield plot">
-      <svg id="unit-yield-chart" viewBox="0 0 960 500" role="img" aria-labelledby="chart-title chart-description">
+      <svg id="unit-yield-chart" viewBox="0 0 960 410" role="img" aria-labelledby="chart-title chart-description">
         <title id="chart-title">Neuropixels unit yield across recording days</title>
         <desc id="chart-description">Individual mouse trajectories and daily means for QC-passing unit yield.</desc>
       </svg>
@@ -392,8 +392,8 @@ tbody a:hover { text-decoration: underline; text-underline-offset: 2px; }
       ? "QC units per probe (% of day 1)"
       : "QC units per probe";
     const width = 960;
-    const height = 500;
-    const margin = { left: 82, right: 24, top: 28, bottom: 72 };
+    const height = 410;
+    const margin = { left: 82, right: 24, top: 24, bottom: 64 };
     const plotWidth = width - margin.left - margin.right;
     const plotHeight = height - margin.top - margin.bottom;
     const days = summary.map((row) => row.day);

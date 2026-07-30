@@ -108,7 +108,7 @@ def test_unit_yield_outputs_are_deterministic_and_inspectable(tmp_path: Path) ->
     html = html_path.read_text(encoding="utf-8")
     svg = svg_path.read_text(encoding="utf-8")
 
-    assert 'id="unit-yield-chart"' in html
+    assert 'id="unit-yield-chart" viewBox="0 0 960 410"' in html
     assert 'id="mouse-select"' in html
     assert '<details class="data-disclosure" id="session-data">' in html
     assert '<details class="data-disclosure" id="session-data" open>' not in html

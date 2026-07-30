@@ -91,8 +91,8 @@
       ? "QC units per probe (% of day 1)"
       : "QC units per probe";
     const width = 960;
-    const height = 500;
-    const margin = { left: 82, right: 24, top: 28, bottom: 72 };
+    const height = 410;
+    const margin = { left: 82, right: 24, top: 24, bottom: 64 };
     const plotWidth = width - margin.left - margin.right;
     const plotHeight = height - margin.top - margin.bottom;
     const days = summary.map((row) => row.day);

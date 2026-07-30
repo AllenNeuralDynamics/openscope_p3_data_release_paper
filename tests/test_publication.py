@@ -220,6 +220,9 @@ def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
     assert "./interactive/unit-yield.html" in manuscript
     assert ":label: fig-supp-neuropixels-unit-yield\n" in manuscript
+    assert manuscript.count(
+        "[Supplementary Figure 2](#fig-supp-neuropixels-unit-yield)"
+    ) == 2
     assert "images/figures/generated/supplementary-neuropixels-unit-yield.svg" not in manuscript
     assert "60 sessions from 16 mice" in manuscript
     assert "supplementary-neuropixels-unit-yield.png" not in manuscript
