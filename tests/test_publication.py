@@ -186,6 +186,12 @@ def test_supplementary_studies_table_is_complete() -> None:
     assert file_sha256(data_path) == provenance["vendored_sha256"]
 
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    supplementary_start = manuscript.index(
+        "# Supplementary Text 1: Published oddball paradigms"
+    )
+    main_text = manuscript[:supplementary_start]
+    assert "[Supplementary Table 1](#table-supplementary-oddball-studies)" in main_text
+    assert "approximately 35 repeats per deviant type" in main_text
     assert ":label: table-supplementary-oddball-studies" in manuscript
     assert (
         ":label: table-supplementary-oddball-studies\n:enumerated: false"

@@ -38,18 +38,19 @@ input {
 .session-tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  border-bottom: 1px solid var(--line);
+  gap: 4px;
 }
 
 .session-tab {
   position: relative;
   min-width: 0;
-  min-height: 48px;
-  padding: 8px 6px 11px;
+  min-height: 42px;
+  padding: 6px 6px 8px;
   overflow: hidden;
   border: 0;
-  background: transparent;
-  color: var(--muted);
+  border-radius: 4px 4px 0 0;
+  background: var(--tab-color);
+  color: var(--tab-text-color);
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
@@ -59,33 +60,36 @@ input {
 
 .session-tab::after {
   position: absolute;
-  right: 18%;
-  bottom: -1px;
-  left: 18%;
-  height: 3px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4px;
   background: transparent;
   content: "";
 }
 
 .session-tab.active {
-  color: var(--ink);
+  color: var(--tab-text-color);
 }
 
 .session-tab.active::after {
-  background: var(--tab-color);
+  background: currentColor;
 }
 
 .session-tab:hover,
 .session-tab:focus-visible {
-  color: var(--ink);
+  color: var(--tab-text-color);
+  filter: brightness(0.94);
   outline: none;
 }
 
 .session-tab:focus-visible {
-  box-shadow: inset 0 0 0 2px rgba(8, 124, 112, 0.28);
+  box-shadow: inset 0 0 0 2px currentColor;
 }
 
 .screen-section {
+  width: min(100%, 760px);
+  margin-inline: auto;
   padding-top: 14px;
 }
 
@@ -298,10 +302,12 @@ input {
   }
 
   .session-tab {
-    min-height: 43px;
-    padding-right: 2px;
-    padding-left: 2px;
+    min-height: 44px;
+    padding: 4px 2px 6px;
     font-size: 11px;
+    line-height: 1.05;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .screen-section {

@@ -1,5 +1,5 @@
 #fig-interactive-experimental-design .relative.inline-block {
-  height: 1020px;
+  height: 820px;
   padding-bottom: 0 !important;
 }
 
@@ -221,7 +221,8 @@ article table.table-laser-power td:first-child {
   }
 
   main.article-grid,
-  article.article-grid {
+  article.article-grid,
+  section.myst-bibliography.article-grid {
     grid-template-columns:
       [screen-start] 0.5rem
       [screen-inset-start] 1fr

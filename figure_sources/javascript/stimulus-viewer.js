@@ -23,7 +23,7 @@
     workflowSource: document.getElementById("workflow-source"),
   };
 
-  const sessionLabels = ["Oddball", "Sensorimotor", "Sequence", "Duration"];
+  const sessionLabels = ["Standard oddball", "Sensorimotor", "Sequence", "Duration"];
   const blockLabels = ["C1", "Context", "C1", "C2", "C3", "C4", "Movie", "RF"];
   const blockColors = ["#ffffff", "#202322", "#ffffff", "#eeeeee", "#d7d9d8", "#bfc3c1", "#8d9390", "#f5f5f5"];
   const state = {
@@ -53,12 +53,24 @@
     return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
   }
 
+  function contrastTextColor(hexColor) {
+    const channels = hexColor.slice(1).match(/.{2}/g).map((value) => {
+      const channel = Number.parseInt(value, 16) / 255;
+      return channel <= 0.04045
+        ? channel / 12.92
+        : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+    const luminance = 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    return luminance > 0.179 ? "#0a0a0a" : "#ffffff";
+  }
+
   function buildSessionTabs() {
     protocol.sessions.forEach((session, index) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "session-tab";
       button.style.setProperty("--tab-color", session.color);
+      button.style.setProperty("--tab-text-color", contrastTextColor(session.color));
       button.textContent = sessionLabels[index];
       button.setAttribute("aria-label", `${session.name}: ${session.mismatch}`);
       button.addEventListener("click", () => selectSession(index));

@@ -97,6 +97,15 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert "setInterval" in html
     assert "Standard oddball" in html
     assert "Duration mismatch" in html
+    assert (
+        'const sessionLabels = ["Standard oddball", "Sensorimotor", "Sequence", "Duration"]'
+        in html
+    )
+    assert "background: var(--tab-color);" in html
+    assert "--tab-text-color" in html
+    assert "white-space: normal;" in html
+    for context_color in ("#008F80", "#3157B7", "#C65D13", "#A47C00"):
+        assert context_color in html
     assert 'width="480" height="380"' in html
     assert "stimulusTableExcerpts" in html
     assert "sharedTableExcerpts" in html

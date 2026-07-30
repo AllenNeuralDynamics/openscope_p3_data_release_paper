@@ -98,6 +98,17 @@ projection. Source links resolve to the pinned generator, Bonsai workflow,
 example tables, and public NWB intervals.
 :::
 
+The mismatch repeat count and session length were informed by the five
+published visual oddball paradigms compared in
+[Supplementary Table 1](#table-supplementary-oddball-studies). Those studies
+reported 10--144 required oddball repeats and total session durations ranging
+from 6 min to 2 h. We therefore set each 26-min context block to 1.35 mismatch
+events per minute for each of four deviant types (5.4/min combined), targeting
+approximately 35 repeats per deviant type and 140 mismatch events per context
+block. This placed per-deviant sampling within the published range while
+keeping the complete shared block sequence to approximately 71 min and applying
+the same event rate across all four predictive contexts.
+
 #### Session type 1: Standard oddball.
 
 Full-field sinusoidal drifting gratings were presented in a classical oddball paradigm. The standard stimulus (0° orientation, 0.04 cycles per degree, 2 Hz temporal frequency, 100% contrast) was presented with high probability, with each trial consisting of a 343 ms stimulus presentation followed by a 343 ms grey inter-stimulus interval (686 ms total trial duration). Deviant stimuli occurred randomly at a combined rate of 5.4 per minute (1.35/min per type) and included: orientation deviants at 45° and 90°, a halt deviant (temporal frequency set to 0, producing a stationary grating), and an omission deviant (contrast set to 0, producing a blank screen).
@@ -1394,7 +1405,7 @@ CSV export contains exactly the displayed subset.
 
 The paradigms span visuomotor decoupling and local or global deviations in visual sequences. Three studies used two-photon calcium imaging, one used local field potentials, and one used Neuropixels recordings.
 
-Reported oddball probabilities ranged from 0.07 to 0.20, the reported number of oddball repeats required ranged from 10 to 144, and session durations ranged from 6 minutes to 2 hours. These values provide literature context for trial-count and session-duration choices in the present dataset; differences in stimuli, response definitions, and significance tests should be considered when comparing responsive-neuron fractions across studies.
+Reported oddball probabilities ranged from 0.07 to 0.20, the reported number of oddball repeats required ranged from 10 to 144, and session durations ranged from 6 minutes to 2 hours. This comparison informed the mismatch repeat count and session duration used in the present dataset; differences in stimuli, response definitions, and significance tests should be considered when comparing responsive-neuron fractions across studies.
 
 # Glossary
 
