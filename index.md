@@ -8,11 +8,20 @@ The displayed author list and author order are provisional and will be finalized
 **[Add or update your authorship contribution](https://data.allenneuraldynamics.org/contributions/add?project=p3_data_release).**
 :::
 
-# Abstract
-
 :::{authorship-explorer}
 :authors: ./authors.yml
 :height: 800px
+:::
+
+:::{note} Manuscript status
+Incomplete prose, analysis outlines, and placeholder figures are labeled **Work in progress**. Specific missing details are highlighted in amber. Unmarked material represents the current manuscript content.
+:::
+
+# Abstract
+
+:::{warning} Work in progress
+:class: manuscript-wip
+The abstract has not yet been drafted.
 :::
 
 # Background & Rationale
@@ -29,7 +38,10 @@ Predictive processing across spatial scales. A visual sequence establishes an ex
 
 Predictive processing theories propose that the brain continuously generates predictions about incoming sensory signals and updates its internal models when those predictions are violated. These prediction errors are thought to drive perception, learning, and behavior. While this framework has gained considerable theoretical support, significant conflicts persist in the experimental literature regarding the neural mechanisms that implement predictive computations.
 
-To be written
+:::{warning} Work in progress
+:class: manuscript-wip
+This subsection still needs additional synthesis of the unresolved conceptual challenges in predictive-processing research.
+:::
 
 ## Relationship to the companion review
 
@@ -253,7 +265,7 @@ The habituation protocol included two cohorts of mice. (1) The **sequence cohort
 
 ## Visual stimulation
 
-All visual stimuli were generated using BonVision [@lopes2021bonvision], an open-source visual environment package running within the Bonsai reactive programming framework [@lopes2015bonsai]. For behavior training, Neuropixels recordings and mesoscope imaging, stimuli were rendered at 60 Hz and displayed on a gamma-calibrated ASUS PA248Q LCD monitor (1920 × 1200 pixels, 55.7 cm wide, 60 Hz refresh rate) positioned 15 cm from the animal's right eye (see **Figure 2**). A spherical warping correction (BonVision SphereMapping) was applied to all stimuli to compensate for the close viewing distance and flat display geometry, ensuring that apparent size, speed, and spatial frequency were constant across the visual field as seen from the mouse's perspective. The monitor subtended 120° × 95° of visual space. Mean luminance was 50 cd/m². Stimulus timing was synchronized to neural recordings via a photodiode placed on a sync square region of the monitor that alternated between black and white every 60 frames, and via digital synchronization pulses sent to a National Instruments digital board. The full stimulus code, Bonsai workflow, and parameter files are available on the project's GitHub repository ([https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing)). <span class="mark">For SLAP2 recordings, the stimulation screen was smaller to account for physical constraints of the SLAP2 rig. SLAP2 stimuli were rendered at 60 Hz and displayed on a gamma-calibrated XXXX LCD monitor (XXXX × XXXX pixels, XX cm wide, 60 Hz refresh rate) also positioned 15 cm from the animal's right eye (see **Figure 2**). The monitor subtended XX° × XX° of visual space.</span>
+All visual stimuli were generated using BonVision [@lopes2021bonvision], an open-source visual environment package running within the Bonsai reactive programming framework [@lopes2015bonsai]. For behavior training, Neuropixels recordings and mesoscope imaging, stimuli were rendered at 60 Hz and displayed on a gamma-calibrated ASUS PA248Q LCD monitor (1920 × 1200 pixels, 55.7 cm wide, 60 Hz refresh rate) positioned 15 cm from the animal's right eye (see **Figure 2**). A spherical warping correction (BonVision SphereMapping) was applied to all stimuli to compensate for the close viewing distance and flat display geometry, ensuring that apparent size, speed, and spatial frequency were constant across the visual field as seen from the mouse's perspective. The monitor subtended 120° × 95° of visual space. Mean luminance was 50 cd/m². Stimulus timing was synchronized to neural recordings via a photodiode placed on a sync square region of the monitor that alternated between black and white every 60 frames, and via digital synchronization pulses sent to a National Instruments digital board. The full stimulus code, Bonsai workflow, and parameter files are available on the project's GitHub repository ([https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing)). For SLAP2 recordings, the stimulation screen was smaller to account for physical constraints of the SLAP2 rig. <span class="manuscript-wip-inline"><strong>Work in progress:</strong> verify and add the SLAP2 display model, pixel dimensions, physical size, and visual-angle coverage.</span>
 
 For each session, a stimulus table (CSV file) was generated programmatically by a Python script (generate_experiment_csv.py) using a session-specific random seed derived from the session UUID and timestamp, ensuring unique trial sequences across sessions while maintaining reproducibility. This CSV table specified all trial parameters (orientation, spatial frequency, temporal frequency, contrast, duration, delay, position, phase, trial type, and block membership) and was read by the Bonsai workflow (generic_oddball.bonsai) to drive stimulus presentation in sequence.
 
@@ -288,7 +300,7 @@ Prior to the first recording, mice were habituated to the Neuropixels rigs every
 
 #### Implant design for recordings
 
-The implant was designed as stated in the surgery section and was described previously [@bennett2024shield]. Briefly, we created a CAD file with holes strategically placed above the areas of interest for our study (see <span class="mark">**Supplementary Fig. X**</span>). Some hole coordinates have been previously validated to allow targeting of some areas, like the center of <span class="mark">VISp</span>, and other hole coordinates were derived from publications, like <span class="mark">VISa</span> [@lyamzin2019parietal]. Hole positions were adjusted using Pinpoint [@birman2023pinpoint]. Note that the placement of the implant on the brain can vary slightly due to the mouse to mouse variability and surgery precision. The coordinates of holes were referenced from bregma, their diameters and intended target areas are represented in <span class="mark">**Supplementary Fig. X**</span>.
+The implant was designed as stated in the surgery section and was described previously [@bennett2024shield]. Briefly, we created a CAD file with holes strategically placed above the areas of interest for our study (see [Supplementary Figure 1](#fig-supp-neuropixels-implant-trajectories)). Some hole coordinates have been previously validated to allow targeting of areas such as the center of VISp, and other hole coordinates were derived from publications, such as VISa [@lyamzin2019parietal]. Hole positions were adjusted using Pinpoint [@birman2023pinpoint]. Note that the placement of the implant on the brain can vary slightly due to mouse-to-mouse variability and surgical precision. The coordinates of holes were referenced from bregma; their diameters and intended target areas are represented in [Supplementary Figure 1](#fig-supp-neuropixels-implant-trajectories).
 
 #### SORTA-Clear plug removal and agarose application
 
@@ -445,7 +457,7 @@ Metrics used for each criteria are available on the AWS S3 bucket in a qc.json f
 
 ### SLAP2 dendritic imaging.
 
-Dual-color imaging of synaptic glutamate and somatic calcium in single neurons was performed using SLAP2. SLAP2 allows for simultaneous measurement of arbitrarily-shaped ROIs across two imaging planes (<span class="mark">CITE PAPER WHEN AVAILABLE</span>). We recorded from Layer 2/3 pyramidal neurons in the visual cortex. We imaged from soma and several peri-somatic dendritic segments in one plane, and imaged several apical dendritic segments on the second plane, typically achieving recordings of \>100 synapses at \>200 Hz each. Imaging was motion stabilized by using SLAP2’s image-based online motion correction.
+Dual-color imaging of synaptic glutamate and somatic calcium in single neurons was performed using SLAP2. SLAP2 allows for simultaneous measurement of arbitrarily-shaped ROIs across two imaging planes. <span class="manuscript-wip-inline"><strong>Citation needed:</strong> add the SLAP2 methods paper when available.</span> We recorded from Layer 2/3 pyramidal neurons in the visual cortex. We imaged from soma and several peri-somatic dendritic segments in one plane, and imaged several apical dendritic segments on the second plane, typically achieving recordings of \>100 synapses at \>200 Hz each. Imaging was motion stabilized by using SLAP2’s image-based online motion correction.
 
 #### Acquisition of reference stacks and ROI selection
 
@@ -936,6 +948,11 @@ the electrophysiology, imaging, and behavioral objects introduced here.
 
 ## Units extraction
 
+:::{warning} Work in progress
+:class: manuscript-wip
+Figure 4 and the modality subsections below remain an analysis outline. The Neuropixels unit-yield result is current; the other signal-quality, stability, extraction, and cross-session analyses still need final results and prose.
+:::
+
 :::{figure} ./images/figures/imported/figure-04-unit-extraction-plan.png
 :label: fig-unit-extraction-plan
 :alt: Draft panel plan for unit extraction and signal-to-noise analysis across modalities.
@@ -986,7 +1003,10 @@ GROUP3
 
 ## Receptive field analysis across modalities
 
-To be written
+:::{warning} Work in progress
+:class: manuscript-wip
+This analysis and Figure 5 are planning placeholders. Receptive-field methods, cross-modality results, and final figure panels still need to be added.
+:::
 
 :::{figure} ./images/figures/imported/figure-05-basic-stimuli-plan.png
 :label: fig-basic-stimuli-plan
@@ -1040,7 +1060,10 @@ the publication.
 
 ## Stimulus-evoked responses: oddball across modalities
 
-To be written
+:::{warning} Work in progress
+:class: manuscript-wip
+This analysis, the questions below, and Figure 7 are planning placeholders. Final cross-modality oddball-response results and figure panels still need to be added.
+:::
 
 - Stability across the session for all modalities ?
 
@@ -1105,15 +1128,19 @@ working with electrophysiology, imaging, and behavioral data.
 
 ## Limitations
 
-- Caveats: passive viewing
-
-- Caveats: cell-type coverage
-
-- More caveats?
+:::{warning} Work in progress
+:class: manuscript-wip
+The final limitations discussion still needs to be drafted. Topics already identified include passive-viewing constraints and incomplete cell-type coverage; additional modality-specific and sampling caveats should be added.
+:::
 
 ## Data analysis plan
 
-Our review (<span class="mark">CITE</span>) highlighted the presence of mismatch responses throughout the cortical network, spanning multiple areas and cellular populations, including excitatory neurons and inhibitory subtypes. These responses involve dynamic contributions from both dendritic and somatic compartments. Consequently, our analysis must disentangle these relative contributions within a tightly integrated network, across multiple types of mismatches.
+:::{warning} Work in progress
+:class: manuscript-wip
+This section is an unedited working outline. It needs substantial shortening and reorganization around a prioritized set of hypotheses, prespecified outcomes, shared cross-modality analyses, and clearly separated confirmatory and exploratory tests.
+:::
+
+Our review [@aizenbud2026neural] highlighted the presence of mismatch responses throughout the cortical network, spanning multiple areas and cellular populations, including excitatory neurons and inhibitory subtypes. These responses involve dynamic contributions from both dendritic and somatic compartments. Consequently, our analysis must disentangle these relative contributions within a tightly integrated network, across multiple types of mismatches.
 
 A key assumption in our analysis is that different types of mismatches may recruit distinct relative contributions from computational primitives. To test this assumption, we must measure the precise dynamic properties of individual compartments across neuronal types, areas and layers. Our goal is to compare the relative timing and strength of predictive responses, complemented by decoding analyses to extract instantaneous prediction strengths emerging across the network. Neuropixels recordings will enable decoding with millisecond precision, such that the first occurrences of mismatch encoding across circuit components (brain regions, cortical layers, neuronal subtypes, and neuronal compartments) can be identified, while imaging experiments will provide denser recordings to measure the broader impact of these predictions on the overall network.
 
@@ -1373,6 +1400,11 @@ Importantly, if the outlined paradigms show the same essential distribution of f
 - Use information theory criteria and cross-validation techniques to compare the goodness-of-fit of different models. Validate models using separate test datasets, including ones obtained from different laboratories.
 
 # Conclusion
+
+:::{warning} Work in progress
+:class: manuscript-wip
+The conclusion has not yet been drafted.
+:::
 
 ## Supplementary figures
 

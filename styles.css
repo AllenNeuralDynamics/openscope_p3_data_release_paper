@@ -3,6 +3,21 @@
   padding-bottom: 0 !important;
 }
 
+.manuscript-wip-inline {
+  padding: 0.08rem 0.24rem;
+  border-bottom: 2px solid #b45309;
+  background: #fef3c7;
+  color: #78350f;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+html[data-theme="dark"] .manuscript-wip-inline {
+  border-bottom-color: #f59e0b;
+  background: #451a03;
+  color: #fde68a;
+}
+
 #fig-graphical-abstract,
 #fig-experimental-design {
   grid-column: body-outset-start / body-outset-end;

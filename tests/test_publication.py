@@ -30,6 +30,23 @@ def test_manuscript_marks_author_list_as_provisional() -> None:
     )
 
 
+def test_manuscript_marks_unfinished_content() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+
+    assert ":::{note} Manuscript status" in manuscript
+    assert manuscript.count(":::{warning} Work in progress") == 8
+    assert manuscript.count('class="manuscript-wip-inline"') == 2
+    for stale_marker in (
+        "To be written",
+        "Supplementary Fig. X",
+        "XXXX",
+        "CITE PAPER WHEN AVAILABLE",
+        '<span class="mark">',
+        "More caveats?",
+    ):
+        assert stale_marker not in manuscript
+
+
 def test_authorship_snapshot_is_portal_backed() -> None:
     authors = (REPO_ROOT / "authors.yml").read_text(encoding="utf-8")
 
