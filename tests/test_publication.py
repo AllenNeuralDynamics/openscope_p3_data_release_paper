@@ -175,6 +175,11 @@ def test_supplementary_studies_table_is_complete() -> None:
 
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     assert ":label: table-supplementary-oddball-studies" in manuscript
+    assert (
+        ":label: table-supplementary-oddball-studies\n:enumerated: false"
+        in manuscript
+    )
+    assert manuscript.count("**Supplementary Table 1.**") == 1
     assert "./interactive/literature-comparison.html" in manuscript
     assert "Supplementary Text 1: Published oddball paradigms" in manuscript
     assert "Reported oddball probabilities ranged from 0.07 to 0.20" in manuscript

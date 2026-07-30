@@ -1333,10 +1333,11 @@ Importantly, if the outlined paradigms show the same essential distribution of f
 
 :::{iframe} ./interactive/literature-comparison.html
 :label: table-supplementary-oddball-studies
+:enumerated: false
 :width: 100%
 :title: Supplementary Table 1. Published oddball paradigms and sampling parameters.
 
-Compare one paradigm parameter across all studies or inspect the complete
+**Supplementary Table 1.** Compare one paradigm parameter across all studies or inspect the complete
 profile of one study. Search filters the visible records in either view, and
 CSV export contains exactly the displayed subset.
 :::
