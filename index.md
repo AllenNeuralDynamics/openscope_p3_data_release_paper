@@ -852,61 +852,68 @@ exported without collapsing individual records into manuscript summary groups.
 
 ## NWB file contents
 
-All data from this project are packaged as Neurodata Without Borders (NWB) files and deposited on the DANDI Archive. Neuropixels electrophysiology sessions are available at DANDI:001637, and mesoscope two-photon imaging sessions at DANDI:001768. NWB files can be streamed directly from DANDI without downloading using remfile and pynwb in Python. The OpenScope Databook (https://alleninstitute.github.io/openscope_databook) provides companion analysis notebooks that demonstrate how to access and work with these files.
+All data from this project are packaged as Neurodata Without Borders (NWB)
+files and deposited on the DANDI Archive. Neuropixels electrophysiology
+sessions are available at [DANDI:001637](https://dandiarchive.org/dandiset/001637),
+and mesoscope two-photon imaging sessions at
+[DANDI:001768](https://dandiarchive.org/dandiset/001768). Use the tabs below as
+a map from a scientific question to the corresponding NWB object and PyNWB
+entry point. Object names can differ slightly among sessions; the paths shown
+here reflect representative files in these Dandisets.
 
-Shared across modalities:
+::::{tab-set}
+:::{tab-item} Shared
 
-- Subject metadata: species, age, sex, genotype, subject ID
+**Shared across modalities:** session context, behavior, and stimulus timing
+use the same acquisition clock, making these objects the starting point for
+aligned analyses.
 
-- Session information: session datetime, session ID, institution
+| Question | NWB contents | Representative PyNWB entry point |
+| --- | --- | --- |
+| When and from which animal was the session recorded? | Root session metadata and `/general/subject` contain the session ID and datetime, institution, subject ID, species, age, sex, and genotype. | `nwbfile.session_id`, `nwbfile.session_start_time`, `nwbfile.subject` |
+| What stimulus was shown at each time? | `/intervals/*_presentations` contains one `TimeIntervals` table per block. Rows include `start_time`, `stop_time`, and stimulus parameters such as orientation, spatial and temporal frequency, contrast, position, phase, and trial type. | `nwbfile.intervals[table_name].to_dataframe()` |
+| When was no stimulus presented? | `/intervals/spontaneous_presentations` marks gaps between stimulus blocks. | `nwbfile.intervals["spontaneous_presentations"]` |
+| Was the animal moving? | `/processing/running` contains synchronized wheel rotation and computed running speed. | `nwbfile.processing["running"]["running_speed"]` |
+| Was the animal looking at the display? | When available, `/processing/eye_tracking` contains pupil, corneal-reflection, and eye ellipse fits plus likely-blink intervals. | `nwbfile.processing["eye_tracking"]` |
 
-- Running: running wheel rotation and computed running speed, synchronized to the session clock
+:::
+:::{tab-item} Neuropixels
 
-- Eye tracking: pupil, corneal reflection, and eye ellipse fits (position, area, width, height, angle) with a likely-blink indicator
+**Neuropixels NWB files ([DANDI:001637](https://dandiarchive.org/dandiset/001637)):**
+connect spike-sorted units to their probes, anatomical positions, quality
+metrics, and local field potentials.
 
-- Stimulus presentation tables (NWB intervals): one table per stimulus block, with each row corresponding to a single stimulus sweep containing, \`start_time\` and \`stop_time\` and all relevant stimulus parameters (orientation, spatial frequency, temporal frequency, contrast, position, phase, trial type, block label, etc.)
+| Question | NWB contents | Representative PyNWB entry point |
+| --- | --- | --- |
+| Which units were isolated, and do they pass quality control? | `/units` contains firing rate, ISI violations, presence ratio, amplitude cutoff, SNR, d-prime, isolation distance, silhouette score, sliding refractory-period violations, and a default QC flag. | `nwbfile.units.to_dataframe()` |
+| When did a unit spike, and what was its waveform? | Ragged `spike_times` plus mean and standard-deviation waveforms are columns of `/units`. | `nwbfile.units["spike_times"][unit_row]` |
+| Where was each unit recorded? | Unit rows identify the probe and electrode and include estimated 3D coordinates. `/general/extracellular_ephys/electrodes` describes every channel, probe group, and shank-relative position. | `nwbfile.electrodes.to_dataframe()` |
+| Which probes were used? | `/general/devices` registers up to six Neuropixels probes and their serial numbers. | `nwbfile.devices` |
+| What was the local population signal? | `/processing/ecephys/LFP` contains downsampled local field potential per probe (96 channels at approximately 2,500 Hz). | `nwbfile.processing["ecephys"]["LFP"]` |
 
-- Spontaneous activity epochs: a separate interval table covering gaps between stimulus blocks
+:::
+:::{tab-item} Mesoscope
 
-Neuropixels NWB files (DANDI:001637):
+**Mesoscope NWB files ([DANDI:001768](https://dandiarchive.org/dandiset/001768)):**
+organize optical physiology by imaging plane so ROIs, traces, events, and
+summary images remain connected.
 
-- Devices: up to six Neuropixels probes, each registered with serial number
+| Question | NWB contents | Representative PyNWB entry point |
+| --- | --- | --- |
+| Where and how was each plane imaged? | `/general/optophysiology` describes eight simultaneous VISp and VISl planes, including excitation wavelength, imaging rate, grid spacing, indicator, cortical location, and field-of-view origin. The mesoscope is registered under `/general/devices`. | `nwbfile.imaging_planes`, `nwbfile.devices` |
+| Which pixels belong to each ROI? | `/processing/<plane>/image_segmentation` contains 512 × 512 px ROI masks with dendrite probability scores. | `nwbfile.processing[plane]["image_segmentation"]` |
+| How does fluorescence change over time? | Each plane contains raw, neuropil, neuropil-corrected, and ΔF/F time series. | `nwbfile.processing[plane]["dff_timeseries"]` |
+| Where are inferred neural events? | Each plane's `event_timeseries` stores deconvolved event traces. | `nwbfile.processing[plane]["event_timeseries"]` |
+| What does the field of view look like? | Each plane's `images` interface contains average projection, maximum projection, and segmentation-mask summary images. | `nwbfile.processing[plane]["images"]` |
 
-- Electrodes table: all recording channels with probe group assignment and relative position on the shank
+:::
+::::
 
-- Units table: all spike-sorted units with:
-
-  - Spike times
-
-  - Mean and standard deviation waveforms (across 384 channels)
-
-  - Assigned probe, electrode index, and estimated 3D coordinates
-
-  - Quality metrics: firing rate, ISI violation ratio, presence ratio, amplitude cutoff, SNR, d-prime, isolation distance, silhouette score, sliding refractory period violation, and a default QC flag
-
-- LFP: downsampled local field potential per probe (96 channels, ~2,500 Hz)
-
-Mesoscope NWB files (DANDI:001768):
-
-- Device: one mesoscope, registered with rig ID
-
-- Imaging planes: eight simultaneously imaged planes across visual cortical areas (VISp, VISl), each with excitation wavelength, imaging rate, grid spacing, indicator, cortical location, and field-of-view origin coordinates
-
-- Per imaging plane:
-
-  - ROI segmentation masks (512 × 512 px) with dendrite probability score
-
-  - Raw fluorescence traces
-
-  - Neuropil fluorescence traces
-
-  - Neuropil-corrected fluorescence
-
-  - ΔF/F traces
-
-  - Deconvolved event traces
-
-  - Summary images: average projection, max projection, and segmentation mask image
+NWB files can be streamed directly from DANDI without downloading the complete
+asset; see the [data access code example](#data-access-code-example) below. The
+[OpenScope Databook](https://alleninstitute.github.io/openscope_databook)
+provides companion analysis notebooks for selecting sessions and working with
+the electrophysiology, imaging, and behavioral objects introduced here.
 
 # Data validation
 
@@ -1032,6 +1039,7 @@ Placeholder for standard oddball responses across recording modalities.
 
 # Usage Notes
 
+(data-access-code-example)=
 ## Data access code example
 
 The following Python example streams an HDF5 NWB file directly from DANDI using

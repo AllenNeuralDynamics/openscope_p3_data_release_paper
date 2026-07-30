@@ -221,6 +221,12 @@ def test_nwb_file_contents_are_in_data_records() -> None:
     assert "Shared across modalities:" in records
     assert "Neuropixels NWB files" in records
     assert "Mesoscope NWB files" in records
+    assert records.count(":::{tab-item}") == 3
+    assert records.count(
+        "| Question | NWB contents | Representative PyNWB entry point |"
+    ) == 3
+    assert "nwbfile.units.to_dataframe()" in records
+    assert 'nwbfile.processing[plane]["dff_timeseries"]' in records
 
 
 def test_imported_data_tables_have_body_cells() -> None:

@@ -8,6 +8,18 @@
   grid-column: body-outset-start / body-outset-end;
 }
 
+article > figure:not(.table-hover-source) img {
+  display: block;
+  max-width: min(100%, 1200px);
+  height: auto;
+  margin-inline: auto;
+}
+
+.myst-tab-set table th:first-child,
+.myst-tab-set table td:first-child {
+  min-width: 9rem;
+}
+
 article > figure.table-hover-source {
   height: 0 !important;
   min-height: 0 !important;
