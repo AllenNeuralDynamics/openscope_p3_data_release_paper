@@ -41,6 +41,8 @@ a:focus-visible {
   background: var(--paper);
 }
 
+html.is-embedded .viewer { min-height: 0; }
+
 .modality-tabs {
   min-height: 48px;
   display: flex;
@@ -384,7 +386,7 @@ a:focus-visible {
   background: #b44235;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 560px) {
   .modality-tabs { padding: 0 7px; }
   .modality-tab { min-width: 0; flex: 1; padding: 0 6px; font-size: 0.75rem; }
   .session-header { padding: 10px; align-items: flex-start; flex-direction: column; gap: 8px; }

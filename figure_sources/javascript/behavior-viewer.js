@@ -30,6 +30,7 @@
     trialType: document.getElementById("trial-type"),
     video: document.getElementById("behavior-video"),
     videoUnavailable: document.getElementById("video-unavailable"),
+    viewer: document.getElementById("behavior-viewer"),
   };
   const state = {
     cameraIndex: 0,
@@ -42,6 +43,29 @@
     "Sensorimotor mismatch": "#3157b7",
     "Standard oddball": "#008f80",
   };
+
+  function enableEmbeddedAutoHeight() {
+    if (window.self === window.top) return;
+
+    let wrapper;
+    try {
+      wrapper = window.frameElement?.parentElement;
+    } catch {
+      return;
+    }
+    if (!wrapper) return;
+
+    document.documentElement.classList.add("is-embedded");
+    const syncHeight = () => {
+      const height = Math.ceil(elements.viewer.getBoundingClientRect().height);
+      if (height > 0) wrapper.style.height = `${height}px`;
+    };
+    const resizeObserver = new ResizeObserver(syncHeight);
+    resizeObserver.observe(elements.viewer);
+    window.addEventListener("resize", syncHeight);
+    window.addEventListener("load", syncHeight, { once: true });
+    syncHeight();
+  }
 
   function currentSession() {
     return protocol.sessions[state.sessionIndex];
@@ -410,4 +434,5 @@
   elements.timeline.max = protocol.durationSeconds;
   buildModalityTabs();
   selectSession(0);
+  enableEmbeddedAutoHeight();
 })();

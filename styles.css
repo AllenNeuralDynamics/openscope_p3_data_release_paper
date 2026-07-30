@@ -199,6 +199,10 @@ article table.table-laser-power td:first-child {
   padding-bottom: 0 !important;
 }
 
+#fig-behavior-tracking {
+  container-type: inline-size;
+}
+
 @media (min-width: 1280px) {
   .myst-primary-sidebar {
     display: none !important;
@@ -239,8 +243,16 @@ article table.table-laser-power td:first-child {
   #table-supplementary-oddball-studies .relative.inline-block {
     height: 700px;
   }
+}
 
+@container (max-width: 560px) {
   #fig-behavior-tracking .relative.inline-block {
-    height: 1120px;
+    height: 1240px;
+  }
+}
+
+@container (max-width: 400px) {
+  #fig-behavior-tracking .relative.inline-block {
+    height: 1160px;
   }
 }

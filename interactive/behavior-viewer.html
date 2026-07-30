@@ -49,6 +49,8 @@ a:focus-visible {
   background: var(--paper);
 }
 
+html.is-embedded .viewer { min-height: 0; }
+
 .modality-tabs {
   min-height: 48px;
   display: flex;
@@ -392,7 +394,7 @@ a:focus-visible {
   background: #b44235;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 560px) {
   .modality-tabs { padding: 0 7px; }
   .modality-tab { min-width: 0; flex: 1; padding: 0 6px; font-size: 0.75rem; }
   .session-header { padding: 10px; align-items: flex-start; flex-direction: column; gap: 8px; }
@@ -513,6 +515,7 @@ a:focus-visible {
     trialType: document.getElementById("trial-type"),
     video: document.getElementById("behavior-video"),
     videoUnavailable: document.getElementById("video-unavailable"),
+    viewer: document.getElementById("behavior-viewer"),
   };
   const state = {
     cameraIndex: 0,
@@ -525,6 +528,29 @@ a:focus-visible {
     "Sensorimotor mismatch": "#3157b7",
     "Standard oddball": "#008f80",
   };
+
+  function enableEmbeddedAutoHeight() {
+    if (window.self === window.top) return;
+
+    let wrapper;
+    try {
+      wrapper = window.frameElement?.parentElement;
+    } catch {
+      return;
+    }
+    if (!wrapper) return;
+
+    document.documentElement.classList.add("is-embedded");
+    const syncHeight = () => {
+      const height = Math.ceil(elements.viewer.getBoundingClientRect().height);
+      if (height > 0) wrapper.style.height = `${height}px`;
+    };
+    const resizeObserver = new ResizeObserver(syncHeight);
+    resizeObserver.observe(elements.viewer);
+    window.addEventListener("resize", syncHeight);
+    window.addEventListener("load", syncHeight, { once: true });
+    syncHeight();
+  }
 
   function currentSession() {
     return protocol.sessions[state.sessionIndex];
@@ -893,6 +919,7 @@ a:focus-visible {
   elements.timeline.max = protocol.durationSeconds;
   buildModalityTabs();
   selectSession(0);
+  enableEmbeddedAutoHeight();
 })();
   </script>
 </body>

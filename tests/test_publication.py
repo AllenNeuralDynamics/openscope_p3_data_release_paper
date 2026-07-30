@@ -275,6 +275,9 @@ def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:
     assert "article > figure.table-hover-source" in stylesheet
     assert ".hover-card-content:has(.table-hover-source) .hover-document" in stylesheet
     assert "max-height: min(460px, calc(100vh - 2rem))" in stylesheet
+    assert "#fig-behavior-tracking" in stylesheet
+    assert "container-type: inline-size" in stylesheet
+    assert "@container (max-width: 560px)" in stylesheet
 
 
 def test_docx_text_formatting_artifacts_are_normalized() -> None:

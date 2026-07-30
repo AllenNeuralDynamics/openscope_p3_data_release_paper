@@ -282,6 +282,10 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "Wheel recording trace with synchronized playback cursor" in html
     assert "videoTimeAt" in html
     assert "localTimeAt" in html
+    assert "enableEmbeddedAutoHeight" in html
+    assert 'classList.add("is-embedded")' in html
+    assert 'addEventListener("resize", syncHeight)' in html
+    assert "@media (max-width: 560px)" in html
     assert "offsetSeconds" not in html
     assert "__BEHAVIOR_" not in html
 
