@@ -1379,13 +1379,13 @@ Importantly, if the outlined paradigms show the same essential distribution of f
 **Supplementary Figure 1.** Neuropixels implant geometry and planned probe trajectories. **A,** Six trajectories (A-F) through the Allen Mouse Brain Common Coordinate Framework. **B,** Atlas structures intersected by each trajectory. **C,** Anteroposterior and mediolateral coordinates relative to bregma with implant-hole diameters D1 and D2. **D,** Top view of the implant with labeled probe-access holes.
 :::
 
-:::{figure} ./images/figures/imported/supplementary-neuropixels-unit-yield.png
+:::{iframe} ./interactive/unit-yield.html
 :label: fig-supp-neuropixels-unit-yield
-:alt: Unit yield over four recording days for three Neuropixels probes in six mice.
 :enumerated: false
 :width: 100%
+:title: Supplementary Figure 2. Neuropixels unit yield across recording days.
 
-**Supplementary Figure 2.** Example Neuropixels unit yield across recording days.
+**Supplementary Figure 2.** Neuropixels unit yield across recording days. Individual lines show 60 sessions from 16 mice; the bold line shows the daily mean, and *n* is the number of sessions represented on each day. Units passed all three quality-control thresholds (ISI-violations ratio < 0.5, presence ratio > 0.8, and amplitude cutoff < 0.1). QC-passing units were divided by the number of recorded probes and normalized to each mouse's day-1 value. Mean yield declined from 100% on day 1 to 80.9% on day 4. Values were derived from the public draft of Dandiset 001637 retrieved July 30, 2026.
 :::
 
 # Supplementary Text 1: Published oddball paradigms and sampling ranges

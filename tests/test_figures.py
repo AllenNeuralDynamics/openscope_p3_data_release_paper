@@ -12,18 +12,23 @@ from openscope_p3_publication.figures import (
     SESSIONS,
     STIMULUS_EXCERPT_PROVENANCE_PATH,
     STIMULUS_SOURCES_PATH,
+    UNIT_YIELD_DATA_PATH,
+    UNIT_YIELD_PROVENANCE_PATH,
     ZEBRA_MOVIE_SOURCE,
     ZEBRA_POSTER_SOURCE,
     load_behavior_excerpts,
     load_publication_table_data,
     load_shared_stimulus_table_excerpts,
     load_stimulus_table_excerpts,
+    load_unit_yield_data,
     total_duration_minutes,
     write_behavior_viewer_html,
     write_data_explorer_html,
     write_interactive_html,
     write_literature_comparison_html,
     write_static_svg,
+    write_unit_yield_html,
+    write_unit_yield_svg,
 )
 
 
@@ -31,6 +36,100 @@ def test_experimental_design_data() -> None:
     assert len(SESSIONS) == 4
     assert len(BLOCKS) == 8
     assert total_duration_minutes() == pytest.approx(71.3)
+
+
+def test_unit_yield_calculation_uses_calendar_days_and_day_one_baseline(
+    tmp_path: Path,
+) -> None:
+    data_path = tmp_path / "unit-yield.csv"
+    data_path.write_text(
+        "dandiset_id,asset_id,asset_path,session_id,mouse_id,date,total_unit_count,"
+        "qc_unit_count,probe_count,probe_names\n"
+        "001637,a,path-a,101_2026-01-01_10-00-00,101,2026-01-01,120,100,2,ProbeA;ProbeB\n"
+        "001637,b,path-b,101_2026-01-03_10-00-00,101,2026-01-03,96,80,2,ProbeA;ProbeB\n"
+        "001637,c,path-c,202_2026-02-01_10-00-00,202,2026-02-01,180,150,3,ProbeA;ProbeB;ProbeC\n",
+        encoding="utf-8",
+    )
+    provenance_path = data_path.with_suffix(".provenance.json")
+    provenance_path.write_text(
+        json.dumps(
+            {
+                "dandiset_id": "001637",
+                "rows": 3,
+                "source_url": "https://dandiarchive.org/dandiset/001637/draft",
+                "vendored_sha256": hashlib.sha256(data_path.read_bytes()).hexdigest(),
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = load_unit_yield_data(data_path, provenance_path)
+
+    assert [record["day"] for record in payload["records"]] == [1, 3, 1]
+    assert [record["percentOfDay1"] for record in payload["records"]] == [100, 80, 100]
+    assert payload["summary"] == [
+        {
+            "day": 1,
+            "meanPercent": 100,
+            "meanUnitsPerProbe": 50,
+            "sessionCount": 2,
+        },
+        {
+            "day": 3,
+            "meanPercent": 80,
+            "meanUnitsPerProbe": 40,
+            "sessionCount": 1,
+        },
+    ]
+
+
+def test_unit_yield_snapshot_is_source_backed() -> None:
+    payload = load_unit_yield_data()
+    provenance = json.loads(UNIT_YIELD_PROVENANCE_PATH.read_text(encoding="utf-8"))
+
+    assert hashlib.sha256(UNIT_YIELD_DATA_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
+    )
+    assert provenance["rows"] == 60
+    assert provenance["subjects"] == 16
+    assert len(provenance["skipped_assets"]) == 2
+    assert {row["reason"] for row in provenance["skipped_assets"]} == {
+        "missing-units-table"
+    }
+    assert len(payload["records"]) == 60
+    assert {record["probeCount"] for record in payload["records"]} == {5, 6}
+    assert [row["sessionCount"] for row in payload["summary"]] == [16, 15, 15, 14]
+    assert payload["summary"][-1]["meanPercent"] == pytest.approx(80.9230526465)
+
+
+def test_unit_yield_outputs_are_deterministic_and_inspectable(tmp_path: Path) -> None:
+    html_path = write_unit_yield_html(tmp_path / "unit-yield.html")
+    svg_path = write_unit_yield_svg(tmp_path / "unit-yield.svg")
+    html = html_path.read_text(encoding="utf-8")
+    svg = svg_path.read_text(encoding="utf-8")
+
+    assert 'id="unit-yield-chart"' in html
+    assert 'id="mouse-select"' in html
+    assert '<details class="data-disclosure" id="session-data">' in html
+    assert '<details class="data-disclosure" id="session-data" open>' not in html
+    assert 'id="session-table-body"' in html
+    assert 'id="session-row-count">60 rows' in html
+    assert "QC units / probe" in html
+    assert "Download visible session data as CSV" in html
+    assert 'class="viewer-header"' not in html
+    assert "DANDI source" not in html
+    assert '"sessionCount":14' in html
+    assert 'document.querySelector("body > main")' in html
+    assert "__UNIT_YIELD_" not in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+    assert 'role="img"' in svg
+    assert "QC-passing Neuropixels unit yield" in svg
+    assert "Day 4" in svg
+
+    write_unit_yield_html(html_path)
+    write_unit_yield_svg(svg_path)
+    assert html_path.read_text(encoding="utf-8") == html
+    assert svg_path.read_text(encoding="utf-8") == svg
 
 
 def test_stimulus_sources_are_pinned() -> None:

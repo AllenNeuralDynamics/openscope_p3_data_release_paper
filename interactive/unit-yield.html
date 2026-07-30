@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Neuropixels unit yield across recording days</title>
+  <style>
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Source+Sans+3:wght@400;500;600;700&display=swap");
+
+:root {
+  color-scheme: light;
+  --ink: #293133;
+  --muted: #68706e;
+  --line: #d2d6d4;
+  --soft-line: #e5e8e7;
+  --paper: #fff;
+  --wash: #f6f7f7;
+  --accent: #087f8c;
+  --mean: #222829;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  min-width: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Source Sans 3", "Avenir Next", sans-serif;
+}
+
+button,
+select { font: inherit; }
+
+.viewer {
+  width: min(100%, 1180px);
+  min-height: 100vh;
+  margin-inline: auto;
+  padding: 12px;
+}
+
+html.is-embedded .viewer { min-height: 0; }
+
+.toolbar {
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: auto auto minmax(130px, 190px) 1fr auto;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--wash);
+}
+
+.toolbar > label {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.metric-switch {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid #bdc4c1;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.metric-button {
+  min-height: 34px;
+  padding: 5px 10px;
+  border: 0;
+  border-right: 1px solid #d5d9d7;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.79rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.metric-button:last-child { border-right: 0; }
+.metric-button.active { background: var(--ink); color: #fff; }
+.metric-button:focus-visible { outline: 3px solid rgba(8, 127, 140, 0.2); outline-offset: -3px; }
+
+#mouse-select,
+#download-csv {
+  min-height: 34px;
+  border: 1px solid #bdc4c1;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 0.79rem;
+}
+
+#mouse-select { min-width: 0; padding: 5px 8px; }
+#mouse-select:focus { border-color: var(--accent); outline: 3px solid rgba(8, 127, 140, 0.16); }
+
+#record-summary {
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-align: right;
+}
+
+#download-csv {
+  padding: 5px 9px;
+  display: grid;
+  place-items: center;
+  background: #edf0ef;
+  color: #496375;
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+#download-csv:hover { background: #e2e6e4; }
+
+.chart-shell {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+
+#unit-yield-chart {
+  width: 100%;
+  min-width: 720px;
+  height: auto;
+  display: block;
+}
+
+.chart-tooltip {
+  position: fixed;
+  z-index: 10;
+  width: max-content;
+  max-width: min(280px, calc(100vw - 24px));
+  padding: 7px 9px;
+  border: 1px solid #aeb6b3;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 4px 14px rgba(34, 40, 41, 0.14);
+  color: var(--ink);
+  font-size: 0.77rem;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.chart-tooltip strong { font-weight: 700; }
+
+.data-disclosure {
+  border-bottom: 1px solid var(--line);
+}
+
+.data-disclosure > summary {
+  min-height: 44px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--wash);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 650;
+  list-style: none;
+}
+
+.data-disclosure > summary::-webkit-details-marker { display: none; }
+
+.data-disclosure > summary::before {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  content: "";
+  transform: rotate(-45deg);
+  transition: transform 120ms ease;
+}
+
+.data-disclosure[open] > summary::before { transform: rotate(45deg) translateY(-2px); }
+.data-disclosure > summary:hover { background: #edf0ef; }
+.data-disclosure > summary:focus-visible { outline: 3px solid rgba(8, 127, 140, 0.18); outline-offset: -3px; }
+
+#session-row-count {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.table-shell {
+  max-height: 390px;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+th,
+td {
+  padding: 8px 9px;
+  border-right: 1px solid var(--soft-line);
+  border-bottom: 1px solid var(--soft-line);
+  text-align: right;
+  vertical-align: top;
+}
+
+th:last-child,
+td:last-child { border-right: 0; }
+
+thead th {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  background: #4b5052;
+  color: #fff;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+th:first-child,
+td:first-child,
+th:nth-child(2),
+td:nth-child(2),
+th:nth-child(3),
+td:nth-child(3) { text-align: left; }
+
+tbody tr:nth-child(even) td { background: var(--wash); }
+tbody tr:hover td { background: #e9eeee; }
+tbody tr.excluded td { color: #8a918f; }
+
+tbody a { color: #496375; text-decoration: none; }
+tbody a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+@media (max-width: 700px) {
+  .viewer { padding: 8px; }
+  .toolbar { grid-template-columns: 1fr auto; }
+  .metric-switch { grid-column: 1 / -1; }
+  .toolbar > label { grid-column: 1; }
+  #mouse-select { grid-column: 2; }
+  #record-summary { text-align: left; }
+  .table-shell { max-height: 500px; }
+}
+  </style>
+</head>
+<body>
+  <main class="viewer" id="unit-yield-viewer">
+    <section class="toolbar" aria-label="Unit-yield controls">
+      <div class="metric-switch" role="group" aria-label="Yield metric">
+        <button type="button" class="metric-button active" data-metric="percent" aria-pressed="true">% of day 1</button>
+        <button type="button" class="metric-button" data-metric="absolute" aria-pressed="false">QC units / probe</button>
+      </div>
+      <label for="mouse-select">Mouse</label>
+      <select id="mouse-select"></select>
+      <output id="record-summary" aria-live="polite"></output>
+      <a id="download-csv" href="#" download title="Download visible session data as CSV" aria-label="Download visible session data as CSV">↓ CSV</a>
+    </section>
+    <section class="chart-shell" aria-label="Interactive unit-yield plot">
+      <svg id="unit-yield-chart" viewBox="0 0 960 500" role="img" aria-labelledby="chart-title chart-description">
+        <title id="chart-title">Neuropixels unit yield across recording days</title>
+        <desc id="chart-description">Individual mouse trajectories and daily means for QC-passing unit yield.</desc>
+      </svg>
+      <div id="chart-tooltip" class="chart-tooltip" role="status" hidden></div>
+    </section>
+    <details class="data-disclosure" id="session-data">
+      <summary><span>Session data</span><output id="session-row-count">60 rows</output></summary>
+      <section class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Session</th>
+              <th scope="col">Mouse</th>
+              <th scope="col">Date</th>
+              <th scope="col">Day</th>
+              <th scope="col">Units</th>
+              <th scope="col">QC units</th>
+              <th scope="col">Probes</th>
+              <th scope="col">QC units / probe</th>
+              <th scope="col">% day 1</th>
+            </tr>
+          </thead>
+          <tbody id="session-table-body"></tbody>
+        </table>
+      </section>
+    </details>
+  </main>
+  <script id="unit-yield-data" type="application/json">{"dandisetId":"001637","records":[{"asset_id":"915bb67f-3d3e-45b1-86e5-a6fcf3bf8046","asset_path":"sub-820454/sub-820454_ses-ecephys-820454-2025-11-04-14-59-22_ecephys.nwb","dandiset_id":"001637","date":"2025-11-04","day":1,"exclusionReason":"","included":true,"mouse_id":"820454","percentOfDay1":100.0,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2373,"qc_unit_count":"2373","session_id":"820454_2025-11-04_14-59-22","total_unit_count":"4126","unitsPerProbe":395.5},{"asset_id":"f7057120-fc07-447c-80ba-bbbc425072b0","asset_path":"sub-820454/sub-820454_ses-ecephys-820454-2025-11-05-15-21-15_ecephys.nwb","dandiset_id":"001637","date":"2025-11-05","day":2,"exclusionReason":"","included":true,"mouse_id":"820454","percentOfDay1":107.75389801938476,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2557,"qc_unit_count":"2557","session_id":"820454_2025-11-05_15-21-15","total_unit_count":"4275","unitsPerProbe":426.1666666666667},{"asset_id":"013eb796-bbe5-4d02-82dd-6e2e5ce7034f","asset_path":"sub-820454/sub-820454_ses-ecephys-820454-2025-11-06-16-00-27_ecephys.nwb","dandiset_id":"001637","date":"2025-11-06","day":3,"exclusionReason":"","included":true,"mouse_id":"820454","percentOfDay1":86.21997471554994,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2046,"qc_unit_count":"2046","session_id":"820454_2025-11-06_16-00-27","total_unit_count":"4009","unitsPerProbe":341.0},{"asset_id":"51c29ef1-339d-449e-b1e5-c0b59f4d272e","asset_path":"sub-820454/sub-820454_ses-ecephys-820454-2025-11-07-10-54-23_ecephys.nwb","dandiset_id":"001637","date":"2025-11-07","day":4,"exclusionReason":"","included":true,"mouse_id":"820454","percentOfDay1":71.47071217867678,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1696,"qc_unit_count":"1696","session_id":"820454_2025-11-07_10-54-23","total_unit_count":"3738","unitsPerProbe":282.6666666666667},{"asset_id":"e3cbee16-232a-4874-8b7e-cfbaebdfeeaf","asset_path":"sub-820459/sub-820459_ses-ecephys-820459-2025-11-10-15-07-13_ecephys.nwb","dandiset_id":"001637","date":"2025-11-10","day":1,"exclusionReason":"","included":true,"mouse_id":"820459","percentOfDay1":100.0,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2322,"qc_unit_count":"2322","session_id":"820459_2025-11-10_15-07-13","total_unit_count":"4346","unitsPerProbe":387.0},{"asset_id":"cfe8eaaf-2f55-4147-aa82-1103ad09274c","asset_path":"sub-820459/sub-820459_ses-ecephys-820459-2025-11-12-14-34-33_ecephys.nwb","dandiset_id":"001637","date":"2025-11-12","day":3,"exclusionReason":"","included":true,"mouse_id":"820459","percentOfDay1":79.94832041343669,"probeCount":5,"probe_count":"5","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeF","qcUnitCount":1547,"qc_unit_count":"1547","session_id":"820459_2025-11-12_14-34-33","total_unit_count":"3170","unitsPerProbe":309.4},{"asset_id":"0c67a84f-7da3-44b2-b707-72ab376a9034","asset_path":"sub-830794/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys.nwb","dandiset_id":"001637","date":"2026-01-26","day":1,"exclusionReason":"","included":true,"mouse_id":"830794","percentOfDay1":100.0,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2725,"qc_unit_count":"2725","session_id":"830794_2026-01-26_12-02-05","total_unit_count":"3966","unitsPerProbe":454.1666666666667},{"asset_id":"a23eba88-5d08-4e4b-89e1-a2a10fd143b5","asset_path":"sub-830794/sub-830794_ses-ecephys-830794-2026-01-27-11-25-31_ecephys.nwb","dandiset_id":"001637","date":"2026-01-27","day":2,"exclusionReason":"","included":true,"mouse_id":"830794","percentOfDay1":79.22201834862385,"probeCount":5,"probe_count":"5","probe_names":"ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1799,"qc_unit_count":"1799","session_id":"830794_2026-01-27_11-25-31","total_unit_count":"3018","unitsPerProbe":359.8},{"asset_id":"6068eec9-d614-471c-aa33-0ab27dc66475","asset_path":"sub-830794/sub-830794_ses-ecephys-830794-2026-01-28-11-01-44_ecephys.nwb","dandiset_id":"001637","date":"2026-01-28","day":3,"exclusionReason":"","included":true,"mouse_id":"830794","percentOfDay1":80.71926605504586,"probeCount":5,"probe_count":"5","probe_names":"ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1833,"qc_unit_count":"1833","session_id":"830794_2026-01-28_11-01-44","total_unit_count":"2951","unitsPerProbe":366.6},{"asset_id":"b383b4ff-a2b9-4497-8c8f-9f77de89e1b0","asset_path":"sub-830794/sub-830794_ses-ecephys-830794-2026-01-29-11-12-57_ecephys.nwb","dandiset_id":"001637","date":"2026-01-29","day":4,"exclusionReason":"","included":true,"mouse_id":"830794","percentOfDay1":64.62385321100918,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1761,"qc_unit_count":"1761","session_id":"830794_2026-01-29_11-12-57","total_unit_count":"3125","unitsPerProbe":293.5},{"asset_id":"3f7f6abd-de5e-4e78-9473-efd672896ac4","asset_path":"sub-830795/sub-830795_ses-ecephys-830795-2026-02-23-15-03-59_ecephys.nwb","dandiset_id":"001637","date":"2026-02-23","day":1,"exclusionReason":"","included":true,"mouse_id":"830795","percentOfDay1":100.0,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1891,"qc_unit_count":"1891","session_id":"830795_2026-02-23_15-03-59","total_unit_count":"3464","unitsPerProbe":315.1666666666667},{"asset_id":"1a3aac78-34f5-44c4-b644-7c16bc313ceb","asset_path":"sub-830795/sub-830795_ses-ecephys-830795-2026-02-24-15-08-59_ecephys.nwb","dandiset_id":"001637","date":"2026-02-24","day":2,"exclusionReason":"","included":true,"mouse_id":"830795","percentOfDay1":69.27551560021153,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1310,"qc_unit_count":"1310","session_id":"830795_2026-02-24_15-08-59","total_unit_count":"2814","unitsPerProbe":218.33333333333334},{"asset_id":"4095a089-8cb6-4101-821c-9d93e2c2dee7","asset_path":"sub-830795/sub-830795_ses-ecephys-830795-2026-02-25-16-03-31_ecephys.nwb","dandiset_id":"001637","date":"2026-02-25","day":3,"exclusionReason":"","included":true,"mouse_id":"830795","percentOfDay1":64.34690639873082,"probeCount":5,"probe_count":"5","probe_names":"ProbeA;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1014,"qc_unit_count":"1014","session_id":"830795_2026-02-25_16-03-31","total_unit_count":"2314","unitsPerProbe":202.8},{"asset_id":"c9024a36-e476-4ffc-9e12-666e6ed3aec7","asset_path":"sub-830795/sub-830795_ses-ecephys-830795-2026-02-26-16-01-33_ecephys.nwb","dandiset_id":"001637","date":"2026-02-26","day":4,"exclusionReason":"","included":true,"mouse_id":"830795","percentOfDay1":64.15653093601269,"probeCount":5,"probe_count":"5","probe_names":"ProbeA;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1011,"qc_unit_count":"1011","session_id":"830795_2026-02-26_16-01-33","total_unit_count":"2225","unitsPerProbe":202.2},{"asset_id":"03973a42-cf55-476f-80d7-85bc402fa57b","asset_path":"sub-830846/sub-830846_ses-ecephys-830846-2026-03-09-10-32-54_ecephys.nwb","dandiset_id":"001637","date":"2026-03-09","day":1,"exclusionReason":"","included":true,"mouse_id":"830846","percentOfDay1":100.0,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1925,"qc_unit_count":"1925","session_id":"830846_2026-03-09_10-32-54","total_unit_count":"3550","unitsPerProbe":320.8333333333333},{"asset_id":"5996b247-cf6a-4ee1-8c21-3cc6c790c2b5","asset_path":"sub-830846/sub-830846_ses-ecephys-830846-2026-03-10-10-17-25_ecephys.nwb","dandiset_id":"001637","date":"2026-03-10","day":2,"exclusionReason":"","included":true,"mouse_id":"830846","percentOfDay1":106.44155844155844,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2049,"qc_unit_count":"2049","session_id":"830846_2026-03-10_10-17-25","total_unit_count":"3834","unitsPerProbe":341.5},{"asset_id":"680d1c0c-e338-4d0b-ba29-4329436d2ae2","asset_path":"sub-830846/sub-830846_ses-ecephys-830846-2026-03-11-10-19-32_ecephys.nwb","dandiset_id":"001637","date":"2026-03-11","day":3,"exclusionReason":"","included":true,"mouse_id":"830846","percentOfDay1":93.76623376623377,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1805,"qc_unit_count":"1805","session_id":"830846_2026-03-11_10-19-32","total_unit_count":"3355","unitsPerProbe":300.8333333333333},{"asset_id":"f2b15614-c07b-4187-9ace-f73b6e55005e","asset_path":"sub-830846/sub-830846_ses-ecephys-830846-2026-03-12-11-09-13_ecephys.nwb","dandiset_id":"001637","date":"2026-03-12","day":4,"exclusionReason":"","included":true,"mouse_id":"830846","percentOfDay1":77.24675324675326,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1487,"qc_unit_count":"1487","session_id":"830846_2026-03-12_11-09-13","total_unit_count":"2943","unitsPerProbe":247.83333333333334},{"asset_id":"826226c3-22c9-4306-9aa7-49d71e683e17","asset_path":"sub-830847/sub-830847_ses-ecephys-830847-2026-03-09-16-23-49_ecephys.nwb","dandiset_id":"001637","date":"2026-03-09","day":1,"exclusionReason":"","included":true,"mouse_id":"830847","percentOfDay1":100.0,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1877,"qc_unit_count":"1877","session_id":"830847_2026-03-09_16-23-49","total_unit_count":"3228","unitsPerProbe":312.8333333333333},{"asset_id":"bc2150b9-c9af-43af-a9ea-31f53fd4c89e","asset_path":"sub-830847/sub-830847_ses-ecephys-830847-2026-03-10-16-32-25_ecephys.nwb","dandiset_id":"001637","date":"2026-03-10","day":2,"exclusionReason":"","included":true,"mouse_id":"830847","percentOfDay1":110.65530101225362,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2077,"qc_unit_count":"2077","session_id":"830847_2026-03-10_16-32-25","total_unit_count":"3591","unitsPerProbe":346.1666666666667},{"asset_id":"8606d35c-9c54-4b54-96ed-2252a9a54694","asset_path":"sub-830847/sub-830847_ses-ecephys-830847-2026-03-11-15-46-40_ecephys.nwb","dandiset_id":"001637","date":"2026-03-11","day":3,"exclusionReason":"","included":true,"mouse_id":"830847","percentOfDay1":106.12679808204582,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1992,"qc_unit_count":"1992","session_id":"830847_2026-03-11_15-46-40","total_unit_count":"3518","unitsPerProbe":332.0},{"asset_id":"59ce3a4d-f144-414f-9a78-8ee6a4ebbe56","asset_path":"sub-830847/sub-830847_ses-ecephys-830847-2026-03-12-17-14-42_ecephys.nwb","dandiset_id":"001637","date":"2026-03-12","day":4,"exclusionReason":"","included":true,"mouse_id":"830847","percentOfDay1":87.21363878529569,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1637,"qc_unit_count":"1637","session_id":"830847_2026-03-12_17-14-42","total_unit_count":"3001","unitsPerProbe":272.8333333333333},{"asset_id":"84b56f6e-7ade-4790-96e1-9bbc82cd5688","asset_path":"sub-830848/sub-830848_ses-ecephys-830848-2026-03-02-15-05-26_ecephys.nwb","dandiset_id":"001637","date":"2026-03-02","day":1,"exclusionReason":"","included":true,"mouse_id":"830848","percentOfDay1":99.99999999999999,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2105,"qc_unit_count":"2105","session_id":"830848_2026-03-02_15-05-26","total_unit_count":"3709","unitsPerProbe":350.8333333333333},{"asset_id":"cc3b7c7b-d489-460c-b575-40b9edf59e2c","asset_path":"sub-830848/sub-830848_ses-ecephys-830848-2026-03-03-14-02-09_ecephys.nwb","dandiset_id":"001637","date":"2026-03-03","day":2,"exclusionReason":"","included":true,"mouse_id":"830848","percentOfDay1":81.42517814726841,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1714,"qc_unit_count":"1714","session_id":"830848_2026-03-03_14-02-09","total_unit_count":"3378","unitsPerProbe":285.6666666666667},{"asset_id":"228c2c2e-1daf-4bf6-9f66-eb6b2bce5ba5","asset_path":"sub-830848/sub-830848_ses-ecephys-830848-2026-03-04-15-34-54_ecephys.nwb","dandiset_id":"001637","date":"2026-03-04","day":3,"exclusionReason":"","included":true,"mouse_id":"830848","percentOfDay1":76.19952494061758,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1604,"qc_unit_count":"1604","session_id":"830848_2026-03-04_15-34-54","total_unit_count":"3117","unitsPerProbe":267.3333333333333},{"asset_id":"c53ec231-46f7-42d6-b89a-19e260b8eaa9","asset_path":"sub-830848/sub-830848_ses-ecephys-830848-2026-03-05-16-07-50_ecephys.nwb","dandiset_id":"001637","date":"2026-03-05","day":4,"exclusionReason":"","included":true,"mouse_id":"830848","percentOfDay1":70.21377672209027,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1478,"qc_unit_count":"1478","session_id":"830848_2026-03-05_16-07-50","total_unit_count":"2570","unitsPerProbe":246.33333333333334},{"asset_id":"fe5b6b44-12a6-4f59-a91f-953850564fb0","asset_path":"sub-830849/sub-830849_ses-ecephys-830849-2026-03-04-10-14-36_ecephys.nwb","dandiset_id":"001637","date":"2026-03-04","day":1,"exclusionReason":"","included":true,"mouse_id":"830849","percentOfDay1":100.0,"probeCount":5,"probe_count":"5","probe_names":"ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1304,"qc_unit_count":"1304","session_id":"830849_2026-03-04_10-14-36","total_unit_count":"2383","unitsPerProbe":260.8},{"asset_id":"cdf63e04-05d0-457a-af66-2de1014eb1d4","asset_path":"sub-830849/sub-830849_ses-ecephys-830849-2026-03-05-10-41-20_ecephys.nwb","dandiset_id":"001637","date":"2026-03-05","day":2,"exclusionReason":"","included":true,"mouse_id":"830849","percentOfDay1":89.11042944785275,"probeCount":5,"probe_count":"5","probe_names":"ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1162,"qc_unit_count":"1162","session_id":"830849_2026-03-05_10-41-20","total_unit_count":"2321","unitsPerProbe":232.4},{"asset_id":"ce62d153-644b-4da9-b5a7-823353bb7ccb","asset_path":"sub-830849/sub-830849_ses-ecephys-830849-2026-03-06-10-51-58_ecephys.nwb","dandiset_id":"001637","date":"2026-03-06","day":3,"exclusionReason":"","included":true,"mouse_id":"830849","percentOfDay1":107.4258691206544,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1681,"qc_unit_count":"1681","session_id":"830849_2026-03-06_10-51-58","total_unit_count":"2902","unitsPerProbe":280.1666666666667},{"asset_id":"ab8ec755-2b87-45c3-a29d-dd88955334b8","asset_path":"sub-830849/sub-830849_ses-ecephys-830849-2026-03-07-09-48-16_ecephys.nwb","dandiset_id":"001637","date":"2026-03-07","day":4,"exclusionReason":"","included":true,"mouse_id":"830849","percentOfDay1":90.03067484662576,"probeCount":5,"probe_count":"5","probe_names":"ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1174,"qc_unit_count":"1174","session_id":"830849_2026-03-07_09-48-16","total_unit_count":"2287","unitsPerProbe":234.8},{"asset_id":"fc14f27c-4b7d-4332-8562-a4c824f757f3","asset_path":"sub-830851/sub-830851_ses-ecephys-830851-2026-03-16-10-18-07_ecephys.nwb","dandiset_id":"001637","date":"2026-03-16","day":1,"exclusionReason":"","included":true,"mouse_id":"830851","percentOfDay1":100.0,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1661,"qc_unit_count":"1661","session_id":"830851_2026-03-16_10-18-07","total_unit_count":"3598","unitsPerProbe":276.8333333333333},{"asset_id":"9b9e8abe-7b43-47f1-b8e1-4114f87898a1","asset_path":"sub-830851/sub-830851_ses-ecephys-830851-2026-03-17-10-46-04_ecephys.nwb","dandiset_id":"001637","date":"2026-03-17","day":2,"exclusionReason":"","included":true,"mouse_id":"830851","percentOfDay1":93.55809753160747,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1554,"qc_unit_count":"1554","session_id":"830851_2026-03-17_10-46-04","total_unit_count":"3122","unitsPerProbe":259.0},{"asset_id":"24822bc8-01d9-473f-9eef-615fa01119d9","asset_path":"sub-830851/sub-830851_ses-ecephys-830851-2026-03-18-10-24-59_ecephys.nwb","dandiset_id":"001637","date":"2026-03-18","day":3,"exclusionReason":"","included":true,"mouse_id":"830851","percentOfDay1":101.14388922335942,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1680,"qc_unit_count":"1680","session_id":"830851_2026-03-18_10-24-59","total_unit_count":"3182","unitsPerProbe":280.0},{"asset_id":"0167df0a-b5f1-45bd-9659-c32ac132d875","asset_path":"sub-830851/sub-830851_ses-ecephys-830851-2026-03-19-10-49-11_ecephys.nwb","dandiset_id":"001637","date":"2026-03-19","day":4,"exclusionReason":"","included":true,"mouse_id":"830851","percentOfDay1":79.89163154726069,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1327,"qc_unit_count":"1327","session_id":"830851_2026-03-19_10-49-11","total_unit_count":"2839","unitsPerProbe":221.16666666666666},{"asset_id":"e15084a4-6372-4a2a-90a7-64ef0e4450b0","asset_path":"sub-830852/sub-830852_ses-ecephys-830852-2026-02-23-10-31-02_ecephys.nwb","dandiset_id":"001637","date":"2026-02-23","day":1,"exclusionReason":"","included":true,"mouse_id":"830852","percentOfDay1":100.0,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1775,"qc_unit_count":"1775","session_id":"830852_2026-02-23_10-31-02","total_unit_count":"3622","unitsPerProbe":295.8333333333333},{"asset_id":"b2f4bb1b-5092-4392-b4fa-b25802ea7769","asset_path":"sub-830852/sub-830852_ses-ecephys-830852-2026-02-24-10-20-58_ecephys.nwb","dandiset_id":"001637","date":"2026-02-24","day":2,"exclusionReason":"","included":true,"mouse_id":"830852","percentOfDay1":85.57746478873239,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1519,"qc_unit_count":"1519","session_id":"830852_2026-02-24_10-20-58","total_unit_count":"2845","unitsPerProbe":253.16666666666666},{"asset_id":"6f14398a-7abc-446c-a5ab-c008f52c7129","asset_path":"sub-830852/sub-830852_ses-ecephys-830852-2026-02-25-10-32-11_ecephys.nwb","dandiset_id":"001637","date":"2026-02-25","day":3,"exclusionReason":"","included":true,"mouse_id":"830852","percentOfDay1":75.6056338028169,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1342,"qc_unit_count":"1342","session_id":"830852_2026-02-25_10-32-11","total_unit_count":"2766","unitsPerProbe":223.66666666666666},{"asset_id":"3ffe2e3d-9c41-459f-819f-1b72ac5284a2","asset_path":"sub-830852/sub-830852_ses-ecephys-830852-2026-02-26-10-49-56_ecephys.nwb","dandiset_id":"001637","date":"2026-02-26","day":4,"exclusionReason":"","included":true,"mouse_id":"830852","percentOfDay1":75.21126760563381,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1335,"qc_unit_count":"1335","session_id":"830852_2026-02-26_10-49-56","total_unit_count":"2612","unitsPerProbe":222.5},{"asset_id":"ed0a9668-90f7-45bd-9b2f-c62905a24f07","asset_path":"sub-832691/sub-832691_ses-ecephys-832691-2026-03-23-11-28-47_ecephys.nwb","dandiset_id":"001637","date":"2026-03-23","day":1,"exclusionReason":"","included":true,"mouse_id":"832691","percentOfDay1":100.0,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1652,"qc_unit_count":"1652","session_id":"832691_2026-03-23_11-28-47","total_unit_count":"3365","unitsPerProbe":275.3333333333333},{"asset_id":"e8dc5ef4-720b-4fb4-a493-e8dc2ef2b8d6","asset_path":"sub-832691/sub-832691_ses-ecephys-832691-2026-03-24-10-04-30_ecephys.nwb","dandiset_id":"001637","date":"2026-03-24","day":2,"exclusionReason":"","included":true,"mouse_id":"832691","percentOfDay1":94.12832929782084,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1555,"qc_unit_count":"1555","session_id":"832691_2026-03-24_10-04-30","total_unit_count":"3413","unitsPerProbe":259.1666666666667},{"asset_id":"2376172b-955a-4533-9342-fdb699cf92fc","asset_path":"sub-832691/sub-832691_ses-ecephys-832691-2026-03-25-10-22-33_ecephys.nwb","dandiset_id":"001637","date":"2026-03-25","day":3,"exclusionReason":"","included":true,"mouse_id":"832691","percentOfDay1":84.14043583535108,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1390,"qc_unit_count":"1390","session_id":"832691_2026-03-25_10-22-33","total_unit_count":"3174","unitsPerProbe":231.66666666666666},{"asset_id":"2255d7ed-7924-4b4f-9823-ac28d871463f","asset_path":"sub-832691/sub-832691_ses-ecephys-832691-2026-03-26-10-51-37_ecephys.nwb","dandiset_id":"001637","date":"2026-03-26","day":4,"exclusionReason":"","included":true,"mouse_id":"832691","percentOfDay1":81.96125907990314,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1354,"qc_unit_count":"1354","session_id":"832691_2026-03-26_10-51-37","total_unit_count":"2648","unitsPerProbe":225.66666666666666},{"asset_id":"4b1a34e9-8ddf-4b70-a19c-eb9941e57e19","asset_path":"sub-834686/sub-834686_ses-ecephys-834686-2026-03-23-17-08-31_ecephys.nwb","dandiset_id":"001637","date":"2026-03-23","day":1,"exclusionReason":"","included":true,"mouse_id":"834686","percentOfDay1":100.0,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1786,"qc_unit_count":"1786","session_id":"834686_2026-03-23_17-08-31","total_unit_count":"3243","unitsPerProbe":297.6666666666667},{"asset_id":"62264fed-94d4-4115-a875-88625ffd2686","asset_path":"sub-834686/sub-834686_ses-ecephys-834686-2026-03-24-15-41-18_ecephys.nwb","dandiset_id":"001637","date":"2026-03-24","day":2,"exclusionReason":"","included":true,"mouse_id":"834686","percentOfDay1":121.16461366181412,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2164,"qc_unit_count":"2164","session_id":"834686_2026-03-24_15-41-18","total_unit_count":"3699","unitsPerProbe":360.6666666666667},{"asset_id":"8bafe4a5-40fc-42a4-a7c4-eea4acbc6fca","asset_path":"sub-834686/sub-834686_ses-ecephys-834686-2026-03-25-15-47-48_ecephys.nwb","dandiset_id":"001637","date":"2026-03-25","day":3,"exclusionReason":"","included":true,"mouse_id":"834686","percentOfDay1":100.44792833146695,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1794,"qc_unit_count":"1794","session_id":"834686_2026-03-25_15-47-48","total_unit_count":"3099","unitsPerProbe":299.0},{"asset_id":"41767a03-31fc-4ceb-90eb-d31228f3c3cc","asset_path":"sub-834686/sub-834686_ses-ecephys-834686-2026-03-26-16-15-13_ecephys.nwb","dandiset_id":"001637","date":"2026-03-26","day":4,"exclusionReason":"","included":true,"mouse_id":"834686","percentOfDay1":91.15341545352743,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1628,"qc_unit_count":"1628","session_id":"834686_2026-03-26_16-15-13","total_unit_count":"3163","unitsPerProbe":271.3333333333333},{"asset_id":"7fbb5805-b423-4dba-b7d6-9a4af48a2023","asset_path":"sub-834687/sub-834687_ses-ecephys-834687-2026-03-16-16-33-30_ecephys.nwb","dandiset_id":"001637","date":"2026-03-16","day":1,"exclusionReason":"","included":true,"mouse_id":"834687","percentOfDay1":100.00000000000001,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2137,"qc_unit_count":"2137","session_id":"834687_2026-03-16_16-33-30","total_unit_count":"3670","unitsPerProbe":356.1666666666667},{"asset_id":"3cbaa2f1-687c-438f-adea-358b4893383f","asset_path":"sub-834687/sub-834687_ses-ecephys-834687-2026-03-17-16-18-25_ecephys.nwb","dandiset_id":"001637","date":"2026-03-17","day":2,"exclusionReason":"","included":true,"mouse_id":"834687","percentOfDay1":81.60973327094057,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1744,"qc_unit_count":"1744","session_id":"834687_2026-03-17_16-18-25","total_unit_count":"3701","unitsPerProbe":290.6666666666667},{"asset_id":"ececeb0e-42cd-401f-9545-b666356e8b6d","asset_path":"sub-834687/sub-834687_ses-ecephys-834687-2026-03-18-15-50-10_ecephys.nwb","dandiset_id":"001637","date":"2026-03-18","day":3,"exclusionReason":"","included":true,"mouse_id":"834687","percentOfDay1":81.98408984557791,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1752,"qc_unit_count":"1752","session_id":"834687_2026-03-18_15-50-10","total_unit_count":"3133","unitsPerProbe":292.0},{"asset_id":"bf725c9c-38cd-4c41-b632-5347bcc18954","asset_path":"sub-834687/sub-834687_ses-ecephys-834687-2026-03-19-16-06-07_ecephys.nwb","dandiset_id":"001637","date":"2026-03-19","day":4,"exclusionReason":"","included":true,"mouse_id":"834687","percentOfDay1":93.54234908750585,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1999,"qc_unit_count":"1999","session_id":"834687_2026-03-19_16-06-07","total_unit_count":"3328","unitsPerProbe":333.1666666666667},{"asset_id":"0cc012fd-e92c-4087-95ef-150d00d59b42","asset_path":"sub-834691/sub-834691_ses-ecephys-834691-2026-02-16-11-02-15_ecephys.nwb","dandiset_id":"001637","date":"2026-02-16","day":1,"exclusionReason":"","included":true,"mouse_id":"834691","percentOfDay1":100.00000000000001,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2434,"qc_unit_count":"2434","session_id":"834691_2026-02-16_11-02-15","total_unit_count":"4234","unitsPerProbe":405.6666666666667},{"asset_id":"9a3f32bf-ee7f-4b36-ae05-6f8217d8a1f0","asset_path":"sub-834691/sub-834691_ses-ecephys-834691-2026-02-17-10-49-35_ecephys.nwb","dandiset_id":"001637","date":"2026-02-17","day":2,"exclusionReason":"","included":true,"mouse_id":"834691","percentOfDay1":64.04272801972063,"probeCount":5,"probe_count":"5","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE","qcUnitCount":1299,"qc_unit_count":"1299","session_id":"834691_2026-02-17_10-49-35","total_unit_count":"2971","unitsPerProbe":259.8},{"asset_id":"641156f5-4e54-42b2-9017-1134cf3115ea","asset_path":"sub-848387/sub-848387_ses-ecephys-848387-2026-05-04-16-19-01_ecephys.nwb","dandiset_id":"001637","date":"2026-05-04","day":1,"exclusionReason":"","included":true,"mouse_id":"848387","percentOfDay1":100.00000000000001,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2251,"qc_unit_count":"2251","session_id":"848387_2026-05-04_16-19-01","total_unit_count":"3428","unitsPerProbe":375.1666666666667},{"asset_id":"c7ec7bc4-3836-467a-af53-33a6605a1d61","asset_path":"sub-848387/sub-848387_ses-ecephys-848387-2026-05-05-15-55-50_ecephys.nwb","dandiset_id":"001637","date":"2026-05-05","day":2,"exclusionReason":"","included":true,"mouse_id":"848387","percentOfDay1":86.00621945801866,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1936,"qc_unit_count":"1936","session_id":"848387_2026-05-05_15-55-50","total_unit_count":"3129","unitsPerProbe":322.6666666666667},{"asset_id":"409f5707-a886-46d7-b392-578b55fa8517","asset_path":"sub-848387/sub-848387_ses-ecephys-848387-2026-05-06-15-09-10_ecephys.nwb","dandiset_id":"001637","date":"2026-05-06","day":3,"exclusionReason":"","included":true,"mouse_id":"848387","percentOfDay1":82.20346512661038,"probeCount":5,"probe_count":"5","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeF","qcUnitCount":1542,"qc_unit_count":"1542","session_id":"848387_2026-05-06_15-09-10","total_unit_count":"2596","unitsPerProbe":308.4},{"asset_id":"27b29de0-84f2-4eb5-9998-c32065b528d3","asset_path":"sub-848387/sub-848387_ses-ecephys-848387-2026-05-07-15-46-10_ecephys.nwb","dandiset_id":"001637","date":"2026-05-07","day":4,"exclusionReason":"","included":true,"mouse_id":"848387","percentOfDay1":99.60017769880054,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2242,"qc_unit_count":"2242","session_id":"848387_2026-05-07_15-46-10","total_unit_count":"3378","unitsPerProbe":373.6666666666667},{"asset_id":"7692aa01-1c14-47ae-93aa-bca6d8f7b050","asset_path":"sub-848390/sub-848390_ses-ecephys-848390-2026-05-04-10-22-33_ecephys.nwb","dandiset_id":"001637","date":"2026-05-04","day":1,"exclusionReason":"","included":true,"mouse_id":"848390","percentOfDay1":100.0,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2001,"qc_unit_count":"2001","session_id":"848390_2026-05-04_10-22-33","total_unit_count":"4318","unitsPerProbe":333.5},{"asset_id":"755840d4-f9e5-4517-83ad-4273521e548c","asset_path":"sub-848390/sub-848390_ses-ecephys-848390-2026-05-05-10-08-25_ecephys.nwb","dandiset_id":"001637","date":"2026-05-05","day":2,"exclusionReason":"","included":true,"mouse_id":"848390","percentOfDay1":100.04997501249376,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":2002,"qc_unit_count":"2002","session_id":"848390_2026-05-05_10-08-25","total_unit_count":"3605","unitsPerProbe":333.6666666666667},{"asset_id":"0e5b530a-e22d-4bf8-a5d7-5108229c899a","asset_path":"sub-848390/sub-848390_ses-ecephys-848390-2026-05-06-09-54-56_ecephys.nwb","dandiset_id":"001637","date":"2026-05-06","day":3,"exclusionReason":"","included":true,"mouse_id":"848390","percentOfDay1":94.60269865067467,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1893,"qc_unit_count":"1893","session_id":"848390_2026-05-06_09-54-56","total_unit_count":"3305","unitsPerProbe":315.5},{"asset_id":"2ee1451c-987e-4dfb-b2eb-be5cd3d52adc","asset_path":"sub-848390/sub-848390_ses-ecephys-848390-2026-05-07-10-22-45_ecephys.nwb","dandiset_id":"001637","date":"2026-05-07","day":4,"exclusionReason":"","included":true,"mouse_id":"848390","percentOfDay1":86.60669665167416,"probeCount":6,"probe_count":"6","probe_names":"ProbeA;ProbeB;ProbeC;ProbeD;ProbeE;ProbeF","qcUnitCount":1733,"qc_unit_count":"1733","session_id":"848390_2026-05-07_10-22-45","total_unit_count":"3139","unitsPerProbe":288.8333333333333}],"sourceUrl":"https://dandiarchive.org/dandiset/001637/draft","summary":[{"day":1,"meanPercent":100.0,"meanUnitsPerProbe":338.33125,"sessionCount":16},{"day":2,"meanPercent":91.33473733722012,"meanUnitsPerProbe":303.2555555555556,"sessionCount":15},{"day":3,"meanPercent":87.65873562054482,"meanUnitsPerProbe":290.02444444444444,"sessionCount":15},{"day":4,"meanPercent":80.92305264648351,"meanUnitsPerProbe":265.4642857142857,"sessionCount":14}],"version":1}</script>
+  <script>
+(() => {
+  "use strict";
+
+  const data = JSON.parse(document.getElementById("unit-yield-data").textContent);
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const colors = [
+    "#087F8C", "#C65D13", "#3157B7", "#8A4F9E",
+    "#4E7B32", "#A47C00", "#B33C2E", "#377D6A",
+    "#6D5D9B", "#A24B72", "#53758C", "#7A6A2F",
+    "#3E6F41", "#985B35", "#4F65A8", "#7F556D",
+  ];
+  const elements = {
+    chart: document.getElementById("unit-yield-chart"),
+    download: document.getElementById("download-csv"),
+    mouse: document.getElementById("mouse-select"),
+    summary: document.getElementById("record-summary"),
+    table: document.getElementById("session-table-body"),
+    tableCount: document.getElementById("session-row-count"),
+    tooltip: document.getElementById("chart-tooltip"),
+  };
+  const state = { metric: "percent", mouse: "all" };
+  const mouseIds = [...new Set(data.records.map((record) => record.mouse_id))].sort();
+  const colorByMouse = Object.fromEntries(
+    mouseIds.map((mouseId, index) => [mouseId, colors[index % colors.length]]),
+  );
+
+  function svgElement(tag, attributes = {}, text = "") {
+    const element = document.createElementNS(SVG_NS, tag);
+    Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, value));
+    if (text) element.textContent = text;
+    return element;
+  }
+
+  function csvCell(value) {
+    return `"${String(value ?? "").replaceAll('"', '""')}"`;
+  }
+
+  function visibleRecords() {
+    return data.records.filter(
+      (record) => state.mouse === "all" || record.mouse_id === state.mouse,
+    );
+  }
+
+  function plottedRecords() {
+    return visibleRecords().filter((record) => record.included);
+  }
+
+  function niceMaximum(value) {
+    if (!Number.isFinite(value) || value <= 0) return 100;
+    const magnitude = 10 ** Math.floor(Math.log10(value));
+    const normalized = value / magnitude;
+    const step = normalized <= 1.2 ? 1.2 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+    return step * magnitude;
+  }
+
+  function formatValue(value, digits = 1) {
+    return Number(value).toLocaleString(undefined, {
+      maximumFractionDigits: digits,
+      minimumFractionDigits: digits,
+    });
+  }
+
+  function tooltipText(record) {
+    const percent = record.percentOfDay1 == null ? "Excluded" : `${formatValue(record.percentOfDay1)}%`;
+    return `<strong>Mouse ${record.mouse_id} · Day ${record.day}</strong><br>`
+      + `${record.date}<br>${record.qcUnitCount.toLocaleString()} of `
+      + `${record.total_unit_count.toLocaleString()} units pass QC<br>`
+      + `${record.probeCount} probes · ${formatValue(record.unitsPerProbe)} QC units/probe<br>`
+      + `${percent} of day 1`;
+  }
+
+  function showTooltip(record, clientX, clientY) {
+    elements.tooltip.innerHTML = tooltipText(record);
+    elements.tooltip.hidden = false;
+    const width = elements.tooltip.offsetWidth;
+    const height = elements.tooltip.offsetHeight;
+    elements.tooltip.style.left = `${Math.min(clientX + 12, window.innerWidth - width - 8)}px`;
+    elements.tooltip.style.top = `${Math.max(8, Math.min(clientY + 12, window.innerHeight - height - 8))}px`;
+  }
+
+  function hideTooltip() {
+    elements.tooltip.hidden = true;
+  }
+
+  function renderChart() {
+    const records = plottedRecords();
+    const summary = data.summary;
+    const valueKey = state.metric === "percent" ? "percentOfDay1" : "unitsPerProbe";
+    const meanKey = state.metric === "percent" ? "meanPercent" : "meanUnitsPerProbe";
+    const yLabel = state.metric === "percent"
+      ? "QC units per probe (% of day 1)"
+      : "QC units per probe";
+    const width = 960;
+    const height = 500;
+    const margin = { left: 82, right: 24, top: 28, bottom: 72 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    const days = summary.map((row) => row.day);
+    const minDay = Math.min(...days);
+    const maxDay = Math.max(...days);
+    const allValues = [
+      ...records.map((record) => record[valueKey]),
+      ...summary.map((row) => row[meanKey]),
+    ];
+    const rawMaximum = Math.max(...allValues);
+    const yMax = state.metric === "percent"
+      ? Math.max(120, niceMaximum(rawMaximum * 1.05))
+      : niceMaximum(rawMaximum * 1.08);
+    const x = (day) => margin.left
+      + (maxDay === minDay ? plotWidth / 2 : (day - minDay) / (maxDay - minDay) * plotWidth);
+    const y = (value) => margin.top + plotHeight - value / yMax * plotHeight;
+
+    elements.chart.replaceChildren(
+      svgElement("title", { id: "chart-title" }, "Neuropixels unit yield across recording days"),
+      svgElement(
+        "desc",
+        { id: "chart-description" },
+        "Individual mouse trajectories and daily means for QC-passing unit yield.",
+      ),
+      svgElement("rect", { width, height, fill: "#FFFFFF" }),
+    );
+
+    const tickCount = 5;
+    for (let index = 0; index <= tickCount; index += 1) {
+      const value = yMax * index / tickCount;
+      const tickY = y(value);
+      elements.chart.append(
+        svgElement("line", {
+          x1: margin.left, y1: tickY, x2: width - margin.right, y2: tickY,
+          stroke: "#E2E5E4", "stroke-width": 1,
+        }),
+        svgElement("text", {
+          x: margin.left - 12, y: tickY + 4, "text-anchor": "end",
+          fill: "#68706E", "font-family": "Source Sans 3, sans-serif", "font-size": 12,
+        }, state.metric === "percent" ? `${Math.round(value)}` : formatValue(value, 0)),
+      );
+    }
+
+    if (state.metric === "percent") {
+      elements.chart.append(svgElement("line", {
+        x1: margin.left, y1: y(100), x2: width - margin.right, y2: y(100),
+        stroke: "#5E6664", "stroke-width": 1.5, "stroke-dasharray": "7 6",
+      }));
+    }
+
+    const byMouse = new Map();
+    records.forEach((record) => {
+      if (!byMouse.has(record.mouse_id)) byMouse.set(record.mouse_id, []);
+      byMouse.get(record.mouse_id).push(record);
+    });
+    byMouse.forEach((mouseRecords, mouseId) => {
+      mouseRecords.sort((first, second) => first.day - second.day);
+      const points = mouseRecords.map((record) => `${x(record.day)},${y(record[valueKey])}`).join(" ");
+      elements.chart.append(svgElement("polyline", {
+        points, fill: "none", stroke: colorByMouse[mouseId], "stroke-width": 2,
+        "stroke-opacity": state.mouse === "all" ? 0.55 : 0.9,
+      }));
+      mouseRecords.forEach((record) => {
+        const point = svgElement("circle", {
+          cx: x(record.day), cy: y(record[valueKey]), r: state.mouse === "all" ? 4.5 : 6,
+          fill: colorByMouse[mouseId], "fill-opacity": 0.82, tabindex: 0,
+          role: "img",
+          "aria-label": `Mouse ${mouseId}, day ${record.day}, ${formatValue(record[valueKey])}`,
+        });
+        point.addEventListener("pointerenter", (event) => showTooltip(record, event.clientX, event.clientY));
+        point.addEventListener("pointermove", (event) => showTooltip(record, event.clientX, event.clientY));
+        point.addEventListener("pointerleave", hideTooltip);
+        point.addEventListener("focus", () => {
+          const bounds = point.getBoundingClientRect();
+          showTooltip(record, bounds.left + bounds.width / 2, bounds.top + bounds.height / 2);
+        });
+        point.addEventListener("blur", hideTooltip);
+        elements.chart.append(point);
+      });
+    });
+
+    const meanPoints = summary.map((row) => `${x(row.day)},${y(row[meanKey])}`).join(" ");
+    elements.chart.append(svgElement("polyline", {
+      points: meanPoints, fill: "none", stroke: "#222829", "stroke-width": 5,
+    }));
+    summary.forEach((row) => elements.chart.append(svgElement("circle", {
+      cx: x(row.day), cy: y(row[meanKey]), r: 7, fill: "#222829",
+      stroke: "#FFFFFF", "stroke-width": 2,
+    })));
+
+    const axisY = margin.top + plotHeight;
+    elements.chart.append(svgElement("line", {
+      x1: margin.left, y1: axisY, x2: width - margin.right, y2: axisY,
+      stroke: "#69716F", "stroke-width": 1.5,
+    }));
+    const summaryByDay = Object.fromEntries(summary.map((row) => [row.day, row]));
+    for (let day = minDay; day <= maxDay; day += 1) {
+      const dayX = x(day);
+      const count = summaryByDay[day]?.sessionCount ?? 0;
+      elements.chart.append(
+        svgElement("line", {
+          x1: dayX, y1: axisY, x2: dayX, y2: axisY + 6,
+          stroke: "#69716F", "stroke-width": 1.5,
+        }),
+        svgElement("text", {
+          x: dayX, y: axisY + 26, "text-anchor": "middle", fill: "#303536",
+          "font-family": "Source Sans 3, sans-serif", "font-size": 14, "font-weight": 600,
+        }, `Day ${day}`),
+        svgElement("text", {
+          x: dayX, y: axisY + 44, "text-anchor": "middle", fill: "#68706E",
+          "font-family": "Source Sans 3, sans-serif", "font-size": 12,
+        }, `n=${count}`),
+      );
+    }
+    elements.chart.append(svgElement("text", {
+      x: 20, y: margin.top + plotHeight / 2, "text-anchor": "middle", fill: "#303536",
+      transform: `rotate(-90 20 ${margin.top + plotHeight / 2})`,
+      "font-family": "Source Sans 3, sans-serif", "font-size": 14,
+    }, yLabel));
+
+    elements.chart.append(
+      svgElement("line", { x1: 722, y1: 16, x2: 756, y2: 16, stroke: "#222829", "stroke-width": 5 }),
+      svgElement("circle", { cx: 739, cy: 16, r: 6, fill: "#222829", stroke: "#fff", "stroke-width": 2 }),
+      svgElement("text", {
+        x: 765, y: 21, fill: "#303536", "font-family": "Source Sans 3, sans-serif", "font-size": 13,
+      }, "Daily mean"),
+      svgElement("line", { x1: 854, y1: 16, x2: 888, y2: 16, stroke: "#53758C", "stroke-width": 2 }),
+      svgElement("circle", { cx: 871, cy: 16, r: 4, fill: "#53758C" }),
+      svgElement("text", {
+        x: 897, y: 21, fill: "#303536", "font-family": "Source Sans 3, sans-serif", "font-size": 13,
+      }, "Mouse"),
+    );
+  }
+
+  function renderTable() {
+    const records = visibleRecords();
+    elements.table.replaceChildren();
+    records.forEach((record) => {
+      const row = document.createElement("tr");
+      row.classList.toggle("excluded", !record.included);
+      const sessionLink = document.createElement("a");
+      sessionLink.href = `${data.sourceUrl}/files?location=${encodeURIComponent(record.asset_path)}`;
+      sessionLink.target = "_blank";
+      sessionLink.rel = "noreferrer";
+      sessionLink.textContent = record.session_id;
+      const values = [
+        sessionLink,
+        record.mouse_id,
+        record.date,
+        record.day,
+        Number(record.total_unit_count).toLocaleString(),
+        record.qcUnitCount.toLocaleString(),
+        record.probeCount,
+        formatValue(record.unitsPerProbe),
+        record.percentOfDay1 == null ? "—" : formatValue(record.percentOfDay1),
+      ];
+      values.forEach((value) => {
+        const cell = document.createElement("td");
+        cell.append(value instanceof Node ? value : document.createTextNode(value));
+        row.append(cell);
+      });
+      if (!record.included) row.title = record.exclusionReason;
+      elements.table.append(row);
+    });
+
+    const headers = [
+      "session_id", "mouse_id", "date", "day", "total_unit_count", "qc_unit_count",
+      "probe_count", "units_per_probe", "percent_of_day_1", "included", "asset_id", "asset_path",
+    ];
+    const csvRows = records.map((record) => [
+      record.session_id, record.mouse_id, record.date, record.day, record.total_unit_count,
+      record.qcUnitCount, record.probeCount, record.unitsPerProbe, record.percentOfDay1,
+      record.included, record.asset_id, record.asset_path,
+    ]);
+    const csv = [headers, ...csvRows].map((values) => values.map(csvCell).join(",")).join("\n");
+    elements.download.href = `data:text/csv;charset=utf-8,%EF%BB%BF${encodeURIComponent(csv)}`;
+    elements.download.download = `openscope-neuropixels-unit-yield-${state.mouse}.csv`;
+
+    const included = records.filter((record) => record.included);
+    const subjectCount = new Set(included.map((record) => record.mouse_id)).size;
+    const subjectLabel = subjectCount === 1 ? "mouse" : "mice";
+    elements.summary.textContent = `${included.length} plotted sessions · ${subjectCount} ${subjectLabel}`;
+    elements.tableCount.textContent = `${records.length} ${records.length === 1 ? "row" : "rows"}`;
+  }
+
+  function render() {
+    renderChart();
+    renderTable();
+  }
+
+  elements.mouse.append(new Option("All mice", "all"));
+  mouseIds.forEach((mouseId) => elements.mouse.append(new Option(mouseId, mouseId)));
+  elements.mouse.addEventListener("change", () => {
+    state.mouse = elements.mouse.value;
+    render();
+  });
+  document.querySelectorAll(".metric-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.metric = button.dataset.metric;
+      document.querySelectorAll(".metric-button").forEach((candidate) => {
+        const active = candidate === button;
+        candidate.classList.toggle("active", active);
+        candidate.setAttribute("aria-pressed", String(active));
+      });
+      renderChart();
+    });
+  });
+  render();
+})();
+  </script>
+  <script>
+(() => {
+  "use strict";
+
+  const root = document.querySelector("body > main");
+  if (!root || window.self === window.top) return;
+
+  let wrapper;
+  try {
+    wrapper = window.frameElement?.parentElement;
+  } catch {
+    return;
+  }
+  if (!wrapper) return;
+
+  document.documentElement.classList.add("is-embedded");
+  document.documentElement.style.overflow = "hidden";
+  document.body.style.overflow = "hidden";
+  const syncHeight = () => {
+    const height = Math.ceil(root.getBoundingClientRect().height);
+    if (height > 0) wrapper.style.height = `${height}px`;
+  };
+  const resizeObserver = new ResizeObserver(syncHeight);
+  resizeObserver.observe(root);
+  window.addEventListener("resize", syncHeight);
+  window.addEventListener("load", syncHeight, { once: true });
+  syncHeight();
+})();
+  </script>
+</body>
+</html>

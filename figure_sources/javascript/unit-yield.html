@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Neuropixels unit yield across recording days</title>
+  <style>
+__UNIT_YIELD_CSS__
+  </style>
+</head>
+<body>
+  <main class="viewer" id="unit-yield-viewer">
+    <section class="toolbar" aria-label="Unit-yield controls">
+      <div class="metric-switch" role="group" aria-label="Yield metric">
+        <button type="button" class="metric-button active" data-metric="percent" aria-pressed="true">% of day 1</button>
+        <button type="button" class="metric-button" data-metric="absolute" aria-pressed="false">QC units / probe</button>
+      </div>
+      <label for="mouse-select">Mouse</label>
+      <select id="mouse-select"></select>
+      <output id="record-summary" aria-live="polite"></output>
+      <a id="download-csv" href="#" download title="Download visible session data as CSV" aria-label="Download visible session data as CSV">↓ CSV</a>
+    </section>
+    <section class="chart-shell" aria-label="Interactive unit-yield plot">
+      <svg id="unit-yield-chart" viewBox="0 0 960 500" role="img" aria-labelledby="chart-title chart-description">
+        <title id="chart-title">Neuropixels unit yield across recording days</title>
+        <desc id="chart-description">Individual mouse trajectories and daily means for QC-passing unit yield.</desc>
+      </svg>
+      <div id="chart-tooltip" class="chart-tooltip" role="status" hidden></div>
+    </section>
+    <details class="data-disclosure" id="session-data">
+      <summary><span>Session data</span><output id="session-row-count">60 rows</output></summary>
+      <section class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Session</th>
+              <th scope="col">Mouse</th>
+              <th scope="col">Date</th>
+              <th scope="col">Day</th>
+              <th scope="col">Units</th>
+              <th scope="col">QC units</th>
+              <th scope="col">Probes</th>
+              <th scope="col">QC units / probe</th>
+              <th scope="col">% day 1</th>
+            </tr>
+          </thead>
+          <tbody id="session-table-body"></tbody>
+        </table>
+      </section>
+    </details>
+  </main>
+  <script id="unit-yield-data" type="application/json">__UNIT_YIELD_DATA__</script>
+  <script>
+__UNIT_YIELD_JS__
+  </script>
+  <script>
+__EMBED_AUTO_HEIGHT_JS__
+  </script>
+</body>
+</html>

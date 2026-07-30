@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import datetime as dt
 import hashlib
 import json
 import math
@@ -26,7 +27,13 @@ BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
 BEHAVIOR_EXCERPTS_PATH = DATA_DIR / "behavior-excerpts.json"
 OTHER_STUDIES_PATH = DATA_DIR / "other-oddball-studies.csv"
 OTHER_STUDIES_PROVENANCE_PATH = OTHER_STUDIES_PATH.with_suffix(".provenance.json")
+UNIT_YIELD_DATA_PATH = DATA_DIR / "neuropixels-unit-yield.csv"
+UNIT_YIELD_PROVENANCE_PATH = UNIT_YIELD_DATA_PATH.with_suffix(".provenance.json")
 STATIC_OUTPUT = REPO_ROOT / "images" / "figures" / "generated" / "experimental-design.svg"
+UNIT_YIELD_STATIC_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "supplementary-neuropixels-unit-yield.svg"
+)
+UNIT_YIELD_INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "unit-yield.html"
 MEDIA_DIR = REPO_ROOT / "figure_sources" / "media"
 ZEBRA_MOVIE_SOURCE = MEDIA_DIR / "zebra-stimulus-excerpt.m4v"
 ZEBRA_POSTER_SOURCE = MEDIA_DIR / "zebra-stimulus-poster.png"
@@ -346,6 +353,29 @@ def write_literature_comparison_html(
     return output
 
 
+def write_unit_yield_html(
+    output: Path = UNIT_YIELD_INTERACTIVE_OUTPUT,
+    data_path: Path = UNIT_YIELD_DATA_PATH,
+    provenance_path: Path = UNIT_YIELD_PROVENANCE_PATH,
+) -> Path:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    payload = load_unit_yield_data(data_path, provenance_path)
+    template = (JAVASCRIPT_DIR / "unit-yield.html").read_text(encoding="utf-8")
+    stylesheet = (JAVASCRIPT_DIR / "unit-yield.css").read_text(encoding="utf-8")
+    javascript = (JAVASCRIPT_DIR / "unit-yield.js").read_text(encoding="utf-8")
+    html = (
+        template.replace("__UNIT_YIELD_CSS__", stylesheet)
+        .replace(
+            "__UNIT_YIELD_DATA__",
+            json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
+        )
+        .replace("__UNIT_YIELD_JS__", javascript)
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+    )
+    output.write_text(html, encoding="utf-8")
+    return output
+
+
 def load_behavior_excerpts(path: Path = BEHAVIOR_EXCERPTS_PATH) -> dict:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if payload.get("version") != 1 or payload.get("durationSeconds") != 16.0:
@@ -530,6 +560,90 @@ def normalize_qc(value: str) -> str:
     return "not marked"
 
 
+def load_unit_yield_data(
+    data_path: Path = UNIT_YIELD_DATA_PATH,
+    provenance_path: Path = UNIT_YIELD_PROVENANCE_PATH,
+) -> dict:
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    checksum = hashlib.sha256(data_path.read_bytes()).hexdigest()
+    if checksum != provenance["vendored_sha256"]:
+        raise RuntimeError("Unit-yield data checksum does not match its provenance record.")
+    with data_path.open(newline="", encoding="utf-8") as stream:
+        source_rows = list(csv.DictReader(stream))
+    if len(source_rows) != provenance["rows"]:
+        raise RuntimeError("Unit-yield row count does not match its provenance record.")
+
+    records = []
+    for source in source_rows:
+        qc_unit_count = int(source["qc_unit_count"])
+        probe_count = int(source["probe_count"])
+        if probe_count <= 0:
+            raise RuntimeError(f"Unit-yield session has no probes: {source['session_id']}")
+        records.append(
+            {
+                **source,
+                "dateValue": dt.date.fromisoformat(source["date"]),
+                "probeCount": probe_count,
+                "qcUnitCount": qc_unit_count,
+                "unitsPerProbe": qc_unit_count / probe_count,
+            }
+        )
+
+    records.sort(key=lambda row: (row["mouse_id"], row["dateValue"], row["session_id"]))
+    session_ids = [row["session_id"] for row in records]
+    if len(session_ids) != len(set(session_ids)):
+        raise RuntimeError("Unit-yield data contains duplicate session IDs.")
+
+    first_dates = {}
+    day_one_yields = {}
+    for record in records:
+        mouse_id = record["mouse_id"]
+        first_dates.setdefault(mouse_id, record["dateValue"])
+        record["day"] = (record["dateValue"] - first_dates[mouse_id]).days + 1
+        if record["day"] == 1 and record["qcUnitCount"] > 0:
+            day_one_yields[mouse_id] = record["unitsPerProbe"]
+
+    plotted_records = []
+    for record in records:
+        baseline = day_one_yields.get(record["mouse_id"])
+        record["included"] = record["qcUnitCount"] > 0 and bool(baseline)
+        record["percentOfDay1"] = (
+            100 * record["unitsPerProbe"] / baseline if record["included"] else None
+        )
+        record["exclusionReason"] = (
+            ""
+            if record["included"]
+            else "zero QC-passing units"
+            if record["qcUnitCount"] <= 0
+            else "no nonzero day-1 baseline"
+        )
+        record.pop("dateValue")
+        if record["included"]:
+            plotted_records.append(record)
+
+    summary_by_day = {}
+    for record in plotted_records:
+        summary_by_day.setdefault(record["day"], []).append(record)
+    summary = [
+        {
+            "day": day,
+            "meanPercent": sum(record["percentOfDay1"] for record in day_records)
+            / len(day_records),
+            "meanUnitsPerProbe": sum(record["unitsPerProbe"] for record in day_records)
+            / len(day_records),
+            "sessionCount": len(day_records),
+        }
+        for day, day_records in sorted(summary_by_day.items())
+    ]
+    return {
+        "dandisetId": provenance["dandiset_id"],
+        "records": records,
+        "sourceUrl": provenance["source_url"],
+        "summary": summary,
+        "version": 1,
+    }
+
+
 def expand_individual_session_table(grouped_table: dict) -> dict:
     rows = []
     session_ids = split_grouped_identifiers(grouped_table, count_index=2)
@@ -636,17 +750,189 @@ def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
     return output
 
 
+UNIT_YIELD_COLORS = (
+    "#087F8C",
+    "#C65D13",
+    "#3157B7",
+    "#8A4F9E",
+    "#4E7B32",
+    "#A47C00",
+    "#B33C2E",
+    "#377D6A",
+    "#6D5D9B",
+    "#A24B72",
+    "#53758C",
+    "#7A6A2F",
+    "#3E6F41",
+    "#985B35",
+    "#4F65A8",
+    "#7F556D",
+)
+
+
+def write_unit_yield_svg(
+    output: Path = UNIT_YIELD_STATIC_OUTPUT,
+    data_path: Path = UNIT_YIELD_DATA_PATH,
+    provenance_path: Path = UNIT_YIELD_PROVENANCE_PATH,
+) -> Path:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    payload = load_unit_yield_data(data_path, provenance_path)
+    records = [record for record in payload["records"] if record["included"]]
+    if not records:
+        raise RuntimeError("Unit-yield figure has no included session records.")
+
+    width, height = 1200, 720
+    left, right, top, bottom = 105, 45, 82, 112
+    plot_width = width - left - right
+    plot_height = height - top - bottom
+    days = sorted({record["day"] for record in records})
+    min_day, max_day = min(days), max(days)
+    maximum = max(record["percentOfDay1"] for record in records)
+    y_max = max(120, math.ceil(maximum / 20) * 20)
+
+    def x_position(day: int) -> float:
+        if min_day == max_day:
+            return left + plot_width / 2
+        return left + (day - min_day) / (max_day - min_day) * plot_width
+
+    def y_position(value: float) -> float:
+        return top + plot_height - value / y_max * plot_height
+
+    mouse_ids = sorted({record["mouse_id"] for record in records})
+    color_by_mouse = {
+        mouse_id: UNIT_YIELD_COLORS[index % len(UNIT_YIELD_COLORS)]
+        for index, mouse_id in enumerate(mouse_ids)
+    }
+    records_by_mouse = {
+        mouse_id: [record for record in records if record["mouse_id"] == mouse_id]
+        for mouse_id in mouse_ids
+    }
+
+    svg = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
+        '<title id="title">Neuropixels unit yield across recording days</title>',
+        '<desc id="description">QC-passing units per probe for each mouse, normalized to '
+        'that mouse&apos;s first recording day, with the daily mean emphasized.</desc>',
+        f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
+        '<text x="105" y="37" font-family="Source Sans 3, sans-serif" font-size="27" '
+        'font-weight="650" fill="#263033">QC-passing Neuropixels unit yield across '
+        'recording days</text>',
+        '<text x="105" y="63" font-family="Source Sans 3, sans-serif" font-size="15" '
+        'fill="#68706E">Each mouse is normalized to its day-1 QC units per probe</text>',
+    ]
+
+    tick_step = 20 if y_max <= 200 else 40
+    for value in range(0, y_max + 1, tick_step):
+        y = y_position(value)
+        svg.extend(
+            [
+                f'<line x1="{left}" y1="{y:.2f}" x2="{width - right}" y2="{y:.2f}" '
+                'stroke="#E2E5E4" stroke-width="1"/>',
+                f'<text x="{left - 14}" y="{y + 5:.2f}" text-anchor="end" '
+                'font-family="Source Sans 3, sans-serif" font-size="13" '
+                f'fill="#68706E">{value}</text>',
+            ]
+        )
+
+    baseline_y = y_position(100)
+    svg.append(
+        f'<line x1="{left}" y1="{baseline_y:.2f}" x2="{width - right}" '
+        f'y2="{baseline_y:.2f}" stroke="#5E6664" stroke-width="1.5" '
+        'stroke-dasharray="7 6"/>'
+    )
+
+    for mouse_id, mouse_records in records_by_mouse.items():
+        points = " ".join(
+            f'{x_position(record["day"]):.2f},{y_position(record["percentOfDay1"]):.2f}'
+            for record in mouse_records
+        )
+        color = color_by_mouse[mouse_id]
+        svg.append(
+            f'<polyline points="{points}" fill="none" stroke="{color}" stroke-width="2" '
+            'stroke-opacity="0.52"/>'
+        )
+        for record in mouse_records:
+            svg.append(
+                f'<circle cx="{x_position(record["day"]):.2f}" '
+                f'cy="{y_position(record["percentOfDay1"]):.2f}" r="4" '
+                f'fill="{color}" fill-opacity="0.72"/>'
+            )
+
+    mean_points = " ".join(
+        f'{x_position(row["day"]):.2f},{y_position(row["meanPercent"]):.2f}'
+        for row in payload["summary"]
+    )
+    svg.append(
+        f'<polyline points="{mean_points}" fill="none" stroke="#222829" stroke-width="5"/>'
+    )
+    for row in payload["summary"]:
+        svg.append(
+            f'<circle cx="{x_position(row["day"]):.2f}" '
+            f'cy="{y_position(row["meanPercent"]):.2f}" r="8" fill="#222829" '
+            'stroke="#FFFFFF" stroke-width="2"/>'
+        )
+
+    summary_by_day = {row["day"]: row for row in payload["summary"]}
+    axis_y = top + plot_height
+    svg.append(
+        f'<line x1="{left}" y1="{axis_y}" x2="{width - right}" y2="{axis_y}" '
+        'stroke="#69716F" stroke-width="1.5"/>'
+    )
+    for day in range(min_day, max_day + 1):
+        x = x_position(day)
+        count = summary_by_day.get(day, {}).get("sessionCount", 0)
+        svg.extend(
+            [
+                f'<line x1="{x:.2f}" y1="{axis_y}" x2="{x:.2f}" y2="{axis_y + 7}" '
+                'stroke="#69716F" stroke-width="1.5"/>',
+                f'<text x="{x:.2f}" y="{axis_y + 29}" text-anchor="middle" '
+                'font-family="Source Sans 3, sans-serif" font-size="15" font-weight="600" '
+                f'fill="#303536">Day {day}</text>',
+                f'<text x="{x:.2f}" y="{axis_y + 49}" text-anchor="middle" '
+                'font-family="Source Sans 3, sans-serif" font-size="13" '
+                f'fill="#68706E">n={count}</text>',
+            ]
+        )
+    svg.extend(
+        [
+            f'<text x="24" y="{top + plot_height / 2:.2f}" '
+            'transform="rotate(-90 24 345)" text-anchor="middle" '
+            'font-family="Source Sans 3, sans-serif" font-size="16" fill="#303536">'
+            'QC units per probe (% of day 1)</text>',
+            '<line x1="905" y1="43" x2="943" y2="43" stroke="#222829" '
+            'stroke-width="5"/>',
+            '<circle cx="924" cy="43" r="7" fill="#222829" stroke="#FFFFFF" '
+            'stroke-width="2"/>',
+            '<text x="952" y="48" font-family="Source Sans 3, sans-serif" '
+            'font-size="14" fill="#303536">Daily mean</text>',
+            '<line x1="1055" y1="43" x2="1093" y2="43" stroke="#53758C" '
+            'stroke-width="2" stroke-opacity="0.65"/>',
+            '<circle cx="1074" cy="43" r="4" fill="#53758C"/>',
+            '<text x="1102" y="48" font-family="Source Sans 3, sans-serif" '
+            'font-size="14" fill="#303536">Mouse</text>',
+            "</svg>",
+        ]
+    )
+    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    return output
+
+
 def main() -> None:
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
     literature_comparison_path = write_literature_comparison_html()
     behavior_viewer_path = write_behavior_viewer_html()
+    unit_yield_html_path = write_unit_yield_html()
     svg_path = write_static_svg()
+    unit_yield_svg_path = write_unit_yield_svg()
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {literature_comparison_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {behavior_viewer_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")
 
 
 if __name__ == "__main__":

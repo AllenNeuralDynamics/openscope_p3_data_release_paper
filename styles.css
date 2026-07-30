@@ -206,6 +206,11 @@ article table.table-laser-power td:first-child {
   padding-bottom: 0 !important;
 }
 
+#fig-supp-neuropixels-unit-yield .relative.inline-block {
+  height: 720px;
+  padding-bottom: 0 !important;
+}
+
 #fig-behavior-tracking .relative.inline-block {
   height: 980px;
   padding-bottom: 0 !important;

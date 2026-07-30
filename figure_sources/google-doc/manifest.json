@@ -163,11 +163,12 @@
       "label": "fig-supp-neuropixels-unit-yield",
       "alt": "Unit yield over four recording days for three Neuropixels probes in six mice.",
       "caption": "Example Neuropixels unit yield across recording days.",
-      "status": "supplementary",
-      "supplementary_number": 2,
+      "status": "source-only",
+      "supplementary_number": null,
       "path": "images/figures/imported/supplementary-neuropixels-unit-yield.png",
       "sha256": "f8ed3665bb78801db383a938a68cc1fbf00a15747a104e2952858512ed5c1046",
       "source_kind": "google-doc-rendered-png",
+      "replaced_by": "images/figures/generated/supplementary-neuropixels-unit-yield.svg",
       "editable_source_url": null
     },
     {

@@ -8,4 +8,6 @@ Small structured inputs used by publication figures and tables live here.
 
 `other-oddball-studies.csv` is the complete 17-row by 6-column source for Supplementary Table 1. Its Google Sheets URL, retrieval date, dimensions, and checksums are recorded in `other-oddball-studies.provenance.json`.
 
+`neuropixels-unit-yield.csv` contains one row for each unit-bearing session NWB in the July 30, 2026 snapshot of draft Dandiset 001637. It records total units, units passing all three manuscript QC thresholds, and the available `Probe*` electrode groups. The DANDI asset-manifest checksum, thresholds, skipped schema-only NWBs, and vendored checksum are recorded in `neuropixels-unit-yield.provenance.json`. Regenerate it with `uv run --with h5py --with numpy --with remfile python scripts/extract_neuropixels_unit_yield.py`.
+
 `stimulus-table-excerpts/` contains compact, checksum-verified excerpts from all four pinned example tables. Context excerpts span approximately 24 seconds around the first true mismatch; shared-block excerpts preserve the first approximately 24 seconds of each generated control block. Source row and trial numbers are retained.

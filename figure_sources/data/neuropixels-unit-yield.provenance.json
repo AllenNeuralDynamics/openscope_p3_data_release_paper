@@ -1,0 +1,30 @@
+{
+  "asset_api_url": "https://api.dandiarchive.org/api/dandisets/001637/versions/draft/assets/?page_size=100",
+  "asset_manifest_sha256": "6ead4c628ef109991db228dbbe78fb128338198b9a9a09c3b89d318ee9eb41f9",
+  "dandiset_id": "001637",
+  "dandiset_version": "draft",
+  "notes": "Session NWBs are streamed with remfile. QC-passing units satisfy all three thresholds; probe count is the number of Probe* electrode groups.",
+  "qc_thresholds": {
+    "amplitude_cutoff_max": 0.1,
+    "isi_violations_ratio_max": 0.5,
+    "presence_ratio_min": 0.8
+  },
+  "retrieved_date": "2026-07-30",
+  "rows": 60,
+  "skipped_assets": [
+    {
+      "asset_id": "edf27171-131b-4422-b22c-8d64d05f2878",
+      "path": "sub-848387/sub-848387_ses-ecephys-848387-2026-05-04-16-19-01.nwb",
+      "reason": "missing-units-table"
+    },
+    {
+      "asset_id": "3cb5e97d-4611-4fa4-a429-d731cb00d277",
+      "path": "sub-848387/sub-848387_ses-ecephys-848387-2026-05-07-15-46-10.nwb",
+      "reason": "missing-units-table"
+    }
+  ],
+  "source_url": "https://dandiarchive.org/dandiset/001637/draft",
+  "subjects": 16,
+  "vendored_sha256": "7f0b57f1c9441d023438b3620c9604905a423b94867c815664eb9d4d3041444e",
+  "version": 1
+}

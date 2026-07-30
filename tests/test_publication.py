@@ -93,8 +93,8 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
-    assert len(figures) == 8
-    assert manuscript.count(":::{figure} ./images/figures/imported/") == 8
+    assert len(figures) == 7
+    assert manuscript.count(":::{figure} ./images/figures/imported/") == 7
     assert manuscript.count(":::{figure} ./images/figures/generated/") == 0
     for options in figures:
         assert ":label:" in options
@@ -218,6 +218,11 @@ def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
     assert manuscript.count(":enumerated: false\n:width: 100%") >= 2
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
+    assert "./interactive/unit-yield.html" in manuscript
+    assert ":label: fig-supp-neuropixels-unit-yield\n" in manuscript
+    assert "images/figures/generated/supplementary-neuropixels-unit-yield.svg" not in manuscript
+    assert "60 sessions from 16 mice" in manuscript
+    assert "supplementary-neuropixels-unit-yield.png" not in manuscript
     assert "supplementary-neuropixels-targeting.png" not in manuscript
     assert "figure-11-analysis-framework.png" not in manuscript
     assert "fig-supp-power-simulation-trials" not in manuscript
