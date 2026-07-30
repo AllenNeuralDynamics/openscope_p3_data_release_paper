@@ -1034,7 +1034,49 @@ Placeholder for standard oddball responses across recording modalities.
 
 ## Data access code example
 
-To be written
+The following Python example streams an HDF5 NWB file directly from DANDI using
+HTTP range requests, without first downloading the complete file. Install the
+required packages with `python -m pip install dandi h5py pynwb remfile`. Set
+`DANDISET_ID` to `001637` for Neuropixels data or `001768` for mesoscope data;
+for reproducible analyses, replace `draft` and the automatically selected asset
+with a published version and explicit asset path.
+
+```{code-cell} python
+:tags: [skip-execution]
+
+import h5py
+import remfile
+from dandi.dandiapi import DandiAPIClient
+from pynwb import NWBHDF5IO
+
+DANDISET_ID = "001637"  # Use "001768" for mesoscope data.
+DANDISET_VERSION = "draft"
+
+with DandiAPIClient() as client:
+    dandiset = client.get_dandiset(DANDISET_ID, version_id=DANDISET_VERSION)
+    asset = next(
+        asset for asset in dandiset.get_assets() if asset.path.endswith(".nwb")
+    )
+    download_url = asset.get_content_url(follow_redirects=1, strip_query=True)
+
+remote_file = remfile.File(download_url)
+h5_file = h5py.File(remote_file, mode="r")
+with NWBHDF5IO(file=h5_file, mode="r", load_namespaces=True) as io:
+    nwbfile = io.read()
+    table_name = next(iter(nwbfile.intervals))
+    intervals = nwbfile.intervals[table_name].to_dataframe()
+
+    print(f"Streaming: {asset.path}")
+    print(f"Session: {nwbfile.session_id}")
+    print(f"Intervals table: {table_name}")
+    print(intervals.head())
+
+remote_file.close()
+```
+
+The [OpenScope Databook](https://alleninstitute.github.io/openscope_databook/)
+provides additional notebooks for downloading files, selecting sessions, and
+working with electrophysiology, imaging, and behavioral data.
 
 ## Limitations
 
