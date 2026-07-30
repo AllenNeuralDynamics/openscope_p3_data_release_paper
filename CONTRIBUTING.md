@@ -8,9 +8,15 @@ During the Google Doc cutover, `scripts/import_google_doc.py` is destructive: it
 
 ## Authorship metadata
 
-Add each contributor once in `authors.yml` with a stable lowercase ID. Include an ORCID when available, affiliation IDs, CRediT roles, contribution levels, section-level contributions, and a concise contribution statement. Do not infer or assign contributions on another person's behalf; authors should review their own record.
+Add or update your contribution through the [P3 data-release contribution form](https://data.allenneuraldynamics.org/contributions/add?project=p3_data_release). Do not edit contributor records directly in `authors.yml`; it is a generated snapshot of the contribution portal.
 
-Use the structure established in the [AuthorshipExtractor](https://github.com/AllenNeuralDynamics/AuthorshipExtractor) plugin and the `openscope_perspective` publication. Affiliation records belong in the shared `project.affiliations` list rather than being duplicated for each contributor.
+Refresh the repository snapshot after portal changes:
+
+```bash
+uv run python scripts/sync_authors.py
+```
+
+The sync pins the newest portal commit and maps its ORCID, affiliation, CRediT-level, and section-level records into the structure consumed by [AuthorshipExtractor](https://github.com/AllenNeuralDynamics/AuthorshipExtractor). Do not infer or assign contributions on another person's behalf; authors should review their own portal record.
 
 ## Figures
 

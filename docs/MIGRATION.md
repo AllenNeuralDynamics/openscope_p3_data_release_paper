@@ -19,7 +19,7 @@
 ## Inputs still needed from the team
 
 - **Editable Google Slides:** The public Docs/DOCX/HTML exports contain only PNG renderings, not presentation IDs. Add each deck or source URL under `figure_sources/google-slides/` and fill `editable_source_url` in `figure_sources/google-doc/manifest.json`.
-- **Complete author roster:** `authors.yml` currently contains only the initial seed record. Each contributor must review their own CRediT roles, effort levels, affiliations, and section contributions.
+- **Complete author roster:** `authors.yml` is synchronized from the `p3_data_release` contribution portal. Each contributor must review their own CRediT roles, effort levels, affiliations, and section contributions through the linked form before the final ordering is set.
 - **Figure placeholders:** Figures 4-7 are visibly unfinished slide canvases and should be replaced by generated analyses or final artwork.
 - **Data and code versions:** Pin DANDI dataset versions and the exact analysis repositories or releases used for each result.
 - **Publication metadata:** Confirm the final title, abstract, author order or consortium policy, corresponding authors, keywords, license, funding, acknowledgements, and journal export target.

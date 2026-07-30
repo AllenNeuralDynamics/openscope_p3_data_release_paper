@@ -19,6 +19,29 @@ def png_dimensions(path: Path) -> tuple[int, int]:
     return struct.unpack(">II", data[16:24])
 
 
+def test_manuscript_marks_author_list_as_provisional() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+
+    assert ":::{warning} Author list not final" in manuscript
+    assert "author list and author order are provisional" in manuscript
+    assert (
+        "https://data.allenneuraldynamics.org/contributions/add?project=p3_data_release"
+        in manuscript
+    )
+
+
+def test_authorship_snapshot_is_portal_backed() -> None:
+    authors = (REPO_ROOT / "authors.yml").read_text(encoding="utf-8")
+
+    commit = re.search(r'^  commit: "([0-9a-f]{32})"$', authors, re.MULTILINE)
+    assert commit
+    assert 'project: "p3_data_release"' in authors
+    assert f"commit={commit.group(1)}&format=json" in authors
+    assert authors.count('\n      name: "') == 14
+    assert 'name: "Jérôme Lecoq"' in authors
+    assert 'name: "Peter A Groblewski"' in authors
+
+
 def test_imported_figure_manifest_matches_files() -> None:
     manifest_path = REPO_ROOT / "figure_sources" / "google-doc" / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

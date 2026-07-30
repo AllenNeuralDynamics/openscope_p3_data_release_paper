@@ -28,7 +28,7 @@ The GitHub Actions workflow runs the same checks and deploys the static site fro
 ## Repository map
 
 - `index.md`: canonical MyST manuscript.
-- `authors.yml`: structured contributor, affiliation, CRediT, and section-level authorship metadata.
+- `authors.yml`: generated snapshot of portal-managed contributor, affiliation, CRediT, and section-level authorship metadata.
 - `myst.yml`: publication, plugin, navigation, and static-asset configuration.
 - `src/openscope_p3_publication/`: installable Python package for publication figures and data transforms.
 - `interactive/`: generated JavaScript/HTML figures copied into the site at stable URLs.
@@ -36,6 +36,7 @@ The GitHub Actions workflow runs the same checks and deploys the static site fro
 - `figure_sources/`: editable sources, input data, and provenance manifests.
 - `manuscript_sources/google-doc/`: preserved Google Doc export and import notes.
 - `scripts/import_google_doc.py`: deterministic but destructive Google Doc importer.
+- `scripts/sync_authors.py`: refreshes `authors.yml` from the versioned `p3_data_release` contribution record.
 - `tests/`: publication and figure regression checks.
 
 ## Manuscript source policy
