@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -365,10 +366,11 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
 
     svg_path = write_session_inventory_svg(tmp_path / "session-inventory.svg")
     svg = svg_path.read_text(encoding="utf-8")
-    assert 'width="1800" height="790"' in svg
+    assert 'width="1150" height="640"' in svg
     assert "A  Neuropixels" in svg
     assert "B  Mesoscope" in svg
-    assert "C  SLAP2 P3" in svg
+    assert "C  SLAP2" in svg
+    assert "SLAP2 P3" not in svg
     assert svg.count('id="mouse-id-axis-label"') == 1
     assert ">Mouse ID</text>" in svg
     assert 'id="session-inventory-legend"' in svg
@@ -385,6 +387,44 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert ">C1</text>" not in svg
     assert ">C2</text>" not in svg
     assert svg.count(">Session number</text>") == 1
+    session_widths = {
+        float(width)
+        for width in re.findall(
+            r'<rect class="session-block"[^>]* width="([^"]+)"',
+            svg,
+        )
+    }
+    assert session_widths == {32.8}
+    panel_title_positions = [
+        float(position)
+        for position in re.findall(
+            r'<text class="panel-title" x="([^"]+)"',
+            svg,
+        )
+    ]
+    assert len(panel_title_positions) == 3
+    panel_chunks = re.split(r'<text class="panel-title"', svg)[1:]
+    first_session_positions = [
+        float(re.search(r'<rect class="session-block" x="([^"]+)"', chunk).group(1))
+        for chunk in panel_chunks
+    ]
+    assert panel_title_positions == first_session_positions
+    assert max(
+        following - current
+        for current, following in zip(
+            panel_title_positions[:-1],
+            panel_title_positions[1:],
+            strict=True,
+        )
+    ) < 500
+    assert svg.count('class="session-axis"') == 1
+    legend_position = re.search(
+        r'id="session-inventory-legend" transform="translate\(([^ ]+) ([^)]+)\)"',
+        svg,
+    )
+    assert legend_position is not None
+    assert float(legend_position.group(1)) == panel_title_positions[1]
+    assert float(legend_position.group(2)) == 480
 
 
 def test_literature_comparison_is_deterministic(tmp_path: Path) -> None:

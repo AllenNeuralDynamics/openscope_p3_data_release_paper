@@ -1046,8 +1046,10 @@ def append_session_block(
     height: float,
     context: str,
     qc_kind: str,
+    element_class: str | None = None,
 ) -> None:
     color = SESSION_CONTEXT_COLORS[context]
+    class_attribute = f' class="{element_class}"' if element_class else ""
     border_colors = {
         "missing": "#FF0000",
         "session-fail": "#FF0000",
@@ -1058,13 +1060,15 @@ def append_session_block(
     }
     if qc_kind in border_colors:
         svg.append(
-            f'<rect x="{x:.2f}" y="{y:.2f}" width="{width:.2f}" height="{height:.2f}" '
+            f'<rect{class_attribute} x="{x:.2f}" y="{y:.2f}" '
+            f'width="{width:.2f}" height="{height:.2f}" '
             f'fill="url(#hatch-{context.replace("/", "-").replace(" ", "-")})" '
             f'stroke="{border_colors[qc_kind]}" stroke-width="2"/>'
         )
     else:
         svg.append(
-            f'<rect x="{x:.2f}" y="{y:.2f}" width="{width:.2f}" height="{height:.2f}" '
+            f'<rect{class_attribute} x="{x:.2f}" y="{y:.2f}" '
+            f'width="{width:.2f}" height="{height:.2f}" '
             f'fill="{color}" stroke="#FFFFFF" stroke-width="1"/>'
         )
     if qc_kind == "probe-fail":
@@ -1082,18 +1086,47 @@ def write_session_inventory_svg(
     panel_specs = (
         ("A", "Neuropixels", "neuropixels", 28),
         ("B", "Mesoscope", "mesoscope", 38),
-        ("C", "SLAP2 P3", "slap2", 38),
+        ("C", "SLAP2", "slap2", 38),
     )
-    width = 1800
-    height = 790
-    panel_width = 550
-    panel_gap = 35
-    panel_lefts = (35, 35 + panel_width + panel_gap, 35 + 2 * (panel_width + panel_gap))
+    width = 1150
+    height = 640
+    panel_gap = 75
     chart_top = 85
     chart_bottom = 570
     chart_offset = 104
     chart_width = 410
     bar_height = 20
+
+    panel_rows = {
+        modality: session_panel_rows(records, modality)
+        for _, _, modality, _ in panel_specs
+    }
+    global_max_sessions = max(
+        len(row["sessions"])
+        for rows in panel_rows.values()
+        for row in rows
+    )
+    slot_width = chart_width / (global_max_sessions + 0.5)
+    panel_axis_maxima = {
+        modality: max(len(row["sessions"]) for row in panel_rows[modality])
+        + (2 if modality == "slap2" else 0.5)
+        for _, _, modality, _ in panel_specs
+    }
+    relative_panel_lefts = [0.0]
+    for _, _, modality, _ in panel_specs[:-1]:
+        relative_panel_lefts.append(
+            relative_panel_lefts[-1]
+            + panel_axis_maxima[modality] * slot_width
+            + panel_gap
+        )
+    final_modality = panel_specs[-1][2]
+    panel_group_width = (
+        relative_panel_lefts[-1]
+        + chart_offset
+        + panel_axis_maxima[final_modality] * slot_width
+    )
+    panel_margin = (width - panel_group_width) / 2
+    panel_lefts = tuple(panel_margin + left for left in relative_panel_lefts)
 
     svg = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
@@ -1125,21 +1158,20 @@ def write_session_inventory_svg(
     for (panel_letter, panel_title, modality, row_step), panel_left in zip(
         panel_specs, panel_lefts, strict=True
     ):
-        rows = session_panel_rows(records, modality)
+        rows = panel_rows[modality]
         max_sessions = max(len(row["sessions"]) for row in rows)
         if modality == "neuropixels":
-            axis_max = max_sessions + 0.5
             tick_values = range(max_sessions + 1)
         elif modality == "mesoscope":
-            axis_max = max_sessions + 0.5
             tick_values = range(max_sessions + 1)
         else:
-            axis_max = max_sessions + 2
             tick_values = range(1, max_sessions + 2)
-        slot_width = chart_width / axis_max
+        axis_max = panel_axis_maxima[modality]
+        axis_width = slot_width * axis_max
         svg.extend(
             [
-                f'<text x="{panel_left}" y="48" font-family="Source Sans 3, sans-serif" '
+                f'<text class="panel-title" x="{panel_left + chart_offset:.2f}" y="48" '
+                'font-family="Source Sans 3, sans-serif" '
                 f'font-size="22" font-weight="700" fill="#293133">'
                 f"{panel_letter}  {panel_title}</text>",
             ]
@@ -1174,28 +1206,30 @@ def write_session_inventory_svg(
                     height=bar_height,
                     context=session["context"],
                     qc_kind=session_qc_kind(record, modality),
+                    element_class="session-block",
                 )
             y += row_step
 
-        svg.append(
-            f'<line x1="{panel_left + chart_offset}" y1="{chart_bottom}" '
-            f'x2="{panel_left + chart_offset + chart_width}" y2="{chart_bottom}" '
-            'stroke="#69716F" stroke-width="1.2"/>'
-        )
-        for tick_value in tick_values:
-            x = panel_left + chart_offset + tick_value * slot_width
-            svg.extend(
-                [
-                    f'<line x1="{x:.2f}" y1="{chart_bottom}" x2="{x:.2f}" '
-                    f'y2="{chart_bottom + 6}" stroke="#69716F" stroke-width="1"/>',
-                    f'<text x="{x:.2f}" y="{chart_bottom + 23}" '
-                    'font-family="IBM Plex Mono, monospace" font-size="11" '
-                    f'text-anchor="middle" fill="#68706E">{tick_value}</text>',
-                ]
-            )
         if modality == "neuropixels":
             svg.append(
-                f'<text x="{panel_left + chart_offset + chart_width / 2}" '
+                f'<line class="session-axis" x1="{panel_left + chart_offset}" '
+                f'y1="{chart_bottom}" '
+                f'x2="{panel_left + chart_offset + axis_width}" y2="{chart_bottom}" '
+                'stroke="#69716F" stroke-width="1.2"/>'
+            )
+            for tick_value in tick_values:
+                x = panel_left + chart_offset + tick_value * slot_width
+                svg.extend(
+                    [
+                        f'<line x1="{x:.2f}" y1="{chart_bottom}" x2="{x:.2f}" '
+                        f'y2="{chart_bottom + 6}" stroke="#69716F" stroke-width="1"/>',
+                        f'<text x="{x:.2f}" y="{chart_bottom + 23}" '
+                        'font-family="IBM Plex Mono, monospace" font-size="11" '
+                        f'text-anchor="middle" fill="#68706E">{tick_value}</text>',
+                    ]
+                )
+            svg.append(
+                f'<text x="{panel_left + chart_offset + axis_width / 2}" '
                 f'y="{chart_bottom + 43}" '
                 'font-family="Source Sans 3, sans-serif" font-size="13" '
                 'text-anchor="middle" fill="#4D5553">Session number</text>'
@@ -1204,49 +1238,51 @@ def write_session_inventory_svg(
     svg.extend(
         [
             '<g id="session-inventory-legend" '
+            f'transform="translate({panel_lefts[1] + chart_offset:.2f} 480)" '
             'aria-label="Session type and quality-control legend">',
-            '<text x="35" y="674" font-family="Source Sans 3, sans-serif" '
+            '<text x="0" y="13" font-family="Source Sans 3, sans-serif" '
             'font-size="13" font-weight="700" fill="#4D5553">Session type</text>',
         ]
     )
     for x, context_name in zip(
-        (245, 515, 765, 1015),
+        (120, 300, 465, 610),
         ("sensorimotor", "standard oddball", "sequence", "duration"),
         strict=True,
     ):
         svg.extend(
             [
-                f'<rect x="{x}" y="660" width="24" height="16" '
+                f'<rect x="{x}" y="0" width="24" height="16" '
                 f'fill="{SESSION_CONTEXT_COLORS[context_name]}"/>',
-                f'<text x="{x + 32}" y="673" font-family="Source Sans 3, sans-serif" '
+                f'<text x="{x + 32}" y="13" font-family="Source Sans 3, sans-serif" '
                 f'font-size="12" fill="#68706E">'
                 f"{escape(SESSION_CONTEXT_LABELS[context_name])}</text>",
             ]
         )
     svg.append(
-        '<text x="35" y="718" font-family="Source Sans 3, sans-serif" '
+        '<text x="0" y="55" font-family="Source Sans 3, sans-serif" '
         'font-size="13" font-weight="700" fill="#4D5553">Quality control</text>'
     )
     qc_items = (
-        (155, "#FF0000", "Missing / failed session"),
-        (575, "#FF0000", "Motion correction partially failed"),
-        (890, "#FF69B4", "Mouse stressed"),
-        (1070, "#32CD32", "Mouse asleep"),
-        (1240, "#F5C400", "SLAP2 stopped halfway"),
+        (120, 42, "#FF0000", "Missing / failed session"),
+        (520, 42, "#FF0000", "Motion correction partially failed"),
+        (120, 77, "#FF69B4", "Mouse stressed"),
+        (340, 77, "#32CD32", "Mouse asleep"),
+        (520, 77, "#F5C400", "SLAP2 stopped halfway"),
     )
-    for x, color, label in qc_items:
+    for x, y, color, label in qc_items:
         svg.extend(
             [
-                f'<rect x="{x}" y="704" width="24" height="16" '
+                f'<rect x="{x}" y="{y}" width="24" height="16" '
                 f'fill="url(#hatch-qc)" stroke="{color}" stroke-width="2"/>',
-                f'<text x="{x + 32}" y="717" font-family="Source Sans 3, sans-serif" '
+                f'<text x="{x + 32}" y="{y + 13}" '
+                'font-family="Source Sans 3, sans-serif" '
                 f'font-size="12" fill="#68706E">{label}</text>',
             ]
         )
     append_session_block(
         svg,
-        x=390,
-        y=704,
+        x=340,
+        y=42,
         width=24,
         height=16,
         context="sensorimotor",
@@ -1254,7 +1290,7 @@ def write_session_inventory_svg(
     )
     svg.extend(
         [
-            '<text x="422" y="717" font-family="Source Sans 3, sans-serif" '
+            '<text x="372" y="55" font-family="Source Sans 3, sans-serif" '
             'font-size="12" fill="#68706E">One probe failed</text>',
             "</g>",
             "</svg>",
