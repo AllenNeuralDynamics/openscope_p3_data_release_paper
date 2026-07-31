@@ -3,7 +3,6 @@
 :root {
   color-scheme: light;
   --accent: #3157b7;
-  --event: #c74738;
   --ink: #303536;
   --muted: #707674;
   --line: #d0d4d2;
@@ -220,7 +219,6 @@ html.is-embedded .viewer { min-height: 0; }
 
 .timeline-ticks span:first-child { text-align: left; }
 .timeline-ticks span:last-child { text-align: right; }
-.timeline-ticks .event-tick { color: var(--event); font-weight: 700; }
 
 .timeline-label {
   color: #4f5654;

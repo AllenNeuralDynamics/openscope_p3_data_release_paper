@@ -23,6 +23,7 @@
     transport: document.querySelector(".transport"),
   };
   const context = elements.canvas.getContext("2d");
+  const excerptDuration = protocol.windowEndSeconds - protocol.windowStartSeconds;
   const matrixCache = new Map();
   const spriteCache = new Map();
   const state = {
@@ -51,14 +52,6 @@
     return currentSession().options[state.optionIndex];
   }
 
-  function xForExcerptTime(time, option) {
-    const width = layout.plotRight - layout.plotLeft;
-    return layout.plotLeft
-      + (time - option.timeStartSeconds)
-      / (option.timeEndSeconds - option.timeStartSeconds)
-      * width;
-  }
-
   function nearestIndex(values, target) {
     let low = 0;
     let high = values.length;
@@ -73,7 +66,11 @@
   }
 
   function formatTime(value) {
-    return `${value >= 0 ? "+" : ""}${value.toFixed(3)} s`;
+    return `${value.toFixed(3)} s`;
+  }
+
+  function elapsedTime(sourceTime) {
+    return sourceTime - protocol.windowStartSeconds;
   }
 
   function formatNumber(value, digits = 1) {
@@ -191,35 +188,26 @@
       size: 10,
     });
 
-    context.strokeStyle = "#c74738";
-    context.lineWidth = 1.5;
-    context.setLineDash([5, 4]);
-    context.beginPath();
-    context.moveTo(xForExcerptTime(0, option), layout.plotTop);
-    context.lineTo(xForExcerptTime(0, option), layout.plotBottom);
-    context.stroke();
-    context.setLineDash([]);
     const axisY = layout.plotBottom + 7;
     for (let index = 0; index <= 4; index += 1) {
       const fraction = index / 4;
       const x = layout.plotLeft + fraction * plotWidth;
-      const milliseconds = (
-        option.timeStartSeconds
-        + fraction * (option.timeEndSeconds - option.timeStartSeconds)
-      ) * 1000;
+      const milliseconds = fraction
+        * (option.timeEndSeconds - option.timeStartSeconds)
+        * 1000;
       context.strokeStyle = "#6c7572";
       context.beginPath();
       context.moveTo(x, layout.plotBottom);
       context.lineTo(x, axisY);
       context.stroke();
-      drawText(`${milliseconds > 0 ? "+" : ""}${Math.round(milliseconds)}`, x, axisY + 14, {
+      drawText(`${Math.round(milliseconds)}`, x, axisY + 14, {
         align: "center",
-        color: Math.abs(milliseconds) < 0.5 ? "#c74738" : "#59615f",
+        color: "#59615f",
         size: 10,
-        weight: Math.abs(milliseconds) < 0.5 ? 700 : 500,
+        weight: 500,
       });
     }
-    drawText("Time from event onset (ms)", (layout.plotLeft + layout.plotRight) / 2, 510, {
+    drawText("Excerpt time (ms)", (layout.plotLeft + layout.plotRight) / 2, 510, {
       align: "center",
       color: "#4d5553",
       size: 11,
@@ -423,10 +411,10 @@
       "aria-label",
       session.viewType === "heatmap"
         ? "Raw 30 kHz AP acquisition voltage with CCF boundaries across the probe shaft"
-        : "Raw imaging frames with a 50 micrometer scale bar aligned to event onset",
+        : "Raw imaging frames with a 50 micrometer scale bar",
     );
-    elements.playhead.value = state.playhead;
-    elements.playheadTime.textContent = formatTime(state.playhead);
+    elements.playhead.value = elapsedTime(state.playhead);
+    elements.playheadTime.textContent = formatTime(elapsedTime(state.playhead));
     renderCanvas();
   }
 
@@ -435,8 +423,8 @@
       protocol.windowStartSeconds,
       Math.min(protocol.windowEndSeconds, value),
     );
-    elements.playhead.value = state.playhead;
-    elements.playheadTime.textContent = formatTime(state.playhead);
+    elements.playhead.value = elapsedTime(state.playhead);
+    elements.playheadTime.textContent = formatTime(elapsedTime(state.playhead));
     renderCanvas();
   }
 
@@ -517,12 +505,12 @@
         const time = option.timeStartSeconds
           + (column + 0.5) / option.columns
           * (option.timeEndSeconds - option.timeStartSeconds);
-        const milliseconds = time * 1000;
-        content = `<strong>${milliseconds >= 0 ? "+" : ""}${milliseconds.toFixed(2)} ms</strong><br>${formatNumber(depth, 0)} µm from tip · ${anatomy.label}<br>${formatNumber(voltage, 1)} µV`;
+        const milliseconds = (time - option.timeStartSeconds) * 1000;
+        content = `<strong>${milliseconds.toFixed(2)} ms</strong><br>${formatNumber(depth, 0)} µm from tip · ${anatomy.label}<br>${formatNumber(voltage, 1)} µV`;
       }
     } else if (session.viewType === "movie") {
       const index = nearestIndex(option.frameTimes, state.playhead);
-      content = `<strong>${formatTime(option.frameTimes[index])}</strong><br>Raw frame ${index + 1} of ${option.frameCount}<br>${option.nativeWidth} × ${option.nativeHeight} source pixels`;
+      content = `<strong>${formatTime(elapsedTime(option.frameTimes[index]))}</strong><br>Raw frame ${index + 1} of ${option.frameCount}<br>${option.nativeWidth} × ${option.nativeHeight} source pixels`;
     }
     if (!content) {
       hideTooltip();
@@ -553,7 +541,7 @@
   });
   elements.playhead.addEventListener("input", () => {
     pause();
-    setPlayhead(Number(elements.playhead.value));
+    setPlayhead(protocol.windowStartSeconds + Number(elements.playhead.value));
   });
   elements.playToggle.addEventListener("click", () => {
     if (state.playing) pause();
@@ -576,6 +564,7 @@
   });
 
   buildTabs();
+  elements.playhead.max = excerptDuration;
   populateOptions();
   updateTabs();
   document.documentElement.style.setProperty("--accent", accents[currentSession().id]);

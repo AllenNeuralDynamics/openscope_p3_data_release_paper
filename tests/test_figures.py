@@ -670,7 +670,15 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert 'id="option-select"' in html
     assert 'id="contrast"' in html
     assert 'id="playhead"' in html
-    assert "Time from event onset (s)" in html
+    assert "Excerpt time (s)" in html
+    assert "Excerpt time (ms)" in html
+    assert "Time from event onset" not in html
+    assert "aligned to event onset" not in html
+    assert "event-tick" not in html
+    assert "xForExcerptTime" not in html
+    assert '"event":' not in html
+    assert '"stimulus":' not in html
+    assert '"alignment":' not in html
     assert "Neuropixels" in html
     assert "Mesoscope" in html
     assert "SLAP2" in html

@@ -22,8 +22,8 @@ __NEURAL_CSS__
       </div>
     </section>
 
-    <section class="visual-shell" aria-label="Event-aligned raw-data view">
-      <canvas id="raw-canvas" width="900" height="520" role="img" tabindex="0" aria-label="Raw data aligned to event onset"></canvas>
+    <section class="visual-shell" aria-label="Raw-data excerpt">
+      <canvas id="raw-canvas" width="900" height="520" role="img" tabindex="0" aria-label="Raw recording excerpt"></canvas>
       <div id="loading-status" class="loading-status" role="status" hidden>Loading raw frames</div>
       <div id="canvas-tooltip" class="canvas-tooltip" role="status" hidden></div>
     </section>
@@ -33,17 +33,17 @@ __NEURAL_CSS__
         <span id="play-icon" aria-hidden="true">&#9654;</span>
       </button>
       <div class="timeline-control">
-        <input id="playhead" type="range" min="-1" max="3" step="0.001" value="-1" aria-label="Time from event onset">
+        <input id="playhead" type="range" min="0" max="4" step="0.001" value="0" aria-label="Excerpt time">
         <div class="timeline-ticks" aria-hidden="true">
-          <span>&minus;1</span>
-          <span class="event-tick">0</span>
-          <span>+1</span>
-          <span>+2</span>
-          <span>+3</span>
+          <span>0</span>
+          <span>1</span>
+          <span>2</span>
+          <span>3</span>
+          <span>4</span>
         </div>
-        <div class="timeline-label">Time from event onset (s)</div>
+        <div class="timeline-label">Excerpt time (s)</div>
       </div>
-      <output id="playhead-time">-1.000 s</output>
+      <output id="playhead-time">0.000 s</output>
     </section>
   </main>
 

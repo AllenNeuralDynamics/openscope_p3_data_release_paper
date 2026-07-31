@@ -342,7 +342,11 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "searchable, filterable tables for 39 mice and 164" in manuscript
     assert "./interactive/neural-viewer.html" in manuscript
     assert ":label: fig-aligned-neural-signals" in manuscript
-    assert "Representative event-aligned raw-data views" in manuscript
+    assert "Representative raw-data excerpts from one public session" in manuscript
+    assert "shown to introduce the native acquisition formats" in manuscript
+    assert "Event-aligned raw data across recording modalities" not in manuscript
+    assert "prediction-violating event" not in manuscript
+    assert re.search(r"Microscopy\s+playback uses elapsed time", manuscript)
     assert "raw AP acquisition stream supplied to spike sorting" in manuscript
     assert "AP samples are not median-corrected" in manuscript
     assert "remain visible as vertical stripes" in manuscript

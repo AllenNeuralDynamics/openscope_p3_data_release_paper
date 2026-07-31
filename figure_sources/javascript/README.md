@@ -37,13 +37,13 @@ uv run --no-project --with h5py --with harp-python==0.4.1 --with numpy --with re
 	python scripts/extract_behavior_excerpts.py
 ```
 
-The event-aligned neural viewer is split into:
+The raw neural-data viewer is split into:
 
 - `neural-viewer.html`: modality, source, contrast, canvas, and timeline controls.
 - `neural-viewer.css`: responsive publication-width raw-data viewer styling.
 - `neural-viewer.js`: raw AP shaft heatmap, spritesheet movie, tooltip, and playback rendering.
 
-Its vendored `figure_sources/data/raw-neural-excerpts.json` snapshot and WebP sheets use the same sessions and marked events as the behavior viewer. Builds do not contact DANDI or S3; the networked extraction script is run only when refreshing the committed snapshot.
+Its vendored `figure_sources/data/raw-neural-excerpts.json` snapshot and WebP sheets use the same source sessions as the behavior viewer. Source windows retain synchronized event metadata for reproducibility, but the neural viewer presents only elapsed excerpt time and does not mark stimulus onset. Builds do not contact DANDI or S3; the networked extraction script is run only when refreshing the committed snapshot.
 
 Build the committed HTML and static SVG fallback with:
 

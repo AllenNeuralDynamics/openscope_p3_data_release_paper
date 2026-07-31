@@ -295,6 +295,46 @@ respectively. Repeated and aborted worksheet rows are retained in the Static
 view, so its rows do not map one-to-one to the 164-record Interactive inventory.
 :::"""
 
+NEUROPIXELS_RAW_SOURCE = (
+    "[ecephys_820459_2025-11-10_15-07-13]"
+    "(https://open.quiltdata.com/b/aind-open-data/tree/"
+    "ecephys_820459_2025-11-10_15-07-13/) "
+    "([DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files))"
+)
+MESOSCOPE_RAW_SOURCE = (
+    "[multiplane-ophys_832700_2026-01-29_11-18-09]"
+    "(https://open.quiltdata.com/b/aind-open-data/tree/"
+    "multiplane-ophys_832700_2026-01-29_11-18-09/) "
+    "([DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files))"
+)
+
+NEURAL_VIEWER_BLOCK = f"""## Raw data across recording modalities
+
+:::{{iframe}} ./interactive/neural-viewer.html
+:label: fig-aligned-neural-signals
+:width: 100%
+:title: Raw recording excerpts across modalities
+
+Representative raw-data excerpts from one public session per recording modality,
+shown to introduce the native acquisition formats. Neuropixels views contain
+100 ms of calibrated, unaveraged 30-kHz voltage from 96 regularly spaced
+contacts in the raw AP acquisition stream supplied to spike sorting; the
+adjacent CCF column and horizontal boundaries identify each contact's annotated
+structure or cortical layer. The displayed AP samples are not median-corrected,
+so common-mode fluctuations across contacts remain visible as vertical stripes.
+Mesoscope views are unprocessed 512 × 512 ScanImage channel frames. SLAP2 views
+map native sparse detector samples onto acquisition-plan superpixels and use a
+dim structural reference only outside sampled dendritic pixels. Microscopy
+playback uses elapsed time within each four-second excerpt. Selectors report CCF
+structures and layers for each probe; area, layer, and depth for each mesoscope
+plane; and indicator plus remote-focus depth below pia (91 µm for DMD1 and
+123.75 µm for DMD2) for each SLAP2 field. Microscopy intensity is pseudocolored
+and contrast-scaled independently for display. Source sessions are Neuropixels
+{NEUROPIXELS_RAW_SOURCE}; mesoscope {MESOSCOPE_RAW_SOURCE};
+and SLAP2
+[796630_2025-08-28_14-25-34](https://open.quiltdata.com/b/aind-open-data/tree/796630_2025-08-28_14-25-34/).
+:::"""
+
 OTHER_STUDIES_BLOCK = """:::{iframe} ./interactive/literature-comparison.html
 :label: table-supplementary-oddball-studies
 :enumerated: false
@@ -978,6 +1018,14 @@ def build_index(markdown: str) -> str:
     markdown = replace_behavior_analysis_text(markdown)
     markdown = relocate_supplementary_implant_figure(markdown)
     markdown = move_glossary_to_end(markdown)
+    data_validation_heading = "# Data validation"
+    if markdown.count(data_validation_heading) != 1:
+        raise RuntimeError("Expected one Data validation heading.")
+    markdown = markdown.replace(
+        data_validation_heading,
+        f"{data_validation_heading}\n\n{NEURAL_VIEWER_BLOCK}",
+        1,
+    )
     interactive_anchor = (
         "The order of stimuli blocks (deviant vs control blocks) were maintained "
         "across all sessions."

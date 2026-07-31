@@ -582,6 +582,9 @@ def load_neural_excerpts(
 def write_neural_viewer_html(output: Path = NEURAL_VIEWER_OUTPUT) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_neural_excerpts()
+    for session in payload["sessions"]:
+        for field in ("alignment", "context", "event", "stimulus"):
+            session.pop(field, None)
     template = (JAVASCRIPT_DIR / "neural-viewer.html").read_text(encoding="utf-8")
     stylesheet = (JAVASCRIPT_DIR / "neural-viewer.css").read_text(encoding="utf-8")
     javascript = (JAVASCRIPT_DIR / "neural-viewer.js").read_text(encoding="utf-8")
