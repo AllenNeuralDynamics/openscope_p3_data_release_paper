@@ -75,10 +75,7 @@ FIGURE_ASSETS = (
         "image10.png",
         "figure-02-experimental-design.png",
         "fig-experimental-design",
-        (
-            "Experimental workflow, recording cohorts, four mismatch contexts, "
-            "and shared control blocks."
-        ),
+        "Experimental workflow, recording cohorts, and shared block order.",
         (
             "Experimental design and shared stimulus architecture. **A,** Animals "
             "progressed from surgery through intrinsic-signal-imaging mapping and "
@@ -89,10 +86,7 @@ FIGURE_ASSETS = (
             "denote recording sessions with mismatches. **C,** Every recording used "
             "the same block order: standard control, context-specific mismatch, "
             "repeat standard control, sequential control, duration-jitter control, "
-            "open-loop playback, receptive-field mapping, and zebra movie. **D,** "
-            "Context panels summarize standard oddball, sensorimotor, sequence, and "
-            "duration violations; control panels show the matched stimulus sets used "
-            "for tuning, normalization, and cross-context comparison."
+            "open-loop playback, receptive-field mapping, and zebra movie."
         ),
     ),
     FigureAsset(
@@ -242,10 +236,11 @@ INTERACTIVE_DESIGN_BLOCK = """:::{iframe} ./interactive/experimental-design.html
 :label: fig-interactive-experimental-design
 :width: 100%
 :title: Predictive-processing stimulus viewer
-:placeholder: ./images/figures/generated/experimental-design.svg
+:placeholder: ./images/figures/generated/experimental-design-panel-d.png
 
-Interactive reconstruction of the four recording contexts and shared control
-blocks. Context playback follows contiguous rows from the pinned generated
+Interactive reconstruction and static panel D summary of the four recording
+contexts and shared control blocks. Toggle between Interactive and Static for
+direct comparison. Context playback follows contiguous rows from the pinned generated
 stimulus tables in their source (pseudo-randomized) order, with the source trial
 number shown for each frame. The Movie block plays an excerpt of the canonical
 zebra stimulus, and receptive-field mapping uses the stated 120° × 95° angular

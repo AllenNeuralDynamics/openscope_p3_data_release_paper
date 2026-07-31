@@ -15,12 +15,15 @@
     playIcon: document.getElementById("play-icon"),
     playToggle: document.getElementById("play-toggle"),
     playbackTime: document.getElementById("playback-time"),
+    playbackView: document.getElementById("playback-view"),
     sessionSelector: document.getElementById("session-selector"),
     sessionTitle: document.getElementById("session-title"),
     stimulusVideo: document.getElementById("stimulus-video"),
+    staticPanel: document.getElementById("static-panel"),
     tableSource: document.getElementById("table-source"),
     trialLabel: document.getElementById("trial-label"),
     workflowSource: document.getElementById("workflow-source"),
+    viewButtons: document.querySelectorAll(".view-button"),
   };
 
   const sessionLabels = ["Standard oddball", "Sensorimotor", "Sequence", "Duration"];
@@ -33,6 +36,7 @@
     movieReady: false,
     playing: false,
     sessionIndex: 0,
+    view: "playback",
   };
 
   let angularCoordinates;
@@ -44,6 +48,18 @@
 
   function currentBlock() {
     return protocol.blocks[state.blockIndex];
+  }
+
+  function selectView(view) {
+    state.view = view;
+    elements.playbackView.hidden = view !== "playback";
+    elements.staticPanel.hidden = view !== "static";
+    if (view === "static") setPlaying(false);
+    elements.viewButtons.forEach((button) => {
+      const active = button.dataset.view === view;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
   }
 
   function formatTime(seconds) {
@@ -324,6 +340,9 @@
   }
 
   function attachInteractions() {
+    elements.viewButtons.forEach((button) => {
+      button.addEventListener("click", () => selectView(button.dataset.view));
+    });
     elements.playToggle.addEventListener("click", (event) => {
       event.stopPropagation();
       togglePlayback();
@@ -337,7 +356,7 @@
       state.movieReady = false;
     });
     document.addEventListener("keydown", (event) => {
-      if (event.code === "Space") {
+      if (event.code === "Space" && state.view === "playback") {
         event.preventDefault();
         togglePlayback();
       }
@@ -363,6 +382,7 @@
   buildBlockTrack();
   attachInteractions();
   selectSession(0);
+  selectView("playback");
   setPlaying(false);
   window.setInterval(playbackStep, 1000 / 30);
 })();

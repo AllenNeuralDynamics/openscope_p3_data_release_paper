@@ -12,6 +12,8 @@ from openscope_p3_publication.figures import (
     BLOCKS,
     NEURAL_EXCERPTS_PATH,
     NEURAL_MEDIA_DIR,
+    SESSION_RECORDS_PATH,
+    SESSION_RECORDS_PROVENANCE_PATH,
     SESSIONS,
     STIMULUS_EXCERPT_PROVENANCE_PATH,
     STIMULUS_SOURCES_PATH,
@@ -20,17 +22,21 @@ from openscope_p3_publication.figures import (
     ZEBRA_MOVIE_SOURCE,
     ZEBRA_POSTER_SOURCE,
     load_behavior_excerpts,
+    load_experimental_session_records,
     load_neural_excerpts,
     load_publication_table_data,
     load_shared_stimulus_table_excerpts,
     load_stimulus_table_excerpts,
     load_unit_yield_data,
+    modality_session_records,
+    session_panel_rows,
     total_duration_minutes,
     write_behavior_viewer_html,
     write_data_explorer_html,
     write_interactive_html,
     write_literature_comparison_html,
     write_neural_viewer_html,
+    write_session_inventory_svg,
     write_static_svg,
     write_unit_yield_html,
     write_unit_yield_svg,
@@ -192,6 +198,13 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     svg = svg_path.read_text(encoding="utf-8")
 
     assert 'id="stimulus-viewer"' in html
+    assert 'data-view="playback"' in html
+    assert 'data-view="static"' in html
+    assert ">Interactive</button>" in html
+    assert ">Static</button>" in html
+    assert 'id="static-panel"' in html
+    assert "data:image/png;base64," in html
+    assert "selectView" in html
     assert 'id="stimulus-canvas"' in html
     assert 'id="session-selector"' in html
     assert 'id="play-toggle"' in html
@@ -263,7 +276,11 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
 
 
 def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
-    explorer_path = write_data_explorer_html(tmp_path / "data-explorer.html")
+    static_path = tmp_path / "session-inventory.svg"
+    explorer_path = write_data_explorer_html(
+        tmp_path / "data-explorer.html",
+        static_output=static_path,
+    )
     html = explorer_path.read_text(encoding="utf-8")
 
     assert 'id="data-explorer"' in html
@@ -271,12 +288,94 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
     assert "Two-photon mesoscope" in html
     assert "832700_2026-01-30" in html
     assert "841193" in html
+    assert 'data-view="interactive"' in html
+    assert 'data-view="static"' in html
+    assert 'id="static-view"' in html
+    assert "data:image/svg+xml;base64," in html
+    assert "selectView" in html
     assert 'document.querySelector("body > main")' in html
     assert 'classList.add("is-embedded")' in html
     assert "__EMBED_AUTO_HEIGHT_JS__" not in html
 
-    write_data_explorer_html(explorer_path)
+    write_data_explorer_html(explorer_path, static_output=static_path)
     assert explorer_path.read_text(encoding="utf-8") == html
+
+
+def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None:
+    provenance = json.loads(
+        SESSION_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    assert hashlib.sha256(SESSION_RECORDS_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
+    )
+    assert provenance["rows"] == 198
+    assert provenance["source_rows"] == 198
+    assert provenance["modality_rows"] == {
+        "mesoscope": 92,
+        "neuropixels": 62,
+        "slap2": 44,
+    }
+
+    payload = load_experimental_session_records()
+    records = payload["records"]
+    assert len(records) == 198
+    assert [int(record["source_row"]) for record in records] == list(range(3, 201))
+    assert {
+        modality: len(modality_session_records(records, modality))
+        for modality in ("neuropixels", "mesoscope", "slap2")
+    } == {"neuropixels": 62, "mesoscope": 92, "slap2": 28}
+
+    mesoscope_rows = session_panel_rows(records, "mesoscope")
+    assert [row["mouseId"] for row in mesoscope_rows] == [
+        "832700",
+        "839909",
+        "843001",
+        "845342",
+        "846289",
+        "837568",
+        "842971",
+        "843000",
+        "850399",
+        "853137",
+    ]
+    assert [len(row["sessions"]) for row in mesoscope_rows] == [
+        8,
+        8,
+        12,
+        9,
+        8,
+        11,
+        8,
+        8,
+        8,
+        12,
+    ]
+    slap2_rows = session_panel_rows(records, "slap2")
+    assert [row["mouseId"] for row in slap2_rows] == [
+        "851453",
+        "851452",
+        "845207",
+        "841193",
+        "841191",
+        "829704",
+        "828409",
+        "828408",
+    ]
+    assert [len(row["sessions"]) for row in slap2_rows] == [3, 1, 4, 2, 4, 4, 4, 6]
+
+    svg_path = write_session_inventory_svg(tmp_path / "session-inventory.svg")
+    svg = svg_path.read_text(encoding="utf-8")
+    assert 'width="1800" height="790"' in svg
+    assert "A  Neuropixels" in svg
+    assert "B  Mesoscope" in svg
+    assert "C  SLAP2 P3" in svg
+    assert "62 worksheet rows · 16 mice" in svg
+    assert "92 worksheet rows · 10 mice" in svg
+    assert "28 worksheet rows · 8 mice" in svg
+    assert "Missing / failed session" in svg
+    assert "One probe failed" in svg
+    assert "Motion correction partially failed" in svg
+    assert "SLAP2 stopped halfway" in svg
 
 
 def test_literature_comparison_is_deterministic(tmp_path: Path) -> None:

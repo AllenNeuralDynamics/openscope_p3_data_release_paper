@@ -1,0 +1,17 @@
+{
+  "export_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/export?format=xlsx",
+  "modality_rows": {
+    "mesoscope": 92,
+    "neuropixels": 62,
+    "slap2": 44
+  },
+  "notes": "Complete EPHYS, MESO, and SLAP2 worksheet rows in source order. Repeated and aborted records are retained to reproduce the supplied static plots; the interactive explorer remains the separate 164-session inventory.",
+  "retrieved_date": "2026-07-31",
+  "rows": 198,
+  "source_rows": 198,
+  "source_sha256": "1ee39b272ab554f193a9ae2a14a9300e6707dc00bd8bec4631739ba9d2126e76",
+  "source_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/edit?usp=sharing",
+  "vendored_sha256": "75313ff9bd623a5f5bcd7270d747aa389be14d985032122de91dc8dba4c9fd06",
+  "version": 1,
+  "worksheet_rows": 198
+}

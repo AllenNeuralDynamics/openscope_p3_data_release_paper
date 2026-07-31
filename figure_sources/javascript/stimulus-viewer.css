@@ -35,6 +35,48 @@ input {
   padding: 16px;
 }
 
+.view-switch {
+  width: max-content;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  margin: 0 0 10px auto;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.view-button {
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.view-button:last-child { border-right: 0; }
+.view-button.active { background: var(--ink); color: #fff; }
+.view-button:focus-visible { outline: 3px solid rgba(8, 124, 112, 0.22); outline-offset: -3px; }
+
+.static-panel {
+  max-width: 550px;
+  margin-inline: auto;
+}
+
+.static-panel img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--line);
+}
+
+#playback-view[hidden],
+.static-panel[hidden] { display: none !important; }
+
 .session-tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

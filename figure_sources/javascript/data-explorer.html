@@ -11,23 +11,36 @@ __DATA_EXPLORER_CSS__
 </head>
 <body>
   <main class="explorer" id="data-explorer">
-    <header class="explorer-header">
-      <nav class="dataset-tabs" id="dataset-tabs" aria-label="Choose a data table"></nav>
-      <div class="table-tools" role="search">
-        <input id="table-search" type="search" placeholder="Search animals" aria-label="Search table">
-        <select id="modality-filter" aria-label="Filter by recording modality"></select>
-        <select id="context-filter" aria-label="Filter by secondary category"></select>
-        <output id="row-count" aria-live="polite"></output>
-        <a id="download-csv" href="#" download title="Download visible rows as CSV" aria-label="Download visible rows as CSV">&#8595; CSV</a>
-      </div>
-    </header>
+    <div class="view-switch" role="group" aria-label="Interactive or static view">
+      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
+    </div>
 
-    <section class="table-shell" aria-live="polite">
-      <table id="explorer-table">
-        <thead><tr id="table-headers"></tr></thead>
-        <tbody id="table-body"></tbody>
-      </table>
-      <p class="empty-state" id="empty-state" hidden>No matching rows.</p>
+    <div id="interactive-view">
+      <header class="explorer-header">
+        <nav class="dataset-tabs" id="dataset-tabs" aria-label="Choose a data table"></nav>
+        <div class="table-tools" role="search">
+          <input id="table-search" type="search" placeholder="Search animals" aria-label="Search table">
+          <select id="modality-filter" aria-label="Filter by recording modality"></select>
+          <select id="context-filter" aria-label="Filter by secondary category"></select>
+          <output id="row-count" aria-live="polite"></output>
+          <a id="download-csv" href="#" download title="Download visible rows as CSV" aria-label="Download visible rows as CSV">&#8595; CSV</a>
+        </div>
+      </header>
+
+      <section class="table-shell" aria-live="polite">
+        <table id="explorer-table">
+          <thead><tr id="table-headers"></tr></thead>
+          <tbody id="table-body"></tbody>
+        </table>
+        <p class="empty-state" id="empty-state" hidden>No matching rows.</p>
+      </section>
+    </div>
+
+    <section class="static-view" id="static-view" aria-label="Static session inventory" hidden>
+      <div class="static-shell">
+        <img src="__SESSION_INVENTORY_IMAGE__" alt="Three panels showing Neuropixels, mesoscope, and SLAP2 sessions per mouse with context and QC status.">
+      </div>
     </section>
   </main>
 

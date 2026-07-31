@@ -25,19 +25,19 @@
       "source_name": "image10.png",
       "filename": "figure-02-experimental-design.png",
       "label": "fig-experimental-design",
-      "alt": "Experimental workflow, recording cohorts, four mismatch contexts, and shared control blocks.",
-      "caption": "Experimental design and shared stimulus architecture. **A,** Animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels, or SLAP2. **B,** Motor- and sequence-habituated cohorts experienced the same four recording contexts in cohort-specific orders; open squares denote training without mismatches and colored squares denote recording sessions with mismatches. **C,** Every recording used the same block order: standard control, context-specific mismatch, repeat standard control, sequential control, duration-jitter control, open-loop playback, receptive-field mapping, and zebra movie. **D,** Context panels summarize standard oddball, sensorimotor, sequence, and duration violations; control panels show the matched stimulus sets used for tuning, normalization, and cross-context comparison.",
+      "alt": "Experimental workflow, recording cohorts, and shared block order.",
+      "caption": "Experimental design and shared stimulus architecture. **A,** Animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels, or SLAP2. **B,** Motor- and sequence-habituated cohorts experienced the same four recording contexts in cohort-specific orders; open squares denote training without mismatches and colored squares denote recording sessions with mismatches. **C,** Every recording used the same block order: standard control, context-specific mismatch, repeat standard control, sequential control, duration-jitter control, open-loop playback, receptive-field mapping, and zebra movie.",
       "status": "draft",
       "supplementary_number": null,
       "path": "images/figures/imported/figure-02-experimental-design.png",
-      "sha256": "d0572a6e3b37b72b4fd70400db3ac1487cc2afc63a71cc6077f0b8d9483aa5cf",
+      "sha256": "57efe6a62d4b956027549ea82e36fb8708aaabbefc05690789c0140b48dd0f63",
       "source_kind": "google-doc-derived-crop",
       "editable_source_url": null,
       "replacement_source_path": "figure_sources/derived/figure-02-experimental-design-cropped.png",
       "crop_box_px": [
         20,
         55,
-        2040,
+        1128,
         835
       ],
       "replaces_google_doc_source": "image10.png"

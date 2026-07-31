@@ -5,11 +5,20 @@
     "image10.png": {
       "output_path": "figure_sources/derived/figure-02-experimental-design-cropped.png",
       "source_sha256": "0bcff274658a86b01e196770db9cc69676d75aca63140c579bbd5150b88eca20",
-      "sha256": "d0572a6e3b37b72b4fd70400db3ac1487cc2afc63a71cc6077f0b8d9483aa5cf",
-      "crop_box_px": [20, 55, 2040, 835],
+      "sha256": "57efe6a62d4b956027549ea82e36fb8708aaabbefc05690789c0140b48dd0f63",
+      "crop_box_px": [20, 55, 1128, 835],
       "source_dimensions_px": [2048, 1024],
-      "output_dimensions_px": [2020, 780],
-      "purpose": "Remove unused top and bottom whitespace while retaining panels A-D."
+      "output_dimensions_px": [1108, 780],
+      "purpose": "Retain panels A-C after moving panel D into the interactive figure."
+    },
+    "image10-panel-d": {
+      "output_path": "images/figures/generated/experimental-design-panel-d.png",
+      "source_sha256": "0bcff274658a86b01e196770db9cc69676d75aca63140c579bbd5150b88eca20",
+      "sha256": "80a30e0cdd4c4e9a27dd88e5d9fa2c4a51094ca1aaa238bb53dee0a7a3acaa74",
+      "crop_box_px": [1128, 55, 2040, 835],
+      "source_dimensions_px": [2048, 1024],
+      "output_dimensions_px": [912, 780],
+      "purpose": "Provide panel D in the interactive viewer and as its static PDF fallback."
     },
     "image8.png": {
       "output_path": "figure_sources/derived/figure-04-multimodal-pipelines-no-traces.png",

@@ -11,40 +11,51 @@ __SIMULATOR_CSS__
 </head>
 <body>
   <main class="viewer" id="stimulus-viewer">
-    <nav class="session-tabs" id="session-selector" aria-label="Stimulus session"></nav>
+    <div class="view-switch" role="group" aria-label="Interactive or static view">
+      <button type="button" class="view-button active" data-view="playback" aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
+    </div>
 
-    <section class="screen-section" aria-labelledby="session-title">
-      <header class="screen-heading">
-        <h1 id="session-title">Standard oddball</h1>
-        <span id="trial-label">Frequent standard 0 deg</span>
-      </header>
+    <div id="playback-view">
+      <nav class="session-tabs" id="session-selector" aria-label="Stimulus session"></nav>
 
-      <div class="monitor-frame" id="screen-toggle">
-        <canvas id="stimulus-canvas" width="480" height="380" role="img" aria-label="Reconstructed visual stimulus"></canvas>
-        <video id="stimulus-video" muted loop playsinline preload="auto" poster="./zebra-stimulus-poster.png" hidden aria-label="Canonical zebra movie stimulus"></video>
-        <span class="mismatch-badge" id="mismatch-badge" hidden>Mismatch</span>
-        <button class="play-overlay" id="play-toggle" type="button" aria-label="Play stimulus" title="Play stimulus">
-          <span id="play-icon" aria-hidden="true">&#9654;</span>
-        </button>
-      </div>
+      <section class="screen-section" aria-labelledby="session-title">
+        <header class="screen-heading">
+          <h1 id="session-title">Standard oddball</h1>
+          <span id="trial-label">Frequent standard 0 deg</span>
+        </header>
 
-      <footer class="playback-bar">
-        <div class="block-track" id="block-track" aria-label="Session blocks"></div>
-        <div class="playback-meta">
-          <time id="playback-time">00:00 / 00:24</time>
-          <span class="source-links">
-            Source:
-            <a id="table-source" href="#" target="_blank" rel="noopener">example table</a>
-            <span aria-hidden="true">&#183;</span>
-            <a id="generator-source" href="#" target="_blank" rel="noopener">generator</a>
-            <span aria-hidden="true">&#183;</span>
-            <a id="workflow-source" href="#" target="_blank" rel="noopener">workflow</a>
-            <span aria-hidden="true">&#183;</span>
-            NWB
-            <a id="ecephys-source" href="#" target="_blank" rel="noopener">ephys</a>/<a id="mesoscope-source" href="#" target="_blank" rel="noopener">2P</a>
-          </span>
+        <div class="monitor-frame" id="screen-toggle">
+          <canvas id="stimulus-canvas" width="480" height="380" role="img" aria-label="Reconstructed visual stimulus"></canvas>
+          <video id="stimulus-video" muted loop playsinline preload="auto" poster="./zebra-stimulus-poster.png" hidden aria-label="Canonical zebra movie stimulus"></video>
+          <span class="mismatch-badge" id="mismatch-badge" hidden>Mismatch</span>
+          <button class="play-overlay" id="play-toggle" type="button" aria-label="Play stimulus" title="Play stimulus">
+            <span id="play-icon" aria-hidden="true">&#9654;</span>
+          </button>
         </div>
-      </footer>
+
+        <footer class="playback-bar">
+          <div class="block-track" id="block-track" aria-label="Session blocks"></div>
+          <div class="playback-meta">
+            <time id="playback-time">00:00 / 00:24</time>
+            <span class="source-links">
+              Source:
+              <a id="table-source" href="#" target="_blank" rel="noopener">example table</a>
+              <span aria-hidden="true">&#183;</span>
+              <a id="generator-source" href="#" target="_blank" rel="noopener">generator</a>
+              <span aria-hidden="true">&#183;</span>
+              <a id="workflow-source" href="#" target="_blank" rel="noopener">workflow</a>
+              <span aria-hidden="true">&#183;</span>
+              NWB
+              <a id="ecephys-source" href="#" target="_blank" rel="noopener">ephys</a>/<a id="mesoscope-source" href="#" target="_blank" rel="noopener">2P</a>
+            </span>
+          </div>
+        </footer>
+      </section>
+    </div>
+
+    <section class="static-panel" id="static-panel" aria-label="Static experimental-design summary" hidden>
+      <img src="__PANEL_D_IMAGE__" alt="Panel D showing the four context blocks and shared control blocks.">
     </section>
   </main>
 

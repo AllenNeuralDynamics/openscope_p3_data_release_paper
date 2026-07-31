@@ -10,13 +10,13 @@ The Movie block uses the real pinned zebra stimulus excerpt and poster under `fi
 
 The stimulus viewer is split into:
 
-- `stimulus-viewer.html`: semantic screen, session tabs, and playback controls.
+- `stimulus-viewer.html`: semantic screen, Interactive/Static toggle, session tabs, and playback controls.
 - `stimulus-viewer.css`: responsive, screen-focused layout.
 - `stimulus-viewer.js`: source-row playback, spherical stimulus rendering, and playback state.
 
 The data explorer follows the same generated-asset pattern:
 
-- `data-explorer.html`: accessible Animals/Sessions explorer structure.
+- `data-explorer.html`: accessible Interactive/Static toggle and Animals/Sessions explorer structure.
 - `data-explorer.css`: compact filters, sticky headers, and responsive table styling.
 - `data-explorer.js`: tabs, search, filters, ID disclosure, and CSV export.
 

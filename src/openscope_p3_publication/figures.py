@@ -21,8 +21,13 @@ STIMULUS_EXCERPT_DIR = DATA_DIR / "stimulus-table-excerpts"
 STIMULUS_EXCERPT_PROVENANCE_PATH = STIMULUS_EXCERPT_DIR / "provenance.json"
 ANIMAL_RECORDS_PATH = DATA_DIR / "experimental-animals.csv"
 ANIMAL_RECORDS_PROVENANCE_PATH = DATA_DIR / "experimental-animals.provenance.json"
+SESSION_RECORDS_PATH = DATA_DIR / "experimental-sessions.csv"
+SESSION_RECORDS_PROVENANCE_PATH = SESSION_RECORDS_PATH.with_suffix(".provenance.json")
 INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "experimental-design.html"
 DATA_EXPLORER_OUTPUT = REPO_ROOT / "interactive" / "data-explorer.html"
+SESSION_INVENTORY_STATIC_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "session-inventory.svg"
+)
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
 BEHAVIOR_EXCERPTS_PATH = DATA_DIR / "behavior-excerpts.json"
@@ -33,6 +38,12 @@ OTHER_STUDIES_PROVENANCE_PATH = OTHER_STUDIES_PATH.with_suffix(".provenance.json
 UNIT_YIELD_DATA_PATH = DATA_DIR / "neuropixels-unit-yield.csv"
 UNIT_YIELD_PROVENANCE_PATH = UNIT_YIELD_DATA_PATH.with_suffix(".provenance.json")
 STATIC_OUTPUT = REPO_ROOT / "images" / "figures" / "generated" / "experimental-design.svg"
+EXPERIMENTAL_DESIGN_PANEL_D_PATH = (
+    REPO_ROOT / "images" / "figures" / "generated" / "experimental-design-panel-d.png"
+)
+DERIVED_FIGURE_PROVENANCE_PATH = (
+    REPO_ROOT / "figure_sources" / "derived" / "cropped-figures.provenance.json"
+)
 UNIT_YIELD_STATIC_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "supplementary-neuropixels-unit-yield.svg"
 )
@@ -284,8 +295,20 @@ def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
     template = (JAVASCRIPT_DIR / "stimulus-viewer.html").read_text(encoding="utf-8")
     stylesheet = (JAVASCRIPT_DIR / "stimulus-viewer.css").read_text(encoding="utf-8")
     javascript = (JAVASCRIPT_DIR / "stimulus-viewer.js").read_text(encoding="utf-8")
+    crop_provenance = json.loads(
+        DERIVED_FIGURE_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )["assets"]["image10-panel-d"]
+    if (
+        crop_provenance["output_path"]
+        != EXPERIMENTAL_DESIGN_PANEL_D_PATH.relative_to(REPO_ROOT).as_posix()
+        or hashlib.sha256(EXPERIMENTAL_DESIGN_PANEL_D_PATH.read_bytes()).hexdigest()
+        != crop_provenance["sha256"]
+    ):
+        raise RuntimeError("Experimental-design panel D checksum mismatch.")
+    panel_d_data = base64.b64encode(EXPERIMENTAL_DESIGN_PANEL_D_PATH.read_bytes()).decode()
     html = (
         template.replace("__SIMULATOR_CSS__", stylesheet)
+        .replace("__PANEL_D_IMAGE__", f"data:image/png;base64,{panel_d_data}")
         .replace(
             "__SIMULATOR_DATA__",
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
@@ -297,14 +320,20 @@ def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
     return output
 
 
-def write_data_explorer_html(output: Path = DATA_EXPLORER_OUTPUT) -> Path:
+def write_data_explorer_html(
+    output: Path = DATA_EXPLORER_OUTPUT,
+    static_output: Path = SESSION_INVENTORY_STATIC_OUTPUT,
+) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_publication_table_data()
+    write_session_inventory_svg(static_output)
+    static_data = base64.b64encode(static_output.read_bytes()).decode()
     template = (JAVASCRIPT_DIR / "data-explorer.html").read_text(encoding="utf-8")
     stylesheet = (JAVASCRIPT_DIR / "data-explorer.css").read_text(encoding="utf-8")
     javascript = (JAVASCRIPT_DIR / "data-explorer.js").read_text(encoding="utf-8")
     html = (
         template.replace("__DATA_EXPLORER_CSS__", stylesheet)
+        .replace("__SESSION_INVENTORY_IMAGE__", f"data:image/svg+xml;base64,{static_data}")
         .replace(
             "__DATA_EXPLORER_DATA__",
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
@@ -814,6 +843,466 @@ def expand_individual_session_table(grouped_table: dict) -> dict:
     }
 
 
+SESSION_CONTEXT_COLORS = {
+    "sensorimotor": "#283185",
+    "standard oddball": "#22BCAD",
+    "sequence": "#B16027",
+    "duration": "#CCAF2D",
+    "other/pilot": "#9CA3AF",
+}
+SESSION_CONTEXT_LABELS = {
+    "sensorimotor": "Sensorimotor",
+    "standard oddball": "Standard",
+    "sequence": "Sequence",
+    "duration": "Duration",
+    "other/pilot": "Pilot / other",
+}
+SESSION_ORDER = {
+    1: ("sensorimotor", "standard oddball", "sequence", "duration"),
+    2: ("sequence", "duration", "standard oddball", "sensorimotor"),
+}
+SLAP2_P3_STIMULI = {
+    "SLAP2_SESSION1_PROD_P3_SENSORYMOTOR",
+    "SLAP2_SESSION2_PROD_P3_STANDARD",
+    "SLAP2_SESSION3_PROD_P3_SEQUENCE",
+    "SLAP2_SESSION4_PROD_P3_DURATION",
+    "SLAP2_SESSION1_PROD_P3_SEQUENCE",
+    "SLAP2_SESSION2_PROD_P3_DURATION",
+    "SLAP2_SESSION3_PROD_P3_STANDARD",
+    "SLAP2_SESSION4_PROD_P3_SENSORYMOTOR",
+}
+
+
+def load_experimental_session_records(
+    data_path: Path = SESSION_RECORDS_PATH,
+    provenance_path: Path = SESSION_RECORDS_PROVENANCE_PATH,
+) -> dict:
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    checksum = hashlib.sha256(data_path.read_bytes()).hexdigest()
+    if checksum != provenance["vendored_sha256"]:
+        raise RuntimeError("Session worksheet checksum does not match its provenance.")
+    with data_path.open(newline="", encoding="utf-8") as stream:
+        records = list(csv.DictReader(stream))
+    if len(records) != provenance["rows"]:
+        raise RuntimeError("Session worksheet row count does not match its provenance.")
+
+    source_rows = [int(record["source_row"]) for record in records]
+    if len(source_rows) != len(set(source_rows)) or source_rows != sorted(source_rows):
+        raise RuntimeError("Session worksheet source rows must be unique and ordered.")
+    modality_rows = {
+        modality: sum(record["modality"] == modality for record in records)
+        for modality in ("neuropixels", "mesoscope", "slap2")
+    }
+    if modality_rows != provenance["modality_rows"]:
+        raise RuntimeError("Session worksheet modality counts do not match provenance.")
+    return {
+        "records": records,
+        "sourceUrl": provenance["source_url"],
+        "version": provenance["version"],
+    }
+
+
+def normalized_session_stimulus(record: dict) -> str:
+    return record["session_stimulus"].upper().removesuffix(" (WITH TRIPPY)")
+
+
+def session_qc_kind(record: dict | None, modality: str) -> str:
+    if record is None:
+        return "missing"
+    qc = record["qc"].lower()
+    if modality == "neuropixels":
+        if "session fail" in qc:
+            return "session-fail"
+        if "fail" in qc:
+            return "probe-fail"
+    elif modality == "mesoscope" and "fail" in qc:
+        return "session-fail"
+    elif modality == "slap2":
+        if "motion correction" in qc:
+            return "motion"
+        if "stressed" in qc:
+            return "stressed"
+        if "asleep" in qc:
+            return "asleep"
+        if "stopped" in qc:
+            return "stopped"
+    return "ok"
+
+
+def session_context(record: dict) -> str:
+    stimulus = normalized_session_stimulus(record)
+    for context, token in (
+        ("sensorimotor", "SENSORYMOTOR"),
+        ("standard oddball", "STANDARD"),
+        ("sequence", "SEQUENCE"),
+        ("duration", "DURATION"),
+    ):
+        if token in stimulus:
+            return context
+    return "other/pilot"
+
+
+def session_cohort(records: list[dict], modality: str) -> int:
+    if modality == "neuropixels":
+        session_one = [
+            record
+            for record in records
+            if re.search(r"SESSION1(?:_|$)", normalized_session_stimulus(record))
+        ]
+        if not session_one:
+            return 1
+        return 1 if session_context(session_one[0]) == "sensorimotor" else 2
+    if modality == "mesoscope":
+        first_record = min(
+            records,
+            key=lambda row: (row["date"], row["source_session_id"], int(row["source_row"])),
+        )
+        first_context = session_context(first_record)
+        if first_context == "sensorimotor":
+            return 1
+        if first_context == "sequence":
+            return 2
+    else:
+        stimuli = {normalized_session_stimulus(record) for record in records}
+        if "SLAP2_SESSION1_PROD_P3_SENSORYMOTOR" in stimuli:
+            return 1
+        if "SLAP2_SESSION1_PROD_P3_SEQUENCE" in stimuli:
+            return 2
+        return 1
+    raise RuntimeError(f"Cannot infer cohort for mouse {records[0]['mouse_id']}")
+
+
+def modality_session_records(records: list[dict], modality: str) -> list[dict]:
+    selected = [record for record in records if record["modality"] == modality]
+    if modality == "slap2":
+        selected = [
+            record
+            for record in selected
+            if normalized_session_stimulus(record) in SLAP2_P3_STIMULI
+        ]
+    return selected
+
+
+def session_panel_rows(records: list[dict], modality: str) -> list[dict]:
+    selected = modality_session_records(records, modality)
+    grouped = {}
+    for record in selected:
+        grouped.setdefault(record["mouse_id"], []).append(record)
+
+    rows = []
+    for mouse_id, mouse_records in grouped.items():
+        cohort = session_cohort(mouse_records, modality)
+        if modality == "neuropixels":
+            by_context = {}
+            for record in mouse_records:
+                by_context.setdefault(session_context(record), record)
+            sessions = [
+                {"context": context, "record": by_context.get(context)}
+                for context in SESSION_ORDER[cohort]
+            ]
+        else:
+            mouse_records.sort(
+                key=lambda row: (
+                    row["date"],
+                    row["source_session_id"],
+                    int(row["source_row"]),
+                )
+            )
+            sessions = [
+                {"context": session_context(record), "record": record}
+                for record in mouse_records
+            ]
+        rows.append(
+            {
+                "cohort": cohort,
+                "mouseId": mouse_id,
+                "sessions": sessions,
+            }
+        )
+    rows.sort(key=lambda row: (row["cohort"], int(row["mouseId"])))
+    if modality == "slap2":
+        rows.reverse()
+    return rows
+
+
+def svg_star(cx: float, cy: float, outer: float = 7, inner: float = 3) -> str:
+    points = []
+    for index in range(10):
+        angle = -math.pi / 2 + index * math.pi / 5
+        radius = outer if index % 2 == 0 else inner
+        points.append(f"{cx + math.cos(angle) * radius:.2f},{cy + math.sin(angle) * radius:.2f}")
+    return " ".join(points)
+
+
+def append_session_block(
+    svg: list[str],
+    *,
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    context: str,
+    qc_kind: str,
+) -> None:
+    color = SESSION_CONTEXT_COLORS[context]
+    border_colors = {
+        "missing": "#FF0000",
+        "session-fail": "#FF0000",
+        "motion": "#FF0000",
+        "stressed": "#FF69B4",
+        "asleep": "#32CD32",
+        "stopped": "#F5C400",
+    }
+    if qc_kind in border_colors:
+        svg.append(
+            f'<rect x="{x:.2f}" y="{y:.2f}" width="{width:.2f}" height="{height:.2f}" '
+            f'fill="url(#hatch-{context.replace("/", "-").replace(" ", "-")})" '
+            f'stroke="{border_colors[qc_kind]}" stroke-width="2"/>'
+        )
+    else:
+        svg.append(
+            f'<rect x="{x:.2f}" y="{y:.2f}" width="{width:.2f}" height="{height:.2f}" '
+            f'fill="{color}" stroke="#FFFFFF" stroke-width="1"/>'
+        )
+    if qc_kind == "probe-fail":
+        svg.append(
+            f'<polygon points="{svg_star(x + width / 2, y + height / 2)}" '
+            'fill="#FFFFFF" stroke="#222829" stroke-width="1"/>'
+        )
+
+
+def write_session_inventory_svg(
+    output: Path = SESSION_INVENTORY_STATIC_OUTPUT,
+) -> Path:
+    payload = load_experimental_session_records()
+    records = payload["records"]
+    panel_specs = (
+        ("A", "Neuropixels", "neuropixels", 28),
+        ("B", "Mesoscope", "mesoscope", 38),
+        ("C", "SLAP2 P3", "slap2", 38),
+    )
+    width = 1800
+    height = 790
+    panel_width = 550
+    panel_gap = 35
+    panel_lefts = (35, 35 + panel_width + panel_gap, 35 + 2 * (panel_width + panel_gap))
+    chart_top = 145
+    chart_bottom = 625
+    chart_offset = 104
+    chart_width = 410
+    bar_height = 20
+
+    svg = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
+        '<title id="title">Recording sessions per mouse across three modalities</title>',
+        '<desc id="description">Three panels show context-colored sessions for Neuropixels, '
+        'mesoscope, and SLAP2 mice, grouped by predictive-processing cohort and annotated '
+        'with session quality-control status.</desc>',
+        f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
+        "<defs>",
+    ]
+    for context, color in SESSION_CONTEXT_COLORS.items():
+        pattern_id = context.replace("/", "-").replace(" ", "-")
+        svg.append(
+            f'<pattern id="hatch-{pattern_id}" width="8" height="8" '
+            'patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
+            '<rect width="8" height="8" fill="#FFFFFF"/>'
+            f'<line x1="0" y1="0" x2="0" y2="8" stroke="{color}" stroke-width="3"/>'
+            "</pattern>"
+        )
+    svg.append(
+        '<pattern id="hatch-qc" width="8" height="8" patternUnits="userSpaceOnUse" '
+        'patternTransform="rotate(45)"><rect width="8" height="8" fill="#FFFFFF"/>'
+        '<line x1="0" y1="0" x2="0" y2="8" stroke="#666666" stroke-width="3"/>'
+        "</pattern>"
+    )
+    svg.extend(
+        [
+            "</defs>",
+            '<text x="35" y="38" font-family="Source Sans 3, sans-serif" '
+            'font-size="25" font-weight="700" fill="#293133">Recording sessions per mouse</text>',
+        ]
+    )
+    legend_x = 710
+    for context in ("sensorimotor", "standard oddball", "sequence", "duration"):
+        svg.extend(
+            [
+                f'<rect x="{legend_x}" y="20" width="22" height="16" '
+                f'fill="{SESSION_CONTEXT_COLORS[context]}"/>',
+                f'<text x="{legend_x + 29}" y="33" font-family="Source Sans 3, sans-serif" '
+                f'font-size="14" fill="#4D5553">{escape(SESSION_CONTEXT_LABELS[context])}</text>',
+            ]
+        )
+        legend_x += 145
+
+    for (panel_letter, panel_title, modality, row_step), panel_left in zip(
+        panel_specs, panel_lefts, strict=True
+    ):
+        rows = session_panel_rows(records, modality)
+        panel_records = modality_session_records(records, modality)
+        max_sessions = max(len(row["sessions"]) for row in rows)
+        if modality == "neuropixels":
+            axis_max = max_sessions + 0.5
+            tick_values = range(max_sessions + 1)
+        elif modality == "mesoscope":
+            axis_max = max_sessions + 0.5
+            tick_values = range(max_sessions + 1)
+        else:
+            axis_max = max_sessions + 2
+            tick_values = range(1, max_sessions + 2)
+        slot_width = chart_width / axis_max
+        svg.extend(
+            [
+                f'<text x="{panel_left}" y="88" font-family="Source Sans 3, sans-serif" '
+                f'font-size="22" font-weight="700" fill="#293133">'
+                f"{panel_letter}  {panel_title}</text>",
+                f'<text x="{panel_left}" y="111" font-family="Source Sans 3, sans-serif" '
+                f'font-size="14" fill="#68706E">{len(panel_records)} worksheet rows · '
+                f'{len(rows)} mice</text>',
+            ]
+        )
+        y_positions = []
+        previous_cohort = rows[0]["cohort"]
+        y = chart_top
+        cohort_ranges = {}
+        for row in rows:
+            if row["cohort"] != previous_cohort:
+                separator_y = y - row_step / 2
+                svg.append(
+                    f'<line x1="{panel_left + chart_offset - 8}" y1="{separator_y:.2f}" '
+                    f'x2="{panel_left + chart_offset + chart_width}" y2="{separator_y:.2f}" '
+                    'stroke="#8A918F" stroke-width="1.3" stroke-dasharray="5 4"/>'
+                )
+                y += 18
+                previous_cohort = row["cohort"]
+            y_positions.append(y)
+            cohort_ranges.setdefault(row["cohort"], []).append(y)
+            svg.append(
+                f'<text x="{panel_left + chart_offset - 12}" y="{y + 4:.2f}" '
+                'font-family="IBM Plex Mono, monospace" font-size="12" '
+                f'text-anchor="end" fill="#4D5553">{escape(row["mouseId"])}</text>'
+            )
+            for index, session in enumerate(row["sessions"]):
+                record = session["record"]
+                append_session_block(
+                    svg,
+                    x=panel_left + chart_offset + index * slot_width,
+                    y=y - bar_height / 2,
+                    width=slot_width,
+                    height=bar_height,
+                    context=session["context"],
+                    qc_kind=session_qc_kind(record, modality),
+                )
+            y += row_step
+
+        for cohort, cohort_ys in cohort_ranges.items():
+            svg.append(
+                f'<text x="{panel_left + chart_offset + chart_width + 6}" '
+                f'y="{sum(cohort_ys) / len(cohort_ys) + 4:.2f}" '
+                'font-family="Source Sans 3, sans-serif" font-size="11" '
+                f'font-style="italic" fill="#68706E">C{cohort}</text>'
+            )
+        svg.append(
+            f'<line x1="{panel_left + chart_offset}" y1="{chart_bottom}" '
+            f'x2="{panel_left + chart_offset + chart_width}" y2="{chart_bottom}" '
+            'stroke="#69716F" stroke-width="1.2"/>'
+        )
+        for tick_value in tick_values:
+            x = panel_left + chart_offset + tick_value * slot_width
+            svg.extend(
+                [
+                    f'<line x1="{x:.2f}" y1="{chart_bottom}" x2="{x:.2f}" '
+                    f'y2="{chart_bottom + 6}" stroke="#69716F" stroke-width="1"/>',
+                    f'<text x="{x:.2f}" y="{chart_bottom + 23}" '
+                    'font-family="IBM Plex Mono, monospace" font-size="11" '
+                    f'text-anchor="middle" fill="#68706E">{tick_value}</text>',
+                ]
+            )
+        svg.append(
+            f'<text x="{panel_left + chart_offset + chart_width / 2}" '
+            f'y="{chart_bottom + 43}" '
+            'font-family="Source Sans 3, sans-serif" font-size="13" '
+            'text-anchor="middle" fill="#4D5553">Session number</text>'
+        )
+
+        legend_y = 700
+        if modality == "neuropixels":
+            append_session_block(
+                svg,
+                x=panel_left,
+                y=legend_y - 12,
+                width=24,
+                height=16,
+                context="standard oddball",
+                qc_kind="session-fail",
+            )
+            svg.append(
+                f'<text x="{panel_left + 32}" y="{legend_y}" '
+                'font-family="Source Sans 3, sans-serif" '
+                'font-size="12" fill="#68706E">Missing / failed session</text>'
+            )
+            append_session_block(
+                svg,
+                x=panel_left + 230,
+                y=legend_y - 12,
+                width=24,
+                height=16,
+                context="sensorimotor",
+                qc_kind="probe-fail",
+            )
+            svg.append(
+                f'<text x="{panel_left + 262}" y="{legend_y}" '
+                'font-family="Source Sans 3, sans-serif" '
+                'font-size="12" fill="#68706E">One probe failed</text>'
+            )
+        elif modality == "mesoscope":
+            append_session_block(
+                svg,
+                x=panel_left,
+                y=legend_y - 12,
+                width=24,
+                height=16,
+                context="sequence",
+                qc_kind="session-fail",
+            )
+            svg.append(
+                f'<text x="{panel_left + 32}" y="{legend_y}" '
+                'font-family="Source Sans 3, sans-serif" '
+                'font-size="12" fill="#68706E">Failed session</text>'
+            )
+        else:
+            status_items = (
+                ("#FF0000", "Motion correction partially failed"),
+                ("#FF69B4", "Mouse stressed"),
+                ("#32CD32", "Mouse asleep"),
+                ("#F5C400", "SLAP2 stopped halfway"),
+            )
+            for index, (color, label) in enumerate(status_items):
+                x = panel_left + (index % 2) * 230
+                row_y = legend_y + (index // 2) * 23
+                svg.extend(
+                    [
+                        f'<rect x="{x}" y="{row_y - 12}" width="24" height="16" '
+                        f'fill="url(#hatch-qc)" stroke="{color}" stroke-width="2"/>',
+                        f'<text x="{x + 32}" y="{row_y}" font-family="Source Sans 3, sans-serif" '
+                        f'font-size="12" fill="#68706E">{label}</text>',
+                    ]
+                )
+
+    svg.extend(
+        [
+            '<text x="35" y="772" font-family="Source Sans 3, sans-serif" '
+            'font-size="11" fill="#7A817F">Static panels follow the supplied worksheet '
+            'plotting rules; repeated and aborted source rows are retained.</text>',
+            "</svg>",
+        ]
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    return output
+
+
 def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     width = 1200
@@ -1067,6 +1556,7 @@ def main() -> None:
     unit_yield_svg_path = write_unit_yield_svg()
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {SESSION_INVENTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {literature_comparison_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {behavior_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {neural_viewer_path.relative_to(REPO_ROOT)}")

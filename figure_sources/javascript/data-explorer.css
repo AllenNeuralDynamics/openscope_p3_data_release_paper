@@ -39,6 +39,51 @@ select {
 
 html.is-embedded .explorer { min-height: 0; }
 
+.view-switch {
+  width: max-content;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  margin: 0 0 10px auto;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.view-button {
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.view-button:last-child { border-right: 0; }
+.view-button.active { background: var(--teal-dark); color: #fff; }
+.view-button:focus-visible { outline: 3px solid rgba(73, 99, 117, 0.2); outline-offset: -3px; }
+
+.static-shell {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #fff;
+}
+
+.static-shell img {
+  width: 100%;
+  min-width: 900px;
+  height: auto;
+  display: block;
+}
+
+#interactive-view[hidden],
+.static-view[hidden] { display: none !important; }
+
 .explorer-header {
   border: 1px solid var(--line);
   border-bottom: 0;
@@ -286,5 +331,9 @@ tr.modality-slap2 td:first-child {
 
   .table-shell {
     max-height: 610px;
+  }
+
+  .static-shell {
+    max-height: 730px;
   }
 }

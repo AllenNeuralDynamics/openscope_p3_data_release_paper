@@ -8,17 +8,31 @@
     download: document.getElementById("download-csv"),
     empty: document.getElementById("empty-state"),
     headers: document.getElementById("table-headers"),
+    interactiveView: document.getElementById("interactive-view"),
     modality: document.getElementById("modality-filter"),
     search: document.getElementById("table-search"),
     status: document.getElementById("row-count"),
+    staticView: document.getElementById("static-view"),
     tabs: document.getElementById("dataset-tabs"),
+    viewButtons: document.querySelectorAll(".view-button"),
   };
   const modalityLabels = {
     mesoscope: "Two-photon",
     neuropixels: "Neuropixels",
     slap2: "SLAP2",
   };
-  const state = { kind: "animals", visibleRows: [] };
+  const state = { kind: "animals", view: "interactive", visibleRows: [] };
+
+  function selectView(view) {
+    state.view = view;
+    elements.interactiveView.hidden = view !== "interactive";
+    elements.staticView.hidden = view !== "static";
+    elements.viewButtons.forEach((button) => {
+      const active = button.dataset.view === view;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+  }
 
   function buildTabs() {
     ["animals", "sessions"].forEach((kind) => {
@@ -149,6 +163,10 @@
   elements.search.addEventListener("input", renderTable);
   elements.modality.addEventListener("change", renderTable);
   elements.context.addEventListener("change", renderTable);
+  elements.viewButtons.forEach((button) => {
+    button.addEventListener("click", () => selectView(button.dataset.view));
+  });
   buildTabs();
   selectTable("animals");
+  selectView("interactive");
 })();

@@ -110,7 +110,7 @@ def test_imported_figure_manifest_matches_files() -> None:
     assert png_dimensions(REPO_ROOT / figure_one["path"]) == (3200, 2400)
 
     expected_crops = {
-        "figure-02-experimental-design.png": ([20, 55, 2040, 835], (2020, 780)),
+        "figure-02-experimental-design.png": ([20, 55, 1128, 835], (1108, 780)),
         "figure-03-multimodal-pipelines.png": ([45, 70, 1600, 965], (1555, 895)),
     }
     for filename, (crop_box, dimensions) in expected_crops.items():
@@ -118,6 +118,18 @@ def test_imported_figure_manifest_matches_files() -> None:
         assert asset["source_kind"] == "google-doc-derived-crop"
         assert asset["crop_box_px"] == crop_box
         assert png_dimensions(REPO_ROOT / asset["path"]) == dimensions
+
+    provenance = json.loads(
+        (REPO_ROOT / "figure_sources/derived/cropped-figures.provenance.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    panel_d = provenance["assets"]["image10-panel-d"]
+    assert panel_d["crop_box_px"] == [1128, 55, 2040, 835]
+    assert panel_d["sha256"] == (
+        "80a30e0cdd4c4e9a27dd88e5d9fa2c4a51094ca1aaa238bb53dee0a7a3acaa74"
+    )
+    assert png_dimensions(REPO_ROOT / panel_d["output_path"]) == (912, 780)
 
 
 def test_manuscript_local_assets_and_figure_metadata() -> None:
@@ -312,6 +324,8 @@ def test_imported_data_tables_have_body_cells() -> None:
         assert "data-full-value" in table
 
     assert manuscript.count("interactive/data-explorer.html") == 1
+    assert ":placeholder: ./images/figures/generated/session-inventory.svg" in manuscript
+    assert "Toggle to Static to compare the worksheet summaries" in manuscript
     assert '<div class="publication-data-source" hidden aria-hidden="true">' in manuscript
     assert "View grouped static summary tables" not in manuscript
 
@@ -321,6 +335,7 @@ def test_figure_captions_and_interactive_placement() -> None:
 
     assert "A visual sequence establishes an expectation" in manuscript
     assert "**A,** Animals progressed from surgery" in manuscript
+    assert "**D,** Context panels summarize" not in manuscript
     assert "Rows summarize Neuropixels, mesoscope two-photon" in manuscript
     assert "Interactive record-level inventory of 39 mice and 164 recording sessions" in manuscript
     assert "./interactive/neural-viewer.html" in manuscript
@@ -470,4 +485,8 @@ def test_manuscript_has_no_docx_formatting_artifacts() -> None:
 def test_interactive_figure_has_static_fallback() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     assert ":::{iframe} ./interactive/experimental-design.html" in manuscript
-    assert ":placeholder: ./images/figures/generated/experimental-design.svg" in manuscript
+    assert (
+        ":placeholder: ./images/figures/generated/experimental-design-panel-d.png"
+        in manuscript
+    )
+    assert "Toggle between Interactive and Static" in manuscript

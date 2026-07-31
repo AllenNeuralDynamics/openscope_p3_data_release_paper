@@ -93,10 +93,10 @@ In both cohorts, the session that matched the habituation context was presented 
 
 :::{figure} ./images/figures/imported/figure-02-experimental-design.png
 :label: fig-experimental-design
-:alt: Experimental workflow, recording cohorts, four mismatch contexts, and shared control blocks.
+:alt: Experimental workflow, recording cohorts, and shared block order.
 :width: 100%
 
-Experimental design and shared stimulus architecture. **A,** Animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels, or SLAP2. **B,** Motor- and sequence-habituated cohorts experienced the same four recording contexts in cohort-specific orders; open squares denote training without mismatches and colored squares denote recording sessions with mismatches. **C,** Every recording used the same block order: standard control, context-specific mismatch, repeat standard control, sequential control, duration-jitter control, open-loop playback, receptive-field mapping, and zebra movie. **D,** Context panels summarize standard oddball, sensorimotor, sequence, and duration violations; control panels show the matched stimulus sets used for tuning, normalization, and cross-context comparison.
+Experimental design and shared stimulus architecture. **A,** Animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels, or SLAP2. **B,** Motor- and sequence-habituated cohorts experienced the same four recording contexts in cohort-specific orders; open squares denote training without mismatches and colored squares denote recording sessions with mismatches. **C,** Every recording used the same block order: standard control, context-specific mismatch, repeat standard control, sequential control, duration-jitter control, open-loop playback, receptive-field mapping, and zebra movie.
 :::
 
 The four distinct session contexts each targeted a different aspect of predictive processing. For all 4 contexts, the stimuli table containing both recurring and deviant trials were created at the onset of each session. The resulting tables were then subsequently shuffled so that the mouse could not predict the exact occurrence of deviants (pseudo-random). The order of stimuli blocks (deviant vs control blocks) were maintained across all sessions.
@@ -105,10 +105,11 @@ The four distinct session contexts each targeted a different aspect of predictiv
 :label: fig-interactive-experimental-design
 :width: 100%
 :title: Predictive-processing stimulus viewer
-:placeholder: ./images/figures/generated/experimental-design.svg
+:placeholder: ./images/figures/generated/experimental-design-panel-d.png
 
-Interactive reconstruction of the four recording contexts and shared control
-blocks. Context playback follows contiguous rows from the pinned generated
+Interactive reconstruction and static panel D summary of the four recording
+contexts and shared control blocks. Toggle between Interactive and Static for
+direct comparison. Context playback follows contiguous rows from the pinned generated
 stimulus tables in their source (pseudo-randomized) order, with the source trial
 number shown for each frame. The Movie block plays an excerpt of the canonical
 zebra stimulus, and receptive-field mapping uses the stated 120° × 95° angular
@@ -592,6 +593,7 @@ A secondary pipeline, also run on the CodeOcean platform, took the output spike 
 :enumerated: false
 :width: 100%
 :title: Interactive explorer for experimental animals and recording sessions
+:placeholder: ./images/figures/generated/session-inventory.svg
 
 Interactive record-level inventory of 39 mice and 164 recording sessions. The
 Animals tab reports one row per mouse with modality, sex, quality-control status,
@@ -600,6 +602,11 @@ Sessions tab reports one row per session with its mouse, acquisition date,
 recording modality, and predictive context. Search and filters update both the
 visible-row count and downloadable CSV, allowing the displayed subset to be
 exported without collapsing individual records into manuscript summary groups.
+Toggle to Static to compare the worksheet summaries supplied for each modality:
+four canonical EPHYS context slots, every chronological MESO row, and the exact
+SLAP2 P3 stimulus set, with worksheet QC status per mouse. Repeated and aborted
+worksheet rows are retained, so the static plot is not a one-to-one reduction of
+the 164-record explorer. The static view is also used for PDF output.
 :::
 
 <div class="publication-data-source" hidden aria-hidden="true">
