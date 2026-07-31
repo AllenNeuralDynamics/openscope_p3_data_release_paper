@@ -328,6 +328,7 @@ def test_imported_data_tables_have_body_cells() -> None:
     assert ":label: fig-recording-session-inventory" in manuscript
     assert "Recording-session inventory and quality-control summary" in manuscript
     assert "**A,** Neuropixels uses 62 worksheet rows" in manuscript
+    assert "whitespace\nseparates the motor-first and sequence-first groups" in manuscript
     assert '<div class="publication-data-source" hidden aria-hidden="true">' in manuscript
     assert "View grouped static summary tables" not in manuscript
 

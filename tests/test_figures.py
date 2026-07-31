@@ -369,13 +369,22 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert "A  Neuropixels" in svg
     assert "B  Mesoscope" in svg
     assert "C  SLAP2 P3" in svg
-    assert "62 worksheet rows · 16 mice" in svg
-    assert "92 worksheet rows · 10 mice" in svg
-    assert "28 worksheet rows · 8 mice" in svg
+    assert svg.count('id="mouse-id-axis-label"') == 1
+    assert ">Mouse ID</text>" in svg
+    assert 'id="session-inventory-legend"' in svg
+    assert "Session type" in svg
+    assert "Quality control" in svg
     assert "Missing / failed session" in svg
     assert "One probe failed" in svg
     assert "Motion correction partially failed" in svg
     assert "SLAP2 stopped halfway" in svg
+    assert "Recording sessions per mouse</text>" not in svg
+    assert "worksheet rows ·" not in svg
+    assert "Static panels follow" not in svg
+    assert "stroke-dasharray" not in svg
+    assert ">C1</text>" not in svg
+    assert ">C2</text>" not in svg
+    assert svg.count(">Session number</text>") == 1
 
 
 def test_literature_comparison_is_deterministic(tmp_path: Path) -> None:

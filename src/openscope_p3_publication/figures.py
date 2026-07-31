@@ -1089,8 +1089,8 @@ def write_session_inventory_svg(
     panel_width = 550
     panel_gap = 35
     panel_lefts = (35, 35 + panel_width + panel_gap, 35 + 2 * (panel_width + panel_gap))
-    chart_top = 145
-    chart_bottom = 625
+    chart_top = 85
+    chart_bottom = 570
     chart_offset = 104
     chart_width = 410
     bar_height = 20
@@ -1120,30 +1120,12 @@ def write_session_inventory_svg(
         '<line x1="0" y1="0" x2="0" y2="8" stroke="#666666" stroke-width="3"/>'
         "</pattern>"
     )
-    svg.extend(
-        [
-            "</defs>",
-            '<text x="35" y="38" font-family="Source Sans 3, sans-serif" '
-            'font-size="25" font-weight="700" fill="#293133">Recording sessions per mouse</text>',
-        ]
-    )
-    legend_x = 710
-    for context in ("sensorimotor", "standard oddball", "sequence", "duration"):
-        svg.extend(
-            [
-                f'<rect x="{legend_x}" y="20" width="22" height="16" '
-                f'fill="{SESSION_CONTEXT_COLORS[context]}"/>',
-                f'<text x="{legend_x + 29}" y="33" font-family="Source Sans 3, sans-serif" '
-                f'font-size="14" fill="#4D5553">{escape(SESSION_CONTEXT_LABELS[context])}</text>',
-            ]
-        )
-        legend_x += 145
+    svg.append("</defs>")
 
     for (panel_letter, panel_title, modality, row_step), panel_left in zip(
         panel_specs, panel_lefts, strict=True
     ):
         rows = session_panel_rows(records, modality)
-        panel_records = modality_session_records(records, modality)
         max_sessions = max(len(row["sessions"]) for row in rows)
         if modality == "neuropixels":
             axis_max = max_sessions + 0.5
@@ -1157,30 +1139,26 @@ def write_session_inventory_svg(
         slot_width = chart_width / axis_max
         svg.extend(
             [
-                f'<text x="{panel_left}" y="88" font-family="Source Sans 3, sans-serif" '
+                f'<text x="{panel_left}" y="48" font-family="Source Sans 3, sans-serif" '
                 f'font-size="22" font-weight="700" fill="#293133">'
                 f"{panel_letter}  {panel_title}</text>",
-                f'<text x="{panel_left}" y="111" font-family="Source Sans 3, sans-serif" '
-                f'font-size="14" fill="#68706E">{len(panel_records)} worksheet rows · '
-                f'{len(rows)} mice</text>',
             ]
         )
+        if modality == "neuropixels":
+            svg.append(
+                f'<text id="mouse-id-axis-label" '
+                f'x="{panel_left + chart_offset - 12}" y="72" '
+                'font-family="Source Sans 3, sans-serif" font-size="13" '
+                'font-weight="600" text-anchor="end" fill="#4D5553">Mouse ID</text>'
+            )
         y_positions = []
         previous_cohort = rows[0]["cohort"]
         y = chart_top
-        cohort_ranges = {}
         for row in rows:
             if row["cohort"] != previous_cohort:
-                separator_y = y - row_step / 2
-                svg.append(
-                    f'<line x1="{panel_left + chart_offset - 8}" y1="{separator_y:.2f}" '
-                    f'x2="{panel_left + chart_offset + chart_width}" y2="{separator_y:.2f}" '
-                    'stroke="#8A918F" stroke-width="1.3" stroke-dasharray="5 4"/>'
-                )
                 y += 18
                 previous_cohort = row["cohort"]
             y_positions.append(y)
-            cohort_ranges.setdefault(row["cohort"], []).append(y)
             svg.append(
                 f'<text x="{panel_left + chart_offset - 12}" y="{y + 4:.2f}" '
                 'font-family="IBM Plex Mono, monospace" font-size="12" '
@@ -1199,13 +1177,6 @@ def write_session_inventory_svg(
                 )
             y += row_step
 
-        for cohort, cohort_ys in cohort_ranges.items():
-            svg.append(
-                f'<text x="{panel_left + chart_offset + chart_width + 6}" '
-                f'y="{sum(cohort_ys) / len(cohort_ys) + 4:.2f}" '
-                'font-family="Source Sans 3, sans-serif" font-size="11" '
-                f'font-style="italic" fill="#68706E">C{cohort}</text>'
-            )
         svg.append(
             f'<line x1="{panel_left + chart_offset}" y1="{chart_bottom}" '
             f'x2="{panel_left + chart_offset + chart_width}" y2="{chart_bottom}" '
@@ -1222,82 +1193,70 @@ def write_session_inventory_svg(
                     f'text-anchor="middle" fill="#68706E">{tick_value}</text>',
                 ]
             )
-        svg.append(
-            f'<text x="{panel_left + chart_offset + chart_width / 2}" '
-            f'y="{chart_bottom + 43}" '
-            'font-family="Source Sans 3, sans-serif" font-size="13" '
-            'text-anchor="middle" fill="#4D5553">Session number</text>'
-        )
-
-        legend_y = 700
         if modality == "neuropixels":
-            append_session_block(
-                svg,
-                x=panel_left,
-                y=legend_y - 12,
-                width=24,
-                height=16,
-                context="standard oddball",
-                qc_kind="session-fail",
-            )
             svg.append(
-                f'<text x="{panel_left + 32}" y="{legend_y}" '
-                'font-family="Source Sans 3, sans-serif" '
-                'font-size="12" fill="#68706E">Missing / failed session</text>'
+                f'<text x="{panel_left + chart_offset + chart_width / 2}" '
+                f'y="{chart_bottom + 43}" '
+                'font-family="Source Sans 3, sans-serif" font-size="13" '
+                'text-anchor="middle" fill="#4D5553">Session number</text>'
             )
-            append_session_block(
-                svg,
-                x=panel_left + 230,
-                y=legend_y - 12,
-                width=24,
-                height=16,
-                context="sensorimotor",
-                qc_kind="probe-fail",
-            )
-            svg.append(
-                f'<text x="{panel_left + 262}" y="{legend_y}" '
-                'font-family="Source Sans 3, sans-serif" '
-                'font-size="12" fill="#68706E">One probe failed</text>'
-            )
-        elif modality == "mesoscope":
-            append_session_block(
-                svg,
-                x=panel_left,
-                y=legend_y - 12,
-                width=24,
-                height=16,
-                context="sequence",
-                qc_kind="session-fail",
-            )
-            svg.append(
-                f'<text x="{panel_left + 32}" y="{legend_y}" '
-                'font-family="Source Sans 3, sans-serif" '
-                'font-size="12" fill="#68706E">Failed session</text>'
-            )
-        else:
-            status_items = (
-                ("#FF0000", "Motion correction partially failed"),
-                ("#FF69B4", "Mouse stressed"),
-                ("#32CD32", "Mouse asleep"),
-                ("#F5C400", "SLAP2 stopped halfway"),
-            )
-            for index, (color, label) in enumerate(status_items):
-                x = panel_left + (index % 2) * 230
-                row_y = legend_y + (index // 2) * 23
-                svg.extend(
-                    [
-                        f'<rect x="{x}" y="{row_y - 12}" width="24" height="16" '
-                        f'fill="url(#hatch-qc)" stroke="{color}" stroke-width="2"/>',
-                        f'<text x="{x + 32}" y="{row_y}" font-family="Source Sans 3, sans-serif" '
-                        f'font-size="12" fill="#68706E">{label}</text>',
-                    ]
-                )
 
     svg.extend(
         [
-            '<text x="35" y="772" font-family="Source Sans 3, sans-serif" '
-            'font-size="11" fill="#7A817F">Static panels follow the supplied worksheet '
-            'plotting rules; repeated and aborted source rows are retained.</text>',
+            '<g id="session-inventory-legend" '
+            'aria-label="Session type and quality-control legend">',
+            '<text x="35" y="674" font-family="Source Sans 3, sans-serif" '
+            'font-size="13" font-weight="700" fill="#4D5553">Session type</text>',
+        ]
+    )
+    for x, context_name in zip(
+        (245, 515, 765, 1015),
+        ("sensorimotor", "standard oddball", "sequence", "duration"),
+        strict=True,
+    ):
+        svg.extend(
+            [
+                f'<rect x="{x}" y="660" width="24" height="16" '
+                f'fill="{SESSION_CONTEXT_COLORS[context_name]}"/>',
+                f'<text x="{x + 32}" y="673" font-family="Source Sans 3, sans-serif" '
+                f'font-size="12" fill="#68706E">'
+                f"{escape(SESSION_CONTEXT_LABELS[context_name])}</text>",
+            ]
+        )
+    svg.append(
+        '<text x="35" y="718" font-family="Source Sans 3, sans-serif" '
+        'font-size="13" font-weight="700" fill="#4D5553">Quality control</text>'
+    )
+    qc_items = (
+        (155, "#FF0000", "Missing / failed session"),
+        (575, "#FF0000", "Motion correction partially failed"),
+        (890, "#FF69B4", "Mouse stressed"),
+        (1070, "#32CD32", "Mouse asleep"),
+        (1240, "#F5C400", "SLAP2 stopped halfway"),
+    )
+    for x, color, label in qc_items:
+        svg.extend(
+            [
+                f'<rect x="{x}" y="704" width="24" height="16" '
+                f'fill="url(#hatch-qc)" stroke="{color}" stroke-width="2"/>',
+                f'<text x="{x + 32}" y="717" font-family="Source Sans 3, sans-serif" '
+                f'font-size="12" fill="#68706E">{label}</text>',
+            ]
+        )
+    append_session_block(
+        svg,
+        x=390,
+        y=704,
+        width=24,
+        height=16,
+        context="sensorimotor",
+        qc_kind="probe-fail",
+    )
+    svg.extend(
+        [
+            '<text x="422" y="717" font-family="Source Sans 3, sans-serif" '
+            'font-size="12" fill="#68706E">One probe failed</text>',
+            "</g>",
             "</svg>",
         ]
     )

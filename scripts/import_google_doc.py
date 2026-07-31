@@ -291,8 +291,10 @@ session. **C,** SLAP2 shows the 28 P3 worksheet rows from 8 mice; colored border
 and hatching denote partially failed motion correction, stress, sleep, or an
 acquisition that stopped halfway. Across panels, indigo, teal, brown, and gold
 denote sensorimotor, standard oddball, sequence, and duration sessions,
-respectively. Repeated and aborted worksheet rows are retained in the Static
-view, so its rows do not map one-to-one to the 164-record Interactive inventory.
+respectively. Mice are ordered by cohort; where both are present, whitespace
+separates the motor-first and sequence-first groups defined in Figure 2.
+Repeated and aborted worksheet rows are retained in the Static view, so its rows
+do not map one-to-one to the 164-record Interactive inventory.
 :::"""
 
 NEUROPIXELS_RAW_SOURCE = (
