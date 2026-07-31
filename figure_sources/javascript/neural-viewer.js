@@ -35,8 +35,10 @@
     spriteToken: 0,
   };
   const layout = {
+    anatomyLeft: 78,
+    anatomyRight: 160,
     plotBottom: 458,
-    plotLeft: 96,
+    plotLeft: 168,
     plotRight: 830,
     plotTop: 42,
   };
@@ -141,6 +143,7 @@
     const plotHeight = layout.plotBottom - layout.plotTop;
     context.imageSmoothingEnabled = false;
     context.drawImage(offscreen, layout.plotLeft, layout.plotTop, plotWidth, plotHeight);
+    drawAnatomySegments(option, plotHeight);
     context.strokeStyle = "#8f9996";
     context.strokeRect(layout.plotLeft, layout.plotTop, plotWidth, plotHeight);
     drawText("Raw AP acquisition", layout.plotLeft, layout.plotTop - 13, {
@@ -152,7 +155,7 @@
     const depthTicks = [option.depthMaxUm, (option.depthMaxUm + option.depthMinUm) / 2, option.depthMinUm];
     depthTicks.forEach((depth, index) => {
       const y = layout.plotTop + index * plotHeight / 2;
-      drawText(formatNumber(depth, 0), layout.plotLeft - 12, y + (index === 0 ? 8 : index === 2 ? -2 : 4), {
+      drawText(formatNumber(depth, 0), layout.anatomyLeft - 10, y + (index === 0 ? 8 : index === 2 ? -2 : 4), {
         align: "right",
         color: "#59615f",
         size: 11,
@@ -169,7 +172,7 @@
     context.restore();
 
     const colorbarX = layout.plotRight + 9;
-  const gradient = context.createLinearGradient(0, layout.plotBottom, 0, layout.plotTop);
+    const gradient = context.createLinearGradient(0, layout.plotBottom, 0, layout.plotTop);
     gradient.addColorStop(0, "rgb(28,77,151)");
     gradient.addColorStop(0.5, "rgb(246,246,246)");
     gradient.addColorStop(1, "rgb(189,54,41)");
@@ -221,6 +224,51 @@
       color: "#4d5553",
       size: 11,
     });
+  }
+
+  function drawAnatomySegments(option, plotHeight) {
+    const width = layout.anatomyRight - layout.anatomyLeft;
+    drawText("CCF", layout.anatomyLeft + width / 2, layout.plotTop - 13, {
+      align: "center",
+      color: "#4d5553",
+      size: 11,
+      weight: 700,
+    });
+    option.anatomySegments.forEach((segment, index) => {
+      const top = layout.plotTop + segment.startRow / option.rows * plotHeight;
+      const bottom = layout.plotTop + segment.endRow / option.rows * plotHeight;
+      const height = bottom - top;
+      context.fillStyle = segment.label === "void"
+        ? "#f5f6f6"
+        : index % 2 === 0 ? "#e2e7e5" : "#eef1f0";
+      context.fillRect(layout.anatomyLeft, top, width, height);
+      if (height >= 11) {
+        drawText(segment.label, layout.anatomyLeft + width / 2, top + height / 2, {
+          align: "center",
+          baseline: "middle",
+          color: "#3f4745",
+          size: 9,
+          weight: 600,
+        });
+      }
+      if (segment.startRow > 0) {
+        context.strokeStyle = "rgba(255, 255, 255, 0.82)";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(layout.anatomyLeft, top);
+        context.lineTo(layout.plotRight, top);
+        context.stroke();
+        context.strokeStyle = "rgba(41, 48, 46, 0.72)";
+        context.lineWidth = 1;
+        context.beginPath();
+        context.moveTo(layout.anatomyLeft, top);
+        context.lineTo(layout.plotRight, top);
+        context.stroke();
+      }
+    });
+    context.strokeStyle = "#8f9996";
+    context.lineWidth = 1;
+    context.strokeRect(layout.anatomyLeft, layout.plotTop, width, plotHeight);
   }
 
   function loadSprite(option) {
@@ -374,7 +422,7 @@
     elements.canvas.setAttribute(
       "aria-label",
       session.viewType === "heatmap"
-        ? "Raw 30 kHz AP acquisition voltage across the probe shaft"
+        ? "Raw 30 kHz AP acquisition voltage with CCF boundaries across the probe shaft"
         : "Raw imaging frames with a 50 micrometer scale bar aligned to event onset",
     );
     elements.playhead.value = state.playhead;
@@ -443,28 +491,35 @@
     let content = "";
     if (
       session.viewType === "heatmap"
-      && position.x >= layout.plotLeft
+      && position.x >= layout.anatomyLeft
       && position.x <= layout.plotRight
       && position.y >= layout.plotTop
       && position.y <= layout.plotBottom
     ) {
-      const column = Math.min(
-        option.columns - 1,
-        Math.floor((position.x - layout.plotLeft) / (layout.plotRight - layout.plotLeft) * option.columns),
-      );
       const row = Math.min(
         option.rows - 1,
         Math.floor((position.y - layout.plotTop) / (layout.plotBottom - layout.plotTop) * option.rows),
       );
-      const encoded = decodeMatrix(option)[row * option.columns + column];
-      const voltage = (encoded / 255 * 2 - 1) * option.valueLimit;
-      const time = option.timeStartSeconds
-        + (column + 0.5) / option.columns
-        * (option.timeEndSeconds - option.timeStartSeconds);
       const depth = option.depthMaxUm
         - row / (option.rows - 1) * (option.depthMaxUm - option.depthMinUm);
-      const milliseconds = time * 1000;
-      content = `<strong>${milliseconds >= 0 ? "+" : ""}${milliseconds.toFixed(2)} ms</strong><br>${formatNumber(depth, 0)} µm from tip<br>${formatNumber(voltage, 1)} µV`;
+      const anatomy = option.anatomySegments.find(
+        segment => row >= segment.startRow && row < segment.endRow,
+      );
+      if (position.x < layout.plotLeft) {
+        content = `<strong>${anatomy.label}</strong><br>${formatNumber(depth, 0)} µm from tip`;
+      } else {
+        const column = Math.min(
+          option.columns - 1,
+          Math.floor((position.x - layout.plotLeft) / (layout.plotRight - layout.plotLeft) * option.columns),
+        );
+        const encoded = decodeMatrix(option)[row * option.columns + column];
+        const voltage = (encoded / 255 * 2 - 1) * option.valueLimit;
+        const time = option.timeStartSeconds
+          + (column + 0.5) / option.columns
+          * (option.timeEndSeconds - option.timeStartSeconds);
+        const milliseconds = time * 1000;
+        content = `<strong>${milliseconds >= 0 ? "+" : ""}${milliseconds.toFixed(2)} ms</strong><br>${formatNumber(depth, 0)} µm from tip · ${anatomy.label}<br>${formatNumber(voltage, 1)} µV`;
+      }
     } else if (session.viewType === "movie") {
       const index = nearestIndex(option.frameTimes, state.playhead);
       content = `<strong>${formatTime(option.frameTimes[index])}</strong><br>Raw frame ${index + 1} of ${option.frameCount}<br>${option.nativeWidth} × ${option.nativeHeight} source pixels`;

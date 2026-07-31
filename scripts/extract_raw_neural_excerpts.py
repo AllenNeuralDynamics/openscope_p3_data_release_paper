@@ -267,9 +267,46 @@ def cortical_layer(depth_um: int) -> str:
     return "L5"
 
 
+def neuropixels_channel_locations(nwb: h5py.File) -> dict[str, dict[int, str]]:
+    electrodes = nwb["general/extracellular_ephys/electrodes"]
+    channel_names = np.asarray(electrodes["channel_name"][:]).astype("U")
+    group_names = np.asarray(electrodes["group_name"][:]).astype("U")
+    locations = np.asarray(electrodes["location"][:]).astype("U")
+    result = {probe_id: {} for probe_id in NEUROPIXELS_AP_STORES}
+    for channel_name, group_name, location in zip(
+        channel_names,
+        group_names,
+        locations,
+        strict=True,
+    ):
+        if not channel_name.startswith("AP") or not channel_name[2:].isdigit():
+            continue
+        probe_id = group_name.removeprefix("Probe")
+        if probe_id in result:
+            result[probe_id][int(channel_name[2:])] = str(location)
+    return result
+
+
+def anatomy_segments(
+    ordered_channels: np.ndarray,
+    channel_locations: dict[int, str],
+) -> list[dict[str, int | str]]:
+    segments = []
+    for row, channel in enumerate(ordered_channels):
+        label = channel_locations.get(int(channel))
+        if not label:
+            raise RuntimeError(f"Missing CCF location for AP channel {channel}")
+        if segments and segments[-1]["label"] == label:
+            segments[-1]["endRow"] = row + 1
+        else:
+            segments.append({"endRow": row + 1, "label": label, "startRow": row})
+    return segments
+
+
 def extract_ap_excerpt(
     probe_id: str,
     aligned_event: float,
+    channel_locations: dict[int, str],
     file_system: s3fs.S3FileSystem,
 ) -> tuple[dict, dict]:
     if WavPack.codec_id != "wavpack":
@@ -303,6 +340,7 @@ def extract_ap_excerpt(
     depth_order = np.argsort(depths)[::-1]
     shaft_uv = values_uv[:, depth_order].T
     value_limit = float(np.percentile(np.abs(shaft_uv), 99.9))
+    ordered_channels = source_channels[depth_order]
     quantized = np.rint(
         (np.clip(shaft_uv, -value_limit, value_limit) + value_limit)
         / (2 * value_limit)
@@ -326,13 +364,14 @@ def extract_ap_excerpt(
         ),
     }
     excerpt = {
+        "anatomySegments": anatomy_segments(ordered_channels, channel_locations),
         "columns": quantized.shape[1],
         "dataBase64": base64.b64encode(quantized.tobytes()).decode(),
         "depthMaxUm": round(float(depths.max()), 3),
         "depthMinUm": round(float(depths.min()), 3),
         "nativeSampleRateHz": round(sample_rate_hz, 6),
         "rows": quantized.shape[0],
-        "sourceChannels": source_channels[depth_order].astype(int).tolist(),
+        "sourceChannels": ordered_channels.astype(int).tolist(),
         "timeEndSeconds": round(float(times[-1] - aligned_event), 9),
         "timeStartSeconds": round(float(times[0] - aligned_event), 9),
         "valueLimit": round(value_limit, 6),
@@ -347,11 +386,13 @@ def extract_neuropixels(session: dict) -> dict:
     with closing(remfile.File(NEUROPIXELS_NWB["url"])) as remote:
         with h5py.File(remote, mode="r") as nwb:
             aligned_event = event_time(nwb)
+            channel_locations = neuropixels_channel_locations(nwb)
             for probe_id in sorted(NEUROPIXELS_AP_STORES):
                 anatomy = NEUROPIXELS_ANATOMY[probe_id]
                 ap_excerpt, ap_source = extract_ap_excerpt(
                     probe_id,
                     aligned_event,
+                    channel_locations[probe_id],
                     file_system,
                 )
                 ap_sources.append(ap_source)
@@ -368,7 +409,8 @@ def extract_neuropixels(session: dict) -> dict:
             "The raw AP acquisition timestamps and stimulus intervals share the "
             "synchronized acquisition clock. Each display matrix contains unaveraged "
             "30-kHz samples from 96 regularly spaced shaft contacts during the 100-ms "
-            "event-centered excerpt."
+            "event-centered excerpt. CCF structure and layer boundaries come from the "
+            "NWB electrode-location annotations."
         ),
         "context": session["context"],
         "event": {**session["event"], "time": 0.0},
@@ -825,7 +867,7 @@ def main() -> None:
                 extract_mesoscope(sessions["mesoscope"], temporary_media),
                 extract_slap2(sessions["slap2"], temporary_media),
             ],
-            "version": 5,
+            "version": 6,
             "windowEndSeconds": WINDOW_END_SECONDS,
             "windowStartSeconds": WINDOW_START_SECONDS,
         }

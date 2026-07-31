@@ -446,7 +446,7 @@ def load_neural_excerpts(
     payload = json.loads(path.read_text(encoding="utf-8"))
     behavior_checksum = hashlib.sha256(behavior_path.read_bytes()).hexdigest()
     if (
-        payload.get("version") != 5
+        payload.get("version") != 6
         or payload.get("windowStartSeconds") != -1.0
         or payload.get("windowEndSeconds") != 3.0
         or payload.get("behaviorExcerptSha256") != behavior_checksum
@@ -503,6 +503,26 @@ def load_neural_excerpts(
                     or not math.isfinite(option.get("valueLimit", math.nan))
                 ):
                     raise RuntimeError(f"Neural heatmap is invalid: {option['id']}")
+                expected_start = 0
+                for segment in option.get("anatomySegments", []):
+                    start = segment.get("startRow")
+                    end = segment.get("endRow")
+                    if (
+                        start != expected_start
+                        or not isinstance(end, int)
+                        or end <= start
+                        or end > rows
+                        or not isinstance(segment.get("label"), str)
+                        or not segment["label"].strip()
+                    ):
+                        raise RuntimeError(
+                            f"Neural anatomy segment is invalid: {option['id']}"
+                        )
+                    expected_start = end
+                if expected_start != rows:
+                    raise RuntimeError(
+                        f"Neural anatomy does not cover the shaft: {option['id']}"
+                    )
             else:
                 times = option.get("frameTimes", [])
                 asset_path = NEURAL_MEDIA_DIR / Path(option.get("assetPath", "")).name

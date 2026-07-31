@@ -420,7 +420,7 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
 
 def test_neural_excerpts_are_source_backed_and_aligned() -> None:
     assert hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest() == (
-        "ddf68d5a3985d0d81dd917542031faf1e10f46088b647bd0936b294a740b0282"
+        "74a3cbcc083a985e50fd1097f9641d72a7e87afdf49282397805a2c656820f09"
     )
     payload = load_neural_excerpts(NEURAL_EXCERPTS_PATH)
 
@@ -452,6 +452,38 @@ def test_neural_excerpts_are_source_backed_and_aligned() -> None:
         assert option["timeStartSeconds"] <= -0.0499
         assert option["timeEndSeconds"] >= 0.0498
         assert "apDataBase64" not in option
+        assert option["anatomySegments"][0]["startRow"] == 0
+        assert option["anatomySegments"][-1]["endRow"] == 96
+        assert all(
+            current["endRow"] == following["startRow"]
+            for current, following in zip(
+                option["anatomySegments"][:-1],
+                option["anatomySegments"][1:],
+                strict=True,
+            )
+        )
+    assert [
+        len(option["anatomySegments"])
+        for option in payload["sessions"][0]["options"]
+    ] == [13, 16, 22, 19, 12, 11]
+    assert [
+        segment["label"]
+        for segment in payload["sessions"][0]["options"][0]["anatomySegments"]
+    ] == [
+        "void",
+        "MOp1",
+        "MOp2/3",
+        "MOp5",
+        "MOp6a",
+        "cing",
+        "ccb",
+        "alv",
+        "CA2",
+        "CA3",
+        "alv",
+        "root",
+        "LD",
+    ]
     assert payload["sessions"][0]["options"][2]["anatomyLabel"] == (
         "VISp L1–L6b · MG · DG"
     )
@@ -541,7 +573,9 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "SLAP2" in html
     assert "Raw AP acquisition voltage" in html
     assert "Raw AP acquisition" in html
-    assert "Raw 30 kHz AP acquisition voltage across the probe shaft" in html
+    assert "Raw 30 kHz AP acquisition voltage with CCF boundaries" in html
+    assert "drawAnatomySegments" in html
+    assert "anatomySegments" in html
     assert "Raw imaging frames with a 50 micrometer scale bar" in html
     assert "scaleBarMicrons = 50" in html
     assert "LFP" not in html
