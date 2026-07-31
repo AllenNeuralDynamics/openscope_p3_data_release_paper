@@ -323,6 +323,28 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "**A,** Animals progressed from surgery" in manuscript
     assert "Rows summarize Neuropixels, mesoscope two-photon" in manuscript
     assert "Interactive record-level inventory of 39 mice and 164 recording sessions" in manuscript
+    assert "./interactive/neural-viewer.html" in manuscript
+    assert ":label: fig-aligned-neural-signals" in manuscript
+    assert "Representative event-aligned raw-data views" in manuscript
+    assert "raw AP acquisition stream supplied to spike sorting" in manuscript
+    assert "AP samples are not median-corrected" in manuscript
+    assert "remain visible as vertical stripes" in manuscript
+    assert (
+        ":label: fig-interactive-experimental-design\n:enumerated: false" in manuscript
+    )
+    assert ":label: table-data-explorer\n:enumerated: false" in manuscript
+    assert (
+        manuscript.index("# Data validation")
+        < manuscript.index("## Raw data across recording modalities")
+        < manuscript.index("fig-aligned-neural-signals")
+        < manuscript.index("## Units extraction")
+        < manuscript.index("fig-unit-extraction-plan")
+        < manuscript.index("## Receptive field analysis across modalities")
+        < manuscript.index("fig-basic-stimuli-plan")
+    )
+    assert "Figure 5 and the modality subsections below" in manuscript
+    assert "This analysis and Figure 6 are planning placeholders" in manuscript
+    assert "Figure 8 are planning placeholders" in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert "Event-centered excerpts from real Neuropixels" in manuscript
     assert "figure-06-behavior-tracking-plan.png" not in manuscript

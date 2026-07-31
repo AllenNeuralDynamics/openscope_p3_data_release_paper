@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import json
 from pathlib import Path
@@ -9,6 +10,8 @@ from openscope_p3_publication.figures import (
     ANIMAL_RECORDS_PROVENANCE_PATH,
     BEHAVIOR_EXCERPTS_PATH,
     BLOCKS,
+    NEURAL_EXCERPTS_PATH,
+    NEURAL_MEDIA_DIR,
     SESSIONS,
     STIMULUS_EXCERPT_PROVENANCE_PATH,
     STIMULUS_SOURCES_PATH,
@@ -17,6 +20,7 @@ from openscope_p3_publication.figures import (
     ZEBRA_MOVIE_SOURCE,
     ZEBRA_POSTER_SOURCE,
     load_behavior_excerpts,
+    load_neural_excerpts,
     load_publication_table_data,
     load_shared_stimulus_table_excerpts,
     load_stimulus_table_excerpts,
@@ -26,6 +30,7 @@ from openscope_p3_publication.figures import (
     write_data_explorer_html,
     write_interactive_html,
     write_literature_comparison_html,
+    write_neural_viewer_html,
     write_static_svg,
     write_unit_yield_html,
     write_unit_yield_svg,
@@ -410,6 +415,153 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "__BEHAVIOR_" not in html
 
     write_behavior_viewer_html(viewer_path)
+    assert viewer_path.read_text(encoding="utf-8") == html
+
+
+def test_neural_excerpts_are_source_backed_and_aligned() -> None:
+    assert hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest() == (
+        "ddf68d5a3985d0d81dd917542031faf1e10f46088b647bd0936b294a740b0282"
+    )
+    payload = load_neural_excerpts(NEURAL_EXCERPTS_PATH)
+
+    assert [session["id"] for session in payload["sessions"]] == [
+        "neuropixels",
+        "mesoscope",
+        "slap2",
+    ]
+    assert [session["viewType"] for session in payload["sessions"]] == [
+        "heatmap",
+        "movie",
+        "movie",
+    ]
+    assert [len(session["options"]) for session in payload["sessions"]] == [6, 8, 4]
+    assert [session["signalUnit"] for session in payload["sessions"]] == [
+        "uV",
+        "detector counts",
+        "detector counts",
+    ]
+    for session in payload["sessions"]:
+        assert session["event"]["time"] == 0.0
+        assert any(row["start"] <= 0 <= row["end"] for row in session["stimulus"])
+    for option in payload["sessions"][0]["options"]:
+        assert (option["rows"], option["columns"]) == (96, 3000)
+        assert len(base64.b64decode(option["dataBase64"])) == 288_000
+        assert (option["depthMinUm"], option["depthMaxUm"]) == (0.0, 3800.0)
+        assert option["nativeSampleRateHz"] == 30_000.0
+        assert option["sourceChannels"] == list(range(380, -1, -4))
+        assert option["timeStartSeconds"] <= -0.0499
+        assert option["timeEndSeconds"] >= 0.0498
+        assert "apDataBase64" not in option
+    assert payload["sessions"][0]["options"][2]["anatomyLabel"] == (
+        "VISp L1–L6b · MG · DG"
+    )
+    movie_options = [
+        option for session in payload["sessions"][1:] for option in session["options"]
+    ]
+    assert [
+        (option["id"], option["imagingDepthUm"], option["channel"])
+        for option in payload["sessions"][1]["options"]
+    ] == [
+        ("visp_0", 152, 2),
+        ("visp_1", 300, 1),
+        ("visp_2", 49, 2),
+        ("visp_3", 402, 1),
+        ("visl_4", 149, 2),
+        ("visl_5", 300, 1),
+        ("visl_6", 50, 2),
+        ("visl_7", 404, 1),
+    ]
+    assert [option["targetLayer"] for option in payload["sessions"][1]["options"]] == [
+        "L2/3",
+        "L4",
+        "L1",
+        "L5",
+        "L2/3",
+        "L4",
+        "L1",
+        "L5",
+    ]
+    assert {
+        option["micronsPerPixel"] for option in payload["sessions"][1]["options"]
+    } == {0.78}
+    assert [option["measurement"] for option in payload["sessions"][2]["options"]] == [
+        "iGluSnFR4f",
+        "RCaMP3",
+        "iGluSnFR4f",
+        "RCaMP3",
+    ]
+    assert [
+        option["remoteFocusDepthBelowPiaUm"]
+        for option in payload["sessions"][2]["options"]
+    ] == [91.0, 91.0, 123.75, 123.75]
+    assert {
+        option["micronsPerPixel"] for option in payload["sessions"][2]["options"]
+    } == {0.25}
+    assert len(movie_options) == 12
+    for option in movie_options:
+        assert option["frameTimes"][0] <= -0.9
+        assert option["frameTimes"][-1] >= 2.89
+        assert len(option["frameTimes"]) == option["frameCount"]
+        asset = NEURAL_MEDIA_DIR / Path(option["assetPath"]).name
+        assert hashlib.sha256(asset.read_bytes()).hexdigest() == option["sheetSha256"]
+    slap2_ranges = [
+        source
+        for source in payload["sessions"][2]["sources"]
+        if "rangeSha256" in source
+    ]
+    assert [source["trialNumber"] for source in slap2_ranges] == [26, 26]
+    assert [source["rangeStop"] - source["rangeStart"] for source in slap2_ranges] == [
+        40_649_112,
+        46_698_496,
+    ]
+
+
+def test_neural_excerpts_require_anatomical_context(tmp_path: Path) -> None:
+    payload = json.loads(NEURAL_EXCERPTS_PATH.read_text(encoding="utf-8"))
+    payload["sessions"][0]["options"][0]["anatomyLabel"] = " "
+    snapshot_path = tmp_path / "raw-neural-excerpts.json"
+    snapshot_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="lacks anatomical context"):
+        load_neural_excerpts(snapshot_path)
+
+
+def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
+    viewer_path = write_neural_viewer_html(tmp_path / "neural-viewer.html")
+    html = viewer_path.read_text(encoding="utf-8")
+
+    assert 'id="neural-viewer"' in html
+    assert 'id="raw-canvas"' in html
+    assert 'id="option-select"' in html
+    assert 'id="contrast"' in html
+    assert 'id="playhead"' in html
+    assert "Time from event onset (s)" in html
+    assert "Neuropixels" in html
+    assert "Mesoscope" in html
+    assert "SLAP2" in html
+    assert "Raw AP acquisition voltage" in html
+    assert "Raw AP acquisition" in html
+    assert "Raw 30 kHz AP acquisition voltage across the probe shaft" in html
+    assert "Raw imaging frames with a 50 micrometer scale bar" in html
+    assert "scaleBarMicrons = 50" in html
+    assert "LFP" not in html
+    assert "apDataBase64" not in html
+    assert "Raw two-photon frames" in html
+    assert "Sparse raw detector frames" in html
+    assert "dataBase64" in html
+    assert "mesoscope-visp-0.webp" in html
+    assert "rangeSha256" in html
+    assert 'document.querySelector("body > main")' in html
+    assert 'id="signal-summary"' not in html
+    assert "event-key" not in html
+    assert "drawStimulusTrack" not in html
+    assert 'elements.transport.hidden = session.viewType === "heatmap"' in html
+    assert "__NEURAL_" not in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+    copied_media = tmp_path / "media" / "neural-viewer"
+    assert len(list(copied_media.glob("*.webp"))) == 12
+
+    write_neural_viewer_html(viewer_path)
     assert viewer_path.read_text(encoding="utf-8") == html
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import csv
 import datetime as dt
 import hashlib
@@ -25,6 +26,8 @@ DATA_EXPLORER_OUTPUT = REPO_ROOT / "interactive" / "data-explorer.html"
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
 BEHAVIOR_EXCERPTS_PATH = DATA_DIR / "behavior-excerpts.json"
+NEURAL_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "neural-viewer.html"
+NEURAL_EXCERPTS_PATH = DATA_DIR / "raw-neural-excerpts.json"
 OTHER_STUDIES_PATH = DATA_DIR / "other-oddball-studies.csv"
 OTHER_STUDIES_PROVENANCE_PATH = OTHER_STUDIES_PATH.with_suffix(".provenance.json")
 UNIT_YIELD_DATA_PATH = DATA_DIR / "neuropixels-unit-yield.csv"
@@ -35,6 +38,7 @@ UNIT_YIELD_STATIC_OUTPUT = (
 )
 UNIT_YIELD_INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "unit-yield.html"
 MEDIA_DIR = REPO_ROOT / "figure_sources" / "media"
+NEURAL_MEDIA_DIR = MEDIA_DIR / "neural-viewer"
 ZEBRA_MOVIE_SOURCE = MEDIA_DIR / "zebra-stimulus-excerpt.m4v"
 ZEBRA_POSTER_SOURCE = MEDIA_DIR / "zebra-stimulus-poster.png"
 ZEBRA_PROVENANCE_PATH = MEDIA_DIR / "zebra-stimulus-excerpt.provenance.json"
@@ -432,6 +436,120 @@ def write_behavior_viewer_html(output: Path = BEHAVIOR_VIEWER_OUTPUT) -> Path:
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
     output.write_text(html, encoding="utf-8")
+    return output
+
+
+def load_neural_excerpts(
+    path: Path = NEURAL_EXCERPTS_PATH,
+    behavior_path: Path = BEHAVIOR_EXCERPTS_PATH,
+) -> dict:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    behavior_checksum = hashlib.sha256(behavior_path.read_bytes()).hexdigest()
+    if (
+        payload.get("version") != 5
+        or payload.get("windowStartSeconds") != -1.0
+        or payload.get("windowEndSeconds") != 3.0
+        or payload.get("behaviorExcerptSha256") != behavior_checksum
+    ):
+        raise RuntimeError("Neural excerpt schema or behavior source is not supported.")
+    sessions = payload.get("sessions", [])
+    expected_options = {"neuropixels": 6, "mesoscope": 8, "slap2": 4}
+    expected_views = {"neuropixels": "heatmap", "mesoscope": "movie", "slap2": "movie"}
+    if [session.get("id") for session in sessions] != list(expected_options):
+        raise RuntimeError("Neural excerpts must contain the three modalities in order.")
+    for session in sessions:
+        options = session.get("options", [])
+        if (
+            len(options) != expected_options[session["id"]]
+            or session.get("viewType") != expected_views[session["id"]]
+        ):
+            raise RuntimeError(f"Neural excerpt option count changed: {session['id']}")
+        if session.get("event", {}).get("time") != 0.0 or not any(
+            row["start"] <= 0 <= row["end"] for row in session.get("stimulus", [])
+        ):
+            raise RuntimeError(f"Neural event lacks a stimulus row: {session['id']}")
+        if not session.get("sources") or not all(
+            source.get("sha256")
+            or source.get("etag")
+            or source.get("rangeSha256")
+            for source in session["sources"]
+        ):
+            raise RuntimeError(f"Neural excerpt lacks source provenance: {session['id']}")
+        for option in options:
+            if not isinstance(option.get("anatomyLabel"), str) or not option[
+                "anatomyLabel"
+            ].strip():
+                raise RuntimeError(
+                    f"Neural excerpt lacks anatomical context: "
+                    f"{session['id']}/{option['id']}"
+                )
+            if session["viewType"] == "heatmap":
+                rows = option.get("rows")
+                columns = option.get("columns")
+                try:
+                    encoded = base64.b64decode(option.get("dataBase64", ""), validate=True)
+                except ValueError as exc:
+                    raise RuntimeError(
+                        f"Neural heatmap encoding is invalid: {option['id']}"
+                    ) from exc
+                if (
+                    rows != 96
+                    or columns != 3000
+                    or len(encoded) != rows * columns
+                    or len(option.get("sourceChannels", [])) != 96
+                    or option.get("nativeSampleRateHz") != 30_000.0
+                    or option.get("timeStartSeconds", 0) > -0.0499
+                    or option.get("timeEndSeconds", 0) < 0.0498
+                    or not math.isfinite(option.get("valueLimit", math.nan))
+                ):
+                    raise RuntimeError(f"Neural heatmap is invalid: {option['id']}")
+            else:
+                times = option.get("frameTimes", [])
+                asset_path = NEURAL_MEDIA_DIR / Path(option.get("assetPath", "")).name
+                expected_pixel_size = 0.78 if session["id"] == "mesoscope" else 0.25
+                if (
+                    len(times) != option.get("frameCount")
+                    or len(times) < 2
+                    or times[0] > -0.9
+                    or times[-1] < 2.89
+                    or any(
+                        current <= previous
+                        for previous, current in zip(times[:-1], times[1:], strict=True)
+                    )
+                    or not asset_path.is_file()
+                    or hashlib.sha256(asset_path.read_bytes()).hexdigest()
+                    != option.get("sheetSha256")
+                    or not math.isclose(
+                        option.get("micronsPerPixel", math.nan),
+                        expected_pixel_size,
+                    )
+                ):
+                    raise RuntimeError(
+                        f"Neural movie asset is invalid: {session['id']}/{option['id']}"
+                    )
+    return payload
+
+
+def write_neural_viewer_html(output: Path = NEURAL_VIEWER_OUTPUT) -> Path:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    payload = load_neural_excerpts()
+    template = (JAVASCRIPT_DIR / "neural-viewer.html").read_text(encoding="utf-8")
+    stylesheet = (JAVASCRIPT_DIR / "neural-viewer.css").read_text(encoding="utf-8")
+    javascript = (JAVASCRIPT_DIR / "neural-viewer.js").read_text(encoding="utf-8")
+    html = (
+        template.replace("__NEURAL_CSS__", stylesheet)
+        .replace(
+            "__NEURAL_DATA__",
+            json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
+        )
+        .replace("__NEURAL_JS__", javascript)
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+    )
+    output.write_text(html, encoding="utf-8")
+    media_output = output.parent / "media" / "neural-viewer"
+    if media_output.exists():
+        shutil.rmtree(media_output)
+    shutil.copytree(NEURAL_MEDIA_DIR, media_output)
     return output
 
 
@@ -923,6 +1041,7 @@ def main() -> None:
     data_explorer_path = write_data_explorer_html()
     literature_comparison_path = write_literature_comparison_html()
     behavior_viewer_path = write_behavior_viewer_html()
+    neural_viewer_path = write_neural_viewer_html()
     unit_yield_html_path = write_unit_yield_html()
     svg_path = write_static_svg()
     unit_yield_svg_path = write_unit_yield_svg()
@@ -930,6 +1049,7 @@ def main() -> None:
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {literature_comparison_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {behavior_viewer_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {neural_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")

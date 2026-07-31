@@ -103,6 +103,7 @@ The four distinct session contexts each targeted a different aspect of predictiv
 
 :::{iframe} ./interactive/experimental-design.html
 :label: fig-interactive-experimental-design
+:enumerated: false
 :width: 100%
 :title: Predictive-processing stimulus viewer
 :placeholder: ./images/figures/generated/experimental-design.svg
@@ -589,6 +590,7 @@ A secondary pipeline, also run on the CodeOcean platform, took the output spike 
 
 :::{iframe} ./interactive/data-explorer.html
 :label: table-data-explorer
+:enumerated: false
 :width: 100%
 :title: Interactive explorer for experimental animals and recording sessions
 
@@ -946,11 +948,21 @@ the electrophysiology, imaging, and behavioral objects introduced here.
 
 # Data validation
 
+## Raw data across recording modalities
+
+:::{iframe} ./interactive/neural-viewer.html
+:label: fig-aligned-neural-signals
+:width: 100%
+:title: Event-aligned raw data across recording modalities
+
+Representative event-aligned raw-data views from one public session per recording modality, with $t=0$ at the onset of a 90° prediction-violating event. The source sessions use different protocol blocks: this event is a visuomotor mismatch for Neuropixels and mesoscope, and an orientation deviant for SLAP2. The viewer therefore uses one common event marker rather than presenting the different stimulus sequences as equivalent. Neuropixels views show a 100-ms excerpt of calibrated, unaveraged 30-kHz voltage from 96 regularly spaced contacts in the raw AP acquisition stream supplied to spike sorting. The displayed AP samples are not median-corrected, so common-mode fluctuations across contacts remain visible as vertical stripes. Mesoscope views are unprocessed 512 × 512 ScanImage channel frames. SLAP2 views map native sparse detector samples onto acquisition-plan superpixels and use a dim structural reference only outside sampled dendritic pixels. Microscopy movies use a $-1$ to $+3$ s playback timeline. Selectors report CCF structures and layers for each probe; area, layer, and depth for each mesoscope plane; and indicator plus remote-focus depth below pia (91 µm for DMD1 and 123.75 µm for DMD2) for each SLAP2 field. Microscopy intensity is pseudocolored and contrast-scaled independently for display. Source sessions are available from [DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files), [DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files), and the [public SLAP2 session](https://open.quiltdata.com/b/aind-open-data/tree/796630_2025-08-28_14-25-34/).
+:::
+
 ## Units extraction
 
 :::{warning} Work in progress
 :class: manuscript-wip
-Figure 4 and the modality subsections below remain an analysis outline. The Neuropixels unit-yield result is current; the other signal-quality, stability, extraction, and cross-session analyses still need final results and prose.
+Figure 5 and the modality subsections below remain an analysis outline. The Neuropixels unit-yield result is current; the other signal-quality, stability, extraction, and cross-session analyses still need final results and prose.
 :::
 
 :::{figure} ./images/figures/imported/figure-04-unit-extraction-plan.png
@@ -1005,7 +1017,7 @@ GROUP3
 
 :::{warning} Work in progress
 :class: manuscript-wip
-This analysis and Figure 5 are planning placeholders. Receptive-field methods, cross-modality results, and final figure panels still need to be added.
+This analysis and Figure 6 are planning placeholders. Receptive-field methods, cross-modality results, and final figure panels still need to be added.
 :::
 
 :::{figure} ./images/figures/imported/figure-05-basic-stimuli-plan.png
@@ -1062,7 +1074,7 @@ the publication.
 
 :::{warning} Work in progress
 :class: manuscript-wip
-This analysis, the questions below, and Figure 7 are planning placeholders. Final cross-modality oddball-response results and figure panels still need to be added.
+This analysis, the questions below, and Figure 8 are planning placeholders. Final cross-modality oddball-response results and figure panels still need to be added.
 :::
 
 - Stability across the session for all modalities ?
