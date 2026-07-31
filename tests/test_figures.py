@@ -114,6 +114,8 @@ def test_unit_yield_outputs_are_deterministic_and_inspectable(tmp_path: Path) ->
     svg = svg_path.read_text(encoding="utf-8")
 
     assert 'id="unit-yield-chart" viewBox="0 0 960 410"' in html
+    assert "min-width: 620px;" in html
+    assert "@media (max-width: 560px)" in html
     assert 'id="mouse-select"' in html
     assert '<details class="data-disclosure" id="session-data">' in html
     assert '<details class="data-disclosure" id="session-data" open>' not in html
@@ -206,6 +208,8 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
         in html
     )
     assert "background: var(--tab-color);" in html
+    assert "max-width: 760px;" in html
+    assert "width: min(100%, 380px);" in html
     assert "--tab-text-color" in html
     assert "white-space: normal;" in html
     for context_color in ("#008F80", "#3157B7", "#C65D13", "#A47C00"):

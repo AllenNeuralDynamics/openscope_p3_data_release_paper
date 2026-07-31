@@ -1,5 +1,5 @@
 #fig-interactive-experimental-design .relative.inline-block {
-  height: 820px;
+  height: 500px;
   padding-bottom: 0 !important;
 }
 
@@ -234,8 +234,14 @@ article table.table-laser-power td:first-child {
 }
 
 #fig-supp-neuropixels-unit-yield .relative.inline-block {
-  height: 600px;
+  height: 415px;
   padding-bottom: 0 !important;
+}
+
+#fig-supp-neuropixels-unit-yield {
+  width: 100%;
+  max-width: 660px;
+  justify-self: center;
 }
 
 #fig-behavior-tracking .relative.inline-block {
@@ -287,6 +293,10 @@ article table.table-laser-power td:first-child {
 
   #table-supplementary-oddball-studies .relative.inline-block {
     height: 700px;
+  }
+
+  #fig-supp-neuropixels-unit-yield .relative.inline-block {
+    height: 500px;
   }
 
 }

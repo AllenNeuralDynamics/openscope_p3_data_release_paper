@@ -103,7 +103,6 @@ The four distinct session contexts each targeted a different aspect of predictiv
 
 :::{iframe} ./interactive/experimental-design.html
 :label: fig-interactive-experimental-design
-:enumerated: false
 :width: 100%
 :title: Predictive-processing stimulus viewer
 :placeholder: ./images/figures/generated/experimental-design.svg
@@ -962,7 +961,7 @@ Representative event-aligned raw-data views from one public session per recordin
 
 :::{warning} Work in progress
 :class: manuscript-wip
-Figure 5 and the modality subsections below remain an analysis outline. The Neuropixels unit-yield result is current; the other signal-quality, stability, extraction, and cross-session analyses still need final results and prose.
+Figure 6 and the modality subsections below remain an analysis outline. The Neuropixels unit-yield result is current; the other signal-quality, stability, extraction, and cross-session analyses still need final results and prose.
 :::
 
 :::{figure} ./images/figures/imported/figure-04-unit-extraction-plan.png
@@ -1017,7 +1016,7 @@ GROUP3
 
 :::{warning} Work in progress
 :class: manuscript-wip
-This analysis and Figure 6 are planning placeholders. Receptive-field methods, cross-modality results, and final figure panels still need to be added.
+This analysis and Figure 7 are planning placeholders. Receptive-field methods, cross-modality results, and final figure panels still need to be added.
 :::
 
 :::{figure} ./images/figures/imported/figure-05-basic-stimuli-plan.png
@@ -1074,7 +1073,7 @@ the publication.
 
 :::{warning} Work in progress
 :class: manuscript-wip
-This analysis, the questions below, and Figure 8 are planning placeholders. Final cross-modality oddball-response results and figure panels still need to be added.
+This analysis, the questions below, and Figure 9 are planning placeholders. Final cross-modality oddball-response results and figure panels still need to be added.
 :::
 
 - Stability across the session for all modalities ?

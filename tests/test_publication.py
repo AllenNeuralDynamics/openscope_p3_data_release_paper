@@ -332,8 +332,10 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "ecephys_820459_2025-11-10_15-07-13" in manuscript
     assert "multiplane-ophys_832700_2026-01-29_11-18-09" in manuscript
     assert "796630_2025-08-28_14-25-34" in manuscript
+    assert ":label: fig-interactive-experimental-design\n:width: 100%" in manuscript
     assert (
-        ":label: fig-interactive-experimental-design\n:enumerated: false" in manuscript
+        ":label: fig-interactive-experimental-design\n:enumerated: false"
+        not in manuscript
     )
     assert ":label: table-data-explorer\n:enumerated: false" in manuscript
     assert (
@@ -345,9 +347,9 @@ def test_figure_captions_and_interactive_placement() -> None:
         < manuscript.index("## Receptive field analysis across modalities")
         < manuscript.index("fig-basic-stimuli-plan")
     )
-    assert "Figure 5 and the modality subsections below" in manuscript
-    assert "This analysis and Figure 6 are planning placeholders" in manuscript
-    assert "Figure 8 are planning placeholders" in manuscript
+    assert "Figure 6 and the modality subsections below" in manuscript
+    assert "This analysis and Figure 7 are planning placeholders" in manuscript
+    assert "Figure 9 are planning placeholders" in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert "Event-centered excerpts from real Neuropixels" in manuscript
     assert "figure-06-behavior-tracking-plan.png" not in manuscript
@@ -377,6 +379,9 @@ def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:
     assert "minmax(10ch, 20ch)" in stylesheet
     assert "#fig-graphical-abstract" in stylesheet
     assert "#fig-experimental-design" in stylesheet
+    assert "#fig-interactive-experimental-design .relative.inline-block" in stylesheet
+    assert "#fig-supp-neuropixels-unit-yield" in stylesheet
+    assert "max-width: 660px" in stylesheet
     assert "article > figure.table-hover-source" in stylesheet
     assert ".hover-card-content:has(.table-hover-source) .hover-document" in stylesheet
     assert "max-height: min(460px, calc(100vh - 2rem))" in stylesheet

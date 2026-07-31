@@ -30,7 +30,7 @@ input {
 
 .viewer {
   width: 100%;
-  max-width: 1040px;
+  max-width: 760px;
   margin: 0 auto;
   padding: 16px;
 }
@@ -88,7 +88,7 @@ input {
 }
 
 .screen-section {
-  width: min(100%, 760px);
+  width: min(100%, 380px);
   margin-inline: auto;
   padding-top: 14px;
 }
@@ -98,13 +98,13 @@ input {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 16px;
+  gap: 8px;
 }
 
 .screen-heading h1 {
   margin: 0;
   overflow: hidden;
-  font-size: 20px;
+  font-size: 16px;
   line-height: 1.2;
   letter-spacing: 0;
   text-overflow: ellipsis;
@@ -115,7 +115,7 @@ input {
   overflow: hidden;
   color: var(--muted);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
+  font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
