@@ -13,6 +13,8 @@ from openscope_p3_publication.figures import (
     BLOCKS,
     NEURAL_EXCERPTS_PATH,
     NEURAL_MEDIA_DIR,
+    NEURAL_STATIC_FRAME_DIR,
+    NEURAL_STATIC_FRAME_PROVENANCE_PATH,
     SESSION_RECORDS_PATH,
     SESSION_RECORDS_PROVENANCE_PATH,
     SESSIONS,
@@ -36,6 +38,7 @@ from openscope_p3_publication.figures import (
     write_data_explorer_html,
     write_interactive_html,
     write_literature_comparison_html,
+    write_neural_static_svg,
     write_neural_viewer_html,
     write_session_inventory_svg,
     write_static_svg,
@@ -711,7 +714,11 @@ def test_neural_excerpts_require_anatomical_context(tmp_path: Path) -> None:
 
 
 def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
-    viewer_path = write_neural_viewer_html(tmp_path / "neural-viewer.html")
+    static_path = tmp_path / "raw-neural-recordings.svg"
+    viewer_path = write_neural_viewer_html(
+        tmp_path / "neural-viewer.html",
+        static_output=static_path,
+    )
     html = viewer_path.read_text(encoding="utf-8")
 
     assert 'id="neural-viewer"' in html
@@ -719,6 +726,11 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert 'id="option-select"' in html
     assert 'id="contrast"' in html
     assert 'id="playhead"' in html
+    assert 'data-view="interactive"' in html
+    assert 'data-view="static"' in html
+    assert 'id="static-view"' in html
+    assert "data:image/svg+xml;base64," in html
+    assert "selectView" in html
     assert "Excerpt time (s)" in html
     assert "Excerpt time (ms)" in html
     assert "Time from event onset" not in html
@@ -755,8 +767,67 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     copied_media = tmp_path / "media" / "neural-viewer"
     assert len(list(copied_media.glob("*.webp"))) == 12
 
-    write_neural_viewer_html(viewer_path)
+    write_neural_viewer_html(viewer_path, static_output=static_path)
     assert viewer_path.read_text(encoding="utf-8") == html
+
+
+def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
+    provenance = json.loads(
+        NEURAL_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    assert provenance["version"] == 1
+    assert provenance["raw_neural_excerpts_sha256"] == hashlib.sha256(
+        NEURAL_EXCERPTS_PATH.read_bytes()
+    ).hexdigest()
+    assert len(provenance["frames"]) == 12
+    assert {
+        (record["modality"], record["option_id"])
+        for record in provenance["frames"]
+    } == {
+        ("mesoscope", "visp_0"),
+        ("mesoscope", "visp_1"),
+        ("mesoscope", "visp_2"),
+        ("mesoscope", "visp_3"),
+        ("mesoscope", "visl_4"),
+        ("mesoscope", "visl_5"),
+        ("mesoscope", "visl_6"),
+        ("mesoscope", "visl_7"),
+        ("slap2", "dmd1-detector-1"),
+        ("slap2", "dmd1-detector-2"),
+        ("slap2", "dmd2-detector-1"),
+        ("slap2", "dmd2-detector-2"),
+    }
+    for record in provenance["frames"]:
+        frame_path = NEURAL_STATIC_FRAME_DIR / record["asset_path"]
+        assert hashlib.sha256(frame_path.read_bytes()).hexdigest() == record[
+            "output_sha256"
+        ]
+        contrast = record["display_contrast"]
+        assert contrast["method"] == "max-channel hue-preserving linear stretch"
+        assert contrast["low_percentile"] == 1.0
+        assert contrast["high_percentile"] == 99.5
+        assert 0 <= contrast["low_value"] < contrast["high_value"] <= 255
+
+    svg_path = write_neural_static_svg(tmp_path / "raw-neural-recordings.svg")
+    svg = svg_path.read_text(encoding="utf-8")
+    assert 'width="1800" height="660"' in svg
+    assert svg.count("data:image/png;base64,") == 18
+    assert svg.count('class="raw-image-card" data-modality="neuropixels"') == 6
+    assert svg.count('class="raw-image-card" data-modality="mesoscope"') == 8
+    assert svg.count('class="raw-image-card" data-modality="slap2"') == 4
+    assert svg.count('class="raw-card-image"') == 18
+    assert "Probe A" in svg
+    assert "Probe F" in svg
+    assert "VISp · 4 planes" in svg
+    assert "VISl · 4 planes" in svg
+    assert "DMD1 · 91 µm below pia" in svg
+    assert "DMD2 · 123.75 µm below pia" in svg
+    assert "6 probe recordings · all raw excerpts stacked" in svg
+    assert "8 planes · 4 VISp + 4 VISl · all raw frames stacked" in svg
+    assert "2 VISp planes · 2 indicator images per plane" in svg
+    assert "scale-card" not in svg
+    assert "playback" not in svg.lower()
+    assert "event onset" not in svg.lower()
 
 
 def test_publication_table_data() -> None:

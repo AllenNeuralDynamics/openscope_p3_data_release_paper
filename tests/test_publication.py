@@ -343,7 +343,14 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "searchable, filterable tables for 39 mice and 164" in manuscript
     assert "./interactive/neural-viewer.html" in manuscript
     assert ":label: fig-aligned-neural-signals" in manuscript
+    assert ":placeholder: ./images/figures/generated/raw-neural-recordings.svg" in manuscript
     assert "Representative raw-data excerpts from one public session" in manuscript
+    assert "**Static** view arranges all available recordings" in manuscript
+    assert "overlapping raw-image cards" in manuscript
+    assert "**A,** all six Neuropixels probe heatmaps" in manuscript
+    assert "eight mesoscope plane stills" in manuscript
+    assert "two SLAP2 plane stacks" in manuscript
+    assert "1st–99.5th max-channel" in manuscript
     assert "shown to introduce the native acquisition formats" in manuscript
     assert "Event-aligned raw data across recording modalities" not in manuscript
     assert "prediction-violating event" not in manuscript

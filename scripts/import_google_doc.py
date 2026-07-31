@@ -316,9 +316,20 @@ NEURAL_VIEWER_BLOCK = f"""## Raw data across recording modalities
 :label: fig-aligned-neural-signals
 :width: 100%
 :title: Raw recording excerpts across modalities
+:placeholder: ./images/figures/generated/raw-neural-recordings.svg
 
 Representative raw-data excerpts from one public session per recording modality,
-shown to introduce the native acquisition formats. Neuropixels views contain
+shown to introduce the native acquisition formats. The **Interactive** view
+supports source selection, contrast adjustment, and microscopy playback. The
+**Static** view arranges all available recordings as overlapping raw-image cards
+without playback controls:
+**A,** all six Neuropixels probe heatmaps stacked with CCF anatomy; **B,** all
+eight mesoscope plane stills in two four-card stacks spanning VISp and VISl; and
+**C,** all four detector views in two SLAP2 plane stacks in VISp (one depth per
+DMD), each containing iGluSnFR4f and RCaMP3 cards. Covered cards retain exposed
+labels and raw-image strips to convey the complete acquisition scale. Static
+microscopy stills are independently stretched to their 1st–99.5th max-channel
+percentiles for display while preserving their pseudocolor hues. Neuropixels views contain
 100 ms of calibrated, unaveraged 30-kHz voltage from 96 regularly spaced
 contacts in the raw AP acquisition stream supplied to spike sorting; the
 adjacent CCF column and horizontal boundaries identify each contact's annotated

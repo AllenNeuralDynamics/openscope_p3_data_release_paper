@@ -11,6 +11,7 @@
   const elements = {
     canvas: document.getElementById("raw-canvas"),
     contrast: document.getElementById("contrast"),
+    interactiveView: document.getElementById("interactive-view"),
     loading: document.getElementById("loading-status"),
     modalitySelector: document.getElementById("modality-selector"),
     optionLabel: document.getElementById("option-label"),
@@ -19,8 +20,10 @@
     playheadTime: document.getElementById("playhead-time"),
     playIcon: document.getElementById("play-icon"),
     playToggle: document.getElementById("play-toggle"),
+    staticView: document.getElementById("static-view"),
     tooltip: document.getElementById("canvas-tooltip"),
     transport: document.querySelector(".transport"),
+    viewButtons: document.querySelectorAll(".view-button"),
   };
   const context = elements.canvas.getContext("2d");
   const excerptDuration = protocol.windowEndSeconds - protocol.windowStartSeconds;
@@ -34,6 +37,7 @@
     playhead: protocol.windowStartSeconds,
     sessionIndex: 0,
     spriteToken: 0,
+    view: "interactive",
   };
   const layout = {
     anatomyLeft: 78,
@@ -50,6 +54,18 @@
 
   function currentOption() {
     return currentSession().options[state.optionIndex];
+  }
+
+  function selectView(view) {
+    state.view = view;
+    if (view === "static") pause();
+    elements.interactiveView.hidden = view !== "interactive";
+    elements.staticView.hidden = view !== "static";
+    elements.viewButtons.forEach((button) => {
+      const active = button.dataset.view === view;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
   }
 
   function nearestIndex(values, target) {
@@ -562,11 +578,15 @@
     pause();
     setPlayhead(state.playhead + (event.key === "ArrowRight" ? 0.04 : -0.04));
   });
+  elements.viewButtons.forEach((button) => {
+    button.addEventListener("click", () => selectView(button.dataset.view));
+  });
 
   buildTabs();
   elements.playhead.max = excerptDuration;
   populateOptions();
   updateTabs();
   document.documentElement.style.setProperty("--accent", accents[currentSession().id]);
+  selectView("interactive");
   render();
 })();

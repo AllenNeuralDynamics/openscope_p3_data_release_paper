@@ -1,0 +1,199 @@
+{
+  "frames": [
+    {
+      "asset_path": "mesoscope-visp_0.png",
+      "display_contrast": {
+        "high_percentile": 99.5,
+        "high_value": 74,
+        "low_percentile": 1.0,
+        "low_value": 8,
+        "method": "max-channel hue-preserving linear stretch"
+      },
+      "frame_index": 19,
+      "frame_time_seconds": 1.02401,
+      "modality": "mesoscope",
+      "option_id": "visp_0",
+      "output_sha256": "6767cc8e01a84c533af874d590466bc401a924ecd42dd6244bd8fc12fa1ac463",
+      "source_sheet_sha256": "9de2cb0de2fa99f36702e30d33f9df0dcba336fc650eb9ad7bdb9b46f8233b10"
+    },
+    {
+      "asset_path": "mesoscope-visp_1.png",
+      "display_contrast": {
+        "high_percentile": 99.5,
+        "high_value": 76,
+        "low_percentile": 1.0,
+        "low_value": 8,
+        "method": "max-channel hue-preserving linear stretch"
+      },
+      "frame_index": 19,
+      "frame_time_seconds": 1.02401,
+      "modality": "mesoscope",
+      "option_id": "visp_1",
+      "output_sha256": "72eba913bd7a39757ceab22e77bae8c874e7120f57dc1b9110176947f22ac480",
+      "source_sheet_sha256": "621004e408831f5ea40f5c66ad1058ecff0b5711263c28765f0cce878cee01f0"
+    },
+    {
+      "asset_path": "mesoscope-visp_2.png",
+      "display_contrast": {
+        "high_percentile": 99.5,
+        "high_value": 63,
+        "low_percentile": 1.0,
+        "low_value": 7,
+        "method": "max-channel hue-preserving linear stretch"
+      },
+      "frame_index": 19,
+      "frame_time_seconds": 1.05038,
+      "modality": "mesoscope",
+      "option_id": "visp_2",
+      "output_sha256": "910daa5abbdff2fef5f1be10c5990da978652690e1f2c44471dc7b38b54b6754",
+      "source_sheet_sha256": "61f374eec0792205fda027a80b1c486c194734d1e62f1c6bdae8f1106300ff0f"
+    },
+    {
+      "asset_path": "mesoscope-visp_3.png",
+      "display_contrast": {
+        "high_percentile": 99.5,
+        "high_value": 61,
+        "low_percentile": 1.0,
+        "low_value": 8,
+        "method": "max-channel hue-preserving linear stretch"
+      },
+      "frame_index": 19,
+      "frame_time_seconds": 1.05038,
+      "modality": "mesoscope",
+      "option_id": "visp_3",
+      "output_sha256": "c1a3751d7dbc647452b14a1f89f8413b579e0e1f318ee1ec58cce734fa1fabda",
+      "source_sheet_sha256": "2f46e20acdc6fb73697602d40770e39f4f6a3681bca68f41af350a0ae00e3864"
+    },
+    {
+      "asset_path": "mesoscope-visl_4.png",
+      "display_contrast": {
+        "high_percentile": 99.5,
+        "high_value": 83,
+        "low_percentile": 1.0,
+        "low_value": 7,
+        "method": "max-channel hue-preserving linear stretch"
+      },
+      "frame_index": 19,
+      "frame_time_seconds": 1.07675,
+      "modality": "mesoscope",
+      "option_id": "visl_4",
+      "output_sha256": "d8f391e66105b0ce7bfe140ebd78e7ca2914425fde5adff2e588f9bed6b7726b",
+      "source_sheet_sha256": "0114b5139f81cfeb7620ac93754adffc9459b8b8ad2c610c8546e2818cba8500"
+    },
+    {
+      "asset_path": "mesoscope-visl_5.png",
+      "display_contrast": {
+        "high_percentile": 99.5,
+        "high_value": 93,
+        "low_percentile": 1.0,
+        "low_value": 8,
+        "method": "max-channel hue-preserving linear stretch"
+      },
+      "frame_index": 19,
+      "frame_time_seconds": 1.07675,
+      "modality": "mesoscope",
+      "option_id": "visl_5",
+      "output_sha256": "e665b0fad820923654dc69d6761cd651d2c47d2c5469d56ef981c85517a85f4d",
+      "source_sheet_sha256": "f8db15b4e5fdc39e1c879219145867356d5fc8d459e06c77a0689f550e44a2ba"
+    },
+    {
+      "asset_path": "mesoscope-visl_6.png",
+      "display_contrast": {
+        "high_percentile": 99.5,
+        "high_value": 66,
+        "low_percentile": 1.0,
+        "low_value": 6,
+        "method": "max-channel hue-preserving linear stretch"
+      },
+      "frame_index": 18,
+      "frame_time_seconds": 0.99764,
+      "modality": "mesoscope",
+      "option_id": "visl_6",
+      "output_sha256": "193df3ff190db2978fd63fce9fbe5fffadc991bebcc186ebb83c43c372d95e2d",
+      "source_sheet_sha256": "10c28465051b89c52625381cedd6d46e8b677afdcc44d17f30fef676dbb0adff"
+    },
+    {
+      "asset_path": "mesoscope-visl_7.png",
+      "display_contrast": {
+        "high_percentile": 99.5,
+        "high_value": 73,
+        "low_percentile": 1.0,
+        "low_value": 6,
+        "method": "max-channel hue-preserving linear stretch"
+      },
+      "frame_index": 18,
+      "frame_time_seconds": 0.99764,
+      "modality": "mesoscope",
+      "option_id": "visl_7",
+      "output_sha256": "3ee5459d90a4d59848c4237c4c080a52375934adf31c9f07ef6feccdc4290567",
+      "source_sheet_sha256": "33bc6554a4a8e0d061f6e4b2cb45794a2755d56a3e10ee288440adde543737c5"
+    },
+    {
+      "asset_path": "slap2-dmd1-detector-1.png",
+      "display_contrast": {
+        "high_percentile": 99.5,
+        "high_value": 62,
+        "low_percentile": 1.0,
+        "low_value": 0,
+        "method": "max-channel hue-preserving linear stretch"
+      },
+      "frame_index": 30,
+      "frame_time_seconds": 1.026271,
+      "modality": "slap2",
+      "option_id": "dmd1-detector-1",
+      "output_sha256": "e4c20a8a297f85b8fe178b78aaa97dcc12e1bcfc9a12734dc66427c04b303417",
+      "source_sheet_sha256": "1cf0b5ee10014d772f9c137bc378e3bd29deba062ca2b03b70e81dc3a303baae"
+    },
+    {
+      "asset_path": "slap2-dmd1-detector-2.png",
+      "display_contrast": {
+        "high_percentile": 99.5,
+        "high_value": 54,
+        "low_percentile": 1.0,
+        "low_value": 0,
+        "method": "max-channel hue-preserving linear stretch"
+      },
+      "frame_index": 30,
+      "frame_time_seconds": 1.026271,
+      "modality": "slap2",
+      "option_id": "dmd1-detector-2",
+      "output_sha256": "486a7c12ca7739cd28340f8192071a97e5c306856b5c88e8a448927202a66bc5",
+      "source_sheet_sha256": "5df1febcd61699106cfe3a07692b774759e644bce32b4e0806e9cd2936f23490"
+    },
+    {
+      "asset_path": "slap2-dmd2-detector-1.png",
+      "display_contrast": {
+        "high_percentile": 99.5,
+        "high_value": 76,
+        "low_percentile": 1.0,
+        "low_value": 0,
+        "method": "max-channel hue-preserving linear stretch"
+      },
+      "frame_index": 30,
+      "frame_time_seconds": 1.032353,
+      "modality": "slap2",
+      "option_id": "dmd2-detector-1",
+      "output_sha256": "0d4c9d75e3d04982bc63d971c997bba5664d89806e6598a3c9642181f8943251",
+      "source_sheet_sha256": "078e2d84a418f5c21656a407a7738494759875c4b7b3b3a4bdf5cbadceec3075"
+    },
+    {
+      "asset_path": "slap2-dmd2-detector-2.png",
+      "display_contrast": {
+        "high_percentile": 99.5,
+        "high_value": 56,
+        "low_percentile": 1.0,
+        "low_value": 0,
+        "method": "max-channel hue-preserving linear stretch"
+      },
+      "frame_index": 30,
+      "frame_time_seconds": 1.032353,
+      "modality": "slap2",
+      "option_id": "dmd2-detector-2",
+      "output_sha256": "756f1d7816023d6d97595ec8c65e7bc10caa44c6e6a2d023ecf282a3765101b3",
+      "source_sheet_sha256": "6b1842674e783caab162739a548f1e99569d32c750bd8453f1e0258b73a7e102"
+    }
+  ],
+  "notes": "Representative middle frames extracted from the committed raw-data sprite sheets for dependency-free HTML and PDF figure generation. Each still is independently contrast-scaled for display.",
+  "raw_neural_excerpts_sha256": "74a3cbcc083a985e50fd1097f9641d72a7e87afdf49282397805a2c656820f09",
+  "version": 1
+}

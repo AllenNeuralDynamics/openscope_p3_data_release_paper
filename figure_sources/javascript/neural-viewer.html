@@ -11,39 +11,52 @@ __NEURAL_CSS__
 </head>
 <body>
   <main class="viewer" id="neural-viewer">
-    <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
+    <div class="view-switch" role="group" aria-label="Interactive or static view">
+      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
+    </div>
 
-    <section class="toolbar" aria-label="Raw-data controls">
-      <label for="option-select" id="option-label">Source</label>
-      <select id="option-select"></select>
-      <div class="contrast-control">
-        <label for="contrast">Contrast</label>
-        <input id="contrast" type="range" min="0.6" max="2.4" step="0.1" value="1" aria-label="Display contrast">
-      </div>
-    </section>
+    <div id="interactive-view">
+      <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
 
-    <section class="visual-shell" aria-label="Raw-data excerpt">
-      <canvas id="raw-canvas" width="900" height="520" role="img" tabindex="0" aria-label="Raw recording excerpt"></canvas>
-      <div id="loading-status" class="loading-status" role="status" hidden>Loading raw frames</div>
-      <div id="canvas-tooltip" class="canvas-tooltip" role="status" hidden></div>
-    </section>
-
-    <section class="transport" aria-label="Timeline controls">
-      <button id="play-toggle" type="button" aria-label="Play raw-data excerpt" title="Play">
-        <span id="play-icon" aria-hidden="true">&#9654;</span>
-      </button>
-      <div class="timeline-control">
-        <input id="playhead" type="range" min="0" max="4" step="0.001" value="0" aria-label="Excerpt time">
-        <div class="timeline-ticks" aria-hidden="true">
-          <span>0</span>
-          <span>1</span>
-          <span>2</span>
-          <span>3</span>
-          <span>4</span>
+      <section class="toolbar" aria-label="Raw-data controls">
+        <label for="option-select" id="option-label">Source</label>
+        <select id="option-select"></select>
+        <div class="contrast-control">
+          <label for="contrast">Contrast</label>
+          <input id="contrast" type="range" min="0.6" max="2.4" step="0.1" value="1" aria-label="Display contrast">
         </div>
-        <div class="timeline-label">Excerpt time (s)</div>
+      </section>
+
+      <section class="visual-shell" aria-label="Raw-data excerpt">
+        <canvas id="raw-canvas" width="900" height="520" role="img" tabindex="0" aria-label="Raw recording excerpt"></canvas>
+        <div id="loading-status" class="loading-status" role="status" hidden>Loading raw frames</div>
+        <div id="canvas-tooltip" class="canvas-tooltip" role="status" hidden></div>
+      </section>
+
+      <section class="transport" aria-label="Timeline controls">
+        <button id="play-toggle" type="button" aria-label="Play raw-data excerpt" title="Play">
+          <span id="play-icon" aria-hidden="true">&#9654;</span>
+        </button>
+        <div class="timeline-control">
+          <input id="playhead" type="range" min="0" max="4" step="0.001" value="0" aria-label="Excerpt time">
+          <div class="timeline-ticks" aria-hidden="true">
+            <span>0</span>
+            <span>1</span>
+            <span>2</span>
+            <span>3</span>
+            <span>4</span>
+          </div>
+          <div class="timeline-label">Excerpt time (s)</div>
+        </div>
+        <output id="playhead-time">0.000 s</output>
+      </section>
+    </div>
+
+    <section class="static-view" id="static-view" aria-label="Static raw-data overview" hidden>
+      <div class="static-shell">
+        <img src="__NEURAL_STATIC_IMAGE__" alt="Static panels showing representative Neuropixels AP voltage, mesoscope imaging planes, and SLAP2 detector fields.">
       </div>
-      <output id="playhead-time">0.000 s</output>
     </section>
   </main>
 

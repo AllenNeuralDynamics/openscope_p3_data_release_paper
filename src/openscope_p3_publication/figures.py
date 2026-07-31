@@ -8,7 +8,9 @@ import json
 import math
 import re
 import shutil
+import struct
 import xml.etree.ElementTree as ET
+import zlib
 from dataclasses import asdict, dataclass
 from html import escape
 from pathlib import Path
@@ -33,6 +35,38 @@ BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
 BEHAVIOR_EXCERPTS_PATH = DATA_DIR / "behavior-excerpts.json"
 NEURAL_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "neural-viewer.html"
 NEURAL_EXCERPTS_PATH = DATA_DIR / "raw-neural-excerpts.json"
+NEURAL_STATIC_FRAME_PROVENANCE_PATH = (
+    DATA_DIR / "raw-neural-static-frames.provenance.json"
+)
+NEURAL_STATIC_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "raw-neural-recordings.svg"
+)
+NEURAL_STATIC_SELECTIONS = {
+    "neuropixels": (
+        "probe-a",
+        "probe-b",
+        "probe-c",
+        "probe-d",
+        "probe-e",
+        "probe-f",
+    ),
+    "mesoscope": (
+        "visp_0",
+        "visp_1",
+        "visp_2",
+        "visp_3",
+        "visl_4",
+        "visl_5",
+        "visl_6",
+        "visl_7",
+    ),
+    "slap2": (
+        "dmd1-detector-1",
+        "dmd1-detector-2",
+        "dmd2-detector-1",
+        "dmd2-detector-2",
+    ),
+}
 OTHER_STUDIES_PATH = DATA_DIR / "other-oddball-studies.csv"
 OTHER_STUDIES_PROVENANCE_PATH = OTHER_STUDIES_PATH.with_suffix(".provenance.json")
 UNIT_YIELD_DATA_PATH = DATA_DIR / "neuropixels-unit-yield.csv"
@@ -50,6 +84,7 @@ UNIT_YIELD_STATIC_OUTPUT = (
 UNIT_YIELD_INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "unit-yield.html"
 MEDIA_DIR = REPO_ROOT / "figure_sources" / "media"
 NEURAL_MEDIA_DIR = MEDIA_DIR / "neural-viewer"
+NEURAL_STATIC_FRAME_DIR = MEDIA_DIR / "neural-viewer-static"
 ZEBRA_MOVIE_SOURCE = MEDIA_DIR / "zebra-stimulus-excerpt.m4v"
 ZEBRA_POSTER_SOURCE = MEDIA_DIR / "zebra-stimulus-poster.png"
 ZEBRA_PROVENANCE_PATH = MEDIA_DIR / "zebra-stimulus-excerpt.provenance.json"
@@ -579,9 +614,387 @@ def load_neural_excerpts(
     return payload
 
 
-def write_neural_viewer_html(output: Path = NEURAL_VIEWER_OUTPUT) -> Path:
+def png_chunk(chunk_type: bytes, data: bytes) -> bytes:
+    checksum = zlib.crc32(chunk_type)
+    checksum = zlib.crc32(data, checksum)
+    return struct.pack(">I", len(data)) + chunk_type + data + struct.pack(">I", checksum)
+
+
+def encode_rgb_png(width: int, height: int, pixels: bytes) -> bytes:
+    if len(pixels) != width * height * 3:
+        raise RuntimeError("RGB pixel buffer does not match its declared dimensions.")
+    stride = width * 3
+    scanlines = b"".join(
+        b"\x00" + pixels[row * stride : (row + 1) * stride]
+        for row in range(height)
+    )
+    return b"".join(
+        (
+            b"\x89PNG\r\n\x1a\n",
+            png_chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)),
+            png_chunk(b"IDAT", zlib.compress(scanlines, level=9)),
+            png_chunk(b"IEND", b""),
+        )
+    )
+
+
+def neural_voltage_rgb(encoded: int) -> tuple[int, int, int]:
+    centered = max(-1.0, min(1.0, (encoded - 127.5) / 127.5))
+    if centered < 0:
+        amount = centered + 1
+        return (
+            round(28 + amount * 218),
+            round(77 + amount * 169),
+            round(151 + amount * 95),
+        )
+    return (
+        round(246 - centered * 57),
+        round(246 - centered * 192),
+        round(246 - centered * 205),
+    )
+
+
+def neural_heatmap_png(option: dict) -> bytes:
+    encoded = base64.b64decode(option["dataBase64"], validate=True)
+    pixels = bytearray()
+    for value in encoded:
+        pixels.extend(neural_voltage_rgb(value))
+    return encode_rgb_png(option["columns"], option["rows"], bytes(pixels))
+
+
+def load_neural_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
+    provenance = json.loads(
+        NEURAL_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    source_checksum = hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest()
+    if (
+        provenance.get("version") != 1
+        or provenance.get("raw_neural_excerpts_sha256") != source_checksum
+    ):
+        raise RuntimeError("Static neural frame provenance is not supported.")
+
+    sessions = {session["id"]: session for session in payload["sessions"]}
+    records = {
+        (record["modality"], record["option_id"]): record
+        for record in provenance.get("frames", [])
+    }
+    expected_keys = {
+        (modality, option_id)
+        for modality in ("mesoscope", "slap2")
+        for option_id in NEURAL_STATIC_SELECTIONS[modality]
+    }
+    if set(records) != expected_keys:
+        raise RuntimeError("Static neural frame selections do not match provenance.")
+
+    paths = {}
+    for modality, option_id in sorted(expected_keys):
+        option = next(
+            option
+            for option in sessions[modality]["options"]
+            if option["id"] == option_id
+        )
+        record = records[(modality, option_id)]
+        frame_index = len(option["frameTimes"]) // 2
+        path = NEURAL_STATIC_FRAME_DIR / record["asset_path"]
+        contrast = record.get("display_contrast", {})
+        if (
+            record["frame_index"] != frame_index
+            or record["frame_time_seconds"] != option["frameTimes"][frame_index]
+            or record["source_sheet_sha256"] != option["sheetSha256"]
+            or contrast.get("method")
+            != "max-channel hue-preserving linear stretch"
+            or contrast.get("low_percentile") != 1.0
+            or contrast.get("high_percentile") != 99.5
+            or not 0
+            <= contrast.get("low_value", -1)
+            < contrast.get("high_value", -1)
+            <= 255
+            or hashlib.sha256(path.read_bytes()).hexdigest()
+            != record["output_sha256"]
+        ):
+            raise RuntimeError(f"Static neural frame checksum mismatch: {path.name}")
+        paths[(modality, option_id)] = path
+    return paths
+
+
+def append_static_scale_bar(
+    svg: list[str],
+    *,
+    x: float,
+    y: float,
+    display_width: float,
+    native_width: int,
+    microns_per_pixel: float,
+    microns: int,
+) -> None:
+    bar_width = display_width * microns / (native_width * microns_per_pixel)
+    svg.extend(
+        [
+            f'<line x1="{x:.2f}" y1="{y:.2f}" x2="{x + bar_width:.2f}" '
+            f'y2="{y:.2f}" stroke="#111111" stroke-width="7"/>',
+            f'<line x1="{x:.2f}" y1="{y:.2f}" x2="{x + bar_width:.2f}" '
+            f'y2="{y:.2f}" stroke="#FFFFFF" stroke-width="4"/>',
+            f'<text x="{x + bar_width / 2:.2f}" y="{y - 9:.2f}" '
+            'font-family="Source Sans 3, sans-serif" font-size="12" '
+            f'font-weight="700" text-anchor="middle" fill="#FFFFFF">{microns} µm</text>',
+        ]
+    )
+
+
+def append_neuropixels_raw_card(
+    svg: list[str],
+    *,
+    x: float,
+    y: float,
+    option: dict,
+    show_axis: bool,
+) -> None:
+    card_width = 540
+    card_height = 225
+    header_height = 28
+    image_height = 145
+    anatomy_x = x + 7
+    anatomy_width = 62
+    heatmap_x = anatomy_x + anatomy_width + 7
+    heatmap_width = 445
+    image_y = y + header_height
+    image_data = base64.b64encode(neural_heatmap_png(option)).decode()
+    svg.extend(
+        [
+            f'<g class="raw-image-card" data-modality="neuropixels" '
+            f'data-option-id="{option["id"]}">',
+            f'<rect x="{x + 5:.2f}" y="{y + 6:.2f}" width="{card_width}" '
+            f'height="{card_height}" rx="3" fill="#D9DEDC" opacity="0.65"/>',
+            f'<rect x="{x:.2f}" y="{y:.2f}" width="{card_width}" '
+            f'height="{card_height}" rx="3" fill="#FFFFFF" stroke="#8F9996"/>',
+            f'<text x="{x + 9:.2f}" y="{y + 19:.2f}" '
+            'font-family="Source Sans 3, sans-serif" font-size="13" '
+            f'font-weight="700" fill="#303536">{escape(option["label"])}</text>',
+            f'<text x="{x + card_width - 9:.2f}" y="{y + 19:.2f}" '
+            'font-family="IBM Plex Mono, monospace" font-size="10" '
+            f'text-anchor="end" fill="#59615F">±{option["valueLimit"]:.0f} µV</text>',
+        ]
+    )
+    for index, segment in enumerate(option["anatomySegments"]):
+        segment_y = image_y + segment["startRow"] / option["rows"] * image_height
+        segment_height = (
+            (segment["endRow"] - segment["startRow"])
+            / option["rows"]
+            * image_height
+        )
+        fill = "#F5F6F6" if segment["label"] == "void" else (
+            "#E2E7E5" if index % 2 == 0 else "#EEF1F0"
+        )
+        svg.append(
+            f'<rect x="{anatomy_x:.2f}" y="{segment_y:.2f}" '
+            f'width="{anatomy_width}" height="{segment_height:.2f}" fill="{fill}"/>'
+        )
+        if segment_height >= 11:
+            svg.append(
+                f'<text x="{anatomy_x + anatomy_width / 2:.2f}" '
+                f'y="{segment_y + segment_height / 2 + 3:.2f}" '
+                'font-family="Source Sans 3, sans-serif" font-size="8" '
+                f'font-weight="600" text-anchor="middle" fill="#3F4745">'
+                f'{escape(segment["label"])}</text>'
+            )
+    svg.extend(
+        [
+            f'<rect x="{anatomy_x:.2f}" y="{image_y:.2f}" width="{anatomy_width}" '
+            f'height="{image_height}" fill="none" stroke="#8F9996"/>',
+            f'<image class="raw-card-image" href="data:image/png;base64,{image_data}" '
+            f'x="{heatmap_x:.2f}" y="{image_y:.2f}" width="{heatmap_width}" '
+            f'height="{image_height}" preserveAspectRatio="none"/>',
+            f'<rect x="{heatmap_x:.2f}" y="{image_y:.2f}" width="{heatmap_width}" '
+            f'height="{image_height}" fill="none" stroke="#8F9996"/>',
+        ]
+    )
+    if show_axis:
+        axis_y = image_y + image_height + 6
+        for tick_index, milliseconds in enumerate((0, 25, 50, 75, 100)):
+            tick_x = heatmap_x + tick_index / 4 * heatmap_width
+            svg.extend(
+                [
+                    f'<line x1="{tick_x:.2f}" y1="{image_y + image_height:.2f}" '
+                    f'x2="{tick_x:.2f}" y2="{axis_y:.2f}" stroke="#6C7572"/>',
+                    f'<text x="{tick_x:.2f}" y="{axis_y + 13:.2f}" '
+                    'font-family="IBM Plex Mono, monospace" font-size="9" '
+                    f'text-anchor="middle" fill="#59615F">{milliseconds}</text>',
+                ]
+            )
+        svg.append(
+            f'<text x="{heatmap_x + heatmap_width / 2:.2f}" y="{axis_y + 29:.2f}" '
+            'font-family="Source Sans 3, sans-serif" font-size="10" '
+            'text-anchor="middle" fill="#4D5553">100 ms raw AP excerpt</text>'
+        )
+    svg.append("</g>")
+
+
+def append_microscopy_raw_card(
+    svg: list[str],
+    *,
+    x: float,
+    y: float,
+    card_width: float,
+    option: dict,
+    path: Path,
+    modality: str,
+    label: str,
+    show_scale: bool,
+) -> float:
+    padding = 7
+    header_height = 27
+    image_width = card_width - 2 * padding
+    image_height = image_width * option["nativeHeight"] / option["nativeWidth"]
+    card_height = header_height + image_height + padding
+    image_x = x + padding
+    image_y = y + header_height
+    image_data = base64.b64encode(path.read_bytes()).decode()
+    svg.extend(
+        [
+            f'<g class="raw-image-card" data-modality="{modality}" '
+            f'data-option-id="{option["id"]}">',
+            f'<rect x="{x + 5:.2f}" y="{y + 6:.2f}" width="{card_width}" '
+            f'height="{card_height:.2f}" rx="3" fill="#D9DEDC" opacity="0.65"/>',
+            f'<rect x="{x:.2f}" y="{y:.2f}" width="{card_width}" '
+            f'height="{card_height:.2f}" rx="3" fill="#FFFFFF" stroke="#8F9996"/>',
+            f'<text x="{x + padding:.2f}" y="{y + 18:.2f}" '
+            'font-family="Source Sans 3, sans-serif" font-size="12" '
+            f'font-weight="700" fill="#303536">{escape(label)}</text>',
+            f'<image class="raw-card-image" href="data:image/png;base64,{image_data}" '
+            f'x="{image_x:.2f}" y="{image_y:.2f}" width="{image_width:.2f}" '
+            f'height="{image_height:.2f}"/>',
+            f'<rect x="{image_x:.2f}" y="{image_y:.2f}" width="{image_width:.2f}" '
+            f'height="{image_height:.2f}" fill="none" stroke="#8F9996"/>',
+        ]
+    )
+    if show_scale:
+        append_static_scale_bar(
+            svg,
+            x=image_x + 12,
+            y=image_y + image_height - 14,
+            display_width=image_width,
+            native_width=option["nativeWidth"],
+            microns_per_pixel=option["micronsPerPixel"],
+            microns=50 if modality == "mesoscope" else 25,
+        )
+    svg.append("</g>")
+    return card_height
+
+
+def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
+    payload = load_neural_excerpts()
+    sessions = {session["id"]: session for session in payload["sessions"]}
+    frame_paths = load_neural_static_frames(payload)
+    width = 1800
+    height = 660
+    panel_lefts = {"neuropixels": 35, "mesoscope": 645, "slap2": 1235}
+    svg = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
+        '<title id="title">Raw recording stacks across three modalities</title>',
+        '<desc id="description">Six stacked Neuropixels probe heatmaps, two stacks '
+        'containing eight mesoscope plane images, and two stacks containing four SLAP2 '
+        'indicator images show the acquisition scale and native raw-data formats.</desc>',
+        f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
+    ]
+    summaries = {
+        "neuropixels": "6 probe recordings · all raw excerpts stacked",
+        "mesoscope": "8 planes · 4 VISp + 4 VISl · all raw frames stacked",
+        "slap2": "2 VISp planes · 2 indicator images per plane",
+    }
+    for letter, label, modality in (
+        ("A", "Neuropixels", "neuropixels"),
+        ("B", "Mesoscope", "mesoscope"),
+        ("C", "SLAP2", "slap2"),
+    ):
+        svg.extend(
+            [
+                f'<text x="{panel_lefts[modality]}" y="36" '
+                'font-family="Source Sans 3, sans-serif" font-size="24" '
+                f'font-weight="700" fill="#293133">{letter}  {label}</text>',
+                f'<text class="modality-scale" x="{panel_lefts[modality]}" y="62" '
+                'font-family="Source Sans 3, sans-serif" font-size="15" '
+                f'font-weight="600" fill="#59615F">{escape(summaries[modality])}</text>',
+            ]
+        )
+
+    neuropixels_options = {
+        option["id"]: option for option in sessions["neuropixels"]["options"]
+    }
+    for index, option_id in enumerate(NEURAL_STATIC_SELECTIONS["neuropixels"]):
+        append_neuropixels_raw_card(
+            svg,
+            x=35 + index * 8,
+            y=82 + index * 62,
+            option=neuropixels_options[option_id],
+            show_axis=index == len(NEURAL_STATIC_SELECTIONS["neuropixels"]) - 1,
+        )
+
+    mesoscope_options = {
+        option["id"]: option for option in sessions["mesoscope"]["options"]
+    }
+    mesoscope_stacks = (
+        ("VISp · 4 planes", 650, ("visp_2", "visp_0", "visp_1", "visp_3")),
+        ("VISl · 4 planes", 925, ("visl_6", "visl_4", "visl_5", "visl_7")),
+    )
+    for stack_label, left, option_ids in mesoscope_stacks:
+        svg.append(
+            f'<text x="{left}" y="91" font-family="Source Sans 3, sans-serif" '
+            f'font-size="14" font-weight="700" fill="#303536">{stack_label}</text>'
+        )
+        for index, option_id in enumerate(option_ids):
+            option = mesoscope_options[option_id]
+            append_microscopy_raw_card(
+                svg,
+                x=left + index * 8,
+                y=102 + index * 45,
+                card_width=235,
+                option=option,
+                path=frame_paths[("mesoscope", option_id)],
+                modality="mesoscope",
+                label=f'{option["targetLayer"]} · {option["imagingDepthUm"]:g} µm',
+                show_scale=index == len(option_ids) - 1,
+            )
+
+    slap2_options = {
+        option["id"]: option for option in sessions["slap2"]["options"]
+    }
+    slap2_stacks = (
+        ("DMD1 · 91 µm below pia", 1240, ("dmd1-detector-1", "dmd1-detector-2")),
+        ("DMD2 · 123.75 µm below pia", 1510, ("dmd2-detector-1", "dmd2-detector-2")),
+    )
+    for stack_label, left, option_ids in slap2_stacks:
+        svg.append(
+            f'<text x="{left}" y="91" font-family="Source Sans 3, sans-serif" '
+            f'font-size="14" font-weight="700" fill="#303536">{stack_label}</text>'
+        )
+        for index, option_id in enumerate(option_ids):
+            option = slap2_options[option_id]
+            append_microscopy_raw_card(
+                svg,
+                x=left + index * 8,
+                y=102 + index * 55,
+                card_width=235,
+                option=option,
+                path=frame_paths[("slap2", option_id)],
+                modality="slap2",
+                label=option["measurement"],
+                show_scale=index == len(option_ids) - 1,
+            )
+    svg.append("</svg>")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    return output
+
+
+def write_neural_viewer_html(
+    output: Path = NEURAL_VIEWER_OUTPUT,
+    static_output: Path = NEURAL_STATIC_OUTPUT,
+) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_neural_excerpts()
+    write_neural_static_svg(static_output)
+    static_data = base64.b64encode(static_output.read_bytes()).decode()
     for session in payload["sessions"]:
         for field in ("alignment", "context", "event", "stimulus"):
             session.pop(field, None)
@@ -590,6 +1003,7 @@ def write_neural_viewer_html(output: Path = NEURAL_VIEWER_OUTPUT) -> Path:
     javascript = (JAVASCRIPT_DIR / "neural-viewer.js").read_text(encoding="utf-8")
     html = (
         template.replace("__NEURAL_CSS__", stylesheet)
+        .replace("__NEURAL_STATIC_IMAGE__", f"data:image/svg+xml;base64,{static_data}")
         .replace(
             "__NEURAL_DATA__",
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
@@ -1558,6 +1972,7 @@ def main() -> None:
     print(f"Wrote {literature_comparison_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {behavior_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {neural_viewer_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {NEURAL_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")
