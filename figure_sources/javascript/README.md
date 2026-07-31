@@ -30,6 +30,8 @@ The synchronized behavior viewer is split into:
 
 `figure_sources/data/behavior-excerpts.json` contains compact event-centered traces and stimulus rows for one real Neuropixels, mesoscope, and SLAP2 session. Camera MP4 files are not copied into the repository; the viewer range-streams them from the public `aind-open-data` bucket. Neuropixels and mesoscope use 100-kHz camera exposure/readout edges from each raw sync file; reported dropped frame IDs are removed before hardware frame indices are mapped to the MP4 60-fps presentation timeline. SLAP2 uses the per-frame `CameraFrameTime` Harp timestamps and maps those frame indices to the MP4 30-fps timeline. Source URLs, NWB SHA-256 values, camera ETags, and small-source SHA-256 values are included in the payload.
 
+Figure 9's Static view embeds 10 ETag-pinned camera stills at local excerpt time 8 s together with each modality's complete running trace. Refresh the committed stills with `uv run --with av --with pillow python scripts/extract_behavior_static_frames.py`.
+
 Regenerate the behavior payload from its public sources with:
 
 ```bash

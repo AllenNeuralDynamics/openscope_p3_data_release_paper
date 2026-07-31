@@ -50,7 +50,7 @@ html.is-embedded .viewer { min-height: 0; }
   width: max-content;
   display: grid;
   grid-template-columns: repeat(2, auto);
-  margin: 10px 12px 10px auto;
+  margin: 10px auto;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 4px;
@@ -58,14 +58,15 @@ html.is-embedded .viewer { min-height: 0; }
 }
 
 .view-button {
-  min-height: 32px;
-  padding: 5px 12px;
+  min-width: 112px;
+  min-height: 38px;
+  padding: 6px 16px;
   border: 0;
   border-right: 1px solid var(--line);
   background: #fff;
   color: var(--muted);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 

@@ -381,6 +381,10 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "This analysis and Figure 8 are planning placeholders" in manuscript
     assert "Figure 10 are planning placeholders" in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
+    assert ":placeholder: ./images/figures/generated/synchronized-behavior.svg" in manuscript
+    assert "**Static** view compares\nall 10 available camera streams" in manuscript
+    assert "1st–99th luminance percentiles" in manuscript
+    assert "maps median luminance to 35%" in manuscript
     assert "Event-centered excerpts from real Neuropixels" in manuscript
     assert "figure-06-behavior-tracking-plan.png" not in manuscript
     assert "continuous raw\nbehavioral videos" in manuscript

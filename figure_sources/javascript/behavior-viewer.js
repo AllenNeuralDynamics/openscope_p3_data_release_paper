@@ -9,6 +9,7 @@
     eventBadge: document.getElementById("event-badge"),
     eventLabel: document.getElementById("event-label"),
     modalitySelector: document.getElementById("modality-selector"),
+    interactiveView: document.getElementById("interactive-view"),
     orientationValue: document.getElementById("orientation-value"),
     playIcon: document.getElementById("play-icon"),
     playToggle: document.getElementById("play-toggle"),
@@ -17,6 +18,7 @@
     sourceLinks: document.getElementById("source-links"),
     spatialFrequency: document.getElementById("spatial-frequency"),
     stagePlay: document.getElementById("stage-play"),
+    staticView: document.getElementById("static-view"),
     stimulusCanvas: document.getElementById("stimulus-canvas"),
     streamStatus: document.getElementById("stream-status"),
     temporalFrequency: document.getElementById("temporal-frequency"),
@@ -29,12 +31,14 @@
     trialType: document.getElementById("trial-type"),
     video: document.getElementById("behavior-video"),
     videoUnavailable: document.getElementById("video-unavailable"),
+    viewButtons: document.querySelectorAll(".view-button"),
   };
   const state = {
     cameraIndex: 0,
     localTime: 0,
     playing: false,
     sessionIndex: 0,
+    view: "interactive",
     videoToken: 0,
   };
   const contextColors = {
@@ -48,6 +52,18 @@
 
   function currentCamera() {
     return currentSession().cameras[state.cameraIndex];
+  }
+
+  function selectView(view) {
+    state.view = view;
+    if (view === "static") pause();
+    elements.interactiveView.hidden = view !== "interactive";
+    elements.staticView.hidden = view !== "static";
+    elements.viewButtons.forEach((button) => {
+      const active = button.dataset.view === view;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
   }
 
   function videoTimeAt(localTime, camera = currentCamera()) {
@@ -404,8 +420,12 @@
   elements.timeline.addEventListener("change", () => {
     if (state.playing) play();
   });
+  elements.viewButtons.forEach((button) => {
+    button.addEventListener("click", () => selectView(button.dataset.view));
+  });
 
   elements.timeline.max = protocol.durationSeconds;
   buildModalityTabs();
+  selectView("interactive");
   selectSession(0);
 })();

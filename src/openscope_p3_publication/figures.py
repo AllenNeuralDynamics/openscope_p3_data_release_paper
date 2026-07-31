@@ -33,6 +33,13 @@ SESSION_INVENTORY_STATIC_OUTPUT = (
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
 BEHAVIOR_EXCERPTS_PATH = DATA_DIR / "behavior-excerpts.json"
+BEHAVIOR_STATIC_LOCAL_TIME_SECONDS = 8.0
+BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH = (
+    DATA_DIR / "behavior-static-frames.provenance.json"
+)
+BEHAVIOR_STATIC_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "synchronized-behavior.svg"
+)
 NEURAL_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "neural-viewer.html"
 NEURAL_EXCERPTS_PATH = DATA_DIR / "raw-neural-excerpts.json"
 NEURAL_STATIC_FRAME_PROVENANCE_PATH = (
@@ -83,6 +90,7 @@ UNIT_YIELD_STATIC_OUTPUT = (
 )
 UNIT_YIELD_INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "unit-yield.html"
 MEDIA_DIR = REPO_ROOT / "figure_sources" / "media"
+BEHAVIOR_STATIC_FRAME_DIR = MEDIA_DIR / "behavior-viewer-static"
 NEURAL_MEDIA_DIR = MEDIA_DIR / "neural-viewer"
 NEURAL_STATIC_FRAME_DIR = MEDIA_DIR / "neural-viewer-static"
 ZEBRA_MOVIE_SOURCE = MEDIA_DIR / "zebra-stimulus-excerpt.m4v"
@@ -484,14 +492,269 @@ def load_behavior_excerpts(path: Path = BEHAVIOR_EXCERPTS_PATH) -> dict:
     return payload
 
 
-def write_behavior_viewer_html(output: Path = BEHAVIOR_VIEWER_OUTPUT) -> Path:
+def behavior_video_time_at(time_map: list[list[float]], local_time: float) -> float:
+    if local_time <= time_map[0][0]:
+        return time_map[0][1]
+    if local_time >= time_map[-1][0]:
+        return time_map[-1][1]
+    low = 0
+    high = len(time_map) - 1
+    while low + 1 < high:
+        middle = (low + high) // 2
+        if time_map[middle][0] <= local_time:
+            low = middle
+        else:
+            high = middle
+    first = time_map[low]
+    second = time_map[high]
+    fraction = (local_time - first[0]) / (second[0] - first[0])
+    return first[1] + (second[1] - first[1]) * fraction
+
+
+def load_behavior_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
+    provenance = json.loads(
+        BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    source_checksum = hashlib.sha256(BEHAVIOR_EXCERPTS_PATH.read_bytes()).hexdigest()
+    if (
+        provenance.get("version") != 1
+        or provenance.get("behavior_excerpts_sha256") != source_checksum
+        or provenance.get("local_time_seconds") != BEHAVIOR_STATIC_LOCAL_TIME_SECONDS
+    ):
+        raise RuntimeError("Static behavior frame provenance is not supported.")
+
+    sessions = {session["id"]: session for session in payload["sessions"]}
+    expected_keys = {
+        (session["id"], camera["id"])
+        for session in payload["sessions"]
+        for camera in session["cameras"]
+    }
+    records = {
+        (record["modality"], record["camera_id"]): record
+        for record in provenance.get("frames", [])
+    }
+    if set(records) != expected_keys:
+        raise RuntimeError("Static behavior frame selections do not match provenance.")
+
+    paths = {}
+    for modality, camera_id in sorted(expected_keys):
+        session = sessions[modality]
+        camera = next(camera for camera in session["cameras"] if camera["id"] == camera_id)
+        source = next(
+            source for source in session["sources"] if source.get("url") == camera["url"]
+        )
+        record = records[(modality, camera_id)]
+        target_time = behavior_video_time_at(
+            camera["timeMap"], BEHAVIOR_STATIC_LOCAL_TIME_SECONDS
+        )
+        path = BEHAVIOR_STATIC_FRAME_DIR / record["asset_path"]
+        frame_interval = 1 / camera["timing"]["encodedRateHz"]
+        contrast = record.get("display_contrast", {})
+        if (
+            record["camera_label"] != camera["label"]
+            or record["source_url"] != camera["url"]
+            or record["source_etag"] != source["etag"]
+            or record["source_content_length"] != source["contentLength"]
+            or contrast.get("method")
+            != "luminance percentile stretch with adaptive gamma"
+            or contrast.get("low_percentile") != 1.0
+            or contrast.get("high_percentile") != 99.0
+            or contrast.get("target_median") != 0.35
+            or not 0
+            <= contrast.get("low_value", -1)
+            < contrast.get("high_value", -1)
+            <= 255
+            or not 0.35 <= contrast.get("gamma", 0) <= 1.0
+            or not math.isclose(record["target_video_time_seconds"], target_time)
+            or record["decoded_video_time_seconds"] < target_time
+            or record["decoded_video_time_seconds"] - target_time > frame_interval * 1.1
+            or hashlib.sha256(path.read_bytes()).hexdigest()
+            != record["output_sha256"]
+        ):
+            raise RuntimeError(f"Static behavior frame checksum mismatch: {path.name}")
+        paths[(modality, camera_id)] = path
+    return paths
+
+
+def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
+    payload = load_behavior_excerpts()
+    frame_paths = load_behavior_static_frames(payload)
+    width = 1800
+    height = 900
+    row_tops = (55, 335, 615)
+    accents = {
+        "neuropixels": "#4B79C6",
+        "mesoscope": "#14866C",
+        "slap2": "#168EA0",
+    }
+    modality_labels = {
+        "neuropixels": "Neuropixels",
+        "mesoscope": "Mesoscope",
+        "slap2": "SLAP2",
+    }
+    svg = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
+        '<title id="title">Synchronized behavior recordings across three modalities</title>',
+        '<desc id="description">Ten synchronized camera stills at eight seconds '
+        'and complete sixteen-second running traces for Neuropixels, mesoscope, and '
+        'SLAP2 sessions.</desc>',
+        f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
+        '<line x1="1340" y1="28" x2="1365" y2="28" stroke="#B44235" '
+        'stroke-width="3"/>',
+        '<text x="1374" y="33" font-family="Source Sans 3, sans-serif" '
+        'font-size="12" fill="#59615F">event (5 s)</text>',
+        '<line x1="1485" y1="28" x2="1510" y2="28" stroke="#202322" '
+        'stroke-width="2" stroke-dasharray="5 3"/>',
+        '<text x="1519" y="33" font-family="Source Sans 3, sans-serif" '
+        'font-size="12" fill="#59615F">camera still (8 s)</text>',
+    ]
+    for letter, session, row_top in zip("ABC", payload["sessions"], row_tops, strict=True):
+        modality = session["id"]
+        cameras = session["cameras"]
+        svg.extend(
+            [
+                f'<text x="35" y="{row_top}" font-family="Source Sans 3, sans-serif" '
+                f'font-size="22" font-weight="700" fill="#293133">{letter}  '
+                f'{modality_labels[modality]}</text>',
+                f'<text x="35" y="{row_top + 21}" '
+                'font-family="IBM Plex Mono, monospace" font-size="11" '
+                f'fill="#68706E">mouse {escape(session["subject"])} · '
+                f'{len(cameras)} camera streams</text>',
+            ]
+        )
+        camera_width = 198
+        camera_height = 148
+        camera_gap = 12
+        camera_top = row_top + 40
+        for index, camera in enumerate(cameras):
+            left = 35 + index * (camera_width + camera_gap)
+            image_data = base64.b64encode(
+                frame_paths[(modality, camera["id"])].read_bytes()
+            ).decode()
+            svg.extend(
+                [
+                    f'<g class="behavior-camera-card" data-modality="{modality}" '
+                    f'data-camera-id="{camera["id"]}">',
+                    f'<text x="{left}" y="{camera_top - 8}" '
+                    'font-family="Source Sans 3, sans-serif" font-size="12" '
+                    f'font-weight="700" fill="#303536">{escape(camera["label"])} camera</text>',
+                    f'<rect x="{left}" y="{camera_top}" width="{camera_width}" '
+                    f'height="{camera_height}" fill="#171A19"/>',
+                    f'<image href="data:image/jpeg;base64,{image_data}" x="{left}" '
+                    f'y="{camera_top}" width="{camera_width}" height="{camera_height}" '
+                    'preserveAspectRatio="xMidYMid meet"/>',
+                    f'<rect x="{left}" y="{camera_top}" width="{camera_width}" '
+                    f'height="{camera_height}" fill="none" stroke="#8F9996"/>',
+                    "</g>",
+                ]
+            )
+
+        trace_left = 910
+        trace_top = row_top + 40
+        trace_width = 850
+        trace_height = 148
+        margin_left = 46
+        margin_right = 12
+        margin_top = 12
+        margin_bottom = 22
+        plot_width = trace_width - margin_left - margin_right
+        plot_height = trace_height - margin_top - margin_bottom
+        values = [point[1] for point in session["trace"]]
+        maximum = max(1, *(abs(value) for value in values)) * 1.08
+
+        def trace_x(
+            time: float,
+            left: float = trace_left + margin_left,
+            duration: float = payload["durationSeconds"],
+            width: float = plot_width,
+        ) -> float:
+            return left + time / duration * width
+
+        def trace_y(
+            value: float,
+            top: float = trace_top + margin_top,
+            limit: float = maximum,
+            height: float = plot_height,
+        ) -> float:
+            return top + (limit - value) / (2 * limit) * height
+
+        points = " ".join(
+            f"{trace_x(time):.2f},{trace_y(value):.2f}"
+            for time, value in session["trace"]
+        )
+        svg.extend(
+            [
+                f'<text x="{trace_left}" y="{trace_top - 8}" '
+                'font-family="Source Sans 3, sans-serif" font-size="12" '
+                f'font-weight="700" fill="#303536">{escape(session["traceLabel"])} '
+                f'({escape(session["traceUnit"])})</text>',
+                f'<rect x="{trace_left}" y="{trace_top}" width="{trace_width}" '
+                f'height="{trace_height}" fill="#FFFFFF" stroke="#D0D4D2"/>',
+            ]
+        )
+        for fraction in (0, 0.5, 1):
+            grid_y = trace_top + margin_top + fraction * plot_height
+            svg.append(
+                f'<line x1="{trace_left + margin_left}" y1="{grid_y:.2f}" '
+                f'x2="{trace_left + trace_width - margin_right}" y2="{grid_y:.2f}" '
+                'stroke="#E2E5E3"/>'
+            )
+        svg.extend(
+            [
+                f'<polyline points="{points}" fill="none" stroke="{accents[modality]}" '
+                'stroke-width="2"/>',
+                f'<line x1="{trace_x(session["event"]["time"]):.2f}" '
+                f'y1="{trace_top + margin_top}" '
+                f'x2="{trace_x(session["event"]["time"]):.2f}" '
+                f'y2="{trace_top + margin_top + plot_height}" stroke="#B44235" '
+                'stroke-width="2"/>',
+                f'<line x1="{trace_x(BEHAVIOR_STATIC_LOCAL_TIME_SECONDS):.2f}" '
+                f'y1="{trace_top + margin_top}" '
+                f'x2="{trace_x(BEHAVIOR_STATIC_LOCAL_TIME_SECONDS):.2f}" '
+                f'y2="{trace_top + margin_top + plot_height}" stroke="#202322" '
+                'stroke-width="2" stroke-dasharray="5 3"/>',
+            ]
+        )
+        for time in (0, 4, 8, 12, 16):
+            svg.append(
+                f'<text x="{trace_x(time):.2f}" y="{trace_top + trace_height - 6}" '
+                'font-family="IBM Plex Mono, monospace" font-size="10" '
+                f'text-anchor="middle" fill="#68706E">{time}s</text>'
+            )
+        svg.extend(
+            [
+                f'<text x="{trace_left + margin_left - 7}" '
+                f'y="{trace_y(maximum) + 4:.2f}" '
+                'font-family="IBM Plex Mono, monospace" font-size="9" '
+                f'text-anchor="end" fill="#68706E">{maximum:.0f}</text>',
+                f'<text x="{trace_left + margin_left - 7}" y="{trace_y(0) + 4:.2f}" '
+                'font-family="IBM Plex Mono, monospace" font-size="9" '
+                'text-anchor="end" fill="#68706E">0</text>',
+            ]
+        )
+    svg.append("</svg>")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    return output
+
+
+def write_behavior_viewer_html(
+    output: Path = BEHAVIOR_VIEWER_OUTPUT,
+    static_output: Path = BEHAVIOR_STATIC_OUTPUT,
+) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_behavior_excerpts()
+    write_behavior_static_svg(static_output)
     template = (JAVASCRIPT_DIR / "behavior-viewer.html").read_text(encoding="utf-8")
     stylesheet = (JAVASCRIPT_DIR / "behavior-viewer.css").read_text(encoding="utf-8")
     javascript = (JAVASCRIPT_DIR / "behavior-viewer.js").read_text(encoding="utf-8")
     html = (
         template.replace("__BEHAVIOR_CSS__", stylesheet)
+        .replace(
+            "__BEHAVIOR_STATIC_IMAGE__",
+            f"media/behavior-viewer/{static_output.name}",
+        )
         .replace(
             "__BEHAVIOR_DATA__",
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
@@ -500,6 +763,11 @@ def write_behavior_viewer_html(output: Path = BEHAVIOR_VIEWER_OUTPUT) -> Path:
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
     output.write_text(html, encoding="utf-8")
+    media_output = output.parent / "media" / "behavior-viewer"
+    if media_output.exists():
+        shutil.rmtree(media_output)
+    media_output.mkdir(parents=True)
+    shutil.copy2(static_output, media_output / static_output.name)
     return output
 
 
@@ -994,7 +1262,6 @@ def write_neural_viewer_html(
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_neural_excerpts()
     write_neural_static_svg(static_output)
-    static_data = base64.b64encode(static_output.read_bytes()).decode()
     for session in payload["sessions"]:
         for field in ("alignment", "context", "event", "stimulus"):
             session.pop(field, None)
@@ -1003,7 +1270,10 @@ def write_neural_viewer_html(
     javascript = (JAVASCRIPT_DIR / "neural-viewer.js").read_text(encoding="utf-8")
     html = (
         template.replace("__NEURAL_CSS__", stylesheet)
-        .replace("__NEURAL_STATIC_IMAGE__", f"data:image/svg+xml;base64,{static_data}")
+        .replace(
+            "__NEURAL_STATIC_IMAGE__",
+            f"media/neural-viewer/{static_output.name}",
+        )
         .replace(
             "__NEURAL_DATA__",
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
@@ -1016,6 +1286,7 @@ def write_neural_viewer_html(
     if media_output.exists():
         shutil.rmtree(media_output)
     shutil.copytree(NEURAL_MEDIA_DIR, media_output)
+    shutil.copy2(static_output, media_output / static_output.name)
     return output
 
 
@@ -1971,6 +2242,7 @@ def main() -> None:
     print(f"Wrote {SESSION_INVENTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {literature_comparison_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {behavior_viewer_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {BEHAVIOR_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {neural_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEURAL_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")

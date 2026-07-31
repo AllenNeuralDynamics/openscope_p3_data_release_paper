@@ -1096,9 +1096,18 @@ signals.
 :label: fig-behavior-tracking
 :width: 100%
 :title: Synchronized behavior, locomotion, and visual stimuli across recording modalities
+:placeholder: ./images/figures/generated/synchronized-behavior.svg
 
 Event-centered excerpts from real Neuropixels, mesoscope, and SLAP2 recording
-sessions. Behavior-camera video is range-streamed from the public
+sessions. The **Interactive** view provides synchronized camera playback,
+running signals, and reconstructed stimulus state. The **Static** view compares
+all 10 available camera streams at a common 8-second excerpt time with the full
+16-second running trace for each modality; red lines mark the event at 5 seconds
+and dashed black lines mark the still-frame time. Each static camera image is
+independently illuminated using its 1st–99th luminance percentiles and a bounded
+gamma that maps median luminance to 35%, with exact parameters retained in
+provenance. Behavior-camera video is
+range-streamed from the public
 `aind-open-data` S3 bucket. For Neuropixels and mesoscope sessions, NWB running
 speed and stimulus rows share the sync-file clock with 100-kHz camera
 exposure/readout edges; reported dropped frames are removed before mapping

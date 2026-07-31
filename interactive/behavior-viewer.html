@@ -51,6 +51,50 @@ a:focus-visible {
 
 html.is-embedded .viewer { min-height: 0; }
 
+.view-switch {
+  width: max-content;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  margin: 10px auto;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.view-button {
+  min-width: 112px;
+  min-height: 38px;
+  padding: 6px 16px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.view-button:last-child { border-right: 0; }
+.view-button.active { background: #30383c; color: #fff; }
+
+.static-view[hidden],
+#interactive-view[hidden] { display: none !important; }
+
+.static-shell {
+  width: 100%;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+
+.static-shell img {
+  width: 100%;
+  min-width: 1000px;
+  height: auto;
+  display: block;
+}
+
 .modality-tabs {
   min-height: 48px;
   display: flex;
@@ -404,17 +448,23 @@ html.is-embedded .viewer { min-height: 0; }
 </head>
 <body>
   <main class="viewer" id="behavior-viewer">
-    <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
+    <div class="view-switch" role="group" aria-label="Interactive or static view">
+      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
+    </div>
 
-    <header class="session-header">
+    <div id="interactive-view">
+      <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
+
+      <header class="session-header">
       <div class="session-identity">
         <p class="context-label" id="context-label"></p>
         <h1 id="session-title"></h1>
       </div>
       <div class="source-links" id="source-links" aria-label="Data sources"></div>
-    </header>
+      </header>
 
-    <section class="media-grid" aria-label="Synchronized recording excerpt">
+      <section class="media-grid" aria-label="Synchronized recording excerpt">
       <div class="camera-panel">
         <div class="camera-tabs" id="camera-selector" aria-label="Behavior camera"></div>
         <div class="video-stage">
@@ -447,17 +497,17 @@ html.is-embedded .viewer { min-height: 0; }
           <div><dt>Temporal freq.</dt><dd id="temporal-frequency">-</dd></div>
         </dl>
       </aside>
-    </section>
+      </section>
 
-    <section class="transport" aria-label="Playback controls">
+      <section class="transport" aria-label="Playback controls">
       <button id="play-toggle" type="button" aria-label="Play synchronized excerpt" title="Play">
         <span id="play-icon" aria-hidden="true">&#9654;</span>
       </button>
       <input id="timeline" type="range" min="0" max="16" step="0.01" value="0" aria-label="Excerpt time">
       <time id="playback-time">00:00.0 / 00:16.0</time>
-    </section>
+      </section>
 
-    <section class="trace-panel" aria-labelledby="trace-heading">
+      <section class="trace-panel" aria-labelledby="trace-heading">
       <div class="panel-heading trace-heading">
         <div>
           <h2 id="trace-heading">Running speed</h2>
@@ -469,6 +519,13 @@ html.is-embedded .viewer { min-height: 0; }
       <div class="event-key">
         <span class="event-line" aria-hidden="true"></span>
         <span id="event-label"></span>
+      </div>
+      </section>
+    </div>
+
+    <section class="static-view" id="static-view" aria-label="Static synchronized behavior overview" hidden>
+      <div class="static-shell">
+        <img src="media/behavior-viewer/synchronized-behavior.svg" alt="Static rows showing all synchronized camera views and running traces for Neuropixels, mesoscope, and SLAP2 sessions.">
       </div>
     </section>
   </main>
@@ -486,6 +543,7 @@ html.is-embedded .viewer { min-height: 0; }
     eventBadge: document.getElementById("event-badge"),
     eventLabel: document.getElementById("event-label"),
     modalitySelector: document.getElementById("modality-selector"),
+    interactiveView: document.getElementById("interactive-view"),
     orientationValue: document.getElementById("orientation-value"),
     playIcon: document.getElementById("play-icon"),
     playToggle: document.getElementById("play-toggle"),
@@ -494,6 +552,7 @@ html.is-embedded .viewer { min-height: 0; }
     sourceLinks: document.getElementById("source-links"),
     spatialFrequency: document.getElementById("spatial-frequency"),
     stagePlay: document.getElementById("stage-play"),
+    staticView: document.getElementById("static-view"),
     stimulusCanvas: document.getElementById("stimulus-canvas"),
     streamStatus: document.getElementById("stream-status"),
     temporalFrequency: document.getElementById("temporal-frequency"),
@@ -506,12 +565,14 @@ html.is-embedded .viewer { min-height: 0; }
     trialType: document.getElementById("trial-type"),
     video: document.getElementById("behavior-video"),
     videoUnavailable: document.getElementById("video-unavailable"),
+    viewButtons: document.querySelectorAll(".view-button"),
   };
   const state = {
     cameraIndex: 0,
     localTime: 0,
     playing: false,
     sessionIndex: 0,
+    view: "interactive",
     videoToken: 0,
   };
   const contextColors = {
@@ -525,6 +586,18 @@ html.is-embedded .viewer { min-height: 0; }
 
   function currentCamera() {
     return currentSession().cameras[state.cameraIndex];
+  }
+
+  function selectView(view) {
+    state.view = view;
+    if (view === "static") pause();
+    elements.interactiveView.hidden = view !== "interactive";
+    elements.staticView.hidden = view !== "static";
+    elements.viewButtons.forEach((button) => {
+      const active = button.dataset.view === view;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
   }
 
   function videoTimeAt(localTime, camera = currentCamera()) {
@@ -881,9 +954,13 @@ html.is-embedded .viewer { min-height: 0; }
   elements.timeline.addEventListener("change", () => {
     if (state.playing) play();
   });
+  elements.viewButtons.forEach((button) => {
+    button.addEventListener("click", () => selectView(button.dataset.view));
+  });
 
   elements.timeline.max = protocol.durationSeconds;
   buildModalityTabs();
+  selectView("interactive");
   selectSession(0);
 })();
   </script>

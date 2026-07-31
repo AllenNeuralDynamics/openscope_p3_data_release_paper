@@ -10,6 +10,8 @@ from openscope_p3_publication.figures import (
     ANIMAL_RECORDS_PATH,
     ANIMAL_RECORDS_PROVENANCE_PATH,
     BEHAVIOR_EXCERPTS_PATH,
+    BEHAVIOR_STATIC_FRAME_DIR,
+    BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH,
     BLOCKS,
     NEURAL_EXCERPTS_PATH,
     NEURAL_MEDIA_DIR,
@@ -34,6 +36,7 @@ from openscope_p3_publication.figures import (
     modality_session_records,
     session_panel_rows,
     total_duration_minutes,
+    write_behavior_static_svg,
     write_behavior_viewer_html,
     write_data_explorer_html,
     write_interactive_html,
@@ -545,7 +548,11 @@ def test_behavior_excerpts_are_source_backed_and_synchronized() -> None:
 
 
 def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
-    viewer_path = write_behavior_viewer_html(tmp_path / "behavior-viewer.html")
+    static_path = tmp_path / "synchronized-behavior.svg"
+    viewer_path = write_behavior_viewer_html(
+        tmp_path / "behavior-viewer.html",
+        static_output=static_path,
+    )
     html = viewer_path.read_text(encoding="utf-8")
 
     assert 'id="behavior-viewer"' in html
@@ -556,6 +563,11 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "832700" in html
     assert "796630" in html
     assert "aind-open-data.s3.us-west-2.amazonaws.com" in html
+    assert 'data-view="interactive"' in html
+    assert 'data-view="static"' in html
+    assert 'id="static-view"' in html
+    assert "media/behavior-viewer/synchronized-behavior.svg" in html
+    assert "selectView" in html
     assert "Wheel recording trace with synchronized playback cursor" in html
     assert "videoTimeAt" in html
     assert "localTimeAt" in html
@@ -568,9 +580,56 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "offsetSeconds" not in html
     assert "__EMBED_AUTO_HEIGHT_JS__" not in html
     assert "__BEHAVIOR_" not in html
+    copied_static = tmp_path / "media" / "behavior-viewer" / static_path.name
+    assert copied_static.read_bytes() == static_path.read_bytes()
 
-    write_behavior_viewer_html(viewer_path)
+    write_behavior_viewer_html(viewer_path, static_output=static_path)
     assert viewer_path.read_text(encoding="utf-8") == html
+
+
+def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
+    provenance = json.loads(
+        BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    assert provenance["version"] == 1
+    assert provenance["behavior_excerpts_sha256"] == hashlib.sha256(
+        BEHAVIOR_EXCERPTS_PATH.read_bytes()
+    ).hexdigest()
+    assert provenance["local_time_seconds"] == 8.0
+    assert len(provenance["frames"]) == 10
+    assert {
+        modality: sum(record["modality"] == modality for record in provenance["frames"])
+        for modality in ("neuropixels", "mesoscope", "slap2")
+    } == {"neuropixels": 3, "mesoscope": 4, "slap2": 3}
+    for record in provenance["frames"]:
+        frame_path = BEHAVIOR_STATIC_FRAME_DIR / record["asset_path"]
+        assert hashlib.sha256(frame_path.read_bytes()).hexdigest() == record[
+            "output_sha256"
+        ]
+        assert record["source_etag"]
+        assert record["source_content_length"] > 0
+        assert record["decoded_video_time_seconds"] >= record[
+            "target_video_time_seconds"
+        ]
+        contrast = record["display_contrast"]
+        assert contrast["method"] == "luminance percentile stretch with adaptive gamma"
+        assert contrast["low_percentile"] == 1.0
+        assert contrast["high_percentile"] == 99.0
+        assert contrast["target_median"] == 0.35
+        assert 0 <= contrast["low_value"] < contrast["high_value"] <= 255
+        assert 0.35 <= contrast["gamma"] <= 1.0
+
+    svg_path = write_behavior_static_svg(tmp_path / "synchronized-behavior.svg")
+    svg = svg_path.read_text(encoding="utf-8")
+    assert 'width="1800" height="900"' in svg
+    assert svg.count("data:image/jpeg;base64,") == 10
+    assert svg.count('class="behavior-camera-card" data-modality="neuropixels"') == 3
+    assert svg.count('class="behavior-camera-card" data-modality="mesoscope"') == 4
+    assert svg.count('class="behavior-camera-card" data-modality="slap2"') == 3
+    assert "event (5 s)" in svg
+    assert "camera still (8 s)" in svg
+    assert "Running speed (cm/s)" in svg
+    assert "Wheel encoder velocity (counts/s)" in svg
 
 
 def test_neural_excerpts_are_source_backed_and_aligned() -> None:
@@ -729,7 +788,7 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert 'data-view="interactive"' in html
     assert 'data-view="static"' in html
     assert 'id="static-view"' in html
-    assert "data:image/svg+xml;base64," in html
+    assert "media/neural-viewer/raw-neural-recordings.svg" in html
     assert "selectView" in html
     assert "Excerpt time (s)" in html
     assert "Excerpt time (ms)" in html
@@ -766,6 +825,7 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "__EMBED_AUTO_HEIGHT_JS__" not in html
     copied_media = tmp_path / "media" / "neural-viewer"
     assert len(list(copied_media.glob("*.webp"))) == 12
+    assert (copied_media / static_path.name).read_bytes() == static_path.read_bytes()
 
     write_neural_viewer_html(viewer_path, static_output=static_path)
     assert viewer_path.read_text(encoding="utf-8") == html

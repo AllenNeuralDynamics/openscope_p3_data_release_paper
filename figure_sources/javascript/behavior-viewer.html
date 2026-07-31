@@ -11,17 +11,23 @@ __BEHAVIOR_CSS__
 </head>
 <body>
   <main class="viewer" id="behavior-viewer">
-    <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
+    <div class="view-switch" role="group" aria-label="Interactive or static view">
+      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
+    </div>
 
-    <header class="session-header">
+    <div id="interactive-view">
+      <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
+
+      <header class="session-header">
       <div class="session-identity">
         <p class="context-label" id="context-label"></p>
         <h1 id="session-title"></h1>
       </div>
       <div class="source-links" id="source-links" aria-label="Data sources"></div>
-    </header>
+      </header>
 
-    <section class="media-grid" aria-label="Synchronized recording excerpt">
+      <section class="media-grid" aria-label="Synchronized recording excerpt">
       <div class="camera-panel">
         <div class="camera-tabs" id="camera-selector" aria-label="Behavior camera"></div>
         <div class="video-stage">
@@ -54,17 +60,17 @@ __BEHAVIOR_CSS__
           <div><dt>Temporal freq.</dt><dd id="temporal-frequency">-</dd></div>
         </dl>
       </aside>
-    </section>
+      </section>
 
-    <section class="transport" aria-label="Playback controls">
+      <section class="transport" aria-label="Playback controls">
       <button id="play-toggle" type="button" aria-label="Play synchronized excerpt" title="Play">
         <span id="play-icon" aria-hidden="true">&#9654;</span>
       </button>
       <input id="timeline" type="range" min="0" max="16" step="0.01" value="0" aria-label="Excerpt time">
       <time id="playback-time">00:00.0 / 00:16.0</time>
-    </section>
+      </section>
 
-    <section class="trace-panel" aria-labelledby="trace-heading">
+      <section class="trace-panel" aria-labelledby="trace-heading">
       <div class="panel-heading trace-heading">
         <div>
           <h2 id="trace-heading">Running speed</h2>
@@ -76,6 +82,13 @@ __BEHAVIOR_CSS__
       <div class="event-key">
         <span class="event-line" aria-hidden="true"></span>
         <span id="event-label"></span>
+      </div>
+      </section>
+    </div>
+
+    <section class="static-view" id="static-view" aria-label="Static synchronized behavior overview" hidden>
+      <div class="static-shell">
+        <img src="__BEHAVIOR_STATIC_IMAGE__" alt="Static rows showing all synchronized camera views and running traces for Neuropixels, mesoscope, and SLAP2 sessions.">
       </div>
     </section>
   </main>
