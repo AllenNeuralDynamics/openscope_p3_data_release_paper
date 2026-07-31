@@ -325,7 +325,9 @@ def test_imported_data_tables_have_body_cells() -> None:
 
     assert manuscript.count("interactive/data-explorer.html") == 1
     assert ":placeholder: ./images/figures/generated/session-inventory.svg" in manuscript
-    assert "Toggle to Static to compare the worksheet summaries" in manuscript
+    assert ":label: fig-recording-session-inventory" in manuscript
+    assert "Recording-session inventory and quality-control summary" in manuscript
+    assert "**A,** Neuropixels uses 62 worksheet rows" in manuscript
     assert '<div class="publication-data-source" hidden aria-hidden="true">' in manuscript
     assert "View grouped static summary tables" not in manuscript
 
@@ -337,7 +339,7 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "**A,** Animals progressed from surgery" in manuscript
     assert "**D,** Context panels summarize" not in manuscript
     assert "Rows summarize Neuropixels, mesoscope two-photon" in manuscript
-    assert "Interactive record-level inventory of 39 mice and 164 recording sessions" in manuscript
+    assert "searchable, filterable tables for 39 mice and 164" in manuscript
     assert "./interactive/neural-viewer.html" in manuscript
     assert ":label: fig-aligned-neural-signals" in manuscript
     assert "Representative event-aligned raw-data views" in manuscript
@@ -352,7 +354,8 @@ def test_figure_captions_and_interactive_placement() -> None:
         ":label: fig-interactive-experimental-design\n:enumerated: false"
         not in manuscript
     )
-    assert ":label: table-data-explorer\n:enumerated: false" in manuscript
+    assert ":label: fig-recording-session-inventory\n:width: 100%" in manuscript
+    assert ":label: fig-recording-session-inventory\n:enumerated: false" not in manuscript
     assert (
         manuscript.index("# Data validation")
         < manuscript.index("## Raw data across recording modalities")
@@ -362,9 +365,9 @@ def test_figure_captions_and_interactive_placement() -> None:
         < manuscript.index("## Receptive field analysis across modalities")
         < manuscript.index("fig-basic-stimuli-plan")
     )
-    assert "Figure 6 and the modality subsections below" in manuscript
-    assert "This analysis and Figure 7 are planning placeholders" in manuscript
-    assert "Figure 9 are planning placeholders" in manuscript
+    assert "Figure 7 and the modality subsections below" in manuscript
+    assert "This analysis and Figure 8 are planning placeholders" in manuscript
+    assert "Figure 10 are planning placeholders" in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert "Event-centered excerpts from real Neuropixels" in manuscript
     assert "figure-06-behavior-tracking-plan.png" not in manuscript

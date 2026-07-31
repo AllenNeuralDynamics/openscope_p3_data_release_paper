@@ -274,17 +274,25 @@ STIMULUS_PROVENANCE_BLOCK = "\n".join(
 )
 
 DATA_EXPLORER_BLOCK = """:::{iframe} ./interactive/data-explorer.html
-:label: table-data-explorer
+:label: fig-recording-session-inventory
 :width: 100%
-:title: Interactive explorer for experimental animals and recording sessions
+:title: Recording-session inventory and quality control across modalities
+:placeholder: ./images/figures/generated/session-inventory.svg
 
-Interactive record-level inventory of 39 mice and 164 recording sessions. The
-Animals tab reports one row per mouse with modality, sex, quality-control status,
-and expandable genotype, viral, surgical, and study-inclusion metadata. The
-Sessions tab reports one row per session with its mouse, acquisition date,
-recording modality, and predictive context. Search and filters update both the
-visible-row count and downloadable CSV, allowing the displayed subset to be
-exported without collapsing individual records into manuscript summary groups.
+Recording-session inventory and quality-control summary across modalities. The
+**Interactive** view provides searchable, filterable tables for 39 mice and 164
+manuscript session records, with expandable animal metadata and CSV export. The
+**Static** view summarizes the complete worksheet inputs used by the supplied
+modality plots. **A,** Neuropixels uses 62 worksheet rows to populate four
+canonical context slots for each of 16 mice; red hatching denotes a missing or
+failed session, and a star denotes one failed probe. **B,** Mesoscope shows all
+92 chronological worksheet rows from 10 mice; red hatching denotes a failed
+session. **C,** SLAP2 shows the 28 P3 worksheet rows from 8 mice; colored borders
+and hatching denote partially failed motion correction, stress, sleep, or an
+acquisition that stopped halfway. Across panels, indigo, teal, brown, and gold
+denote sensorimotor, standard oddball, sequence, and duration sessions,
+respectively. Repeated and aborted worksheet rows are retained in the Static
+view, so its rows do not map one-to-one to the 164-record Interactive inventory.
 :::"""
 
 OTHER_STUDIES_BLOCK = """:::{iframe} ./interactive/literature-comparison.html
@@ -843,6 +851,13 @@ def normalize_known_export_artifacts(markdown: str) -> str:
         "SUPP figures": "## Supplementary figures",
         "shared below.Four predictive contexts": "shared below.\n\n**Four predictive contexts**",
         " (see **Figure 11**)": "",
+        "Figure 6 and the modality subsections below": (
+            "Figure 7 and the modality subsections below"
+        ),
+        "This analysis and Figure 7 are planning placeholders": (
+            "This analysis and Figure 8 are planning placeholders"
+        ),
+        "Figure 9 are planning placeholders": "Figure 10 are planning placeholders",
         "\nDescription of the multi-modal animal experimentation pipelines\n": "\n",
         "\n## \n": "\n",
         "\n\\\n=\n": "\n",

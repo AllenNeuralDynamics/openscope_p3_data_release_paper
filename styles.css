@@ -236,7 +236,7 @@ article table.table-laser-power td:first-child {
   overflow-wrap: anywhere;
 }
 
-#table-data-explorer .relative.inline-block {
+#fig-recording-session-inventory .relative.inline-block {
   height: 650px;
   padding-bottom: 0 !important;
 }
@@ -320,7 +320,7 @@ article table.table-laser-power td:first-child {
     overflow-x: clip;
   }
 
-  #table-data-explorer .relative.inline-block {
+  #fig-recording-session-inventory .relative.inline-block {
     height: 830px;
   }
 
