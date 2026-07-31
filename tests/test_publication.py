@@ -382,6 +382,9 @@ def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:
     assert "#fig-interactive-experimental-design .relative.inline-block" in stylesheet
     assert "#fig-supp-neuropixels-unit-yield" in stylesheet
     assert "max-width: 660px" in stylesheet
+    assert "grid-template-columns: minmax(0, 660px) minmax(0, 1fr)" in stylesheet
+    assert "@media (min-width: 1280px)" in stylesheet
+    assert "@media (max-width: 1100px)" not in stylesheet
     assert "article > figure.table-hover-source" in stylesheet
     assert ".hover-card-content:has(.table-hover-source) .hover-document" in stylesheet
     assert "max-height: min(460px, calc(100vh - 2rem))" in stylesheet

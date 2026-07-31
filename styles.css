@@ -3,6 +3,31 @@
   padding-bottom: 0 !important;
 }
 
+#fig-interactive-experimental-design,
+#fig-supp-neuropixels-unit-yield {
+  width: 100%;
+  display: block;
+  justify-self: center;
+}
+
+#fig-interactive-experimental-design {
+  max-width: 760px;
+}
+
+#fig-supp-neuropixels-unit-yield {
+  max-width: 660px;
+}
+
+#fig-interactive-experimental-design > div,
+#fig-supp-neuropixels-unit-yield > div {
+  min-width: 0;
+}
+
+#fig-interactive-experimental-design > figcaption,
+#fig-supp-neuropixels-unit-yield > figcaption {
+  margin-top: 0.75rem;
+}
+
 .manuscript-wip-inline {
   padding: 0.08rem 0.24rem;
   border-bottom: 2px solid #b45309;
@@ -238,12 +263,6 @@ article table.table-laser-power td:first-child {
   padding-bottom: 0 !important;
 }
 
-#fig-supp-neuropixels-unit-yield {
-  width: 100%;
-  max-width: 660px;
-  justify-self: center;
-}
-
 #fig-behavior-tracking .relative.inline-block {
   height: 980px;
   padding-bottom: 0 !important;
@@ -279,6 +298,20 @@ article table.table-laser-power td:first-child {
       [page-end] 1fr
       [screen-inset-end] 0.5rem
       [screen-end];
+  }
+
+  #fig-interactive-experimental-design,
+  #fig-supp-neuropixels-unit-yield {
+    max-width: 984px;
+    display: grid;
+    grid-template-columns: minmax(0, 660px) minmax(0, 1fr);
+    align-items: start;
+    gap: 1.5rem;
+  }
+
+  #fig-interactive-experimental-design > figcaption,
+  #fig-supp-neuropixels-unit-yield > figcaption {
+    margin-top: 0;
   }
 }
 
