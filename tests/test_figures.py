@@ -1131,7 +1131,10 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     svg_path = write_neural_static_svg(tmp_path / "raw-neural-recordings.svg")
     svg = svg_path.read_text(encoding="utf-8")
     assert 'width="1800" height="660"' in svg
-    assert svg.count("data:image/png;base64,") == 16
+    assert svg.count("data:image/png;base64,") == 19
+    assert svg.count('class="platform-heading" data-modality=') == 3
+    assert svg.count('class="platform-logo"') == 3
+    assert svg.count('y="1" width="96" height="96"') == 3
     assert svg.count('class="raw-image-card" data-modality="neuropixels"') == 6
     assert svg.count('class="raw-image-card" data-modality="mesoscope"') == 8
     assert svg.count('class="raw-image-card" data-modality="slap2"') == 2

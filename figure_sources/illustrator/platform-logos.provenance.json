@@ -1,0 +1,33 @@
+{
+  "assets": {
+    "mesoscope": {
+      "height": 367,
+      "rendered_path": "figure_sources/media/platform-logos/mesoscope.png",
+      "rendered_sha256": "083ef7972d131a4714382fa7c268edb792abbe37aaaaa6cc5167a545e73d8995",
+      "source_path": "figure_sources/illustrator/mesoscope_logo.ai",
+      "source_sha256": "cd42dd3509bf2579fa97257cc013334032d100d69b2b1642ff3e370223f0fd15",
+      "width": 367
+    },
+    "neuropixels": {
+      "height": 367,
+      "rendered_path": "figure_sources/media/platform-logos/neuropixels.png",
+      "rendered_sha256": "4ba3f550219d5d193d269ee95daeb992aa1423fe7bf1bdda59952b1ed29f69c3",
+      "source_path": "figure_sources/illustrator/neuropixel_logo.ai",
+      "source_sha256": "463f124a77caa6750e58009e7961196453d8c49e4565fdd35f378d3f459b167b",
+      "width": 367
+    },
+    "slap2": {
+      "height": 367,
+      "rendered_path": "figure_sources/media/platform-logos/slap2.png",
+      "rendered_sha256": "efb2549af0ee08cc1d273fbff45a7a72372557c2d10b8bedd6c27971e774d8e4",
+      "source_path": "figure_sources/illustrator/slap2_logo.ai",
+      "source_sha256": "0214f5e68e10036fc2e2d7553cd47d5d87f6066257ed0ef9f476b44c785764c8",
+      "width": 367
+    }
+  },
+  "generated_at": "2026-08-01",
+  "method": "Adobe Illustrator PNG24 export at 400% with transparency; crop to the shared 359 x 359 visible frame, add 4 px transparent padding, and clip SLAP2 alpha to the shared rounded-frame mask",
+  "postprocessor": "Pillow 12.3.0",
+  "renderer": "Adobe Illustrator 30.3.0",
+  "version": 1
+}

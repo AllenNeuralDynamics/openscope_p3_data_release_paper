@@ -101,12 +101,41 @@ UNIT_YIELD_STATIC_OUTPUT = (
 )
 UNIT_YIELD_INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "unit-yield.html"
 MEDIA_DIR = REPO_ROOT / "figure_sources" / "media"
+PLATFORM_LOGO_PROVENANCE_PATH = (
+    REPO_ROOT / "figure_sources" / "illustrator" / "platform-logos.provenance.json"
+)
 BEHAVIOR_STATIC_FRAME_DIR = MEDIA_DIR / "behavior-viewer-static"
 NEURAL_MEDIA_DIR = MEDIA_DIR / "neural-viewer"
 NEURAL_STATIC_FRAME_DIR = MEDIA_DIR / "neural-viewer-static"
 ZEBRA_MOVIE_SOURCE = MEDIA_DIR / "zebra-stimulus-excerpt.m4v"
 ZEBRA_POSTER_SOURCE = MEDIA_DIR / "zebra-stimulus-poster.png"
 ZEBRA_PROVENANCE_PATH = MEDIA_DIR / "zebra-stimulus-excerpt.provenance.json"
+
+
+def load_platform_logos() -> dict[str, Path]:
+    provenance = json.loads(PLATFORM_LOGO_PROVENANCE_PATH.read_text(encoding="utf-8"))
+    assets = provenance.get("assets", {})
+    expected_modalities = {"neuropixels", "mesoscope", "slap2"}
+    if provenance.get("version") != 1 or set(assets) != expected_modalities:
+        raise RuntimeError("Platform logo provenance is not supported.")
+
+    paths = {}
+    for modality, record in assets.items():
+        source_path = REPO_ROOT / record["source_path"]
+        rendered_path = REPO_ROOT / record["rendered_path"]
+        rendered = rendered_path.read_bytes()
+        dimensions = list(struct.unpack(">II", rendered[16:24]))
+        if (
+            hashlib.sha256(source_path.read_bytes()).hexdigest()
+            != record["source_sha256"]
+            or hashlib.sha256(rendered).hexdigest() != record["rendered_sha256"]
+            or not rendered.startswith(b"\x89PNG\r\n\x1a\n")
+            or dimensions != [record["width"], record["height"]]
+            or rendered[25] != 6
+        ):
+            raise RuntimeError(f"Platform logo asset is invalid: {modality}")
+        paths[modality] = rendered_path
+    return paths
 
 
 @dataclass(frozen=True)
@@ -1601,6 +1630,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
     payload = load_neural_excerpts()
     sessions = {session["id"]: session for session in payload["sessions"]}
     frame_paths = load_neural_static_frames(payload)
+    logo_paths = load_platform_logos()
     width = 1800
     height = 660
     panel_lefts = {"neuropixels": 35, "mesoscope": 645, "slap2": 1235}
@@ -1623,14 +1653,25 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         ("B", "Mesoscope", "mesoscope"),
         ("C", "SLAP2", "slap2"),
     ):
+        left = panel_lefts[modality]
+        logo_size = 96
+        logo_data = base64.b64encode(logo_paths[modality].read_bytes()).decode()
         svg.extend(
             [
-                f'<text x="{panel_lefts[modality]}" y="36" '
+                f'<g class="platform-heading" data-modality="{modality}">',
+                f'<text x="{left}" y="36" '
                 'font-family="Source Sans 3, sans-serif" font-size="24" '
-                f'font-weight="700" fill="#293133">{letter}  {label}</text>',
-                f'<text class="modality-scale" x="{panel_lefts[modality]}" y="62" '
+                f'font-weight="700" fill="#293133">{letter}</text>',
+                f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
+                f'x="{left + 28}" y="1" width="{logo_size}" height="{logo_size}" '
+                'preserveAspectRatio="xMidYMid meet"/>',
+                f'<text x="{left + 136}" y="35" '
+                'font-family="Source Sans 3, sans-serif" font-size="24" '
+                f'font-weight="700" fill="#293133">{label}</text>',
+                f'<text class="modality-scale" x="{left + 136}" y="61" '
                 'font-family="Source Sans 3, sans-serif" font-size="15" '
                 f'font-weight="600" fill="#59615F">{escape(summaries[modality])}</text>',
+                "</g>",
             ]
         )
 
@@ -1641,7 +1682,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         append_neuropixels_raw_card(
             svg,
             x=35 + index * 8,
-            y=82 + index * 62,
+            y=102 + index * 62,
             option=neuropixels_options[option_id],
             show_axis=index == len(NEURAL_STATIC_SELECTIONS["neuropixels"]) - 1,
         )
@@ -1655,7 +1696,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
     )
     for stack_label, left, option_ids in mesoscope_stacks:
         svg.append(
-            f'<text x="{left}" y="91" font-family="Source Sans 3, sans-serif" '
+            f'<text x="{left}" y="111" font-family="Source Sans 3, sans-serif" '
             f'font-size="14" font-weight="700" fill="#303536">{stack_label}</text>'
         )
         for index, option_id in enumerate(option_ids):
@@ -1663,7 +1704,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
             append_microscopy_raw_card(
                 svg,
                 x=left + index * 8,
-                y=102 + index * 45,
+                y=122 + index * 45,
                 card_width=255,
                 option=option,
                 path=frame_paths[("mesoscope", option_id)],
@@ -1676,7 +1717,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         option["id"]: option for option in sessions["slap2"]["options"]
     }
     svg.append(
-        '<text x="1240" y="91" font-family="Source Sans 3, sans-serif" '
+        '<text x="1240" y="111" font-family="Source Sans 3, sans-serif" '
         'font-size="14" font-weight="700" fill="#303536">'
         'iGluSnFR4f (green) + RCaMP3 (red)</text>'
     )
@@ -1689,7 +1730,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         append_microscopy_raw_card(
             svg,
             x=1240 + index * 10,
-            y=102 + index * 205,
+            y=122 + index * 205,
             card_width=500,
             option=option,
             path=frame_paths[("slap2", composite_id)],
