@@ -657,27 +657,6 @@ def load_running_statistics(path: Path = RUNNING_STATISTICS_PATH) -> dict:
     return payload
 
 
-def compact_running_statistics(payload: dict) -> dict:
-    return {
-        "contexts": payload["contexts"],
-        "mouseContext": [
-            {
-                "context": record["context"],
-                "contextMeanForwardSpeedCmS": record[
-                    "context_mean_forward_speed_cm_s"
-                ],
-                "controlMeanForwardSpeedCmS": record[
-                    "control_mean_forward_speed_cm_s"
-                ],
-                "modality": record["modality"],
-                "mouseId": record["mouse_id"],
-                "sessionCount": record["session_count"],
-            }
-            for record in payload["mouse_context"]
-        ],
-    }
-
-
 def behavior_video_time_at(time_map: list[list[float]], local_time: float) -> float:
     if local_time <= time_map[0][0]:
         return time_map[0][1]
@@ -1157,9 +1136,6 @@ def write_behavior_viewer_html(
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_behavior_excerpts()
-    payload["runningStatistics"] = compact_running_statistics(
-        load_running_statistics()
-    )
     write_behavior_static_svg(static_output)
     template = (JAVASCRIPT_DIR / "behavior-viewer.html").read_text(encoding="utf-8")
     stylesheet = (JAVASCRIPT_DIR / "behavior-viewer.css").read_text(encoding="utf-8")

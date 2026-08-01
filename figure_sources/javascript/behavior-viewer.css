@@ -423,36 +423,6 @@ html.is-embedded .viewer { min-height: 0; }
   background: #b44235;
 }
 
-.running-summary-panel {
-  padding: 12px 12px 8px;
-  border-top: 1px solid var(--line);
-}
-
-.running-summary-heading { min-height: 36px; }
-.running-summary-heading > div { display: flex; align-items: baseline; gap: 7px; }
-.running-summary-heading span,
-.running-summary-method {
-  color: var(--muted);
-  font-size: 0.66rem;
-}
-
-.running-summary-scroll {
-  width: 100%;
-  overflow-x: auto;
-}
-
-#running-summary-canvas {
-  width: 100%;
-  min-width: 780px;
-  height: auto;
-  display: block;
-}
-
-.running-summary-method {
-  margin: 2px 0 0;
-  text-align: center;
-}
-
 @media (max-width: 560px) {
   .modality-tabs { padding: 0 7px; }
   .modality-tab { min-width: 0; flex: 1; padding: 0 6px; font-size: 0.75rem; }
@@ -465,5 +435,4 @@ html.is-embedded .viewer { min-height: 0; }
   .transport { grid-template-columns: 34px minmax(0, 1fr); }
   #playback-time { grid-column: 1 / -1; min-width: 0; text-align: center; }
   #trace-canvas { height: 130px; }
-  .running-summary-heading { align-items: flex-start; flex-direction: column; }
 }

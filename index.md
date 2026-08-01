@@ -1118,8 +1118,7 @@ Neuropixels, mesoscope, and SLAP2, compared on one shared cm/s axis. Each point 
 one mouse after averaging its available complete sessions, and each bar is the
 mean across mice for its modality; legend values report included mice. The
 **Interactive** view provides synchronized camera playback, running signals,
-reconstructed stimulus state, and paired control-versus-context running
-summaries for the selected modality. Metrics use
+and reconstructed stimulus state for the selected modality. Metrics use
 50 ms bins, and negative velocity is set to zero before summarization. SLAP2 encoder values
 are converted to cm/s using the pinned
 acquisition convention of 8192 counts/revolution, an 8.255 cm disc radius, and a

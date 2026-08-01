@@ -575,10 +575,10 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "media/behavior-viewer/synchronized-behavior.svg" in html
     assert "selectView" in html
     assert "Wheel recording trace with synchronized playback cursor" in html
-    assert 'id="running-summary-canvas"' in html
-    assert "runningStatistics" in html
-    assert "drawRunningSummary" in html
-    assert "Mean forward speed: control vs context block (cm/s)" in html
+    assert 'id="running-summary-canvas"' not in html
+    assert "runningStatistics" not in html
+    assert "drawRunningSummary" not in html
+    assert "Control versus context-block running" not in html
     assert "videoTimeAt" in html
     assert "localTimeAt" in html
     assert 'document.querySelector("body > main")' in html

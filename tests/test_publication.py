@@ -396,6 +396,8 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "compared on one shared cm/s axis" in manuscript
     assert "each bar is the\nmean across mice" in manuscript
     assert "legend values report included mice" in manuscript
+    assert "and reconstructed stimulus state for the selected modality" in manuscript
+    assert "paired control-versus-context running" not in manuscript
     assert "8192 counts/revolution, an 8.255 cm disc radius" in manuscript
     assert "1st–99th luminance percentiles" in manuscript
     assert "maps median luminance to 35%" in manuscript
