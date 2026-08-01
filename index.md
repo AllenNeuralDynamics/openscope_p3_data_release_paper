@@ -164,11 +164,7 @@ All four session types shared an identical set of control blocks presented befor
 
 8.  Receptive field mapping block (5 min): A small drifting grating patch (20° diameter, 0.08 cpd, 4 Hz temporal frequency, 80% contrast) was presented at 81 positions on a 9 × 9 grid spanning ±40° of visual space in 10° steps. Three orientations (0°, 45°, 90°) were tested at each position with 5 repeats, using 250 ms presentations. This block enables estimation of spatial receptive fields for individual neurons.
 
-# Methods
-
-## Experimental animals
-
-All animal procedures were approved by the Institutional Animal Care and Use Committee (IACUC) at the Allen Institute under protocol 2427 and conducted in accordance with NIH guidelines. Following surgery (see below), all mice were single-housed and maintained on a reverse 12-hour light cycle in a shared facility with room temperatures between 68º and 72ºF and humidity between 30 and 70%. All experiments were performed during the dark cycle. All mice in these experiments were given ad libitum access to food (regular or doxycycline diets) and water.
+## Multimodal recording hardware
 
 :::{figure} ./images/figures/imported/figure-03-multimodal-pipelines.png
 :label: fig-multimodal-pipelines
@@ -177,6 +173,15 @@ All animal procedures were approved by the Institutional Animal Care and Use Com
 
 Multimodal experimental pipelines. Rows summarize Neuropixels, mesoscope two-photon calcium imaging, and SLAP2 dendritic imaging. Colored blocks indicate the cohort-specific order of predictive contexts across recording days. The central columns show each rig and head-fixed mouse platform. Brain-targeting schematics show six acute Neuropixels trajectories spanning cortical and subcortical structures, eight chronic mesoscope planes across VISp and VISlm, and dual-plane SLAP2 sampling of proximal and apical dendritic compartments in a layer II/III pyramidal neuron.
 :::
+
+# Methods
+
+::::{dropdown} Show complete Methods
+:class: manuscript-methods-dropdown
+
+## Experimental animals
+
+All animal procedures were approved by the Institutional Animal Care and Use Committee (IACUC) at the Allen Institute under protocol 2427 and conducted in accordance with NIH guidelines. Following surgery (see below), all mice were single-housed and maintained on a reverse 12-hour light cycle in a shared facility with room temperatures between 68º and 72ºF and humidity between 30 and 70%. All experiments were performed during the dark cycle. All mice in these experiments were given ad libitum access to food (regular or doxycycline diets) and water.
 
 To systematically collect physiological data, we used standardized data collection and processing pipelines that were previously introduced [@devries2020survey; @groblewski2020headfixation; @durand2023acute; @bennett2024shield; @siegle2021survey]. The data collection workflow progressed from surgical headpost implantation and craniotomy to retinotopic mapping of cortical areas using intrinsic signal imaging, in vivo recording of neuronal activity using various modalities (Neuropixels, Mesoscope two photon imaging, SLAP2 dendritic two-photon imaging), brain fixation and brain histology (see **Figure 2**). We describe each one of those steps in the dedicated sections below. As part of this workflow, all mice were trained on one of two possible cohorts: A motor cohort and a sequence cohort. Details of each cohort is described in the behavioral training section below. Both behavioral cohorts were recorded with the Neuropixels and Mesoscope recording modality. Only the motor cohort was used for SLAP2 experiments. Each modality (Neuropixels, Mesoscope, SLAP2) was recorded with separate mice as they had different, modality-specific brain implants.
 
@@ -583,6 +588,8 @@ A secondary pipeline, also run on the CodeOcean platform, took the output spike 
 - Aligning the running speed traces to the recorded synchronized timing and packaging it into the NWB, using a capsule called aind-running-speed-nwb ([https://github.com/AllenNeuralDynamics/aind-running-speed-nwb](https://github.com/AllenNeuralDynamics/aind-running-speed-nwb))
 
 - The NWBs were then uploaded to their dandiset using the DANDI command line interface ([https://github.com/dandi/dandi-cli](https://github.com/dandi/dandi-cli))
+
+::::
 
 # Data records
 

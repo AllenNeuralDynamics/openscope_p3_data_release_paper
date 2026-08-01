@@ -1053,6 +1053,58 @@ def replace_behavior_analysis_text(markdown: str) -> str:
     return markdown.replace(draft, BEHAVIOR_ANALYSIS_DESCRIPTION, 1)
 
 
+def relocate_multimodal_pipeline_figure(markdown: str) -> str:
+    methods_heading = "# Methods"
+    figure_label = ":label: fig-multimodal-pipelines"
+    section_heading = "## Multimodal recording hardware"
+    if markdown.count(methods_heading) != 1 or markdown.count(figure_label) != 1:
+        raise RuntimeError("Expected one Methods heading and multimodal pipeline figure.")
+    methods_index = markdown.index(methods_heading)
+    label_index = markdown.index(figure_label)
+    if label_index < methods_index:
+        if markdown.count(section_heading) != 1:
+            raise RuntimeError("Visible multimodal pipeline figure lacks its heading.")
+        return markdown
+    figure_start = markdown.rfind(":::{figure}", methods_index, label_index)
+    figure_end = markdown.find("\n:::", label_index)
+    if figure_start < 0 or figure_end < 0:
+        raise RuntimeError("Multimodal pipeline figure block is malformed.")
+    figure_end += len("\n:::")
+    figure = markdown[figure_start:figure_end]
+    without_figure = (
+        f"{markdown[:figure_start].rstrip()}\n\n{markdown[figure_end:].lstrip()}"
+    )
+    visible_section = f"{section_heading}\n\n{figure}\n\n{methods_heading}"
+    return without_figure.replace(methods_heading, visible_section, 1)
+
+
+def wrap_methods_dropdown(markdown: str) -> str:
+    methods_heading = "# Methods"
+    records_heading = "# Data records"
+    if markdown.count(methods_heading) != 1 or markdown.count(records_heading) != 1:
+        raise RuntimeError("Expected one Methods and one Data records heading.")
+    methods_start = markdown.index(methods_heading) + len(methods_heading)
+    records_start = markdown.index(records_heading)
+    if methods_start >= records_start:
+        raise RuntimeError("Methods must precede Data records.")
+    methods_body = markdown[methods_start:records_start].strip()
+    if methods_body.startswith("::::{dropdown} Show complete Methods"):
+        return markdown
+    wrapped = "\n".join(
+        [
+            methods_heading,
+            "",
+            "::::{dropdown} Show complete Methods",
+            ":class: manuscript-methods-dropdown",
+            "",
+            methods_body,
+            "::::",
+            "",
+        ]
+    )
+    return f"{markdown[: markdown.index(methods_heading)]}{wrapped}{markdown[records_start:]}"
+
+
 def build_index(markdown: str) -> str:
     markdown = replace_images(markdown)
     markdown = normalize_known_export_artifacts(markdown)
@@ -1097,6 +1149,8 @@ def build_index(markdown: str) -> str:
         f"{stimulus_paragraph_end}\n\n{STIMULUS_PROVENANCE_BLOCK}",
         1,
     )
+    markdown = relocate_multimodal_pipeline_figure(markdown)
+    markdown = wrap_methods_dropdown(markdown)
     return f"{FRONTMATTER}\n\n{markdown}"
 
 

@@ -217,6 +217,45 @@ def test_glossary_is_an_expandable_final_section() -> None:
     assert "Mesoscope NWB files" not in glossary
 
 
+def test_methods_are_collapsed_as_one_section() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    hardware_start = manuscript.index("## Multimodal recording hardware")
+    methods_start = manuscript.index("# Methods")
+    records_start = manuscript.index("# Data records")
+    methods = manuscript[methods_start:records_start]
+    hardware = manuscript[hardware_start:methods_start]
+
+    assert hardware_start < methods_start
+    assert ":::{figure} ./images/figures/imported/figure-03-multimodal-pipelines.png" in hardware
+    assert methods.startswith(
+        "# Methods\n\n::::{dropdown} Show complete Methods\n"
+        ":class: manuscript-methods-dropdown\n"
+    )
+    assert methods.rstrip().endswith("::::")
+    assert "## Experimental animals" in methods
+    assert "fig-multimodal-pipelines" not in methods
+    assert "#### Neuropixels Ephys NWB Packaging Pipeline" in methods
+
+    import_script = runpy.run_path(
+        str(REPO_ROOT / "scripts" / "import_google_doc.py")
+    )
+    wrap_methods_dropdown = import_script["wrap_methods_dropdown"]
+    relocate_figure = import_script["relocate_multimodal_pipeline_figure"]
+    source = "# Background\n\n# Methods\n\n## Procedure\n\nText.\n\n# Data records\n"
+    wrapped = wrap_methods_dropdown(source)
+    assert wrapped.count("::::{dropdown} Show complete Methods") == 1
+    assert wrap_methods_dropdown(wrapped) == wrapped
+
+    figure_source = (
+        "# Background\n\n# Methods\n\n"
+        ":::{figure} figure.png\n:label: fig-multimodal-pipelines\n\nCaption.\n:::\n\n"
+        "## Procedure\n\nText.\n\n# Data records\n"
+    )
+    relocated = relocate_figure(figure_source)
+    assert relocated.index("## Multimodal recording hardware") < relocated.index("# Methods")
+    assert relocate_figure(relocated) == relocated
+
+
 def test_supplementary_studies_table_is_complete() -> None:
     data_path = REPO_ROOT / "figure_sources" / "data" / "other-oddball-studies.csv"
     provenance_path = data_path.with_suffix(".provenance.json")
