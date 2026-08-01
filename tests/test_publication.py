@@ -349,7 +349,7 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "overlapping raw-image cards" in manuscript
     assert "**A,** all six Neuropixels probe heatmaps" in manuscript
     assert "eight mesoscope plane stills" in manuscript
-    assert "two SLAP2 plane stacks" in manuscript
+    assert "one enlarged SLAP2 stack" in manuscript
     assert "1st–99.5th max-channel" in manuscript
     assert "shown to introduce the native acquisition formats" in manuscript
     assert "Event-aligned raw data across recording modalities" not in manuscript
@@ -382,7 +382,13 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "Figure 10 are planning placeholders" in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert ":placeholder: ./images/figures/generated/synchronized-behavior.svg" in manuscript
-    assert "**Static** view compares\nall 10 available camera streams" in manuscript
+    assert "**Static** view compares all 10\navailable camera streams" in manuscript
+    assert "same mouse and session in each modality" in manuscript
+    assert "share one time axis" in manuscript
+    assert "using the Figure 2 block colors" in manuscript
+    assert "Panel D follows that same block\norder" in manuscript
+    assert "each bar is the mean across mice" in manuscript
+    assert "8192 counts/revolution, an 8.255 cm disc radius" in manuscript
     assert "1st–99th luminance percentiles" in manuscript
     assert "maps median luminance to 35%" in manuscript
     assert "Event-centered excerpts from real Neuropixels" in manuscript

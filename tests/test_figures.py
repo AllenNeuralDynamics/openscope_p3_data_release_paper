@@ -17,6 +17,7 @@ from openscope_p3_publication.figures import (
     NEURAL_MEDIA_DIR,
     NEURAL_STATIC_FRAME_DIR,
     NEURAL_STATIC_FRAME_PROVENANCE_PATH,
+    RUNNING_STATISTICS_PATH,
     SESSION_RECORDS_PATH,
     SESSION_RECORDS_PROVENANCE_PATH,
     SESSIONS,
@@ -30,6 +31,7 @@ from openscope_p3_publication.figures import (
     load_experimental_session_records,
     load_neural_excerpts,
     load_publication_table_data,
+    load_running_statistics,
     load_shared_stimulus_table_excerpts,
     load_stimulus_table_excerpts,
     load_unit_yield_data,
@@ -492,6 +494,10 @@ def test_behavior_excerpts_are_source_backed_and_synchronized() -> None:
         1070,
         112,
     ]
+    assert {session["traceUnit"] for session in payload["sessions"]} == {"cm/s"}
+    assert {session["traceLabel"] for session in payload["sessions"]} == {
+        "Running speed"
+    }
     for session in payload["sessions"]:
         assert len(session["trace"]) == 321
         assert session["trace"][0][0] == 0.0
@@ -569,6 +575,10 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "media/behavior-viewer/synchronized-behavior.svg" in html
     assert "selectView" in html
     assert "Wheel recording trace with synchronized playback cursor" in html
+    assert 'id="running-summary-canvas"' in html
+    assert "runningStatistics" in html
+    assert "drawRunningSummary" in html
+    assert "Mean forward speed: control vs context block (cm/s)" in html
     assert "videoTimeAt" in html
     assert "localTimeAt" in html
     assert 'document.querySelector("body > main")' in html
@@ -591,9 +601,12 @@ def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
     provenance = json.loads(
         BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
-    assert provenance["version"] == 1
+    assert provenance["version"] == 2
     assert provenance["behavior_excerpts_sha256"] == hashlib.sha256(
         BEHAVIOR_EXCERPTS_PATH.read_bytes()
+    ).hexdigest()
+    assert provenance["running_statistics_sha256"] == hashlib.sha256(
+        RUNNING_STATISTICS_PATH.read_bytes()
     ).hexdigest()
     assert provenance["local_time_seconds"] == 8.0
     assert len(provenance["frames"]) == 10
@@ -608,6 +621,8 @@ def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
         ]
         assert record["source_etag"]
         assert record["source_content_length"] > 0
+        assert record["mouse_id"]
+        assert record["source_session_id"]
         assert record["decoded_video_time_seconds"] >= record[
             "target_video_time_seconds"
         ]
@@ -621,15 +636,209 @@ def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
 
     svg_path = write_behavior_static_svg(tmp_path / "synchronized-behavior.svg")
     svg = svg_path.read_text(encoding="utf-8")
-    assert 'width="1800" height="900"' in svg
+    statistics_payload = load_running_statistics()
+    assert 'width="1800" height="1050"' in svg
     assert svg.count("data:image/jpeg;base64,") == 10
     assert svg.count('class="behavior-camera-card" data-modality="neuropixels"') == 3
     assert svg.count('class="behavior-camera-card" data-modality="mesoscope"') == 4
     assert svg.count('class="behavior-camera-card" data-modality="slap2"') == 3
-    assert "event (5 s)" in svg
-    assert "camera still (8 s)" in svg
-    assert "Running speed (cm/s)" in svg
-    assert "Wheel encoder velocity (counts/s)" in svg
+    assert "camera stills: 8 s in synchronized excerpts" not in svg
+    assert "Full-session running profile" not in svg
+    assert "camera streams" not in svg
+    assert svg.count('class="running-profile"') == 3
+    assert svg.count('class="running-profile-block"') == 24
+    assert svg.count(">0m</text>") == 1
+    assert svg.count(">20m</text>") == 1
+    assert svg.count(">40m</text>") == 1
+    assert svg.count(">60m</text>") == 1
+    for block, color in {
+        "standard": "#D9DFE3",
+        "context": "#3157B7",
+        "standard_repeat": "#C7D0D6",
+        "sequence": "#B5C1C8",
+        "jitter": "#A4B2BA",
+        "open_loop": "#92A3AC",
+        "movie": "#80949E",
+        "rf": "#6F858F",
+    }.items():
+        assert re.search(
+            rf'class="running-profile-block" data-block="{block}"[^>]+fill="{color}"',
+            svg,
+        )
+    assert "Wheel encoder velocity (counts/s)" not in svg
+    assert "Average running speed across blocks" not in svg
+    assert svg.count('class="running-summary-plot" data-shared-y-axis="true"') == 1
+    assert 'class="running-panel-label"' in svg
+    assert svg.count('class="running-block-header"') == 0
+    assert svg.count('class="running-block-region"') == 8
+    assert svg.count("Mean forward speed (cm/s)") == 1
+    axis_title = re.search(r'<text class="running-y-axis-title"[^>]*>', svg)
+    assert axis_title is not None
+    assert "transform=" not in axis_title.group()
+    assert svg.count('class="running-block-mean"') == 24
+    assert svg.count('class="running-block-point"') == len(
+        statistics_payload["mouse_block"]
+    )
+    for modality, color in {
+        "neuropixels": "#4B79C6",
+        "mesoscope": "#14866C",
+        "slap2": "#168EA0",
+    }.items():
+        assert len(
+            re.findall(
+                rf'class="running-block-mean" data-block="[^"]+" '
+                rf'data-modality="{modality}"[^>]+fill="{color}"',
+                svg,
+            )
+        ) == 8
+    profiles = {
+        profile["modality"]: profile
+        for profile in statistics_payload["example_profiles"]
+    }
+    for record in provenance["frames"]:
+        assert record["mouse_id"] == profiles[record["modality"]]["mouse_id"]
+        assert record["source_session_id"] == profiles[record["modality"]][
+            "source_session_id"
+        ]
+
+
+def test_running_statistics_are_source_backed_and_mouse_aggregated() -> None:
+    payload = load_running_statistics()
+
+    assert payload["version"] == 2
+    assert payload["sample_rate_hz"] == 20
+    assert payload["threshold_cm_s"] == 1.0
+    assert payload["source_session_records"]["sha256"] == hashlib.sha256(
+        SESSION_RECORDS_PATH.read_bytes()
+    ).hexdigest()
+    assert [context["id"] for context in payload["contexts"]] == [
+        "sensorimotor",
+        "standard",
+        "sequence",
+        "duration",
+    ]
+    calibration = payload["calibration"]["slap2"]
+    assert calibration["counts_per_revolution"] == 8192
+    assert calibration["wheel_radius_cm"] == 8.255
+    assert calibration["subject_position"] == pytest.approx(2 / 3)
+    assert "37ce6471824c5f76b18820e429c7d8fd69352f0a" in calibration["source_url"]
+
+    sessions = payload["sessions"]
+    summaries = payload["mouse_context"]
+    mouse_blocks = payload["mouse_block"]
+    coverage = payload["coverage"]
+    profiles = payload["example_profiles"]
+    expected_blocks = [
+        "standard",
+        "context",
+        "standard_repeat",
+        "sequence",
+        "jitter",
+        "open_loop",
+        "movie",
+        "rf",
+    ]
+    assert {record["modality"] for record in sessions} == {
+        "neuropixels",
+        "mesoscope",
+        "slap2",
+    }
+    assert len(coverage) == 12
+    assert sum(record["included_sessions"] for record in coverage) == len(sessions)
+    assert sum(record["included_mice"] for record in coverage) == len(summaries)
+    assert len(mouse_blocks) % 8 == 0
+    assert {(record["modality"], record["block"]) for record in mouse_blocks} == {
+        (modality, block)
+        for modality in ("neuropixels", "mesoscope", "slap2")
+        for block in expected_blocks
+    }
+    assert [record["modality"] for record in profiles] == [
+        "neuropixels",
+        "mesoscope",
+        "slap2",
+    ]
+    assert all(profile["bin_seconds"] == 5 for profile in profiles)
+    assert all(4200 < profile["duration_seconds"] < 4400 for profile in profiles)
+    assert all(len(profile["points"]) > 800 for profile in profiles)
+    assert all(
+        [block["id"] for block in profile["blocks"]] == expected_blocks
+        for profile in profiles
+    )
+    assert all(record["duration_seconds"] > 60 * 60 for record in sessions)
+    assert all(0 <= record["running_fraction"] <= 1 for record in sessions)
+    assert all(0 <= record["mean_forward_speed_cm_s"] < 100 for record in sessions)
+    assert all(
+        [block["id"] for block in record["blocks"]] == expected_blocks
+        for record in sessions
+    )
+    assert all(
+        0 <= record["control_mean_forward_speed_cm_s"] < 100
+        and 0 <= record["context_mean_forward_speed_cm_s"] < 100
+        for record in sessions
+    )
+
+    for session in sessions:
+        source = session["source"]
+        if session["modality"] == "slap2":
+            assert source["encoder"]["etag"]
+            assert len(source["encoder"]["sha256"]) == 64
+            assert source["device"]["etag"]
+            assert source["pulse_do0"]["etag"]
+            assert source["pulse_do2"]["etag"]
+            assert source["stimulus"]["etag"]
+        else:
+            assert source["asset_id"]
+            assert source["size"] > 0
+            assert source["download_url"].endswith("/download/")
+
+    for summary in summaries:
+        matching = [
+            session
+            for session in sessions
+            if session["modality"] == summary["modality"]
+            and session["mouse_id"] == summary["mouse_id"]
+            and session["context"] == summary["context"]
+        ]
+        assert len(matching) == summary["session_count"]
+        assert sorted(record["source_session_id"] for record in matching) == summary[
+            "source_session_ids"
+        ]
+        assert summary["mean_forward_speed_cm_s"] == pytest.approx(
+            sum(record["mean_forward_speed_cm_s"] for record in matching)
+            / len(matching),
+            abs=1e-4,
+        )
+        assert summary["running_fraction"] == pytest.approx(
+            sum(record["running_fraction"] for record in matching) / len(matching),
+            abs=1e-6,
+        )
+        assert summary["control_mean_forward_speed_cm_s"] == pytest.approx(
+            sum(record["control_mean_forward_speed_cm_s"] for record in matching)
+            / len(matching),
+            abs=1e-4,
+        )
+        assert summary["context_mean_forward_speed_cm_s"] == pytest.approx(
+            sum(record["context_mean_forward_speed_cm_s"] for record in matching)
+            / len(matching),
+            abs=1e-4,
+        )
+
+    for summary in mouse_blocks:
+        matching = [
+            session
+            for session in sessions
+            if session["modality"] == summary["modality"]
+            and session["mouse_id"] == summary["mouse_id"]
+        ]
+        assert len(matching) == summary["session_count"]
+        assert summary["mean_forward_speed_cm_s"] == pytest.approx(
+            sum(
+                record["block_mean_forward_speed_cm_s"][summary["block"]]
+                for record in matching
+            )
+            / len(matching),
+            abs=1e-4,
+        )
 
 
 def test_neural_excerpts_are_source_backed_and_aligned() -> None:
@@ -876,12 +1085,16 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert svg.count('class="raw-image-card" data-modality="mesoscope"') == 8
     assert svg.count('class="raw-image-card" data-modality="slap2"') == 4
     assert svg.count('class="raw-card-image"') == 18
+    assert svg.count('data-modality="mesoscope" data-option-id=') == 8
+    assert svg.count('data-card-width="255"') == 8
+    assert svg.count('data-modality="slap2" data-option-id=') == 4
+    assert svg.count('data-card-width="500"') == 4
     assert "Probe A" in svg
     assert "Probe F" in svg
     assert "VISp · 4 planes" in svg
     assert "VISl · 4 planes" in svg
-    assert "DMD1 · 91 µm below pia" in svg
-    assert "DMD2 · 123.75 µm below pia" in svg
+    assert "DMD1 · 91 µm · iGluSnFR4f" in svg
+    assert "DMD2 · 123.75 µm · RCaMP3" in svg
     assert "6 probe recordings · all raw excerpts stacked" in svg
     assert "8 planes · 4 VISp + 4 VISl · all raw frames stacked" in svg
     assert "2 VISp planes · 2 indicator images per plane" in svg

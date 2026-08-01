@@ -84,11 +84,25 @@ __BEHAVIOR_CSS__
         <span id="event-label"></span>
       </div>
       </section>
+
+      <section class="running-summary-panel" aria-labelledby="running-summary-heading">
+        <div class="panel-heading running-summary-heading">
+          <div>
+            <h2 id="running-summary-heading">Control versus context-block running</h2>
+            <span id="running-summary-modality"></span>
+          </div>
+          <span>paired mouse values · median bars</span>
+        </div>
+        <div class="running-summary-scroll">
+          <canvas id="running-summary-canvas" width="1200" height="360" role="img" aria-label="Mouse-level running statistics by session context"></canvas>
+        </div>
+        <p class="running-summary-method">Control pools standard, repeat, sequence, jitter, and open-loop blocks; movie and RF are excluded.</p>
+      </section>
     </div>
 
     <section class="static-view" id="static-view" aria-label="Static synchronized behavior overview" hidden>
       <div class="static-shell">
-        <img src="__BEHAVIOR_STATIC_IMAGE__" alt="Static rows showing all synchronized camera views and running traces for Neuropixels, mesoscope, and SLAP2 sessions.">
+        <img src="__BEHAVIOR_STATIC_IMAGE__" alt="Static rows showing camera views and full-session block-annotated running profiles from the same mice, followed by one shared-axis comparison of mouse-level mean running speed across modalities and protocol blocks.">
       </div>
     </section>
   </main>

@@ -972,9 +972,10 @@ supports source selection, contrast adjustment, and microscopy playback. The
 without playback controls:
 **A,** all six Neuropixels probe heatmaps stacked with CCF anatomy; **B,** all
 eight mesoscope plane stills in two four-card stacks spanning VISp and VISl; and
-**C,** all four detector views in two SLAP2 plane stacks in VISp (one depth per
-DMD), each containing iGluSnFR4f and RCaMP3 cards. Covered cards retain exposed
-labels and raw-image strips to convey the complete acquisition scale. Static
+**C,** all four detector views in one enlarged SLAP2 stack spanning two VISp
+planes (one depth per DMD), each containing iGluSnFR4f and RCaMP3 cards.
+Covered cards retain exposed labels and raw-image strips to convey the complete
+acquisition scale. Static
 microscopy stills are independently stretched to their 1st–99.5th max-channel
 percentiles for display while preserving their pseudocolor hues. Neuropixels views contain
 100 ms of calibrated, unaveraged 30-kHz voltage from 96 regularly spaced
@@ -1100,10 +1101,22 @@ signals.
 
 Event-centered excerpts from real Neuropixels, mesoscope, and SLAP2 recording
 sessions. The **Interactive** view provides synchronized camera playback,
-running signals, and reconstructed stimulus state. The **Static** view compares
-all 10 available camera streams at a common 8-second excerpt time with the full
-16-second running trace for each modality; red lines mark the event at 5 seconds
-and dashed black lines mark the still-frame time. Each static camera image is
+running signals, reconstructed stimulus state, and paired control-versus-context
+running summaries for the selected modality. The **Static** view compares all 10
+available camera streams beside one complete protocol running profile for the
+same mouse and session in each modality. Neuropixels and mesoscope stills retain
+the common 8-second synchronized excerpt selection; the SLAP2 stills are sampled
+at 600 seconds from the full-session profile source. Five-second profile means
+share one time axis and are shown over measured standard, context,
+standard-repeat, sequence, jitter, open-loop, natural-movie, and receptive-field
+block boundaries using the Figure 2 block colors. Panel D follows that same block
+order on one shared cm/s axis for all three modalities. Within each block,
+modality-colored points show mouse means after averaging available complete
+sessions, and each bar is the mean across mice for its modality. Metrics use
+50 ms bins, and negative velocity is set to zero before summarization. SLAP2 encoder values
+are converted to cm/s using the pinned
+acquisition convention of 8192 counts/revolution, an 8.255 cm disc radius, and a
+2/3 effective running radius. Each static camera image is
 independently illuminated using its 1st–99th luminance percentiles and a bounded
 gamma that maps median luminance to 35%, with exact parameters retained in
 provenance. Behavior-camera video is

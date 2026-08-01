@@ -14,6 +14,8 @@
     playIcon: document.getElementById("play-icon"),
     playToggle: document.getElementById("play-toggle"),
     playbackTime: document.getElementById("playback-time"),
+    runningSummaryCanvas: document.getElementById("running-summary-canvas"),
+    runningSummaryModality: document.getElementById("running-summary-modality"),
     sessionTitle: document.getElementById("session-title"),
     sourceLinks: document.getElementById("source-links"),
     spatialFrequency: document.getElementById("spatial-frequency"),
@@ -44,6 +46,12 @@
   const contextColors = {
     "Sensorimotor mismatch": "#3157b7",
     "Standard oddball": "#008f80",
+  };
+  const summaryContextColors = {
+    duration: "#ccaf2d",
+    sensorimotor: "#283185",
+    sequence: "#b16027",
+    standard: "#22bcad",
   };
 
   function currentSession() {
@@ -181,6 +189,7 @@
     buildCameraTabs();
     loadCamera();
     render();
+    drawRunningSummary();
   }
 
   function selectCamera(index) {
@@ -403,6 +412,136 @@
 
     const value = interpolatedTraceValue(trace, state.localTime);
     elements.traceValue.textContent = `${value.toFixed(1)} ${session.traceUnit}`;
+  }
+
+  function median(values) {
+    const sorted = [...values].sort((first, second) => first - second);
+    const middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2
+      ? sorted[middle]
+      : (sorted[middle - 1] + sorted[middle]) / 2;
+  }
+
+  function stableJitter(key) {
+    let hash = 0;
+    for (let index = 0; index < key.length; index += 1) {
+      hash = (hash * 31 + key.charCodeAt(index)) >>> 0;
+    }
+    return (hash % 1001) / 1000 - 0.5;
+  }
+
+  function speedMaximum(rows) {
+    const maximum = Math.max(
+      ...rows.flatMap((row) => [
+        row.controlMeanForwardSpeedCmS,
+        row.contextMeanForwardSpeedCmS,
+      ]),
+    );
+    const step = maximum > 25 ? 10 : 5;
+    return Math.max(step, Math.ceil(maximum * 1.08 / step) * step);
+  }
+
+  function drawSummaryMetric(context, rows, maximum) {
+    const plotTop = 54;
+    const plotBottom = 286;
+    const plotHeight = plotBottom - plotTop;
+    const plotLeft = 70;
+    const plotWidth = 1110;
+    const contextWidth = plotWidth / protocol.runningStatistics.contexts.length;
+
+    context.fillStyle = "#303536";
+    context.font = "700 16px Source Sans 3, sans-serif";
+    context.textAlign = "center";
+    context.fillText("Mean forward speed: control vs context block (cm/s)", 625, 25);
+
+    for (let tick = 0; tick <= 4; tick += 1) {
+      const fraction = tick / 4;
+      const y = plotBottom - fraction * plotHeight;
+      context.strokeStyle = tick === 0 ? "#aeb5b2" : "#e2e5e3";
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(plotLeft, y);
+      context.lineTo(plotLeft + plotWidth, y);
+      context.stroke();
+      context.fillStyle = "#707674";
+      context.font = "11px IBM Plex Mono, monospace";
+      context.textAlign = "right";
+      context.fillText((fraction * maximum).toFixed(0), plotLeft - 8, y + 4);
+    }
+
+    protocol.runningStatistics.contexts.forEach((contextRecord, contextIndex) => {
+      const values = rows.filter((row) => row.context === contextRecord.id);
+      const center = plotLeft + (contextIndex + 0.5) * contextWidth;
+      const controlX = center - 38;
+      const contextX = center + 38;
+      context.fillStyle = summaryContextColors[contextRecord.id];
+      context.font = "600 12px Source Sans 3, sans-serif";
+      context.textAlign = "center";
+      context.fillText(contextRecord.label, center, plotBottom + 25);
+      context.fillStyle = "#707674";
+      context.font = "10px IBM Plex Mono, monospace";
+      context.fillText(`n=${values.length}`, center, plotTop - 10);
+      context.fillText("Ctl", controlX, plotBottom + 44);
+      context.fillStyle = summaryContextColors[contextRecord.id];
+      context.fillText("Ctx", contextX, plotBottom + 44);
+
+      values.forEach((row) => {
+        const jitter = stableJitter(`${contextRecord.id}:${row.mouseId}`) * 18;
+        const controlY = plotBottom
+          - Math.min(1, row.controlMeanForwardSpeedCmS / maximum) * plotHeight;
+        const contextY = plotBottom
+          - Math.min(1, row.contextMeanForwardSpeedCmS / maximum) * plotHeight;
+        context.strokeStyle = "#aab0ae";
+        context.lineWidth = 1;
+        context.beginPath();
+        context.moveTo(controlX + jitter, controlY);
+        context.lineTo(contextX + jitter, contextY);
+        context.stroke();
+        context.globalAlpha = 0.72;
+        context.fillStyle = "#6f7774";
+        context.beginPath();
+        context.arc(controlX + jitter, controlY, 4.5, 0, 2 * Math.PI);
+        context.fill();
+        context.fillStyle = summaryContextColors[contextRecord.id];
+        context.beginPath();
+        context.arc(contextX + jitter, contextY, 4.5, 0, 2 * Math.PI);
+        context.fill();
+        context.globalAlpha = 1;
+      });
+      if (values.length) {
+        for (const [key, x] of [
+          ["controlMeanForwardSpeedCmS", controlX],
+          ["contextMeanForwardSpeedCmS", contextX],
+        ]) {
+          const centerValue = median(values.map((row) => row[key]));
+          const y = plotBottom - Math.min(1, centerValue / maximum) * plotHeight;
+          context.strokeStyle = "#202322";
+          context.lineWidth = 3;
+          context.beginPath();
+          context.moveTo(x - 18, y);
+          context.lineTo(x + 18, y);
+          context.stroke();
+        }
+      }
+    });
+  }
+
+  function drawRunningSummary() {
+    const session = currentSession();
+    const canvas = elements.runningSummaryCanvas;
+    const context = canvas.getContext("2d");
+    const rows = protocol.runningStatistics.mouseContext.filter(
+      (row) => row.modality === session.id,
+    );
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    drawSummaryMetric(context, rows, speedMaximum(rows));
+    elements.runningSummaryModality.textContent = session.label;
+    canvas.setAttribute(
+      "aria-label",
+      `${session.label} mouse-level running statistics across four session contexts`,
+    );
   }
 
   function render() {

@@ -8,6 +8,7 @@ import json
 import math
 import re
 import shutil
+import statistics
 import struct
 import xml.etree.ElementTree as ET
 import zlib
@@ -33,7 +34,18 @@ SESSION_INVENTORY_STATIC_OUTPUT = (
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
 BEHAVIOR_EXCERPTS_PATH = DATA_DIR / "behavior-excerpts.json"
+RUNNING_STATISTICS_PATH = DATA_DIR / "running-statistics.json"
 BEHAVIOR_STATIC_LOCAL_TIME_SECONDS = 8.0
+SLAP2_COUNTS_PER_REVOLUTION = 8192
+SLAP2_WHEEL_RADIUS_CM = 8.255
+SLAP2_SUBJECT_POSITION = 2 / 3
+SLAP2_DISTANCE_PER_COUNT_CM = (
+    2
+    * math.pi
+    * SLAP2_WHEEL_RADIUS_CM
+    * SLAP2_SUBJECT_POSITION
+    / SLAP2_COUNTS_PER_REVOLUTION
+)
 BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH = (
     DATA_DIR / "behavior-static-frames.provenance.json"
 )
@@ -153,6 +165,22 @@ SHARED_COLORS = (
     "#80949E",
     "#6F858F",
 )
+PROTOCOL_CONTEXT_COLORS = {
+    "standard": "#008F80",
+    "sensorimotor": "#3157B7",
+    "sequence": "#C65D13",
+    "duration": "#A47C00",
+}
+PROTOCOL_BLOCK_COLORS = {
+    "standard": SHARED_COLORS[0],
+    "context": PROTOCOL_CONTEXT_COLORS["sensorimotor"],
+    "standard_repeat": SHARED_COLORS[1],
+    "sequence": SHARED_COLORS[2],
+    "jitter": SHARED_COLORS[3],
+    "open_loop": SHARED_COLORS[4],
+    "movie": SHARED_COLORS[5],
+    "rf": SHARED_COLORS[6],
+}
 
 
 def total_duration_minutes() -> float:
@@ -489,7 +517,166 @@ def load_behavior_excerpts(path: Path = BEHAVIOR_EXCERPTS_PATH) -> dict:
                 raise RuntimeError(
                     f"Behavior camera frame map is invalid: {session['id']}/{camera['id']}"
                 )
+    slap2 = sessions[-1]
+    if slap2.get("traceLabel") != "Wheel encoder velocity" or slap2.get(
+        "traceUnit"
+    ) != "counts/s":
+        raise RuntimeError("SLAP2 behavior trace is not the expected raw encoder velocity.")
+    slap2["trace"] = [
+        [time, round(value * SLAP2_DISTANCE_PER_COUNT_CM, 4)]
+        for time, value in slap2["trace"]
+    ]
+    slap2["traceLabel"] = "Running speed"
+    slap2["traceUnit"] = "cm/s"
     return payload
+
+
+def load_running_statistics(path: Path = RUNNING_STATISTICS_PATH) -> dict:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    expected_contexts = ["sensorimotor", "standard", "sequence", "duration"]
+    expected_blocks = [
+        "standard",
+        "context",
+        "standard_repeat",
+        "sequence",
+        "jitter",
+        "open_loop",
+        "movie",
+        "rf",
+    ]
+    calibration = payload.get("calibration", {}).get("slap2", {})
+    source = payload.get("source_session_records", {})
+    if (
+        payload.get("version") != 2
+        or payload.get("sample_rate_hz") != 20
+        or payload.get("threshold_cm_s") != 1.0
+        or [context.get("id") for context in payload.get("contexts", [])]
+        != expected_contexts
+        or source.get("sha256")
+        != hashlib.sha256(SESSION_RECORDS_PATH.read_bytes()).hexdigest()
+        or calibration.get("counts_per_revolution") != SLAP2_COUNTS_PER_REVOLUTION
+        or calibration.get("wheel_radius_cm") != SLAP2_WHEEL_RADIUS_CM
+        or not math.isclose(
+            calibration.get("subject_position", 0), SLAP2_SUBJECT_POSITION
+        )
+    ):
+        raise RuntimeError("Running-statistics schema or calibration is not supported.")
+
+    sessions = payload.get("sessions", [])
+    mouse_context = payload.get("mouse_context", [])
+    mouse_block = payload.get("mouse_block", [])
+    coverage = payload.get("coverage", [])
+    profiles = payload.get("example_profiles", [])
+    expected_cells = {
+        (modality, context)
+        for modality in ("neuropixels", "mesoscope", "slap2")
+        for context in expected_contexts
+    }
+    expected_block_cells = {
+        (modality, block)
+        for modality in ("neuropixels", "mesoscope", "slap2")
+        for block in expected_blocks
+    }
+    if (
+        not sessions
+        or not mouse_context
+        or not mouse_block
+        or len(coverage) != len(expected_cells)
+        or {(record.get("modality"), record.get("context")) for record in coverage}
+        != expected_cells
+        or {
+            (record.get("modality"), record.get("context"))
+            for record in mouse_context
+        }
+        != expected_cells
+        or [record.get("modality") for record in profiles]
+        != ["neuropixels", "mesoscope", "slap2"]
+        or {
+            (record.get("modality"), record.get("block"))
+            for record in mouse_block
+        }
+        != expected_block_cells
+    ):
+        raise RuntimeError("Running-statistics coverage is incomplete.")
+    for profile in profiles:
+        if (
+            profile.get("bin_seconds") != 5
+            or not profile.get("points")
+            or [block.get("id") for block in profile.get("blocks", [])]
+            != expected_blocks
+            or not 4200 < profile.get("duration_seconds", 0) < 4400
+        ):
+            raise RuntimeError("Running-statistics example profile is invalid.")
+    for session in sessions:
+        if (
+            [block.get("id") for block in session.get("blocks", [])]
+            != expected_blocks
+            or set(session.get("block_mean_forward_speed_cm_s", {}))
+            != set(expected_blocks)
+            or session.get("control_mean_forward_speed_cm_s", -1) < 0
+            or session.get("context_mean_forward_speed_cm_s", -1) < 0
+        ):
+            raise RuntimeError("Running-statistics session blocks are invalid.")
+    for record in mouse_block:
+        if (
+            (record.get("modality"), record.get("block"))
+            not in expected_block_cells
+            or not record.get("mouse_id")
+            or record.get("session_count", 0) < 1
+            or record.get("mean_forward_speed_cm_s", -1) < 0
+        ):
+            raise RuntimeError("Running-statistics mouse/block summary is invalid.")
+    for record in mouse_context:
+        if (
+            (record.get("modality"), record.get("context")) not in expected_cells
+            or not record.get("mouse_id")
+            or record.get("session_count", 0) < 1
+            or record.get("mean_forward_speed_cm_s", -1) < 0
+            or record.get("control_mean_forward_speed_cm_s", -1) < 0
+            or record.get("context_mean_forward_speed_cm_s", -1) < 0
+            or not 0 <= record.get("running_fraction", -1) <= 1
+        ):
+            raise RuntimeError("Running-statistics mouse summary is invalid.")
+    for record in coverage:
+        matching_sessions = [
+            session
+            for session in sessions
+            if session["modality"] == record["modality"]
+            and session["context"] == record["context"]
+        ]
+        matching_mice = [
+            summary
+            for summary in mouse_context
+            if summary["modality"] == record["modality"]
+            and summary["context"] == record["context"]
+        ]
+        if (
+            len(matching_sessions) != record["included_sessions"]
+            or len(matching_mice) != record["included_mice"]
+        ):
+            raise RuntimeError("Running-statistics counts do not match coverage.")
+    return payload
+
+
+def compact_running_statistics(payload: dict) -> dict:
+    return {
+        "contexts": payload["contexts"],
+        "mouseContext": [
+            {
+                "context": record["context"],
+                "contextMeanForwardSpeedCmS": record[
+                    "context_mean_forward_speed_cm_s"
+                ],
+                "controlMeanForwardSpeedCmS": record[
+                    "control_mean_forward_speed_cm_s"
+                ],
+                "modality": record["modality"],
+                "mouseId": record["mouse_id"],
+                "sessionCount": record["session_count"],
+            }
+            for record in payload["mouse_context"]
+        ],
+    }
 
 
 def behavior_video_time_at(time_map: list[list[float]], local_time: float) -> float:
@@ -511,14 +698,18 @@ def behavior_video_time_at(time_map: list[list[float]], local_time: float) -> fl
     return first[1] + (second[1] - first[1]) * fraction
 
 
-def load_behavior_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
+def load_behavior_static_frames(
+    payload: dict, profiles: dict[str, dict]
+) -> dict[tuple[str, str], Path]:
     provenance = json.loads(
         BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
     source_checksum = hashlib.sha256(BEHAVIOR_EXCERPTS_PATH.read_bytes()).hexdigest()
+    running_checksum = hashlib.sha256(RUNNING_STATISTICS_PATH.read_bytes()).hexdigest()
     if (
-        provenance.get("version") != 1
+        provenance.get("version") != 2
         or provenance.get("behavior_excerpts_sha256") != source_checksum
+        or provenance.get("running_statistics_sha256") != running_checksum
         or provenance.get("local_time_seconds") != BEHAVIOR_STATIC_LOCAL_TIME_SECONDS
     ):
         raise RuntimeError("Static behavior frame provenance is not supported.")
@@ -540,21 +731,49 @@ def load_behavior_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
     for modality, camera_id in sorted(expected_keys):
         session = sessions[modality]
         camera = next(camera for camera in session["cameras"] if camera["id"] == camera_id)
-        source = next(
-            source for source in session["sources"] if source.get("url") == camera["url"]
-        )
         record = records[(modality, camera_id)]
-        target_time = behavior_video_time_at(
-            camera["timeMap"], BEHAVIOR_STATIC_LOCAL_TIME_SECONDS
-        )
+        profile = profiles[modality]
+        if record.get("selection") == "excerpt_local_time_seconds":
+            source = next(
+                source
+                for source in session["sources"]
+                if source.get("url") == camera["url"]
+            )
+            target_time = behavior_video_time_at(
+                camera["timeMap"], BEHAVIOR_STATIC_LOCAL_TIME_SECONDS
+            )
+            source_matches = (
+                record["source_url"] == camera["url"]
+                and record["source_etag"] == source["etag"]
+                and record["source_content_length"] == source["contentLength"]
+                and record.get("local_time_seconds")
+                == BEHAVIOR_STATIC_LOCAL_TIME_SECONDS
+            )
+        elif record.get("selection") == "video_time_seconds" and modality == "slap2":
+            target_time = record["target_video_time_seconds"]
+            expected_url = (
+                "https://aind-open-data.s3.us-west-2.amazonaws.com/"
+                f'{profile["source_session_id"]}/behavior-videos/'
+                f'{camera["label"]}Camera/video.mp4'
+            )
+            source_matches = (
+                record["source_url"] == expected_url
+                and record["source_etag"]
+                and record["source_content_length"] > 0
+                and record.get("local_time_seconds") is None
+            )
+        else:
+            raise RuntimeError(
+                f"Static behavior frame selection is invalid: {modality}/{camera_id}"
+            )
         path = BEHAVIOR_STATIC_FRAME_DIR / record["asset_path"]
         frame_interval = 1 / camera["timing"]["encodedRateHz"]
         contrast = record.get("display_contrast", {})
         if (
             record["camera_label"] != camera["label"]
-            or record["source_url"] != camera["url"]
-            or record["source_etag"] != source["etag"]
-            or record["source_content_length"] != source["contentLength"]
+            or record.get("mouse_id") != profile["mouse_id"]
+            or record.get("source_session_id") != profile["source_session_id"]
+            or not source_matches
             or contrast.get("method")
             != "luminance percentile stretch with adaptive gamma"
             or contrast.get("low_percentile") != 1.0
@@ -576,12 +795,281 @@ def load_behavior_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
     return paths
 
 
+def running_profile_svg(
+    profile: dict,
+    modality: str,
+    accent: str,
+    left: float,
+    top: float,
+    width: float,
+    height: float,
+    speed_limit: float,
+    shared_duration: float,
+    show_block_labels: bool,
+    show_time_axis: bool,
+) -> list[str]:
+    margin_left = 46
+    margin_right = 12
+    margin_top = 20
+    margin_bottom = 22
+    plot_left = left + margin_left
+    plot_top = top + margin_top
+    plot_width = width - margin_left - margin_right
+    plot_height = height - margin_top - margin_bottom
+    duration = shared_duration
+
+    def x(time: float) -> float:
+        return plot_left + time / duration * plot_width
+
+    def y(value: float) -> float:
+        return plot_top + (speed_limit - value) / speed_limit * plot_height
+
+    block_labels = {
+        "standard": "Std",
+        "context": "Context",
+        "standard_repeat": "Std 2",
+        "sequence": "Seq",
+        "jitter": "Jitter",
+        "open_loop": "Open",
+        "movie": "Movie",
+        "rf": "RF",
+    }
+    svg = [
+        f'<rect x="{left}" y="{top}" width="{width}" height="{height}" '
+        'fill="#FFFFFF" stroke="#D0D4D2"/>',
+    ]
+    for block in profile["blocks"]:
+        block_left = x(block["start_seconds"])
+        block_right = x(block["end_seconds"])
+        svg.extend(
+            [
+                f'<rect class="running-profile-block" data-block="{block["id"]}" '
+                f'x="{block_left:.2f}" y="{top + 1}" '
+                f'width="{max(0, block_right - block_left):.2f}" height="{height - 2}" '
+                f'fill="{PROTOCOL_BLOCK_COLORS[block["id"]]}" fill-opacity="0.18"/>',
+                f'<rect x="{block_left:.2f}" y="{top + 1}" '
+                f'width="{max(0, block_right - block_left):.2f}" height="18" '
+                f'fill="{PROTOCOL_BLOCK_COLORS[block["id"]]}"/>',
+                f'<line x1="{block_left:.2f}" y1="{top}" x2="{block_left:.2f}" '
+                f'y2="{top + height}" stroke="#C8CECB"/>',
+            ]
+        )
+        if show_block_labels:
+            label_fill = "#FFFFFF" if block["id"] in {"context", "movie", "rf"} else "#172126"
+            svg.append(
+                f'<text x="{(block_left + block_right) / 2:.2f}" y="{top + 14}" '
+                'font-family="Source Sans 3, sans-serif" font-size="12" '
+                f'font-weight="600" text-anchor="middle" fill="{label_fill}">'
+                f'{block_labels[block["id"]]}</text>'
+            )
+    for fraction in (0, 0.5, 1):
+        grid_y = plot_top + (1 - fraction) * plot_height
+        svg.extend(
+            [
+                f'<line x1="{plot_left}" y1="{grid_y:.2f}" '
+                f'x2="{plot_left + plot_width}" y2="{grid_y:.2f}" '
+                'stroke="#D8DCDA"/>',
+                f'<text x="{plot_left - 7}" y="{grid_y + 4:.2f}" '
+                'font-family="IBM Plex Mono, monospace" font-size="12" '
+                f'text-anchor="end" fill="#68706E">{fraction * speed_limit:.0f}</text>',
+            ]
+        )
+    points = " ".join(
+        f'{x(point[0]):.2f},{y(min(speed_limit, point[1])):.2f}'
+        for point in profile["points"]
+    )
+    svg.append(
+        f'<polyline class="running-profile" data-modality="{modality}" '
+        f'points="{points}" fill="none" stroke="{accent}" stroke-width="1.6"/>'
+    )
+    if show_time_axis:
+        tick_minutes = [0, 20, 40, 60, round(duration / 60)]
+        for minute in dict.fromkeys(tick_minutes):
+            tick_time = min(duration, minute * 60)
+            svg.append(
+                f'<text x="{x(tick_time):.2f}" y="{top + height - 6}" '
+                'font-family="IBM Plex Mono, monospace" font-size="12" '
+                f'text-anchor="middle" fill="#68706E">{minute}m</text>'
+            )
+    return svg
+
+
+def running_speed_limit(maximum: float) -> int:
+    step = 10 if maximum > 25 else 5
+    return max(step, math.ceil(maximum * 1.05 / step) * step)
+
+
+def running_summary_svg(payload: dict) -> list[str]:
+    summaries = payload["mouse_block"]
+    modality_colors = {
+        "neuropixels": "#4B79C6",
+        "mesoscope": "#14866C",
+        "slap2": "#168EA0",
+    }
+    modality_labels = {
+        "neuropixels": "Neuropixels",
+        "mesoscope": "Mesoscope",
+        "slap2": "SLAP2",
+    }
+    block_labels = {
+        "standard": "Standard",
+        "context": "Context",
+        "standard_repeat": "Standard repeat",
+        "sequence": "Sequence",
+        "jitter": "Jitter",
+        "open_loop": "Open loop",
+        "movie": "Natural movie",
+        "rf": "RF mapping",
+    }
+    block_order = tuple(PROTOCOL_BLOCK_COLORS)
+    profile_block_order = tuple(block["id"] for block in payload["example_profiles"][0]["blocks"])
+    if block_order != profile_block_order:
+        raise RuntimeError("Panel D block order does not match the example profiles.")
+    speed_limit = running_speed_limit(
+        max(record["mean_forward_speed_cm_s"] for record in summaries)
+    )
+    plot_left = 185
+    plot_width = 1560
+    block_label_y = 735
+    plot_top = 745
+    plot_height = 255
+    plot_bottom = plot_top + plot_height
+    modality_offsets = {
+        "neuropixels": -52,
+        "mesoscope": 0,
+        "slap2": 52,
+    }
+    mouse_counts = {
+        modality: len(
+            {
+                record["mouse_id"]
+                for record in summaries
+                if record["modality"] == modality
+            }
+        )
+        for modality in modality_labels
+    }
+    svg = [
+        '<text class="running-panel-label" x="35" y="704" '
+        'font-family="Source Sans 3, sans-serif" font-size="24" '
+        'font-weight="700" fill="#293133">D</text>',
+        '<text class="running-y-axis-title" x="72" y="704" '
+        'font-family="Source Sans 3, sans-serif" font-size="16" '
+        'font-weight="700" fill="#3F4745">Mean forward speed (cm/s)</text>',
+    ]
+    legend_left = 980
+    for index, modality in enumerate(modality_labels):
+        left = legend_left + index * 250
+        color = modality_colors[modality]
+        svg.extend(
+            [
+                f'<rect x="{left}" y="686" width="18" height="18" '
+                f'fill="{color}" fill-opacity="0.42" stroke="{color}" '
+                'stroke-width="1.5"/>',
+                f'<text x="{left + 27}" y="701" '
+                'font-family="Source Sans 3, sans-serif" font-size="16" '
+                f'font-weight="700" fill="{color}">{modality_labels[modality]} '
+                f'(n={mouse_counts[modality]})</text>',
+            ]
+        )
+    svg.append('<g class="running-summary-plot" data-shared-y-axis="true">')
+    block_width = plot_width / len(block_order)
+    for block_index, block_id in enumerate(block_order):
+        left = plot_left + block_index * block_width
+        color = PROTOCOL_BLOCK_COLORS[block_id]
+        svg.extend(
+            [
+                f'<rect class="running-block-region" data-block="{block_id}" '
+                f'x="{left:.2f}" y="{plot_top}" width="{block_width:.2f}" '
+                f'height="{plot_height}" fill="{color}" fill-opacity="0.08"/>',
+                f'<text x="{left + block_width / 2:.2f}" y="{block_label_y}" '
+                'font-family="Source Sans 3, sans-serif" font-size="14" '
+                'font-weight="700" text-anchor="middle" fill="#3F4745">'
+                f'{block_labels[block_id]}</text>',
+            ]
+        )
+        if block_index:
+            svg.append(
+                f'<line x1="{left:.2f}" y1="{plot_top}" '
+                f'x2="{left:.2f}" y2="{plot_bottom}" stroke="#C8CECB"/>'
+            )
+    tick_step = 30 if speed_limit > 80 else 20 if speed_limit > 40 else 10
+    tick_values = list(range(0, speed_limit, tick_step)) + [speed_limit]
+    for tick_value in tick_values:
+        y = plot_bottom - tick_value / speed_limit * plot_height
+        grid_color = "#AEB5B2" if tick_value == 0 else "#DDE1DF"
+        svg.append(
+            f'<line x1="{plot_left}" y1="{y:.2f}" '
+            f'x2="{plot_left + plot_width}" y2="{y:.2f}" stroke="{grid_color}"/>'
+        )
+        svg.append(
+            f'<text x="{plot_left - 10}" y="{y + 4:.2f}" '
+            'font-family="IBM Plex Mono, monospace" font-size="13" '
+            f'text-anchor="end" fill="#68706E">{tick_value}</text>'
+        )
+    for block_index, block_id in enumerate(block_order):
+        block_center = plot_left + (block_index + 0.5) * block_width
+        for modality, offset in modality_offsets.items():
+            center = block_center + offset
+            records = [
+                record
+                for record in summaries
+                if record["modality"] == modality
+                and record["block"] == block_id
+            ]
+            values = [record["mean_forward_speed_cm_s"] for record in records]
+            mean = statistics.fmean(values)
+            mean_y = plot_bottom - min(1, mean / speed_limit) * plot_height
+            color = modality_colors[modality]
+            svg.append(
+                f'<rect class="running-block-mean" data-block="{block_id}" '
+                f'data-modality="{modality}" x="{center - 19:.2f}" '
+                f'y="{mean_y:.2f}" width="38" height="{plot_bottom - mean_y:.2f}" '
+                f'fill="{color}" fill-opacity="0.38" stroke="{color}" '
+                'stroke-width="1.4"/>'
+            )
+            svg.append(
+                f'<line class="running-block-mean-cap" data-block="{block_id}" '
+                f'data-modality="{modality}" x1="{center - 20:.2f}" '
+                f'y1="{mean_y:.2f}" x2="{center + 20:.2f}" y2="{mean_y:.2f}" '
+                f'stroke="{color}" stroke-width="2.4"/>'
+            )
+            for record in records:
+                value = record["mean_forward_speed_cm_s"]
+                jitter_hash = 0
+                for character in f'{modality}:{block_id}:{record["mouse_id"]}':
+                    jitter_hash = (jitter_hash * 31 + ord(character)) & 0xFFFFFFFF
+                jitter = ((jitter_hash % 1001) / 1000 - 0.5) * 28
+                point_y = plot_bottom - min(1, value / speed_limit) * plot_height
+                svg.append(
+                    '<circle class="running-block-point" '
+                    f'data-block="{block_id}" data-modality="{modality}" '
+                    f'cx="{center + jitter:.2f}" cy="{point_y:.2f}" r="3" '
+                    f'fill="{color}" fill-opacity="0.72" stroke="#FFFFFF" '
+                    'stroke-width="0.5"/>'
+                )
+    svg.append("</g>")
+    return svg
+
+
 def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
     payload = load_behavior_excerpts()
-    frame_paths = load_behavior_static_frames(payload)
+    running_statistics = load_running_statistics()
+    profiles = {
+        profile["modality"]: profile
+        for profile in running_statistics["example_profiles"]
+    }
+    shared_profile_duration = max(
+        profile["duration_seconds"] for profile in profiles.values()
+    )
+    profile_speed_limits = {
+        modality: running_speed_limit(max(point[1] for point in profile["points"]))
+        for modality, profile in profiles.items()
+    }
+    frame_paths = load_behavior_static_frames(payload, profiles)
     width = 1800
-    height = 900
-    row_tops = (55, 335, 615)
+    height = 1050
+    row_tops = (40, 243, 446)
     accents = {
         "neuropixels": "#4B79C6",
         "mesoscope": "#14866C",
@@ -596,37 +1084,29 @@ def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
         '<title id="title">Synchronized behavior recordings across three modalities</title>',
-        '<desc id="description">Ten synchronized camera stills at eight seconds '
-        'and complete sixteen-second running traces for Neuropixels, mesoscope, and '
-        'SLAP2 sessions.</desc>',
+        '<desc id="description">Camera stills and full-session running profiles '
+        'from the same Neuropixels, mesoscope, and SLAP2 mice and sessions, followed '
+        'by a shared-axis comparison of mouse-level mean running speed in each '
+        'protocol block.</desc>',
         f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
-        '<line x1="1340" y1="28" x2="1365" y2="28" stroke="#B44235" '
-        'stroke-width="3"/>',
-        '<text x="1374" y="33" font-family="Source Sans 3, sans-serif" '
-        'font-size="12" fill="#59615F">event (5 s)</text>',
-        '<line x1="1485" y1="28" x2="1510" y2="28" stroke="#202322" '
-        'stroke-width="2" stroke-dasharray="5 3"/>',
-        '<text x="1519" y="33" font-family="Source Sans 3, sans-serif" '
-        'font-size="12" fill="#59615F">camera still (8 s)</text>',
     ]
-    for letter, session, row_top in zip("ABC", payload["sessions"], row_tops, strict=True):
+    for row_index, (letter, session, row_top) in enumerate(
+        zip("ABC", payload["sessions"], row_tops, strict=True)
+    ):
         modality = session["id"]
         cameras = session["cameras"]
+        profile = profiles[modality]
         svg.extend(
             [
                 f'<text x="35" y="{row_top}" font-family="Source Sans 3, sans-serif" '
-                f'font-size="22" font-weight="700" fill="#293133">{letter}  '
-                f'{modality_labels[modality]}</text>',
-                f'<text x="35" y="{row_top + 21}" '
-                'font-family="IBM Plex Mono, monospace" font-size="11" '
-                f'fill="#68706E">mouse {escape(session["subject"])} · '
-                f'{len(cameras)} camera streams</text>',
+                f'font-size="24" font-weight="700" fill="#293133">{letter}  '
+                f'{modality_labels[modality]} · mouse {escape(profile["mouse_id"])}</text>',
             ]
         )
         camera_width = 198
         camera_height = 148
         camera_gap = 12
-        camera_top = row_top + 40
+        camera_top = row_top + 28
         for index, camera in enumerate(cameras):
             left = 35 + index * (camera_width + camera_gap)
             image_data = base64.b64encode(
@@ -637,7 +1117,7 @@ def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
                     f'<g class="behavior-camera-card" data-modality="{modality}" '
                     f'data-camera-id="{camera["id"]}">',
                     f'<text x="{left}" y="{camera_top - 8}" '
-                    'font-family="Source Sans 3, sans-serif" font-size="12" '
+                    'font-family="Source Sans 3, sans-serif" font-size="15" '
                     f'font-weight="700" fill="#303536">{escape(camera["label"])} camera</text>',
                     f'<rect x="{left}" y="{camera_top}" width="{camera_width}" '
                     f'height="{camera_height}" fill="#171A19"/>',
@@ -650,89 +1130,22 @@ def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
                 ]
             )
 
-        trace_left = 910
-        trace_top = row_top + 40
-        trace_width = 850
-        trace_height = 148
-        margin_left = 46
-        margin_right = 12
-        margin_top = 12
-        margin_bottom = 22
-        plot_width = trace_width - margin_left - margin_right
-        plot_height = trace_height - margin_top - margin_bottom
-        values = [point[1] for point in session["trace"]]
-        maximum = max(1, *(abs(value) for value in values)) * 1.08
-
-        def trace_x(
-            time: float,
-            left: float = trace_left + margin_left,
-            duration: float = payload["durationSeconds"],
-            width: float = plot_width,
-        ) -> float:
-            return left + time / duration * width
-
-        def trace_y(
-            value: float,
-            top: float = trace_top + margin_top,
-            limit: float = maximum,
-            height: float = plot_height,
-        ) -> float:
-            return top + (limit - value) / (2 * limit) * height
-
-        points = " ".join(
-            f"{trace_x(time):.2f},{trace_y(value):.2f}"
-            for time, value in session["trace"]
-        )
         svg.extend(
-            [
-                f'<text x="{trace_left}" y="{trace_top - 8}" '
-                'font-family="Source Sans 3, sans-serif" font-size="12" '
-                f'font-weight="700" fill="#303536">{escape(session["traceLabel"])} '
-                f'({escape(session["traceUnit"])})</text>',
-                f'<rect x="{trace_left}" y="{trace_top}" width="{trace_width}" '
-                f'height="{trace_height}" fill="#FFFFFF" stroke="#D0D4D2"/>',
-            ]
-        )
-        for fraction in (0, 0.5, 1):
-            grid_y = trace_top + margin_top + fraction * plot_height
-            svg.append(
-                f'<line x1="{trace_left + margin_left}" y1="{grid_y:.2f}" '
-                f'x2="{trace_left + trace_width - margin_right}" y2="{grid_y:.2f}" '
-                'stroke="#E2E5E3"/>'
+            running_profile_svg(
+                profile,
+                modality,
+                accents[modality],
+                910,
+                row_top + 28,
+                850,
+                148,
+                profile_speed_limits[modality],
+                shared_profile_duration,
+                row_index == 0,
+                row_index == 2,
             )
-        svg.extend(
-            [
-                f'<polyline points="{points}" fill="none" stroke="{accents[modality]}" '
-                'stroke-width="2"/>',
-                f'<line x1="{trace_x(session["event"]["time"]):.2f}" '
-                f'y1="{trace_top + margin_top}" '
-                f'x2="{trace_x(session["event"]["time"]):.2f}" '
-                f'y2="{trace_top + margin_top + plot_height}" stroke="#B44235" '
-                'stroke-width="2"/>',
-                f'<line x1="{trace_x(BEHAVIOR_STATIC_LOCAL_TIME_SECONDS):.2f}" '
-                f'y1="{trace_top + margin_top}" '
-                f'x2="{trace_x(BEHAVIOR_STATIC_LOCAL_TIME_SECONDS):.2f}" '
-                f'y2="{trace_top + margin_top + plot_height}" stroke="#202322" '
-                'stroke-width="2" stroke-dasharray="5 3"/>',
-            ]
         )
-        for time in (0, 4, 8, 12, 16):
-            svg.append(
-                f'<text x="{trace_x(time):.2f}" y="{trace_top + trace_height - 6}" '
-                'font-family="IBM Plex Mono, monospace" font-size="10" '
-                f'text-anchor="middle" fill="#68706E">{time}s</text>'
-            )
-        svg.extend(
-            [
-                f'<text x="{trace_left + margin_left - 7}" '
-                f'y="{trace_y(maximum) + 4:.2f}" '
-                'font-family="IBM Plex Mono, monospace" font-size="9" '
-                f'text-anchor="end" fill="#68706E">{maximum:.0f}</text>',
-                f'<text x="{trace_left + margin_left - 7}" y="{trace_y(0) + 4:.2f}" '
-                'font-family="IBM Plex Mono, monospace" font-size="9" '
-                'text-anchor="end" fill="#68706E">0</text>',
-            ]
-        )
+    svg.extend(running_summary_svg(running_statistics))
     svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(svg) + "\n", encoding="utf-8")
@@ -745,6 +1158,9 @@ def write_behavior_viewer_html(
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_behavior_excerpts()
+    payload["runningStatistics"] = compact_running_statistics(
+        load_running_statistics()
+    )
     write_behavior_static_svg(static_output)
     template = (JAVASCRIPT_DIR / "behavior-viewer.html").read_text(encoding="utf-8")
     stylesheet = (JAVASCRIPT_DIR / "behavior-viewer.css").read_text(encoding="utf-8")
@@ -1120,7 +1536,7 @@ def append_microscopy_raw_card(
     svg.extend(
         [
             f'<g class="raw-image-card" data-modality="{modality}" '
-            f'data-option-id="{option["id"]}">',
+            f'data-option-id="{option["id"]}" data-card-width="{card_width:.0f}">',
             f'<rect x="{x + 5:.2f}" y="{y + 6:.2f}" width="{card_width}" '
             f'height="{card_height:.2f}" rx="3" fill="#D9DEDC" opacity="0.65"/>',
             f'<rect x="{x:.2f}" y="{y:.2f}" width="{card_width}" '
@@ -1203,7 +1619,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
     }
     mesoscope_stacks = (
         ("VISp · 4 planes", 650, ("visp_2", "visp_0", "visp_1", "visp_3")),
-        ("VISl · 4 planes", 925, ("visl_6", "visl_4", "visl_5", "visl_7")),
+        ("VISl · 4 planes", 915, ("visl_6", "visl_4", "visl_5", "visl_7")),
     )
     for stack_label, left, option_ids in mesoscope_stacks:
         svg.append(
@@ -1216,7 +1632,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
                 svg,
                 x=left + index * 8,
                 y=102 + index * 45,
-                card_width=235,
+                card_width=255,
                 option=option,
                 path=frame_paths[("mesoscope", option_id)],
                 modality="mesoscope",
@@ -1227,28 +1643,32 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
     slap2_options = {
         option["id"]: option for option in sessions["slap2"]["options"]
     }
-    slap2_stacks = (
-        ("DMD1 · 91 µm below pia", 1240, ("dmd1-detector-1", "dmd1-detector-2")),
-        ("DMD2 · 123.75 µm below pia", 1510, ("dmd2-detector-1", "dmd2-detector-2")),
+    slap2_option_ids = (
+        "dmd1-detector-1",
+        "dmd1-detector-2",
+        "dmd2-detector-1",
+        "dmd2-detector-2",
     )
-    for stack_label, left, option_ids in slap2_stacks:
-        svg.append(
-            f'<text x="{left}" y="91" font-family="Source Sans 3, sans-serif" '
-            f'font-size="14" font-weight="700" fill="#303536">{stack_label}</text>'
+    svg.append(
+        '<text x="1240" y="91" font-family="Source Sans 3, sans-serif" '
+        'font-size="14" font-weight="700" fill="#303536">'
+        '2 planes · 4 detector views</text>'
+    )
+    for index, option_id in enumerate(slap2_option_ids):
+        option = slap2_options[option_id]
+        dmd = option_id.split("-", maxsplit=1)[0].upper()
+        depth = option["remoteFocusDepthBelowPiaUm"]
+        append_microscopy_raw_card(
+            svg,
+            x=1240 + index * 10,
+            y=102 + index * 70,
+            card_width=500,
+            option=option,
+            path=frame_paths[("slap2", option_id)],
+            modality="slap2",
+            label=f'{dmd} · {depth:g} µm · {option["measurement"]}',
+            show_scale=index == len(slap2_option_ids) - 1,
         )
-        for index, option_id in enumerate(option_ids):
-            option = slap2_options[option_id]
-            append_microscopy_raw_card(
-                svg,
-                x=left + index * 8,
-                y=102 + index * 55,
-                card_width=235,
-                option=option,
-                path=frame_paths[("slap2", option_id)],
-                modality="slap2",
-                label=option["measurement"],
-                show_scale=index == len(option_ids) - 1,
-            )
     svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(svg) + "\n", encoding="utf-8")

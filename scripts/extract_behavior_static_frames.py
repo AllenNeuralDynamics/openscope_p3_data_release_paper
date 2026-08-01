@@ -3,9 +3,11 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import math
+import urllib.request
 from pathlib import Path
 
 from openscope_p3_publication.figures import (
@@ -13,6 +15,7 @@ from openscope_p3_publication.figures import (
     BEHAVIOR_STATIC_FRAME_DIR,
     BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH,
     BEHAVIOR_STATIC_LOCAL_TIME_SECONDS,
+    RUNNING_STATISTICS_PATH,
     load_behavior_excerpts,
 )
 
@@ -24,6 +27,29 @@ except ImportError as exc:  # pragma: no cover - optional extraction environment
         "Run with: uv run --with av --with pillow python "
         "scripts/extract_behavior_static_frames.py"
     ) from exc
+
+
+STATIC_SLAP2_SESSION = {
+    "id": "slap2",
+    "session": "828408_2025-11-13_10-30-53",
+    "subject": "828408",
+    "target_video_time_seconds": 600.0,
+    "cameras": (
+        ("body", "Body", "BodyCamera"),
+        ("face", "Face", "FaceCamera"),
+        ("eye", "Eye", "EyeCamera"),
+    ),
+}
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--modality",
+        choices=("neuropixels", "mesoscope", "slap2"),
+        help="Refresh one modality while preserving the other verified records.",
+    )
+    return parser.parse_args()
 
 
 def file_sha256(path: Path) -> str:
@@ -119,6 +145,50 @@ def video_source(session: dict, url: str) -> dict:
     return matching[0]
 
 
+def remote_metadata(url: str) -> dict:
+    request = urllib.request.Request(url, method="HEAD")
+    with urllib.request.urlopen(request, timeout=60) as response:
+        return {
+            "contentLength": int(response.headers["Content-Length"]),
+            "etag": response.headers.get("ETag", "").strip('"'),
+        }
+
+
+def static_sessions(payload: dict) -> list[dict]:
+    sessions = []
+    for session in payload["sessions"]:
+        if session["id"] != "slap2":
+            sessions.append(
+                {
+                    **session,
+                    "selection": "excerpt_local_time_seconds",
+                    "target_video_time_seconds": None,
+                }
+            )
+            continue
+        cameras = []
+        for camera_id, label, directory in STATIC_SLAP2_SESSION["cameras"]:
+            cameras.append(
+                {
+                    "id": camera_id,
+                    "label": label,
+                    "url": (
+                        "https://aind-open-data.s3.us-west-2.amazonaws.com/"
+                        f'{STATIC_SLAP2_SESSION["session"]}/behavior-videos/'
+                        f"{directory}/video.mp4"
+                    ),
+                }
+            )
+        sessions.append(
+            {
+                **STATIC_SLAP2_SESSION,
+                "cameras": cameras,
+                "selection": "video_time_seconds",
+            }
+        )
+    return sessions
+
+
 def decode_frame(url: str, target_seconds: float) -> tuple[Image.Image, float]:
     with av.open(url, options={"rw_timeout": "60000000"}) as container:
         stream = container.streams.video[0]
@@ -145,14 +215,33 @@ def resize_frame(image: Image.Image, maximum_width: int = 520) -> Image.Image:
 
 
 def main() -> None:
+    args = parse_args()
     payload = load_behavior_excerpts()
     BEHAVIOR_STATIC_FRAME_DIR.mkdir(parents=True, exist_ok=True)
-    records = []
-    for session in payload["sessions"]:
+    existing_records = {}
+    if BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH.exists():
+        existing = json.loads(
+            BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
+        )
+        existing_records = {
+            (record["modality"], record["camera_id"]): record
+            for record in existing.get("frames", [])
+        }
+    source_sessions = static_sessions(payload)
+    payload_sessions = {session["id"]: session for session in payload["sessions"]}
+    records = dict(existing_records)
+    for session in source_sessions:
+        if args.modality is not None and session["id"] != args.modality:
+            continue
         for camera in session["cameras"]:
-            target_video_time = video_time_at(
-                camera["timeMap"], BEHAVIOR_STATIC_LOCAL_TIME_SECONDS
-            )
+            if session["selection"] == "excerpt_local_time_seconds":
+                target_video_time = video_time_at(
+                    camera["timeMap"], BEHAVIOR_STATIC_LOCAL_TIME_SECONDS
+                )
+                source = video_source(payload_sessions[session["id"]], camera["url"])
+            else:
+                target_video_time = session["target_video_time_seconds"]
+                source = remote_metadata(camera["url"])
             image, decoded_time = decode_frame(camera["url"], target_video_time)
             image, display_contrast = illuminate_frame(image)
             image = resize_frame(image)
@@ -168,32 +257,52 @@ def main() -> None:
                 optimize=False,
                 progressive=False,
             )
-            source = video_source(session, camera["url"])
-            records.append(
-                {
-                    "asset_path": output_path.name,
-                    "camera_id": camera["id"],
-                    "camera_label": camera["label"],
-                    "decoded_video_time_seconds": decoded_time,
-                    "display_contrast": display_contrast,
-                    "local_time_seconds": BEHAVIOR_STATIC_LOCAL_TIME_SECONDS,
-                    "modality": session["id"],
-                    "output_sha256": file_sha256(output_path),
-                    "source_content_length": source["contentLength"],
-                    "source_etag": source["etag"],
-                    "source_url": camera["url"],
-                    "target_video_time_seconds": target_video_time,
-                }
-            )
+            records[(session["id"], camera["id"])] = {
+                "asset_path": output_path.name,
+                "camera_id": camera["id"],
+                "camera_label": camera["label"],
+                "decoded_video_time_seconds": decoded_time,
+                "display_contrast": display_contrast,
+                "local_time_seconds": (
+                    BEHAVIOR_STATIC_LOCAL_TIME_SECONDS
+                    if session["selection"] == "excerpt_local_time_seconds"
+                    else None
+                ),
+                "modality": session["id"],
+                "mouse_id": session["subject"],
+                "output_sha256": file_sha256(output_path),
+                "selection": session["selection"],
+                "source_content_length": source["contentLength"],
+                "source_etag": source["etag"],
+                "source_session_id": session["session"],
+                "source_url": camera["url"],
+                "target_video_time_seconds": target_video_time,
+            }
+    for session in source_sessions:
+        for camera in session["cameras"]:
+            key = (session["id"], camera["id"])
+            if key not in records:
+                raise RuntimeError(f"Static camera record is unavailable: {key}")
+            record = records[key]
+            record.setdefault("mouse_id", session["subject"])
+            record.setdefault("source_session_id", session["session"])
+            record.setdefault("selection", session["selection"])
     provenance = {
-        "version": 1,
+        "version": 2,
         "behavior_excerpts_sha256": file_sha256(BEHAVIOR_EXCERPTS_PATH),
+        "running_statistics_sha256": file_sha256(RUNNING_STATISTICS_PATH),
         "local_time_seconds": BEHAVIOR_STATIC_LOCAL_TIME_SECONDS,
-        "frames": records,
+        "frames": [
+            records[(session["id"], camera["id"])]
+            for session in source_sessions
+            for camera in session["cameras"]
+        ],
         "notes": (
-            "Synchronized camera frames decoded from ETag-pinned public MP4 sources "
-            "at a common local excerpt time for Figure 9's static view. Each still "
-            "is independently illuminated from luminance percentiles."
+            "Camera frames decoded from ETag-pinned public MP4 sources for Figure 9's "
+            "static view. Neuropixels and mesoscope retain the common synchronized "
+            "excerpt time; SLAP2 uses the same session and mouse as its full-session "
+            "running profile. Each still is independently illuminated from luminance "
+            "percentiles."
         ),
     }
     BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH.write_text(
