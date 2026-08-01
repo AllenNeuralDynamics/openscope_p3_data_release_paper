@@ -27,9 +27,12 @@
     viewer: document.getElementById("neural-viewer"),
   };
   const context = elements.canvas.getContext("2d");
+  const movieFrameCanvas = document.createElement("canvas");
+  const movieFrameContext = movieFrameCanvas.getContext("2d");
   const excerptDuration = protocol.windowEndSeconds - protocol.windowStartSeconds;
   const matrixCache = new Map();
   const spriteCache = new Map();
+  let movieFrameKey = "";
   const state = {
     contrast: 1,
     lastFrame: null,
@@ -303,12 +306,58 @@
     return record;
   }
 
+  function microscopyFrame(option, record, frameIndex) {
+    const key = `${option.assetPath}:${frameIndex}:${state.contrast}`;
+    if (movieFrameKey === key) return movieFrameCanvas;
+    if (
+      movieFrameCanvas.width !== option.frameWidth
+      || movieFrameCanvas.height !== option.frameHeight
+    ) {
+      movieFrameCanvas.width = option.frameWidth;
+      movieFrameCanvas.height = option.frameHeight;
+    }
+    const sourceX = (frameIndex % option.sheetColumns) * option.frameWidth;
+    const sourceY = Math.floor(frameIndex / option.sheetColumns) * option.frameHeight;
+    movieFrameContext.clearRect(0, 0, option.frameWidth, option.frameHeight);
+    movieFrameContext.drawImage(
+      record.image,
+      sourceX,
+      sourceY,
+      option.frameWidth,
+      option.frameHeight,
+      0,
+      0,
+      option.frameWidth,
+      option.frameHeight,
+    );
+    if (state.contrast !== 1) {
+      const image = movieFrameContext.getImageData(
+        0,
+        0,
+        option.frameWidth,
+        option.frameHeight,
+      );
+      for (let index = 0; index < image.data.length; index += 4) {
+        image.data[index] = Math.min(255, Math.round(image.data[index] * state.contrast));
+        image.data[index + 1] = Math.min(
+          255,
+          Math.round(image.data[index + 1] * state.contrast),
+        );
+        image.data[index + 2] = Math.min(
+          255,
+          Math.round(image.data[index + 2] * state.contrast),
+        );
+      }
+      movieFrameContext.putImageData(image, 0, 0);
+    }
+    movieFrameKey = key;
+    return movieFrameCanvas;
+  }
+
   function drawMovie(option) {
     const record = loadSprite(option);
     if (!record.ready) return;
     const frameIndex = nearestIndex(option.frameTimes, state.playhead);
-    const sourceX = (frameIndex % option.sheetColumns) * option.frameWidth;
-    const sourceY = Math.floor(frameIndex / option.sheetColumns) * option.frameHeight;
     const availableWidth = 760;
     const availableHeight = 460;
     const scale = Math.min(
@@ -319,21 +368,14 @@
     const height = option.frameHeight * scale;
     const x = (elements.canvas.width - width) / 2;
     const y = (elements.canvas.height - height) / 2;
-    context.save();
-    context.filter = `brightness(${state.contrast})`;
     context.imageSmoothingEnabled = true;
     context.drawImage(
-      record.image,
-      sourceX,
-      sourceY,
-      option.frameWidth,
-      option.frameHeight,
+      microscopyFrame(option, record, frameIndex),
       x,
       y,
       width,
       height,
     );
-    context.restore();
     context.strokeStyle = "#8f9996";
     context.strokeRect(x, y, width, height);
     drawScaleBar(option, x, y, width, height);

@@ -1025,7 +1025,10 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "media/neural-viewer/raw-neural-recordings.svg" in html
     assert ".viewer.static-active { max-width: 1200px; }" in html
     assert 'classList.toggle("static-active", view === "static")' in html
-    assert "context.filter = `brightness(${state.contrast})`" in html
+    assert "function microscopyFrame(option, record, frameIndex)" in html
+    assert "movieFrameContext.getImageData" in html
+    assert "movieFrameContext.putImageData" in html
+    assert "context.filter" not in html
     assert "selectView" in html
     assert "Excerpt time (s)" in html
     assert "Excerpt time (ms)" in html
