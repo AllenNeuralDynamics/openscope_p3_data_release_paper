@@ -21,7 +21,7 @@
     neuropixels: "Neuropixels",
     slap2: "SLAP2",
   };
-  const state = { kind: "animals", view: "interactive", visibleRows: [] };
+  const state = { kind: "animals", view: "static", visibleRows: [] };
 
   function selectView(view) {
     state.view = view;
@@ -168,5 +168,5 @@
   });
   buildTabs();
   selectTable("animals");
-  selectView("interactive");
+  selectView("static");
 })();

@@ -300,6 +300,10 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
     assert 'data-view="interactive"' in html
     assert 'data-view="static"' in html
     assert 'id="static-view"' in html
+    assert 'class="view-button active" data-view="static" aria-pressed="true"' in html
+    assert '<div id="interactive-view" hidden>' in html
+    assert 'selectView("static")' in html
+    assert 'selectView("interactive")' not in html
     assert "data:image/svg+xml;base64," in html
     assert "selectView" in html
     assert 'document.querySelector("body > main")' in html
@@ -1023,7 +1027,8 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert 'data-view="static"' in html
     assert 'id="static-view"' in html
     assert "media/neural-viewer/raw-neural-recordings.svg" in html
-    assert ".viewer.static-active { max-width: 1200px; }" in html
+    assert "max-width: 900px" not in html
+    assert "max-width: 1200px" not in html
     assert 'classList.toggle("static-active", view === "static")' in html
     assert "function microscopyFrame(option, record, frameIndex)" in html
     assert "movieFrameContext.getImageData" in html

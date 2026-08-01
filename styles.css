@@ -253,8 +253,6 @@ article table.table-laser-power td:first-child {
 
 #fig-aligned-neural-signals {
   width: 100%;
-  max-width: 900px;
-  justify-self: center;
   container-type: inline-size;
 }
 
