@@ -349,8 +349,10 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "overlapping raw-image cards" in manuscript
     assert "**A,** all six Neuropixels probe heatmaps" in manuscript
     assert "eight mesoscope plane stills" in manuscript
-    assert "one enlarged SLAP2 stack" in manuscript
-    assert "1st–99.5th max-channel" in manuscript
+    assert "two merged SLAP2 plane previews" in manuscript
+    assert "1st–99.5th max-channel percentiles" in manuscript
+    assert "640 × 400 lossless WebP frames" in manuscript
+    assert "single aligned source frame without temporal averaging" in manuscript
     assert "shown to introduce the native acquisition formats" in manuscript
     assert "Event-aligned raw data across recording modalities" not in manuscript
     assert "prediction-violating event" not in manuscript
@@ -382,16 +384,20 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "Figure 10 are planning placeholders" in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert ":placeholder: ./images/figures/generated/synchronized-behavior.svg" in manuscript
-    assert "**Static** view compares all 10\navailable camera streams" in manuscript
-    assert "same mouse and session in each modality" in manuscript
+    assert "Synchronized behavior and running across recording modalities" in manuscript
+    assert "**A–C,** Camera\nviews and complete-session running profiles" in manuscript
+    assert "Neuropixels\n(**A**), mesoscope (**B**), and SLAP2 (**C**)" in manuscript
+    assert "same mouse and source\nsession" in manuscript
     assert "share one time axis" in manuscript
-    assert "using the Figure 2 block colors" in manuscript
-    assert "Panel D follows that same block\norder" in manuscript
-    assert "each bar is the mean across mice" in manuscript
+    assert "using the Figure\n2 block colors" in manuscript
+    assert "**D,** Mean forward running speed in each protocol block" in manuscript
+    assert "compared on one shared cm/s axis" in manuscript
+    assert "each bar is the\nmean across mice" in manuscript
+    assert "legend values report included mice" in manuscript
     assert "8192 counts/revolution, an 8.255 cm disc radius" in manuscript
     assert "1st–99th luminance percentiles" in manuscript
     assert "maps median luminance to 35%" in manuscript
-    assert "Event-centered excerpts from real Neuropixels" in manuscript
+    assert "Event-centered excerpts from real Neuropixels" not in manuscript
     assert "figure-06-behavior-tracking-plan.png" not in manuscript
     assert "continuous raw\nbehavioral videos" in manuscript
     assert "[](#fig-behavior-tracking) show these streams" in manuscript

@@ -142,10 +142,14 @@ SLAP2_HEADER_FIELDS = (
 SLAP2_MAGIC_NUMBER = 322379495
 SLAP2_MOVIE_FRAMES = 60
 SLAP2_MICRONS_PER_PIXEL = 0.25
+SLAP2_NATIVE_SIZE = (1280, 800)
+SLAP2_DOWNSAMPLE_FACTOR = 2
 
 AP_EXCERPT_SECONDS = 0.1
 MOVIE_FRAME_SIZE = (256, 256)
-SLAP2_FRAME_SIZE = (256, 160)
+SLAP2_FRAME_SIZE = tuple(
+    dimension // SLAP2_DOWNSAMPLE_FACTOR for dimension in SLAP2_NATIVE_SIZE
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -225,6 +229,7 @@ def save_sprite_sheet(
     output: Path,
     columns: int,
     quality: int = 78,
+    lossless: bool = False,
 ) -> dict[str, int | str]:
     if not images:
         raise RuntimeError(f"No frames were provided for {output.name}")
@@ -234,7 +239,8 @@ def save_sprite_sheet(
     for index, image in enumerate(images):
         sheet.paste(image, ((index % columns) * width, (index // columns) * height))
     output.parent.mkdir(parents=True, exist_ok=True)
-    sheet.save(output, "WEBP", quality=quality, method=6)
+    save_options = {"lossless": True} if lossless else {"quality": quality}
+    sheet.save(output, "WEBP", method=6, **save_options)
     return {
         "assetPath": f"media/neural-viewer/{output.name}",
         "frameHeight": height,
@@ -656,8 +662,13 @@ def slap2_sparse_frame(
     flat = np.zeros(len(counts), dtype=float)
     valid = counts > 0
     flat[valid] = sums[valid] / counts[valid]
-    frame = flat.reshape((1280, 800), order="F").T
-    return np.max(frame.reshape((160, 5, 256, 5)), axis=(1, 3))
+    native_width, native_height = SLAP2_NATIVE_SIZE
+    frame = flat.reshape((native_width, native_height), order="F").T
+    frame_width, frame_height = SLAP2_FRAME_SIZE
+    factor = SLAP2_DOWNSAMPLE_FACTOR
+    return np.max(
+        frame.reshape((frame_height, factor, frame_width, factor)), axis=(1, 3)
+    )
 
 
 def slap2_overlay_images(
@@ -685,6 +696,55 @@ def slap2_overlay_images(
             )
         images.append(Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8)))
     return images, float(low), float(high)
+
+
+def slap2_composite_images(
+    green_frames: np.ndarray,
+    red_frames: np.ndarray,
+    background: np.ndarray,
+) -> list[Image.Image]:
+    channel_frames = (green_frames, red_frames)
+    channel_masks = tuple(frames != 0 for frames in channel_frames)
+    channel_ranges = tuple(
+        np.percentile(frames[mask], [1, 99.5])
+        for frames, mask in zip(channel_frames, channel_masks, strict=True)
+    )
+    background_low, background_high = np.percentile(background, [1, 99.8])
+    context = np.clip(
+        (background - background_low) / (background_high - background_low), 0, 1
+    )
+    images = []
+    for green, red, green_mask, red_mask in zip(
+        green_frames,
+        red_frames,
+        channel_masks[0],
+        channel_masks[1],
+        strict=True,
+    ):
+        green_low, green_high = channel_ranges[0]
+        red_low, red_high = channel_ranges[1]
+        green_signal = np.clip((green - green_low) / (green_high - green_low), 0, 1)
+        red_signal = np.clip((red - red_low) / (red_high - red_low), 0, 1)
+        rgb = np.repeat((context * 52)[..., np.newaxis], 3, axis=-1)
+        rgb[..., 0] = np.where(
+            red_mask,
+            rgb[..., 0] * (1 - red_signal) + 255 * red_signal,
+            rgb[..., 0],
+        )
+        rgb[..., 1] = np.where(
+            green_mask,
+            rgb[..., 1] * (1 - green_signal) + 255 * green_signal,
+            rgb[..., 1],
+        )
+        combined_signal = np.maximum(green_signal, red_signal)
+        combined_mask = green_mask | red_mask
+        rgb[..., 2] = np.where(
+            combined_mask,
+            rgb[..., 2] * (1 - combined_signal),
+            rgb[..., 2],
+        )
+        images.append(Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8)))
+    return images
 
 
 def extract_slap2_plane(plane: str, media_dir: Path) -> tuple[list[dict], list[dict]]:
@@ -745,7 +805,11 @@ def extract_slap2_plane(plane: str, media_dir: Path) -> tuple[list[dict], list[d
     with tempfile.NamedTemporaryFile(suffix=".tif") as reference_file:
         reference_source = fetch_file(reference_url, Path(reference_file.name))
         reference = tifffile.imread(reference_file.name).max(axis=0)
-    background = reference.reshape(160, 5, 256, 5).mean(axis=(1, 3))
+    frame_width, frame_height = SLAP2_FRAME_SIZE
+    factor = SLAP2_DOWNSAMPLE_FACTOR
+    background = reference.reshape(
+        frame_height, factor, frame_width, factor
+    ).mean(axis=(1, 3))
     cycle_indices = first_cycle + selected.astype(float) + 0.5
     frame_times = cycle_indices * cycle_duration - SLAP2_EVENT_OFFSET_SECONDS
     options = []
@@ -754,13 +818,26 @@ def extract_slap2_plane(plane: str, media_dir: Path) -> tuple[list[dict], list[d
         annotation["intended_red_channel_target"],
     )
     colors = ("green", "red")
-    for channel, frames in enumerate(frames_by_channel):
-        frame_array = np.stack(frames)
+    frame_arrays = tuple(np.stack(frames) for frames in frames_by_channel)
+    composite_images = slap2_composite_images(*frame_arrays, background)
+    composite_filename = f"slap2-{plane.lower()}-composite.webp"
+    composite_sprite = save_sprite_sheet(
+        composite_images,
+        media_dir / composite_filename,
+        columns=10,
+        lossless=True,
+    )
+    for channel, frame_array in enumerate(frame_arrays):
         images, contrast_low, contrast_high = slap2_overlay_images(
             frame_array, background, channel
         )
         filename = f"slap2-{plane.lower()}-detector-{channel + 1}.webp"
-        sprite = save_sprite_sheet(images, media_dir / filename, columns=10, quality=80)
+        sprite = save_sprite_sheet(
+            images,
+            media_dir / filename,
+            columns=10,
+            lossless=True,
+        )
         options.append(
             {
                 **sprite,
@@ -770,6 +847,8 @@ def extract_slap2_plane(plane: str, media_dir: Path) -> tuple[list[dict], list[d
                     f"{measurements[channel]}"
                 ),
                 "channelColor": colors[channel],
+                "compositeAssetPath": composite_sprite["assetPath"],
+                "compositeSheetSha256": composite_sprite["sheetSha256"],
                 "contrastHigh": round(contrast_high, 6),
                 "contrastLow": round(contrast_low, 6),
                 "detectorChannel": channel + 1,
@@ -790,6 +869,8 @@ def extract_slap2_plane(plane: str, media_dir: Path) -> tuple[list[dict], list[d
                 "remoteFocusDepthBelowPiaUm": abs(
                     annotation["pia_depth_on_remote_focus_um"]
                 ),
+                "spatialDownsampleFactor": SLAP2_DOWNSAMPLE_FACTOR,
+                "spriteEncoding": "lossless WebP",
                 "structureType": "dendrite",
                 "targetArea": annotation["targeted_structure"],
                 "targetLayer": "L2/3",
@@ -867,7 +948,7 @@ def main() -> None:
                 extract_mesoscope(sessions["mesoscope"], temporary_media),
                 extract_slap2(sessions["slap2"], temporary_media),
             ],
-            "version": 6,
+            "version": 7,
             "windowEndSeconds": WINDOW_END_SECONDS,
             "windowStartSeconds": WINDOW_START_SECONDS,
         }

@@ -3016,7 +3016,6 @@
         },
         {
           "label": "DANDI",
-          "micronsPerPixel": 0.78,
           "url": "https://dandiarchive.org/dandiset/001768/draft/files"
         },
         {
@@ -4286,11 +4285,13 @@
           "anatomyLabel": "DMD1 \u00b7 VISp L2/3 \u00b7 91 \u00b5m below pia \u00b7 iGluSnFR4f",
           "assetPath": "media/neural-viewer/slap2-dmd1-detector-1.webp",
           "channelColor": "green",
-          "contrastHigh": 413.403333,
-          "contrastLow": 10.9475,
+          "compositeAssetPath": "media/neural-viewer/slap2-dmd1-composite.webp",
+          "compositeSheetSha256": "314d99ca375ce69a46ce98afbfa819b640d313c1019da34ff9a868c19b1498be",
+          "contrastHigh": 342.5,
+          "contrastLow": 3.0,
           "detectorChannel": 1,
           "frameCount": 60,
-          "frameHeight": 160,
+          "frameHeight": 400,
           "frameRateHz": 15.0,
           "frameTimes": [
             -1.00046,
@@ -4354,7 +4355,7 @@
             2.928454,
             2.99639
           ],
-          "frameWidth": 256,
+          "frameWidth": 640,
           "id": "dmd1-detector-1",
           "label": "DMD1 \u00b7 VISp L2/3 \u00b7 91 \u00b5m below pia \u00b7 iGluSnFR4f",
           "measurement": "iGluSnFR4f",
@@ -4365,7 +4366,9 @@
           "remoteFocusDepthBelowPiaUm": 91.0,
           "sheetColumns": 10,
           "sheetRows": 6,
-          "sheetSha256": "1cf0b5ee10014d772f9c137bc378e3bd29deba062ca2b03b70e81dc3a303baae",
+          "sheetSha256": "e75e5a14561a3d0980bd4dac40eb1de4f2b15caf4ce0513414060153fff97e42",
+          "spatialDownsampleFactor": 2,
+          "spriteEncoding": "lossless WebP",
           "structureType": "dendrite",
           "targetArea": "VISp",
           "targetLayer": "L2/3"
@@ -4374,11 +4377,13 @@
           "anatomyLabel": "DMD1 \u00b7 VISp L2/3 \u00b7 91 \u00b5m below pia \u00b7 RCaMP3",
           "assetPath": "media/neural-viewer/slap2-dmd1-detector-2.webp",
           "channelColor": "red",
-          "contrastHigh": 339.0,
-          "contrastLow": 7.57,
+          "compositeAssetPath": "media/neural-viewer/slap2-dmd1-composite.webp",
+          "compositeSheetSha256": "314d99ca375ce69a46ce98afbfa819b640d313c1019da34ff9a868c19b1498be",
+          "contrastHigh": 278.495833,
+          "contrastLow": 2.0,
           "detectorChannel": 2,
           "frameCount": 60,
-          "frameHeight": 160,
+          "frameHeight": 400,
           "frameRateHz": 15.0,
           "frameTimes": [
             -1.00046,
@@ -4442,7 +4447,7 @@
             2.928454,
             2.99639
           ],
-          "frameWidth": 256,
+          "frameWidth": 640,
           "id": "dmd1-detector-2",
           "label": "DMD1 \u00b7 VISp L2/3 \u00b7 91 \u00b5m below pia \u00b7 RCaMP3",
           "measurement": "RCaMP3",
@@ -4453,7 +4458,9 @@
           "remoteFocusDepthBelowPiaUm": 91.0,
           "sheetColumns": 10,
           "sheetRows": 6,
-          "sheetSha256": "5df1febcd61699106cfe3a07692b774759e644bce32b4e0806e9cd2936f23490",
+          "sheetSha256": "2a69c000497013001015596c090325f4b536625ae5d2c72f1281e4cf7adfdd57",
+          "spatialDownsampleFactor": 2,
+          "spriteEncoding": "lossless WebP",
           "structureType": "dendrite",
           "targetArea": "VISp",
           "targetLayer": "L2/3"
@@ -4462,11 +4469,13 @@
           "anatomyLabel": "DMD2 \u00b7 VISp L2/3 \u00b7 123.75 \u00b5m below pia \u00b7 iGluSnFR4f",
           "assetPath": "media/neural-viewer/slap2-dmd2-detector-1.webp",
           "channelColor": "green",
-          "contrastHigh": 448.0,
-          "contrastLow": 10.666667,
+          "compositeAssetPath": "media/neural-viewer/slap2-dmd2-composite.webp",
+          "compositeSheetSha256": "f2548cf79a349ac4fa5ccdc46bd930de4053549d1f96d53566d35a6162fa26d2",
+          "contrastHigh": 371.0,
+          "contrastLow": 3.0,
           "detectorChannel": 1,
           "frameCount": 60,
-          "frameHeight": 160,
+          "frameHeight": 400,
           "frameRateHz": 15.0,
           "frameTimes": [
             -1.001302,
@@ -4530,7 +4539,7 @@
             2.931075,
             2.998542
           ],
-          "frameWidth": 256,
+          "frameWidth": 640,
           "id": "dmd2-detector-1",
           "label": "DMD2 \u00b7 VISp L2/3 \u00b7 123.75 \u00b5m below pia \u00b7 iGluSnFR4f",
           "measurement": "iGluSnFR4f",
@@ -4541,7 +4550,9 @@
           "remoteFocusDepthBelowPiaUm": 123.75,
           "sheetColumns": 10,
           "sheetRows": 6,
-          "sheetSha256": "078e2d84a418f5c21656a407a7738494759875c4b7b3b3a4bdf5cbadceec3075",
+          "sheetSha256": "a7a5a54407a24353a8b74ca4d6ac5b177ba29091b98fda4c7c6c40956a3649da",
+          "spatialDownsampleFactor": 2,
+          "spriteEncoding": "lossless WebP",
           "structureType": "dendrite",
           "targetArea": "VISp",
           "targetLayer": "L2/3"
@@ -4550,11 +4561,13 @@
           "anatomyLabel": "DMD2 \u00b7 VISp L2/3 \u00b7 123.75 \u00b5m below pia \u00b7 RCaMP3",
           "assetPath": "media/neural-viewer/slap2-dmd2-detector-2.webp",
           "channelColor": "red",
-          "contrastHigh": 347.0,
-          "contrastLow": 7.0,
+          "compositeAssetPath": "media/neural-viewer/slap2-dmd2-composite.webp",
+          "compositeSheetSha256": "f2548cf79a349ac4fa5ccdc46bd930de4053549d1f96d53566d35a6162fa26d2",
+          "contrastHigh": 302.31,
+          "contrastLow": 2.0,
           "detectorChannel": 2,
           "frameCount": 60,
-          "frameHeight": 160,
+          "frameHeight": 400,
           "frameRateHz": 15.0,
           "frameTimes": [
             -1.001302,
@@ -4618,7 +4631,7 @@
             2.931075,
             2.998542
           ],
-          "frameWidth": 256,
+          "frameWidth": 640,
           "id": "dmd2-detector-2",
           "label": "DMD2 \u00b7 VISp L2/3 \u00b7 123.75 \u00b5m below pia \u00b7 RCaMP3",
           "measurement": "RCaMP3",
@@ -4629,7 +4642,9 @@
           "remoteFocusDepthBelowPiaUm": 123.75,
           "sheetColumns": 10,
           "sheetRows": 6,
-          "sheetSha256": "6b1842674e783caab162739a548f1e99569d32c750bd8453f1e0258b73a7e102",
+          "sheetSha256": "a332b09de2275a7c00ac0401472663cb7af4eeb9e5fb30531e83fac8e4e8c030",
+          "spatialDownsampleFactor": 2,
+          "spriteEncoding": "lossless WebP",
           "structureType": "dendrite",
           "targetArea": "VISp",
           "targetLayer": "L2/3"
@@ -4645,7 +4660,6 @@
         },
         {
           "label": "SLAP2 packaging",
-          "micronsPerPixel": 0.25,
           "url": "https://github.com/AllenNeuralDynamics/slap2_packaging_nwb"
         }
       ],
@@ -4795,7 +4809,7 @@
       "viewType": "movie"
     }
   ],
-  "version": 6,
+  "version": 7,
   "windowEndSeconds": 3.0,
   "windowStartSeconds": -1.0
 }

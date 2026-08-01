@@ -843,7 +843,7 @@ def test_running_statistics_are_source_backed_and_mouse_aggregated() -> None:
 
 def test_neural_excerpts_are_source_backed_and_aligned() -> None:
     assert hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest() == (
-        "74a3cbcc083a985e50fd1097f9641d72a7e87afdf49282397805a2c656820f09"
+        "65a5c35e30634d0c261697a728aec7ca6fbdc3c94b2e326a61771238492480f8"
     )
     payload = load_neural_excerpts(NEURAL_EXCERPTS_PATH)
 
@@ -952,6 +952,31 @@ def test_neural_excerpts_are_source_backed_and_aligned() -> None:
     assert {
         option["micronsPerPixel"] for option in payload["sessions"][2]["options"]
     } == {0.25}
+    slap2_options = payload["sessions"][2]["options"]
+    assert {
+        (
+            option["frameWidth"],
+            option["frameHeight"],
+            option["spatialDownsampleFactor"],
+            option["spriteEncoding"],
+        )
+        for option in slap2_options
+    } == {(640, 400, 2, "lossless WebP")}
+    for green_option, red_option in zip(
+        slap2_options[0::2], slap2_options[1::2], strict=True
+    ):
+        assert green_option["frameTimes"] == red_option["frameTimes"]
+        assert green_option["compositeAssetPath"] == red_option["compositeAssetPath"]
+        assert (
+            green_option["compositeSheetSha256"]
+            == red_option["compositeSheetSha256"]
+        )
+        composite_asset = NEURAL_MEDIA_DIR / Path(
+            green_option["compositeAssetPath"]
+        ).name
+        assert hashlib.sha256(composite_asset.read_bytes()).hexdigest() == (
+            green_option["compositeSheetSha256"]
+        )
     assert len(movie_options) == 12
     for option in movie_options:
         assert option["frameTimes"][0] <= -0.9
@@ -998,6 +1023,8 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert 'data-view="static"' in html
     assert 'id="static-view"' in html
     assert "media/neural-viewer/raw-neural-recordings.svg" in html
+    assert ".viewer.static-active { max-width: 1000px; }" in html
+    assert 'classList.toggle("static-active", view === "static")' in html
     assert "selectView" in html
     assert "Excerpt time (s)" in html
     assert "Excerpt time (ms)" in html
@@ -1033,7 +1060,9 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "__NEURAL_" not in html
     assert "__EMBED_AUTO_HEIGHT_JS__" not in html
     copied_media = tmp_path / "media" / "neural-viewer"
-    assert len(list(copied_media.glob("*.webp"))) == 12
+    assert len(list(copied_media.glob("*.webp"))) == 14
+    assert (copied_media / "slap2-dmd1-composite.webp").is_file()
+    assert (copied_media / "slap2-dmd2-composite.webp").is_file()
     assert (copied_media / static_path.name).read_bytes() == static_path.read_bytes()
 
     write_neural_viewer_html(viewer_path, static_output=static_path)
@@ -1044,11 +1073,11 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     provenance = json.loads(
         NEURAL_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
-    assert provenance["version"] == 1
+    assert provenance["version"] == 2
     assert provenance["raw_neural_excerpts_sha256"] == hashlib.sha256(
         NEURAL_EXCERPTS_PATH.read_bytes()
     ).hexdigest()
-    assert len(provenance["frames"]) == 12
+    assert len(provenance["frames"]) == 10
     assert {
         (record["modality"], record["option_id"])
         for record in provenance["frames"]
@@ -1061,43 +1090,52 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
         ("mesoscope", "visl_5"),
         ("mesoscope", "visl_6"),
         ("mesoscope", "visl_7"),
-        ("slap2", "dmd1-detector-1"),
-        ("slap2", "dmd1-detector-2"),
-        ("slap2", "dmd2-detector-1"),
-        ("slap2", "dmd2-detector-2"),
+        ("slap2", "dmd1-composite"),
+        ("slap2", "dmd2-composite"),
     }
     for record in provenance["frames"]:
         frame_path = NEURAL_STATIC_FRAME_DIR / record["asset_path"]
         assert hashlib.sha256(frame_path.read_bytes()).hexdigest() == record[
             "output_sha256"
         ]
-        contrast = record["display_contrast"]
-        assert contrast["method"] == "max-channel hue-preserving linear stretch"
-        assert contrast["low_percentile"] == 1.0
-        assert contrast["high_percentile"] == 99.5
-        assert 0 <= contrast["low_value"] < contrast["high_value"] <= 255
+        if record["modality"] == "mesoscope":
+            contrast = record["display_contrast"]
+            assert contrast["method"] == "max-channel hue-preserving linear stretch"
+            assert contrast["low_percentile"] == 1.0
+            assert contrast["high_percentile"] == 99.5
+            assert 0 <= contrast["low_value"] < contrast["high_value"] <= 255
+        else:
+            assert record["frame_size"] == [640, 400]
+            assert record["spatial_downsample_factor"] == 2
+            assert record["temporal_averaging_frames"] == 1
+            assert record["channel_composite"] == {
+                "green": "iGluSnFR4f",
+                "red": "RCaMP3",
+                "source_high_percentile": 99.5,
+                "source_low_percentile": 1.0,
+            }
 
     svg_path = write_neural_static_svg(tmp_path / "raw-neural-recordings.svg")
     svg = svg_path.read_text(encoding="utf-8")
     assert 'width="1800" height="660"' in svg
-    assert svg.count("data:image/png;base64,") == 18
+    assert svg.count("data:image/png;base64,") == 16
     assert svg.count('class="raw-image-card" data-modality="neuropixels"') == 6
     assert svg.count('class="raw-image-card" data-modality="mesoscope"') == 8
-    assert svg.count('class="raw-image-card" data-modality="slap2"') == 4
-    assert svg.count('class="raw-card-image"') == 18
+    assert svg.count('class="raw-image-card" data-modality="slap2"') == 2
+    assert svg.count('class="raw-card-image"') == 16
     assert svg.count('data-modality="mesoscope" data-option-id=') == 8
     assert svg.count('data-card-width="255"') == 8
-    assert svg.count('data-modality="slap2" data-option-id=') == 4
-    assert svg.count('data-card-width="500"') == 4
+    assert svg.count('data-modality="slap2" data-option-id=') == 2
+    assert svg.count('data-card-width="500"') == 2
     assert "Probe A" in svg
     assert "Probe F" in svg
     assert "VISp · 4 planes" in svg
     assert "VISl · 4 planes" in svg
-    assert "DMD1 · 91 µm · iGluSnFR4f" in svg
-    assert "DMD2 · 123.75 µm · RCaMP3" in svg
+    assert "DMD1 · 91 µm · green + red composite" in svg
+    assert "DMD2 · 123.75 µm · green + red composite" in svg
     assert "6 probe recordings · all raw excerpts stacked" in svg
     assert "8 planes · 4 VISp + 4 VISl · all raw frames stacked" in svg
-    assert "2 VISp planes · 2 indicator images per plane" in svg
+    assert "2 VISp planes · merged green + red channels" in svg
     assert "scale-card" not in svg
     assert "playback" not in svg.lower()
     assert "event onset" not in svg.lower()

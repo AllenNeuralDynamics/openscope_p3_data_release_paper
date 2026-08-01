@@ -129,71 +129,57 @@
       "source_sheet_sha256": "33bc6554a4a8e0d061f6e4b2cb45794a2755d56a3e10ee288440adde543737c5"
     },
     {
-      "asset_path": "slap2-dmd1-detector-1.png",
-      "display_contrast": {
-        "high_percentile": 99.5,
-        "high_value": 62,
-        "low_percentile": 1.0,
-        "low_value": 0,
-        "method": "max-channel hue-preserving linear stretch"
+      "asset_path": "slap2-dmd1-composite.png",
+      "channel_composite": {
+        "green": "iGluSnFR4f",
+        "red": "RCaMP3",
+        "source_high_percentile": 99.5,
+        "source_low_percentile": 1.0
       },
       "frame_index": 30,
+      "frame_size": [
+        640,
+        400
+      ],
       "frame_time_seconds": 1.026271,
       "modality": "slap2",
-      "option_id": "dmd1-detector-1",
-      "output_sha256": "e4c20a8a297f85b8fe178b78aaa97dcc12e1bcfc9a12734dc66427c04b303417",
-      "source_sheet_sha256": "1cf0b5ee10014d772f9c137bc378e3bd29deba062ca2b03b70e81dc3a303baae"
+      "option_id": "dmd1-composite",
+      "output_sha256": "3330b6924acf03e4d924a9465a9e9bb3a7ec564253da9560ac124300e60bde48",
+      "source_option_ids": [
+        "dmd1-detector-1",
+        "dmd1-detector-2"
+      ],
+      "source_sheet_sha256": "314d99ca375ce69a46ce98afbfa819b640d313c1019da34ff9a868c19b1498be",
+      "spatial_downsample_factor": 2,
+      "temporal_averaging_frames": 1
     },
     {
-      "asset_path": "slap2-dmd1-detector-2.png",
-      "display_contrast": {
-        "high_percentile": 99.5,
-        "high_value": 54,
-        "low_percentile": 1.0,
-        "low_value": 0,
-        "method": "max-channel hue-preserving linear stretch"
+      "asset_path": "slap2-dmd2-composite.png",
+      "channel_composite": {
+        "green": "iGluSnFR4f",
+        "red": "RCaMP3",
+        "source_high_percentile": 99.5,
+        "source_low_percentile": 1.0
       },
       "frame_index": 30,
-      "frame_time_seconds": 1.026271,
-      "modality": "slap2",
-      "option_id": "dmd1-detector-2",
-      "output_sha256": "486a7c12ca7739cd28340f8192071a97e5c306856b5c88e8a448927202a66bc5",
-      "source_sheet_sha256": "5df1febcd61699106cfe3a07692b774759e644bce32b4e0806e9cd2936f23490"
-    },
-    {
-      "asset_path": "slap2-dmd2-detector-1.png",
-      "display_contrast": {
-        "high_percentile": 99.5,
-        "high_value": 76,
-        "low_percentile": 1.0,
-        "low_value": 0,
-        "method": "max-channel hue-preserving linear stretch"
-      },
-      "frame_index": 30,
+      "frame_size": [
+        640,
+        400
+      ],
       "frame_time_seconds": 1.032353,
       "modality": "slap2",
-      "option_id": "dmd2-detector-1",
-      "output_sha256": "0d4c9d75e3d04982bc63d971c997bba5664d89806e6598a3c9642181f8943251",
-      "source_sheet_sha256": "078e2d84a418f5c21656a407a7738494759875c4b7b3b3a4bdf5cbadceec3075"
-    },
-    {
-      "asset_path": "slap2-dmd2-detector-2.png",
-      "display_contrast": {
-        "high_percentile": 99.5,
-        "high_value": 56,
-        "low_percentile": 1.0,
-        "low_value": 0,
-        "method": "max-channel hue-preserving linear stretch"
-      },
-      "frame_index": 30,
-      "frame_time_seconds": 1.032353,
-      "modality": "slap2",
-      "option_id": "dmd2-detector-2",
-      "output_sha256": "756f1d7816023d6d97595ec8c65e7bc10caa44c6e6a2d023ecf282a3765101b3",
-      "source_sheet_sha256": "6b1842674e783caab162739a548f1e99569d32c750bd8453f1e0258b73a7e102"
+      "option_id": "dmd2-composite",
+      "output_sha256": "5a8a718ec49d20ef0f384d522a096b8db6ee3f799376471715b4ce43f640fbc8",
+      "source_option_ids": [
+        "dmd2-detector-1",
+        "dmd2-detector-2"
+      ],
+      "source_sheet_sha256": "f2548cf79a349ac4fa5ccdc46bd930de4053549d1f96d53566d35a6162fa26d2",
+      "spatial_downsample_factor": 2,
+      "temporal_averaging_frames": 1
     }
   ],
-  "notes": "Representative middle frames extracted from the committed raw-data sprite sheets for dependency-free HTML and PDF figure generation. Each still is independently contrast-scaled for display.",
-  "raw_neural_excerpts_sha256": "74a3cbcc083a985e50fd1097f9641d72a7e87afdf49282397805a2c656820f09",
-  "version": 1
+  "notes": "Representative middle frames extracted from committed lossless movie sheets for dependency-free HTML and PDF figure generation. Mesoscope stills are independently contrast-scaled. Each SLAP2 still merges its aligned green iGluSnFR4f and red RCaMP3 channels without temporal averaging.",
+  "raw_neural_excerpts_sha256": "65a5c35e30634d0c261697a728aec7ca6fbdc3c94b2e326a61771238492480f8",
+  "version": 2
 }

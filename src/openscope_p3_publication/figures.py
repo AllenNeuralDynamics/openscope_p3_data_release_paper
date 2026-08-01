@@ -60,6 +60,10 @@ NEURAL_STATIC_FRAME_PROVENANCE_PATH = (
 NEURAL_STATIC_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "raw-neural-recordings.svg"
 )
+SLAP2_STATIC_COMPOSITES = {
+    "dmd1-composite": ("dmd1-detector-1", "dmd1-detector-2"),
+    "dmd2-composite": ("dmd2-detector-1", "dmd2-detector-2"),
+}
 NEURAL_STATIC_SELECTIONS = {
     "neuropixels": (
         "probe-a",
@@ -79,12 +83,7 @@ NEURAL_STATIC_SELECTIONS = {
         "visl_6",
         "visl_7",
     ),
-    "slap2": (
-        "dmd1-detector-1",
-        "dmd1-detector-2",
-        "dmd2-detector-1",
-        "dmd2-detector-2",
-    ),
+    "slap2": tuple(SLAP2_STATIC_COMPOSITES),
 }
 OTHER_STUDIES_PATH = DATA_DIR / "other-oddball-studies.csv"
 OTHER_STUDIES_PROVENANCE_PATH = OTHER_STUDIES_PATH.with_suffix(".provenance.json")
@@ -1194,7 +1193,7 @@ def load_neural_excerpts(
     payload = json.loads(path.read_text(encoding="utf-8"))
     behavior_checksum = hashlib.sha256(behavior_path.read_bytes()).hexdigest()
     if (
-        payload.get("version") != 6
+        payload.get("version") != 7
         or payload.get("windowStartSeconds") != -1.0
         or payload.get("windowEndSeconds") != 3.0
         or payload.get("behaviorExcerptSha256") != behavior_checksum
@@ -1275,6 +1274,20 @@ def load_neural_excerpts(
                 times = option.get("frameTimes", [])
                 asset_path = NEURAL_MEDIA_DIR / Path(option.get("assetPath", "")).name
                 expected_pixel_size = 0.78 if session["id"] == "mesoscope" else 0.25
+                slap2_asset_valid = True
+                if session["id"] == "slap2":
+                    composite_path = NEURAL_MEDIA_DIR / Path(
+                        option.get("compositeAssetPath", "")
+                    ).name
+                    slap2_asset_valid = (
+                        option.get("frameWidth") == 640
+                        and option.get("frameHeight") == 400
+                        and option.get("spatialDownsampleFactor") == 2
+                        and option.get("spriteEncoding") == "lossless WebP"
+                        and composite_path.is_file()
+                        and hashlib.sha256(composite_path.read_bytes()).hexdigest()
+                        == option.get("compositeSheetSha256")
+                    )
                 if (
                     len(times) != option.get("frameCount")
                     or len(times) < 2
@@ -1291,6 +1304,7 @@ def load_neural_excerpts(
                         option.get("micronsPerPixel", math.nan),
                         expected_pixel_size,
                     )
+                    or not slap2_asset_valid
                 ):
                     raise RuntimeError(
                         f"Neural movie asset is invalid: {session['id']}/{option['id']}"
@@ -1352,7 +1366,7 @@ def load_neural_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
     )
     source_checksum = hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest()
     if (
-        provenance.get("version") != 1
+        provenance.get("version") != 2
         or provenance.get("raw_neural_excerpts_sha256") != source_checksum
     ):
         raise RuntimeError("Static neural frame provenance is not supported.")
@@ -1372,27 +1386,65 @@ def load_neural_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
 
     paths = {}
     for modality, option_id in sorted(expected_keys):
-        option = next(
-            option
-            for option in sessions[modality]["options"]
-            if option["id"] == option_id
-        )
         record = records[(modality, option_id)]
-        frame_index = len(option["frameTimes"]) // 2
         path = NEURAL_STATIC_FRAME_DIR / record["asset_path"]
-        contrast = record.get("display_contrast", {})
+        if modality == "mesoscope":
+            option = next(
+                option
+                for option in sessions[modality]["options"]
+                if option["id"] == option_id
+            )
+            frame_index = len(option["frameTimes"]) // 2
+            contrast = record.get("display_contrast", {})
+            valid = (
+                record["frame_index"] == frame_index
+                and record["frame_time_seconds"] == option["frameTimes"][frame_index]
+                and record["source_sheet_sha256"] == option["sheetSha256"]
+                and contrast.get("method")
+                == "max-channel hue-preserving linear stretch"
+                and contrast.get("low_percentile") == 1.0
+                and contrast.get("high_percentile") == 99.5
+                and 0
+                <= contrast.get("low_value", -1)
+                < contrast.get("high_value", -1)
+                <= 255
+            )
+        else:
+            source_option_ids = SLAP2_STATIC_COMPOSITES[option_id]
+            source_options = [
+                next(
+                    option
+                    for option in sessions[modality]["options"]
+                    if option["id"] == source_option_id
+                )
+                for source_option_id in source_option_ids
+            ]
+            green_option, red_option = source_options
+            frame_index = len(green_option["frameTimes"]) // 2
+            composite = record.get("channel_composite", {})
+            valid = (
+                record.get("source_option_ids") == list(source_option_ids)
+                and green_option["frameTimes"] == red_option["frameTimes"]
+                and green_option["compositeAssetPath"]
+                == red_option["compositeAssetPath"]
+                and green_option["compositeSheetSha256"]
+                == red_option["compositeSheetSha256"]
+                and record["source_sheet_sha256"]
+                == green_option["compositeSheetSha256"]
+                and record["frame_index"] == frame_index
+                and record["frame_time_seconds"]
+                == green_option["frameTimes"][frame_index]
+                and record.get("frame_size")
+                == [green_option["frameWidth"], green_option["frameHeight"]]
+                and record.get("spatial_downsample_factor") == 2
+                and record.get("temporal_averaging_frames") == 1
+                and composite.get("green") == green_option["measurement"]
+                and composite.get("red") == red_option["measurement"]
+                and composite.get("source_low_percentile") == 1.0
+                and composite.get("source_high_percentile") == 99.5
+            )
         if (
-            record["frame_index"] != frame_index
-            or record["frame_time_seconds"] != option["frameTimes"][frame_index]
-            or record["source_sheet_sha256"] != option["sheetSha256"]
-            or contrast.get("method")
-            != "max-channel hue-preserving linear stretch"
-            or contrast.get("low_percentile") != 1.0
-            or contrast.get("high_percentile") != 99.5
-            or not 0
-            <= contrast.get("low_value", -1)
-            < contrast.get("high_value", -1)
-            <= 255
+            not valid
             or hashlib.sha256(path.read_bytes()).hexdigest()
             != record["output_sha256"]
         ):
@@ -1577,14 +1629,14 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
         '<title id="title">Raw recording stacks across three modalities</title>',
         '<desc id="description">Six stacked Neuropixels probe heatmaps, two stacks '
-        'containing eight mesoscope plane images, and two stacks containing four SLAP2 '
-        'indicator images show the acquisition scale and native raw-data formats.</desc>',
+        'containing eight mesoscope plane images, and two SLAP2 plane images merging '
+        'green iGluSnFR4f with red RCaMP3 show the native raw-data formats.</desc>',
         f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
     ]
     summaries = {
         "neuropixels": "6 probe recordings · all raw excerpts stacked",
         "mesoscope": "8 planes · 4 VISp + 4 VISl · all raw frames stacked",
-        "slap2": "2 VISp planes · 2 indicator images per plane",
+        "slap2": "2 VISp planes · merged green + red channels",
     }
     for letter, label, modality in (
         ("A", "Neuropixels", "neuropixels"),
@@ -1643,31 +1695,27 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
     slap2_options = {
         option["id"]: option for option in sessions["slap2"]["options"]
     }
-    slap2_option_ids = (
-        "dmd1-detector-1",
-        "dmd1-detector-2",
-        "dmd2-detector-1",
-        "dmd2-detector-2",
-    )
     svg.append(
         '<text x="1240" y="91" font-family="Source Sans 3, sans-serif" '
         'font-size="14" font-weight="700" fill="#303536">'
-        '2 planes · 4 detector views</text>'
+        'iGluSnFR4f (green) + RCaMP3 (red)</text>'
     )
-    for index, option_id in enumerate(slap2_option_ids):
-        option = slap2_options[option_id]
-        dmd = option_id.split("-", maxsplit=1)[0].upper()
+    for index, (composite_id, source_option_ids) in enumerate(
+        SLAP2_STATIC_COMPOSITES.items()
+    ):
+        option = {**slap2_options[source_option_ids[0]], "id": composite_id}
+        dmd = composite_id.split("-", maxsplit=1)[0].upper()
         depth = option["remoteFocusDepthBelowPiaUm"]
         append_microscopy_raw_card(
             svg,
             x=1240 + index * 10,
-            y=102 + index * 70,
+            y=102 + index * 205,
             card_width=500,
             option=option,
-            path=frame_paths[("slap2", option_id)],
+            path=frame_paths[("slap2", composite_id)],
             modality="slap2",
-            label=f'{dmd} · {depth:g} µm · {option["measurement"]}',
-            show_scale=index == len(slap2_option_ids) - 1,
+            label=f"{dmd} · {depth:g} µm · green + red composite",
+            show_scale=index == len(SLAP2_STATIC_COMPOSITES) - 1,
         )
     svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)

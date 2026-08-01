@@ -24,6 +24,7 @@
     tooltip: document.getElementById("canvas-tooltip"),
     transport: document.querySelector(".transport"),
     viewButtons: document.querySelectorAll(".view-button"),
+    viewer: document.getElementById("neural-viewer"),
   };
   const context = elements.canvas.getContext("2d");
   const excerptDuration = protocol.windowEndSeconds - protocol.windowStartSeconds;
@@ -61,6 +62,7 @@
     if (view === "static") pause();
     elements.interactiveView.hidden = view !== "interactive";
     elements.staticView.hidden = view !== "static";
+    elements.viewer.classList.toggle("static-active", view === "static");
     elements.viewButtons.forEach((button) => {
       const active = button.dataset.view === view;
       button.classList.toggle("active", active);

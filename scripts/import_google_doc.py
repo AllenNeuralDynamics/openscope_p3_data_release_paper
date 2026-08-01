@@ -325,20 +325,23 @@ supports source selection, contrast adjustment, and microscopy playback. The
 without playback controls:
 **A,** all six Neuropixels probe heatmaps stacked with CCF anatomy; **B,** all
 eight mesoscope plane stills in two four-card stacks spanning VISp and VISl; and
-**C,** all four detector views in one enlarged SLAP2 stack spanning two VISp
-planes (one depth per DMD), each containing iGluSnFR4f and RCaMP3 cards.
+**C,** two merged SLAP2 plane previews spanning two VISp depths (one per DMD),
+with iGluSnFR4f shown in green and RCaMP3 in red.
 Covered cards retain exposed labels and raw-image strips to convey the complete
-acquisition scale. Static
-microscopy stills are independently stretched to their 1st–99.5th max-channel
-percentiles for display while preserving their pseudocolor hues. Neuropixels views contain
+acquisition scale. Static mesoscope stills are independently stretched to their
+1st–99.5th max-channel percentiles. Each SLAP2 preview merges the two channels,
+independently scaled to their 1st–99.5th sampled-pixel percentiles, from a
+single aligned source frame without temporal averaging. Neuropixels views contain
 100 ms of calibrated, unaveraged 30-kHz voltage from 96 regularly spaced
 contacts in the raw AP acquisition stream supplied to spike sorting; the
 adjacent CCF column and horizontal boundaries identify each contact's annotated
 structure or cortical layer. The displayed AP samples are not median-corrected,
 so common-mode fluctuations across contacts remain visible as vertical stripes.
 Mesoscope views are unprocessed 512 × 512 ScanImage channel frames. SLAP2 views
-map native sparse detector samples onto acquisition-plan superpixels and use a
-dim structural reference only outside sampled dendritic pixels. Microscopy
+map native sparse detector samples onto acquisition-plan superpixels, reduce the
+1280 × 800 acquisition-coordinate raster by 2×, and encode the resulting
+640 × 400 lossless WebP frames. A dim structural reference is used only outside
+sampled dendritic pixels. Microscopy
 playback uses elapsed time within each four-second excerpt. Selectors report CCF
 structures and layers for each probe; area, layer, and depth for each mesoscope
 plane; and indicator plus remote-focus depth below pia (91 µm for DMD1 and
@@ -366,20 +369,22 @@ BEHAVIOR_VIEWER_BLOCK = """:::{iframe} ./interactive/behavior-viewer.html
 :title: Synchronized behavior, locomotion, and visual stimuli across recording modalities
 :placeholder: ./images/figures/generated/synchronized-behavior.svg
 
-Event-centered excerpts from real Neuropixels, mesoscope, and SLAP2 recording
-sessions. The **Interactive** view provides synchronized camera playback,
-running signals, reconstructed stimulus state, and paired control-versus-context
-running summaries for the selected modality. The **Static** view compares all 10
-available camera streams beside one complete protocol running profile for the
-same mouse and session in each modality. Neuropixels and mesoscope stills retain
-the common 8-second synchronized excerpt selection; the SLAP2 stills are sampled
-at 600 seconds from the full-session profile source. Five-second profile means
-share one time axis and are shown over measured standard, context,
-standard-repeat, sequence, jitter, open-loop, natural-movie, and receptive-field
-block boundaries using the Figure 2 block colors. Panel D follows that same block
-order on one shared cm/s axis for all three modalities. Within each block,
-modality-colored points show mouse means after averaging available complete
-sessions, and each bar is the mean across mice for its modality. Metrics use
+Synchronized behavior and running across recording modalities. **A–C,** Camera
+views and complete-session running profiles from representative Neuropixels
+(**A**), mesoscope (**B**), and SLAP2 (**C**) sessions. Each row pairs all
+available camera views with the running profile from the same mouse and source
+session. Neuropixels and mesoscope stills retain the common 8-second synchronized
+excerpt selection; the SLAP2 stills are sampled at 600 seconds from the
+full-session profile source. Five-second profile means share one time axis and
+are shown over measured standard, context, standard-repeat, sequence, jitter,
+open-loop, natural-movie, and receptive-field block boundaries using the Figure
+2 block colors. **D,** Mean forward running speed in each protocol block for
+Neuropixels, mesoscope, and SLAP2, compared on one shared cm/s axis. Each point is
+one mouse after averaging its available complete sessions, and each bar is the
+mean across mice for its modality; legend values report included mice. The
+**Interactive** view provides synchronized camera playback, running signals,
+reconstructed stimulus state, and paired control-versus-context running
+summaries for the selected modality. Metrics use
 50 ms bins, and negative velocity is set to zero before summarization. SLAP2 encoder values
 are converted to cm/s using the pinned
 acquisition convention of 8192 counts/revolution, an 8.255 cm disc radius, and a

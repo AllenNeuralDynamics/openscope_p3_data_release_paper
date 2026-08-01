@@ -44,6 +44,8 @@ canvas:focus-visible {
   background: var(--paper);
 }
 
+.viewer.static-active { max-width: 1000px; }
+
 html.is-embedded .viewer { min-height: 0; }
 
 .view-switch {
@@ -85,7 +87,6 @@ html.is-embedded .viewer { min-height: 0; }
 
 .static-shell img {
   width: 100%;
-  min-width: 900px;
   height: auto;
   display: block;
 }
