@@ -379,9 +379,13 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     svg_path = write_session_inventory_svg(tmp_path / "session-inventory.svg")
     svg = svg_path.read_text(encoding="utf-8")
     assert 'width="1150" height="640"' in svg
-    assert "A  Neuropixels" in svg
-    assert "B  Mesoscope" in svg
-    assert "C  SLAP2" in svg
+    assert svg.count('class="platform-heading" data-modality=') == 3
+    assert svg.count('class="platform-logo"') == 3
+    assert svg.count('y="1" width="54" height="54"') == 3
+    assert svg.count("data:image/png;base64,") == 3
+    assert '>A</text>' in svg and '>Neuropixels</text>' in svg
+    assert '>B</text>' in svg and '>Mesoscope</text>' in svg
+    assert '>C</text>' in svg and '>SLAP2</text>' in svg
     assert "SLAP2 P3" not in svg
     assert svg.count('id="mouse-id-axis-label"') == 1
     assert ">Mouse ID</text>" in svg
@@ -569,6 +573,9 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "Neuropixels" in html
     assert "Mesoscope" in html
     assert "SLAP2" in html
+    assert html.count('"logo":"data:image/png;base64,') == 3
+    assert 'className = "modality-logo"' in html
+    assert 'button.append(logo, session.label)' in html
     assert "820459" in html
     assert "832700" in html
     assert "796630" in html
@@ -641,8 +648,12 @@ def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
     svg_path = write_behavior_static_svg(tmp_path / "synchronized-behavior.svg")
     svg = svg_path.read_text(encoding="utf-8")
     statistics_payload = load_running_statistics()
-    assert 'width="1800" height="1050"' in svg
+    assert 'width="1800" height="1080"' in svg
     assert svg.count("data:image/jpeg;base64,") == 10
+    assert svg.count("data:image/png;base64,") == 3
+    assert svg.count('class="platform-heading" data-modality=') == 3
+    assert svg.count('class="platform-logo"') == 3
+    assert svg.count('width="54" height="54"') == 3
     assert svg.count('class="behavior-camera-card" data-modality="neuropixels"') == 3
     assert svg.count('class="behavior-camera-card" data-modality="mesoscope"') == 4
     assert svg.count('class="behavior-camera-card" data-modality="slap2"') == 3
@@ -672,6 +683,7 @@ def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert "Wheel encoder velocity (counts/s)" not in svg
     assert "Average running speed across blocks" not in svg
     assert svg.count('class="running-summary-plot" data-shared-y-axis="true"') == 1
+    assert '<g class="running-summary" transform="translate(0 30)">' in svg
     assert 'class="running-panel-label"' in svg
     assert svg.count('class="running-block-header"') == 0
     assert svg.count('class="running-block-region"') == 8
@@ -1047,6 +1059,9 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "Neuropixels" in html
     assert "Mesoscope" in html
     assert "SLAP2" in html
+    assert html.count('"logo":"data:image/png;base64,') == 3
+    assert 'className = "modality-logo"' in html
+    assert 'button.append(logo, session.label)' in html
     assert "Raw AP acquisition voltage" in html
     assert "Raw AP acquisition" in html
     assert "Raw 30 kHz AP acquisition voltage with CCF boundaries" in html

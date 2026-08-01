@@ -116,7 +116,13 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = "modality-tab";
-      button.textContent = session.label;
+      const logo = document.createElement("img");
+      logo.className = "modality-logo";
+      logo.src = session.logo;
+      logo.alt = "";
+      logo.width = 42;
+      logo.height = 42;
+      button.append(logo, session.label);
       button.setAttribute("aria-label", `${session.label}, mouse ${session.subject}`);
       button.addEventListener("click", () => selectSession(index));
       elements.modalitySelector.append(button);

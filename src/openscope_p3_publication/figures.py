@@ -138,6 +138,13 @@ def load_platform_logos() -> dict[str, Path]:
     return paths
 
 
+def platform_logo_data_uris() -> dict[str, str]:
+    return {
+        modality: f"data:image/png;base64,{base64.b64encode(path.read_bytes()).decode()}"
+        for modality, path in load_platform_logos().items()
+    }
+
+
 @dataclass(frozen=True)
 class Session:
     number: int
@@ -1062,6 +1069,7 @@ def running_summary_svg(payload: dict) -> list[str]:
 def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
     payload = load_behavior_excerpts()
     running_statistics = load_running_statistics()
+    logo_paths = load_platform_logos()
     profiles = {
         profile["modality"]: profile
         for profile in running_statistics["example_profiles"]
@@ -1075,8 +1083,8 @@ def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
     }
     frame_paths = load_behavior_static_frames(payload, profiles)
     width = 1800
-    height = 1050
-    row_tops = (40, 243, 446)
+    height = 1080
+    row_tops = (40, 276, 512)
     accents = {
         "neuropixels": "#4B79C6",
         "mesoscope": "#14866C",
@@ -1103,17 +1111,25 @@ def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
         modality = session["id"]
         cameras = session["cameras"]
         profile = profiles[modality]
+        logo_data = base64.b64encode(logo_paths[modality].read_bytes()).decode()
         svg.extend(
             [
+                f'<g class="platform-heading" data-modality="{modality}">',
                 f'<text x="35" y="{row_top}" font-family="Source Sans 3, sans-serif" '
-                f'font-size="24" font-weight="700" fill="#293133">{letter}  '
+                f'font-size="24" font-weight="700" fill="#293133">{letter}</text>',
+                f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
+                f'x="63" y="{row_top - 38}" width="54" height="54" '
+                'preserveAspectRatio="xMidYMid meet"/>',
+                f'<text x="125" y="{row_top}" font-family="Source Sans 3, sans-serif" '
+                'font-size="24" font-weight="700" fill="#293133">'
                 f'{modality_labels[modality]} · mouse {escape(profile["mouse_id"])}</text>',
+                "</g>",
             ]
         )
         camera_width = 198
         camera_height = 148
         camera_gap = 12
-        camera_top = row_top + 28
+        camera_top = row_top + 42
         for index, camera in enumerate(cameras):
             left = 35 + index * (camera_width + camera_gap)
             image_data = base64.b64encode(
@@ -1152,7 +1168,9 @@ def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
                 row_index == 2,
             )
         )
+    svg.append('<g class="running-summary" transform="translate(0 30)">')
     svg.extend(running_summary_svg(running_statistics))
+    svg.append("</g>")
     svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(svg) + "\n", encoding="utf-8")
@@ -1165,6 +1183,9 @@ def write_behavior_viewer_html(
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_behavior_excerpts()
+    logo_data_uris = platform_logo_data_uris()
+    for session in payload["sessions"]:
+        session["logo"] = logo_data_uris[session["id"]]
     write_behavior_static_svg(static_output)
     template = (JAVASCRIPT_DIR / "behavior-viewer.html").read_text(encoding="utf-8")
     stylesheet = (JAVASCRIPT_DIR / "behavior-viewer.css").read_text(encoding="utf-8")
@@ -1750,8 +1771,10 @@ def write_neural_viewer_html(
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_neural_excerpts()
+    logo_data_uris = platform_logo_data_uris()
     write_neural_static_svg(static_output)
     for session in payload["sessions"]:
+        session["logo"] = logo_data_uris[session["id"]]
         for field in ("alignment", "context", "event", "stimulus"):
             session.pop(field, None)
     template = (JAVASCRIPT_DIR / "neural-viewer.html").read_text(encoding="utf-8")
@@ -2256,6 +2279,7 @@ def write_session_inventory_svg(
     output: Path = SESSION_INVENTORY_STATIC_OUTPUT,
 ) -> Path:
     payload = load_experimental_session_records()
+    logo_paths = load_platform_logos()
     records = payload["records"]
     panel_specs = (
         ("A", "Neuropixels", "neuropixels", 28),
@@ -2342,12 +2366,22 @@ def write_session_inventory_svg(
             tick_values = range(1, max_sessions + 2)
         axis_max = panel_axis_maxima[modality]
         axis_width = slot_width * axis_max
+        title_x = panel_left + chart_offset
+        logo_data = base64.b64encode(logo_paths[modality].read_bytes()).decode()
         svg.extend(
             [
-                f'<text class="panel-title" x="{panel_left + chart_offset:.2f}" y="48" '
+                f'<g class="platform-heading" data-modality="{modality}">',
+                f'<text class="panel-title" x="{title_x:.2f}" y="48" '
                 'font-family="Source Sans 3, sans-serif" '
                 f'font-size="22" font-weight="700" fill="#293133">'
-                f"{panel_letter}  {panel_title}</text>",
+                f"{panel_letter}</text>",
+                f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
+                f'x="{title_x + 24:.2f}" y="1" width="54" height="54" '
+                'preserveAspectRatio="xMidYMid meet"/>',
+                f'<text class="platform-title" x="{title_x + 86:.2f}" y="47" '
+                'font-family="Source Sans 3, sans-serif" '
+                f'font-size="22" font-weight="700" fill="#293133">{panel_title}</text>',
+                "</g>",
             ]
         )
         if modality == "neuropixels":

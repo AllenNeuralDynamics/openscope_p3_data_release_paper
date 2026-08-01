@@ -89,9 +89,9 @@ html.is-embedded .viewer { min-height: 0; }
 }
 
 .modality-tabs {
-  min-height: 48px;
+  min-height: 62px;
   display: flex;
-  align-items: end;
+  align-items: stretch;
   gap: 3px;
   padding: 0 14px;
   border-bottom: 1px solid var(--line);
@@ -100,13 +100,23 @@ html.is-embedded .viewer { min-height: 0; }
 
 .modality-tab {
   position: relative;
-  min-height: 47px;
-  padding: 0 16px;
+  min-height: 61px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   border: 0;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
   font-weight: 650;
+}
+
+.modality-logo {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  object-fit: contain;
 }
 
 .modality-tab::after {
@@ -280,7 +290,8 @@ html.is-embedded .viewer { min-height: 0; }
 
 @media (max-width: 700px) {
   .modality-tabs { padding-inline: 5px; }
-  .modality-tab { flex: 1; padding-inline: 6px; font-size: 0.82rem; }
+  .modality-tab { min-width: 0; flex: 1; gap: 4px; padding-inline: 6px; font-size: 0.75rem; }
+  .modality-logo { width: 32px; height: 32px; flex-basis: 32px; }
   .toolbar { grid-template-columns: auto minmax(120px, 1fr); }
   .contrast-control { grid-column: 1 / -1; }
   .transport { grid-template-columns: 36px minmax(130px, 1fr) 70px; gap: 7px; }
