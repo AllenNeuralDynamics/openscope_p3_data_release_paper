@@ -2292,6 +2292,7 @@ def write_session_inventory_svg(
     chart_top = 85
     chart_bottom = 570
     chart_offset = 104
+    heading_label_offset = 66
     chart_width = 410
     bar_height = 20
 
@@ -2366,7 +2367,7 @@ def write_session_inventory_svg(
             tick_values = range(1, max_sessions + 2)
         axis_max = panel_axis_maxima[modality]
         axis_width = slot_width * axis_max
-        title_x = panel_left + chart_offset
+        title_x = panel_left + chart_offset - heading_label_offset
         logo_data = base64.b64encode(logo_paths[modality].read_bytes()).decode()
         svg.extend(
             [

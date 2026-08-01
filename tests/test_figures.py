@@ -424,7 +424,14 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
         float(re.search(r'<rect class="session-block" x="([^"]+)"', chunk).group(1))
         for chunk in panel_chunks
     ]
-    assert panel_title_positions == first_session_positions
+    assert [
+        session_position - title_position
+        for title_position, session_position in zip(
+            panel_title_positions,
+            first_session_positions,
+            strict=True,
+        )
+    ] == [66, 66, 66]
     assert max(
         following - current
         for current, following in zip(
@@ -439,7 +446,7 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
         svg,
     )
     assert legend_position is not None
-    assert float(legend_position.group(1)) == panel_title_positions[1]
+    assert float(legend_position.group(1)) == first_session_positions[1]
     assert float(legend_position.group(2)) == 480
 
 
