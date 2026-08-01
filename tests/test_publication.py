@@ -350,9 +350,11 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "**A,** all six Neuropixels probe heatmaps" in manuscript
     assert "eight mesoscope plane stills" in manuscript
     assert "two merged SLAP2 plane previews" in manuscript
+    assert "black-referenced display gain" in manuscript
     assert "1st–99.5th max-channel percentiles" in manuscript
     assert "640 × 400 lossless WebP frames" in manuscript
     assert "single aligned source frame without temporal averaging" in manuscript
+    assert "hue-preserving gamma of 0.55" in manuscript
     assert "shown to introduce the native acquisition formats" in manuscript
     assert "Event-aligned raw data across recording modalities" not in manuscript
     assert "prediction-violating event" not in manuscript

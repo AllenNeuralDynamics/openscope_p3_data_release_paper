@@ -1023,8 +1023,9 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert 'data-view="static"' in html
     assert 'id="static-view"' in html
     assert "media/neural-viewer/raw-neural-recordings.svg" in html
-    assert ".viewer.static-active { max-width: 1000px; }" in html
+    assert ".viewer.static-active { max-width: 1200px; }" in html
     assert 'classList.toggle("static-active", view === "static")' in html
+    assert "context.filter = `brightness(${state.contrast})`" in html
     assert "selectView" in html
     assert "Excerpt time (s)" in html
     assert "Excerpt time (ms)" in html
@@ -1108,6 +1109,10 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
             assert record["frame_size"] == [640, 400]
             assert record["spatial_downsample_factor"] == 2
             assert record["temporal_averaging_frames"] == 1
+            assert record["display_contrast"] == {
+                "gamma": 0.55,
+                "method": "max-channel hue-preserving gamma",
+            }
             assert record["channel_composite"] == {
                 "green": "iGluSnFR4f",
                 "red": "RCaMP3",

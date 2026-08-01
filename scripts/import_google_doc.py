@@ -321,6 +321,7 @@ NEURAL_VIEWER_BLOCK = f"""## Raw data across recording modalities
 Representative raw-data excerpts from one public session per recording modality,
 shown to introduce the native acquisition formats. The **Interactive** view
 supports source selection, contrast adjustment, and microscopy playback. The
+microscopy contrast control applies black-referenced display gain. The
 **Static** view arranges all available recordings as overlapping raw-image cards
 without playback controls:
 **A,** all six Neuropixels probe heatmaps stacked with CCF anatomy; **B,** all
@@ -331,7 +332,8 @@ Covered cards retain exposed labels and raw-image strips to convey the complete
 acquisition scale. Static mesoscope stills are independently stretched to their
 1st–99.5th max-channel percentiles. Each SLAP2 preview merges the two channels,
 independently scaled to their 1st–99.5th sampled-pixel percentiles, from a
-single aligned source frame without temporal averaging. Neuropixels views contain
+single aligned source frame without temporal averaging, then applies a
+hue-preserving gamma of 0.55 for display. Neuropixels views contain
 100 ms of calibrated, unaveraged 30-kHz voltage from 96 regularly spaced
 contacts in the raw AP acquisition stream supplied to spike sorting; the
 adjacent CCF column and horizontal boundaries identify each contact's annotated

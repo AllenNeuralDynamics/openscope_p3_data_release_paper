@@ -71,6 +71,29 @@ def stretch_display_contrast(
     return output, low, high
 
 
+def apply_hue_preserving_gamma(
+    image: Image.Image,
+    gamma: float,
+) -> Image.Image:
+    if not 0 < gamma <= 1:
+        raise ValueError("Static-frame gamma must be in the interval (0, 1].")
+    image = image.convert("RGB")
+    data = image.tobytes()
+    pixels = zip(data[0::3], data[1::3], data[2::3], strict=True)
+    lookup = [round(255 * (value / 255) ** gamma) for value in range(256)]
+    adjusted = []
+    for pixel in pixels:
+        value = max(pixel)
+        if value == 0:
+            adjusted.append((0, 0, 0))
+            continue
+        scale = lookup[value] / value
+        adjusted.append(tuple(min(255, round(component * scale)) for component in pixel))
+    output = Image.new("RGB", image.size)
+    output.putdata(adjusted)
+    return output
+
+
 def main() -> None:
     payload = load_neural_excerpts()
     sessions = {session["id"]: session for session in payload["sessions"]}
@@ -152,7 +175,8 @@ def main() -> None:
         )
         output_path = NEURAL_STATIC_FRAME_DIR / f"slap2-{composite_id}.png"
         with Image.open(source_path) as sheet:
-            sheet.crop(box).convert("RGB").save(
+            frame = apply_hue_preserving_gamma(sheet.crop(box), gamma=0.55)
+            frame.save(
                 output_path,
                 format="PNG",
                 compress_level=9,
@@ -166,6 +190,10 @@ def main() -> None:
                     "red": red_option["measurement"],
                     "source_high_percentile": 99.5,
                     "source_low_percentile": 1.0,
+                },
+                "display_contrast": {
+                    "gamma": 0.55,
+                    "method": "max-channel hue-preserving gamma",
                 },
                 "frame_index": frame_index,
                 "frame_time_seconds": green_option["frameTimes"][frame_index],
@@ -191,7 +219,8 @@ def main() -> None:
             "Representative middle frames extracted from committed lossless movie "
             "sheets for dependency-free HTML and PDF figure generation. Mesoscope "
             "stills are independently contrast-scaled. Each SLAP2 still merges its "
-            "aligned green iGluSnFR4f and red RCaMP3 channels without temporal averaging."
+            "aligned green iGluSnFR4f and red RCaMP3 channels without temporal averaging "
+            "and applies a max-channel hue-preserving gamma of 0.55."
         ),
     }
     NEURAL_STATIC_FRAME_PROVENANCE_PATH.write_text(

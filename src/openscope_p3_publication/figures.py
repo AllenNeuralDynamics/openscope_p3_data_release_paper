@@ -1422,6 +1422,7 @@ def load_neural_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
             green_option, red_option = source_options
             frame_index = len(green_option["frameTimes"]) // 2
             composite = record.get("channel_composite", {})
+            display_contrast = record.get("display_contrast", {})
             valid = (
                 record.get("source_option_ids") == list(source_option_ids)
                 and green_option["frameTimes"] == red_option["frameTimes"]
@@ -1442,6 +1443,9 @@ def load_neural_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
                 and composite.get("red") == red_option["measurement"]
                 and composite.get("source_low_percentile") == 1.0
                 and composite.get("source_high_percentile") == 99.5
+                and display_contrast.get("method")
+                == "max-channel hue-preserving gamma"
+                and display_contrast.get("gamma") == 0.55
             )
         if (
             not valid

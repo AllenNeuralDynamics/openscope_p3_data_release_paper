@@ -136,6 +136,10 @@
         "source_high_percentile": 99.5,
         "source_low_percentile": 1.0
       },
+      "display_contrast": {
+        "gamma": 0.55,
+        "method": "max-channel hue-preserving gamma"
+      },
       "frame_index": 30,
       "frame_size": [
         640,
@@ -144,7 +148,7 @@
       "frame_time_seconds": 1.026271,
       "modality": "slap2",
       "option_id": "dmd1-composite",
-      "output_sha256": "3330b6924acf03e4d924a9465a9e9bb3a7ec564253da9560ac124300e60bde48",
+      "output_sha256": "7bcbf9415278e609111677abfc6a7d68f0b8028feb7e7b74ca284776d44070f4",
       "source_option_ids": [
         "dmd1-detector-1",
         "dmd1-detector-2"
@@ -161,6 +165,10 @@
         "source_high_percentile": 99.5,
         "source_low_percentile": 1.0
       },
+      "display_contrast": {
+        "gamma": 0.55,
+        "method": "max-channel hue-preserving gamma"
+      },
       "frame_index": 30,
       "frame_size": [
         640,
@@ -169,7 +177,7 @@
       "frame_time_seconds": 1.032353,
       "modality": "slap2",
       "option_id": "dmd2-composite",
-      "output_sha256": "5a8a718ec49d20ef0f384d522a096b8db6ee3f799376471715b4ce43f640fbc8",
+      "output_sha256": "2c8469b7a04c6f032f598faf74a147d7aa287c5e56f6491502f35720a5d1cbd7",
       "source_option_ids": [
         "dmd2-detector-1",
         "dmd2-detector-2"
@@ -179,7 +187,7 @@
       "temporal_averaging_frames": 1
     }
   ],
-  "notes": "Representative middle frames extracted from committed lossless movie sheets for dependency-free HTML and PDF figure generation. Mesoscope stills are independently contrast-scaled. Each SLAP2 still merges its aligned green iGluSnFR4f and red RCaMP3 channels without temporal averaging.",
+  "notes": "Representative middle frames extracted from committed lossless movie sheets for dependency-free HTML and PDF figure generation. Mesoscope stills are independently contrast-scaled. Each SLAP2 still merges its aligned green iGluSnFR4f and red RCaMP3 channels without temporal averaging and applies a max-channel hue-preserving gamma of 0.55.",
   "raw_neural_excerpts_sha256": "65a5c35e30634d0c261697a728aec7ca6fbdc3c94b2e326a61771238492480f8",
   "version": 2
 }

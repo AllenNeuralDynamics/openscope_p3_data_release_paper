@@ -320,7 +320,7 @@
     const x = (elements.canvas.width - width) / 2;
     const y = (elements.canvas.height - height) / 2;
     context.save();
-    context.filter = `contrast(${state.contrast})`;
+    context.filter = `brightness(${state.contrast})`;
     context.imageSmoothingEnabled = true;
     context.drawImage(
       record.image,

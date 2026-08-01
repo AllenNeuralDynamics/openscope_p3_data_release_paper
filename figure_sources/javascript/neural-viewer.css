@@ -44,7 +44,7 @@ canvas:focus-visible {
   background: var(--paper);
 }
 
-.viewer.static-active { max-width: 1000px; }
+.viewer.static-active { max-width: 1200px; }
 
 html.is-embedded .viewer { min-height: 0; }
 
