@@ -63,7 +63,7 @@ input {
 .view-button:focus-visible { outline: 3px solid rgba(8, 124, 112, 0.22); outline-offset: -3px; }
 
 .static-panel {
-  max-width: 550px;
+  max-width: 760px;
   margin-inline: auto;
 }
 
@@ -79,15 +79,15 @@ input {
 
 .session-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
 }
 
 .session-tab {
   position: relative;
   min-width: 0;
-  min-height: 42px;
-  padding: 6px 6px 8px;
+  min-height: 34px;
+  padding: 4px 5px 6px;
   overflow: hidden;
   border: 0;
   border-radius: 4px 4px 0 0;
@@ -243,28 +243,48 @@ input {
 }
 
 .playback-bar {
-  min-height: 68px;
-  padding-top: 8px;
+  min-height: 150px;
+  padding-top: 2px;
 }
 
 .block-track {
   position: relative;
   width: 100%;
-  height: 28px;
+  height: 43px;
   display: flex;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  background: #eef1ef;
+  align-items: flex-start;
+  gap: 2px;
+  overflow: visible;
+  background: transparent;
+}
+
+.block-track::before {
+  position: absolute;
+  right: 5px;
+  bottom: 3px;
+  left: 0;
+  border-top: 2px solid #303536;
+  content: "";
+}
+
+.block-track::after {
+  position: absolute;
+  right: 0;
+  bottom: -3px;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 12px solid #303536;
+  content: "";
 }
 
 .block-tab {
   position: relative;
   min-width: 8px;
-  height: 100%;
+  height: 30px;
   overflow: hidden;
   padding: 0 3px;
-  border: 0;
-  border-right: 1px solid rgba(255, 255, 255, 0.86);
+  border: 1px solid #AAB3AF;
+  border-radius: 2px;
   background: var(--block-color);
   color: #34423c;
   cursor: pointer;
@@ -286,6 +306,8 @@ input {
 }
 
 .block-tab.context {
+  height: 36px;
+  border-color: var(--accent);
   background: var(--accent);
   color: #fff;
 }
@@ -305,11 +327,37 @@ input {
   outline-offset: -2px;
 }
 
+.context-selector {
+  position: relative;
+  width: var(--context-width, 36%);
+  margin-left: var(--context-start, 9%);
+  padding-bottom: 13px;
+}
+
+.context-selector::before {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  height: 11px;
+  border-left: 2px solid var(--accent);
+  content: "";
+}
+
+.context-selector-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .playback-meta {
-  min-height: 31px;
+  min-height: 24px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
 }
 
@@ -320,44 +368,27 @@ input {
   white-space: nowrap;
 }
 
-.source-links {
-  overflow: hidden;
-  color: #7a8580;
-  font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.source-links a {
-  color: #53645c;
-  text-underline-offset: 2px;
-}
-
-.source-links a:hover,
-.source-links a:focus-visible {
-  color: var(--accent);
-}
-
 @media (max-width: 560px) {
   .viewer {
     padding: 9px;
   }
 
   .session-tab {
-    min-height: 44px;
-    padding: 4px 2px 6px;
-    font-size: 11px;
+    min-height: 27px;
+    padding: 2px 4px;
+    font-size: 10px;
     line-height: 1.05;
     text-overflow: clip;
-    white-space: normal;
+    white-space: nowrap;
   }
 
   .screen-section {
-    padding-top: 10px;
+    width: min(100%, 280px);
+    padding-top: 4px;
   }
 
   .screen-heading {
-    min-height: 48px;
+    min-height: 40px;
     display: block;
   }
 
@@ -381,7 +412,7 @@ input {
   }
 
   .block-track {
-    height: 25px;
+    height: 40px;
   }
 
   .block-tab {
@@ -396,9 +427,6 @@ input {
     align-items: flex-start;
   }
 
-  .source-links {
-    font-size: 9px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

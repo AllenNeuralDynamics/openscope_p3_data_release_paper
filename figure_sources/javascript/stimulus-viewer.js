@@ -7,9 +7,7 @@
   const playbackDuration = protocol.playback_duration_seconds;
   const elements = {
     blockTrack: document.getElementById("block-track"),
-    ecephysSource: document.getElementById("ecephys-source"),
-    generatorSource: document.getElementById("generator-source"),
-    mesoscopeSource: document.getElementById("mesoscope-source"),
+    contextSelector: document.getElementById("context-selector"),
     mismatchBadge: document.getElementById("mismatch-badge"),
     monitorFrame: document.getElementById("screen-toggle"),
     playIcon: document.getElementById("play-icon"),
@@ -20,9 +18,7 @@
     sessionTitle: document.getElementById("session-title"),
     stimulusVideo: document.getElementById("stimulus-video"),
     staticPanel: document.getElementById("static-panel"),
-    tableSource: document.getElementById("table-source"),
     trialLabel: document.getElementById("trial-label"),
-    workflowSource: document.getElementById("workflow-source"),
     viewButtons: document.querySelectorAll(".view-button"),
   };
 
@@ -36,7 +32,7 @@
     movieReady: false,
     playing: false,
     sessionIndex: 0,
-    view: "playback",
+    view: "static",
   };
 
   let angularCoordinates;
@@ -96,6 +92,17 @@
 
   function buildBlockTrack() {
     const totalMinutes = protocol.blocks.reduce((total, block) => total + block.duration_minutes, 0);
+    const contextIndex = protocol.blocks.findIndex((block) => block.category === "context");
+    const contextStart = protocol.blocks
+      .slice(0, contextIndex)
+      .reduce((total, block) => total + block.duration_minutes, 0) / totalMinutes * 100;
+    const contextWidth = protocol.blocks[contextIndex].duration_minutes / totalMinutes * 100;
+    elements.contextSelector.style.setProperty("--context-start", `${contextStart}%`);
+    elements.contextSelector.style.setProperty("--context-width", `${contextWidth}%`);
+    elements.contextSelector.style.setProperty(
+      "--context-center",
+      `${contextStart + contextWidth / 2}%`,
+    );
     protocol.blocks.forEach((block, index) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -117,6 +124,10 @@
     const session = currentSession();
     document.documentElement.style.setProperty("--accent", session.color);
     elements.sessionTitle.textContent = session.name;
+    const contextButton = elements.blockTrack.querySelectorAll("button")[1];
+    contextButton.textContent = sessionLabels[index];
+    contextButton.title = `${session.name} context: ${currentBlock().duration_minutes.toFixed(1)} min`;
+    contextButton.setAttribute("aria-label", contextButton.title);
     elements.sessionSelector.querySelectorAll("button").forEach((button, buttonIndex) => {
       const active = buttonIndex === index;
       button.classList.toggle("active", active);
@@ -141,25 +152,9 @@
       button.classList.toggle("active", active);
       button.setAttribute("aria-pressed", String(active));
     });
-    updateSourceLinks();
     updateMediaState();
     drawFrame();
     updatePlaybackUi();
-  }
-
-  function updateSourceLinks() {
-    const sessionSource = protocol.sources.sessions.find((source) => source.number === currentSession().number);
-    const movieSelected = currentBlock().name === "Natural movie";
-    elements.tableSource.href = movieSelected
-      ? protocol.sources.zebra_movie_url
-      : sessionSource.example_table_url;
-    elements.tableSource.textContent = movieSelected
-      ? "canonical movie"
-      : "pinned table (source order)";
-    elements.generatorSource.href = protocol.sources.generator_url;
-    elements.workflowSource.href = protocol.sources.workflow_url;
-    elements.ecephysSource.href = protocol.sources.recorded_tables.ecephys;
-    elements.mesoscopeSource.href = protocol.sources.recorded_tables.mesoscope;
   }
 
   function setPlaying(playing) {
@@ -382,7 +377,7 @@
   buildBlockTrack();
   attachInteractions();
   selectSession(0);
-  selectView("playback");
+  selectView("static");
   setPlaying(false);
   window.setInterval(playbackStep, 1000 / 30);
 })();

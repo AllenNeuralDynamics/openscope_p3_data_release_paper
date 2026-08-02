@@ -31,6 +31,27 @@ DATA_EXPLORER_OUTPUT = REPO_ROOT / "interactive" / "data-explorer.html"
 SESSION_INVENTORY_STATIC_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "session-inventory.svg"
 )
+GRAPHICAL_ABSTRACT_SOURCE = (
+    REPO_ROOT / "images" / "figures" / "imported" / "figure-01-graphical-abstract.png"
+)
+EXPERIMENTAL_DESIGN_SOURCE = (
+    REPO_ROOT / "images" / "figures" / "imported" / "figure-02-experimental-design.png"
+)
+MERGED_FIGURE_1_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-01-overview.svg"
+)
+REDUCED_FIGURE_2_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-02-experimental-design.svg"
+)
+EXPERIMENTAL_DESIGN_SOURCE_PROVENANCE_PATH = (
+    REPO_ROOT
+    / "figure_sources"
+    / "illustrator"
+    / "experimental-design-sources.provenance.json"
+)
+CONTEXT_CONTROLS_STATIC_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-03-context-controls.svg"
+)
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
 BEHAVIOR_EXCERPTS_PATH = DATA_DIR / "behavior-excerpts.json"
@@ -90,12 +111,6 @@ OTHER_STUDIES_PROVENANCE_PATH = OTHER_STUDIES_PATH.with_suffix(".provenance.json
 UNIT_YIELD_DATA_PATH = DATA_DIR / "neuropixels-unit-yield.csv"
 UNIT_YIELD_PROVENANCE_PATH = UNIT_YIELD_DATA_PATH.with_suffix(".provenance.json")
 STATIC_OUTPUT = REPO_ROOT / "images" / "figures" / "generated" / "experimental-design.svg"
-EXPERIMENTAL_DESIGN_PANEL_D_PATH = (
-    REPO_ROOT / "images" / "figures" / "generated" / "experimental-design-panel-d.png"
-)
-DERIVED_FIGURE_PROVENANCE_PATH = (
-    REPO_ROOT / "figure_sources" / "derived" / "cropped-figures.provenance.json"
-)
 UNIT_YIELD_STATIC_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "supplementary-neuropixels-unit-yield.svg"
 )
@@ -143,6 +158,253 @@ def platform_logo_data_uris() -> dict[str, str]:
         modality: f"data:image/png;base64,{base64.b64encode(path.read_bytes()).decode()}"
         for modality, path in load_platform_logos().items()
     }
+
+
+def png_data_uri(path: Path, expected_dimensions: tuple[int, int]) -> str:
+    data = path.read_bytes()
+    dimensions = struct.unpack(">II", data[16:24])
+    if not data.startswith(b"\x89PNG\r\n\x1a\n") or dimensions != expected_dimensions:
+        raise RuntimeError(f"Figure source PNG is invalid: {path.name}")
+    return f"data:image/png;base64,{base64.b64encode(data).decode()}"
+
+
+def load_experimental_design_sources() -> dict[str, Path]:
+    provenance = json.loads(
+        EXPERIMENTAL_DESIGN_SOURCE_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    assets = provenance.get("assets", {})
+    expected_assets = {
+        "figure_2_modality_cohorts",
+        "figure_2_training_cohorts",
+        "figure_3_detailed_blocks",
+        "figure_3_stimulus_timeline",
+    }
+    if provenance.get("version") != 1 or set(assets) != expected_assets:
+        raise RuntimeError("Experimental-design source provenance is not supported.")
+
+    rendered_paths = {}
+    for asset_id, record in assets.items():
+        source_path = REPO_ROOT / record["source_path"]
+        if hashlib.sha256(source_path.read_bytes()).hexdigest() != record["source_sha256"]:
+            raise RuntimeError(f"Experimental-design source is invalid: {asset_id}")
+        if "rendered_path" not in record:
+            continue
+        rendered_path = REPO_ROOT / record["rendered_path"]
+        rendered = rendered_path.read_bytes()
+        dimensions = struct.unpack(">II", rendered[16:24])
+        if (
+            hashlib.sha256(rendered).hexdigest() != record["rendered_sha256"]
+            or not rendered.startswith(b"\x89PNG\r\n\x1a\n")
+            or dimensions != (record["width"], record["height"])
+        ):
+            raise RuntimeError(f"Experimental-design rendering is invalid: {asset_id}")
+        rendered_paths[asset_id] = rendered_path
+    return rendered_paths
+
+
+def write_merged_figure_1_svg(output: Path = MERGED_FIGURE_1_OUTPUT) -> Path:
+    graphical_abstract = png_data_uri(GRAPHICAL_ABSTRACT_SOURCE, (3200, 2400))
+    experimental_design = png_data_uri(EXPERIMENTAL_DESIGN_SOURCE, (1108, 780))
+    svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="800" '
+        'viewBox="0 0 2000 800" role="img" aria-labelledby="title description">',
+        '<title id="title">Predictive-processing framework and experimental workflow</title>',
+        '<desc id="description">Panel A links predictions and errors across brain-wide, '
+        'local-circuit, and single-cell scales. Panel B follows animals from surgery through '
+        'intrinsic-signal-imaging mapping and habituation to one of three recording '
+        'modalities.</desc>',
+        '<rect width="2000" height="800" fill="#FFFFFF"/>',
+        f'<image href="{graphical_abstract}" x="40" y="60" width="960" height="720" '
+        'preserveAspectRatio="xMidYMid meet"/>',
+        '<svg x="1040" y="60" width="924" height="720" viewBox="0 60 590 460" '
+        'overflow="hidden" preserveAspectRatio="xMidYMid meet">',
+        f'<image href="{experimental_design}" x="0" y="0" width="1108" height="780"/>',
+        '</svg>',
+        '<text class="panel-label" x="20" y="48" font-family="Source Sans 3, sans-serif" '
+        'font-size="34" font-weight="700" fill="#293133">A</text>',
+        '<text class="panel-label" x="1020" y="48" font-family="Source Sans 3, sans-serif" '
+        'font-size="34" font-weight="700" fill="#293133">B</text>',
+        '</svg>',
+    ]
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    return output
+
+
+def write_reduced_figure_2_svg(output: Path = REDUCED_FIGURE_2_OUTPUT) -> Path:
+    load_experimental_design_sources()
+    logo_paths = load_platform_logos()
+    modality_groups = (
+        (
+            "neuropixels",
+            "Neuropixels",
+            "4 recording days · each context once",
+            ((1, 205), (2, 290)),
+            1,
+        ),
+        (
+            "mesoscope",
+            "Mesoscope",
+            "8 recording sessions · each context twice",
+            ((1, 425), (2, 510)),
+            2,
+        ),
+        (
+            "slap2",
+            "SLAP2",
+            "4 recording sessions · motor cohort only",
+            ((1, 680),),
+            1,
+        ),
+    )
+    session_square_size = 38
+    svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="780" '
+        'viewBox="0 0 1600 780" role="img" aria-labelledby="title description">',
+        '<title id="title">Predictive-context cohorts across recording modalities</title>',
+        '<desc id="description">Five dedicated cohort timelines show eight outlined '
+        'habituation sessions followed by filled recording sessions. Neuropixels and '
+        'mesoscope sampled motor- and sequence-habituated cohorts in opposite context orders; '
+        'SLAP2 sampled the motor-habituated cohort only.</desc>',
+        '<rect width="1600" height="780" fill="#FFFFFF"/>',
+        '<text x="680" y="155" text-anchor="middle" '
+        'font-family="Source Sans 3, sans-serif" font-size="20" font-weight="700" '
+        'fill="#4D5553">Habituation / training</text>',
+        '<text x="1110" y="155" text-anchor="middle" '
+        'font-family="Source Sans 3, sans-serif" font-size="20" font-weight="700" '
+        'fill="#4D5553">Neural recording contexts</text>',
+    ]
+
+    legend_x = 260
+    for context in ("sensorimotor", "standard oddball", "sequence", "duration"):
+        label = SESSION_CONTEXT_LABELS[context]
+        color = SESSION_CONTEXT_COLORS[context]
+        svg.extend(
+            [
+                f'<rect x="{legend_x}" y="38" width="24" height="24" rx="2" '
+                f'fill="{color}"/>',
+                f'<text x="{legend_x + 34}" y="57" '
+                'font-family="Source Sans 3, sans-serif" font-size="17" '
+                f'font-weight="600" fill="#4D5553">{label}</text>',
+            ]
+        )
+        legend_x += 120 + len(label) * 7
+    svg.extend(
+        [
+            '<rect x="1225" y="38" width="24" height="24" rx="2" '
+            'fill="#FFFFFF" stroke="#283185" stroke-width="3"/>',
+            '<text x="1259" y="57" font-family="Source Sans 3, sans-serif" '
+            'font-size="17" font-weight="600" fill="#4D5553">'
+            'Habituation without mismatch</text>',
+        ]
+    )
+
+    for modality, label, summary, cohort_lines, repeats in modality_groups:
+        center_y = sum(line_y for _, line_y in cohort_lines) / len(cohort_lines)
+        logo_data = base64.b64encode(logo_paths[modality].read_bytes()).decode()
+        svg.extend(
+            [
+                f'<g class="modality-cohort" data-modality="{modality}">',
+                f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
+                f'x="42" y="{center_y - 60}" width="120" height="120" '
+                'preserveAspectRatio="xMidYMid meet"/>',
+                f'<text x="182" y="{center_y - 12}" '
+                'font-family="Source Sans 3, sans-serif" font-size="28" '
+                f'font-weight="700" fill="#293133">{label}</text>',
+                f'<text x="182" y="{center_y + 22}" '
+                'font-family="Source Sans 3, sans-serif" font-size="17" '
+                f'font-weight="600" fill="#68706E">{summary}</text>',
+                '</g>',
+            ]
+        )
+        for cohort, line_y in cohort_lines:
+            contexts = SESSION_ORDER[cohort]
+            svg.extend(
+                [
+                    f'<g class="cohort-line" data-modality="{modality}" '
+                    f'data-cohort="{cohort}">',
+                    f'<text x="360" y="{line_y + 6}" text-anchor="end" '
+                    'font-family="Source Sans 3, sans-serif" font-size="19" '
+                    f'font-weight="700" fill="#4D5553">'
+                    f'{"Motor cohort" if cohort == 1 else "Sequence cohort"}</text>',
+                    f'<line x1="405" y1="{line_y}" x2="1540" y2="{line_y}" '
+                    'stroke="#303536" stroke-width="3"/>',
+                    f'<polygon points="1540,{line_y} 1522,{line_y - 10} '
+                    f'1522,{line_y + 10}" fill="#303536"/>',
+                ]
+            )
+            training_color = SESSION_CONTEXT_COLORS[contexts[0]]
+            training_x = 500
+            for training_index in range(8):
+                svg.append(
+                    f'<rect class="habituation-session" data-cohort="{cohort}" '
+                    f'x="{training_x + training_index * 46}" '
+                    f'y="{line_y - session_square_size / 2}" '
+                    f'width="{session_square_size}" height="{session_square_size}" '
+                    'rx="2" fill="#FFFFFF" '
+                    f'stroke="{training_color}" stroke-width="3"/>'
+                )
+            repeat_gap = 8
+            context_gap = 18
+            group_width = (
+                repeats * session_square_size + (repeats - 1) * repeat_gap
+            )
+            total_width = len(contexts) * group_width + (len(contexts) - 1) * context_gap
+            square_x = 1085 - total_width / 2
+            for context in contexts:
+                for _ in range(repeats):
+                    svg.append(
+                        f'<rect class="cohort-session" data-cohort="{cohort}" '
+                        f'data-context="{context}" x="{square_x:.2f}" '
+                        f'y="{line_y - session_square_size / 2:.2f}" '
+                        f'width="{session_square_size}" height="{session_square_size}" '
+                        'rx="3" '
+                        f'fill="{SESSION_CONTEXT_COLORS[context]}" stroke="#FFFFFF" '
+                        'stroke-width="2"/>'
+                    )
+                    square_x += session_square_size + repeat_gap
+                square_x += context_gap - repeat_gap
+            svg.append('</g>')
+    svg.append('</svg>')
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    return output
+
+
+def write_context_controls_svg(output: Path = CONTEXT_CONTROLS_STATIC_OUTPUT) -> Path:
+    assets = load_experimental_design_sources()
+    timeline = png_data_uri(assets["figure_3_stimulus_timeline"], (1836, 375))
+    details = png_data_uri(assets["figure_3_detailed_blocks"], (2250, 1628))
+    svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600" '
+        'viewBox="0 0 1600 1600" role="img" aria-labelledby="title description">',
+        '<title id="title">Within-session controls enable cross-context comparisons</title>',
+        '<desc id="description">Panel A shows the common session timeline, with a control '
+        'block repeated immediately after the context block and additional controls, '
+        'receptive-field mapping, and a zebra movie. Panel B details the four context blocks '
+        'and shared control and system-identification stimuli.</desc>',
+        '<rect width="1600" height="1600" fill="#FFFFFF"/>',
+        '<text class="panel-label" x="22" y="54" '
+        'font-family="Source Sans 3, sans-serif" font-size="34" font-weight="700" '
+        'fill="#293133">A</text>',
+        '<text x="78" y="54" font-family="Source Sans 3, sans-serif" '
+        'font-size="28" font-weight="700" fill="#293133">'
+        'Shared session architecture</text>',
+        f'<image href="{timeline}" x="40" y="82" width="1520" height="310" '
+        'preserveAspectRatio="xMidYMid meet"/>',
+        '<text class="panel-label" x="22" y="455" '
+        'font-family="Source Sans 3, sans-serif" font-size="34" font-weight="700" '
+        'fill="#293133">B</text>',
+        '<text x="78" y="455" font-family="Source Sans 3, sans-serif" '
+        'font-size="28" font-weight="700" fill="#293133">'
+        'Context, control, and system-identification blocks</text>',
+        f'<image href="{details}" x="40" y="480" width="1520" height="1100" '
+        'preserveAspectRatio="xMidYMid meet"/>',
+        '</svg>',
+    ]
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    return output
 
 
 @dataclass(frozen=True)
@@ -401,20 +663,11 @@ def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
     template = (JAVASCRIPT_DIR / "stimulus-viewer.html").read_text(encoding="utf-8")
     stylesheet = (JAVASCRIPT_DIR / "stimulus-viewer.css").read_text(encoding="utf-8")
     javascript = (JAVASCRIPT_DIR / "stimulus-viewer.js").read_text(encoding="utf-8")
-    crop_provenance = json.loads(
-        DERIVED_FIGURE_PROVENANCE_PATH.read_text(encoding="utf-8")
-    )["assets"]["image10-panel-d"]
-    if (
-        crop_provenance["output_path"]
-        != EXPERIMENTAL_DESIGN_PANEL_D_PATH.relative_to(REPO_ROOT).as_posix()
-        or hashlib.sha256(EXPERIMENTAL_DESIGN_PANEL_D_PATH.read_bytes()).hexdigest()
-        != crop_provenance["sha256"]
-    ):
-        raise RuntimeError("Experimental-design panel D checksum mismatch.")
-    panel_d_data = base64.b64encode(EXPERIMENTAL_DESIGN_PANEL_D_PATH.read_bytes()).decode()
+    static_output = write_context_controls_svg()
+    static_data = base64.b64encode(static_output.read_bytes()).decode()
     html = (
         template.replace("__SIMULATOR_CSS__", stylesheet)
-        .replace("__PANEL_D_IMAGE__", f"data:image/png;base64,{panel_d_data}")
+        .replace("__PANEL_D_IMAGE__", f"data:image/svg+xml;base64,{static_data}")
         .replace(
             "__SIMULATOR_DATA__",
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
@@ -1715,7 +1968,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         ("VISp · 4 planes", 650, ("visp_2", "visp_0", "visp_1", "visp_3")),
         ("VISl · 4 planes", 915, ("visl_6", "visl_4", "visl_5", "visl_7")),
     )
-    for stack_label, left, option_ids in mesoscope_stacks:
+    for stack_index, (stack_label, left, option_ids) in enumerate(mesoscope_stacks):
         svg.append(
             f'<text x="{left}" y="111" font-family="Source Sans 3, sans-serif" '
             f'font-size="14" font-weight="700" fill="#303536">{stack_label}</text>'
@@ -1731,7 +1984,10 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
                 path=frame_paths[("mesoscope", option_id)],
                 modality="mesoscope",
                 label=f'{option["targetLayer"]} · {option["imagingDepthUm"]:g} µm',
-                show_scale=index == len(option_ids) - 1,
+                show_scale=(
+                    stack_index == len(mesoscope_stacks) - 1
+                    and index == len(option_ids) - 1
+                ),
             )
 
     slap2_options = {
@@ -2753,6 +3009,8 @@ def write_unit_yield_svg(
 
 
 def main() -> None:
+    merged_figure_1_path = write_merged_figure_1_svg()
+    reduced_figure_2_path = write_reduced_figure_2_svg()
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
     literature_comparison_path = write_literature_comparison_html()
@@ -2761,6 +3019,9 @@ def main() -> None:
     unit_yield_html_path = write_unit_yield_html()
     svg_path = write_static_svg()
     unit_yield_svg_path = write_unit_yield_svg()
+    print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {reduced_figure_2_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {SESSION_INVENTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")

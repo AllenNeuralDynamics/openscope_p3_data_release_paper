@@ -26,12 +26,12 @@ The abstract has not yet been drafted.
 
 # Background & Rationale
 
-:::{figure} ./images/figures/imported/figure-01-graphical-abstract.png
+:::{figure} ./images/figures/generated/figure-01-overview.svg
 :label: fig-graphical-abstract
-:alt: Predictive processing across brain-wide, local-circuit, and single-cell scales.
+:alt: Predictive-processing computations across spatial scales and the multimodal experimental workflow used to sample them.
 :width: 100%
 
-Predictive processing across spatial scales. A visual sequence establishes an expectation (blue), whereas an unexpected oddball produces a prediction-error signal (red). Predictions and errors may be expressed through reciprocal brain-wide pathways, within local cortical populations, and across the dendritic and somatic compartments of individual neurons. The multimodal dataset samples these nested scales to test whether mismatch responses reflect a shared computation or scale- and circuit-specific mechanisms.
+Distributed predictive-processing hypotheses motivate multimodal recordings. **A,** A visual sequence establishes an expectation (blue), whereas an unexpected oddball produces a prediction-error signal (red). Predictions and errors may be expressed through reciprocal brain-wide pathways, within local cortical populations, and across the dendritic and somatic compartments of individual neurons. **B,** To sample these nested scales within one standardized project, animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels electrophysiology, or SLAP2 dendritic imaging.
 :::
 
 ## The challenge of predictive processing research
@@ -91,12 +91,12 @@ In both cohorts, the session that matched the habituation context was presented 
 
 **Four predictive contexts**
 
-:::{figure} ./images/figures/imported/figure-02-experimental-design.png
+:::{figure} ./images/figures/generated/figure-02-experimental-design.svg
 :label: fig-experimental-design
-:alt: Experimental workflow, recording cohorts, and shared block order.
+:alt: Motor- and sequence-habituated cohorts distributed across Neuropixels, mesoscope, and SLAP2 recording contexts.
 :width: 100%
 
-Experimental design and shared stimulus architecture. **A,** Animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels, or SLAP2. **B,** Motor- and sequence-habituated cohorts experienced the same four recording contexts in cohort-specific orders; open squares denote training without mismatches and colored squares denote recording sessions with mismatches. **C,** Every recording used the same block order: standard control, context-specific mismatch, repeat standard control, sequential control, duration-jitter control, open-loop playback, receptive-field mapping, and zebra movie.
+Predictive contexts distributed across modalities and cohorts. Each dedicated cohort line begins with eight outlined habituation and training sessions; indigo outlines identify the motor-habituated cohort and brown outlines identify the sequence-habituated cohort. Filled boxes denote neural recording sessions. Neuropixels and mesoscope sampled both cohorts in opposite context orders. Neuropixels sampled every context once, whereas mesoscope repeated each context twice to support cell-matched replication. SLAP2 sampled the motor-habituated cohort once per context. Indigo, teal, brown, and gold filled boxes consistently identify sensorimotor, standard-oddball, sequence, and duration recording contexts, respectively.
 :::
 
 The four distinct session contexts each targeted a different aspect of predictive processing. For all 4 contexts, the stimuli table containing both recurring and deviant trials were created at the onset of each session. The resulting tables were then subsequently shuffled so that the mouse could not predict the exact occurrence of deviants (pseudo-random). The order of stimuli blocks (deviant vs control blocks) were maintained across all sessions.
@@ -105,16 +105,27 @@ The four distinct session contexts each targeted a different aspect of predictiv
 :label: fig-interactive-experimental-design
 :width: 100%
 :title: Predictive-processing stimulus viewer
-:placeholder: ./images/figures/generated/experimental-design-panel-d.png
+:placeholder: ./images/figures/generated/figure-03-context-controls.svg
 
-Interactive reconstruction and static panel D summary of the four recording
-contexts and shared control blocks. Toggle between Interactive and Static for
-direct comparison. Context playback follows contiguous rows from the pinned generated
-stimulus tables in their source (pseudo-randomized) order, with the source trial
-number shown for each frame. The Movie block plays an excerpt of the canonical
-zebra stimulus, and receptive-field mapping uses the stated 120° × 95° angular
-projection. Source links resolve to the pinned generator, Bonsai workflow,
-example tables, and public NWB intervals.
+Within-session architecture for cross-context comparison. In the **Static** view,
+**A** shows the common session sequence: a standard control precedes each context
+block and is repeated immediately afterward, followed by shared randomized,
+duration, open-loop, receptive-field, and zebra-movie blocks. **B** details the
+four contexts and the control and system-identification stimuli used to measure
+context-induced changes in response properties. The **Interactive** view
+mirrors panel A: select one of the four contexts from the vertical selector above
+the Context block or select any shared control or system-identification block
+directly. It reconstructs
+contiguous rows from the pinned generated stimulus tables in their source
+pseudo-randomized order, with the source trial number shown for each frame.
+The Movie block plays an excerpt of the canonical zebra stimulus, and receptive-field
+mapping uses the stated 120° × 95° angular projection. Sources: pinned
+[example tables](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/tree/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples),
+[generator](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generate_experiment_csv.py),
+[Bonsai workflow](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generic_oddball.bonsai),
+and public NWB intervals for
+[electrophysiology](https://dandiarchive.org/dandiset/001637/draft/files) and
+[mesoscope](https://dandiarchive.org/dandiset/001768/draft/files).
 :::
 
 The mismatch repeat count and session length were informed by the five
@@ -183,7 +194,7 @@ Multimodal experimental pipelines. Rows summarize Neuropixels, mesoscope two-pho
 
 All animal procedures were approved by the Institutional Animal Care and Use Committee (IACUC) at the Allen Institute under protocol 2427 and conducted in accordance with NIH guidelines. Following surgery (see below), all mice were single-housed and maintained on a reverse 12-hour light cycle in a shared facility with room temperatures between 68º and 72ºF and humidity between 30 and 70%. All experiments were performed during the dark cycle. All mice in these experiments were given ad libitum access to food (regular or doxycycline diets) and water.
 
-To systematically collect physiological data, we used standardized data collection and processing pipelines that were previously introduced [@devries2020survey; @groblewski2020headfixation; @durand2023acute; @bennett2024shield; @siegle2021survey]. The data collection workflow progressed from surgical headpost implantation and craniotomy to retinotopic mapping of cortical areas using intrinsic signal imaging, in vivo recording of neuronal activity using various modalities (Neuropixels, Mesoscope two photon imaging, SLAP2 dendritic two-photon imaging), brain fixation and brain histology (see **Figure 2**). We describe each one of those steps in the dedicated sections below. As part of this workflow, all mice were trained on one of two possible cohorts: A motor cohort and a sequence cohort. Details of each cohort is described in the behavioral training section below. Both behavioral cohorts were recorded with the Neuropixels and Mesoscope recording modality. Only the motor cohort was used for SLAP2 experiments. Each modality (Neuropixels, Mesoscope, SLAP2) was recorded with separate mice as they had different, modality-specific brain implants.
+To systematically collect physiological data, we used standardized data collection and processing pipelines that were previously introduced [@devries2020survey; @groblewski2020headfixation; @durand2023acute; @bennett2024shield; @siegle2021survey]. The data collection workflow progressed from surgical headpost implantation and craniotomy to retinotopic mapping of cortical areas using intrinsic signal imaging, in vivo recording of neuronal activity using various modalities (Neuropixels, Mesoscope two photon imaging, SLAP2 dendritic two-photon imaging), brain fixation and brain histology (see [Figure 1](#fig-graphical-abstract)). We describe each one of those steps in the dedicated sections below. As part of this workflow, all mice were trained on one of two possible cohorts: A motor cohort and a sequence cohort. Details of each cohort is described in the behavioral training section below. Both behavioral cohorts were recorded with the Neuropixels and Mesoscope recording modality. Only the motor cohort was used for SLAP2 experiments. Each modality (Neuropixels, Mesoscope, SLAP2) was recorded with separate mice as they had different, modality-specific brain implants.
 
 ### Mesoscopic two-photon calcium imaging experimental animals
 
@@ -271,7 +282,7 @@ The habituation protocol included two cohorts of mice. (1) The **sequence cohort
 
 ## Visual stimulation
 
-All visual stimuli were generated using BonVision [@lopes2021bonvision], an open-source visual environment package running within the Bonsai reactive programming framework [@lopes2015bonsai]. For behavior training, Neuropixels recordings and mesoscope imaging, stimuli were rendered at 60 Hz and displayed on a gamma-calibrated ASUS PA248Q LCD monitor (1920 × 1200 pixels, 55.7 cm wide, 60 Hz refresh rate) positioned 15 cm from the animal's right eye (see **Figure 2**). A spherical warping correction (BonVision SphereMapping) was applied to all stimuli to compensate for the close viewing distance and flat display geometry, ensuring that apparent size, speed, and spatial frequency were constant across the visual field as seen from the mouse's perspective. The monitor subtended 120° × 95° of visual space. Mean luminance was 50 cd/m². Stimulus timing was synchronized to neural recordings via a photodiode placed on a sync square region of the monitor that alternated between black and white every 60 frames, and via digital synchronization pulses sent to a National Instruments digital board. The full stimulus code, Bonsai workflow, and parameter files are available on the project's GitHub repository ([https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing)). For SLAP2 recordings, the stimulation screen was smaller to account for physical constraints of the SLAP2 rig. <span class="manuscript-wip-inline"><strong>Work in progress:</strong> verify and add the SLAP2 display model, pixel dimensions, physical size, and visual-angle coverage.</span>
+All visual stimuli were generated using BonVision [@lopes2021bonvision], an open-source visual environment package running within the Bonsai reactive programming framework [@lopes2015bonsai]. For behavior training, Neuropixels recordings and mesoscope imaging, stimuli were rendered at 60 Hz and displayed on a gamma-calibrated ASUS PA248Q LCD monitor (1920 × 1200 pixels, 55.7 cm wide, 60 Hz refresh rate) positioned 15 cm from the animal's right eye (see [Figure 1](#fig-graphical-abstract)). A spherical warping correction (BonVision SphereMapping) was applied to all stimuli to compensate for the close viewing distance and flat display geometry, ensuring that apparent size, speed, and spatial frequency were constant across the visual field as seen from the mouse's perspective. The monitor subtended 120° × 95° of visual space. Mean luminance was 50 cd/m². Stimulus timing was synchronized to neural recordings via a photodiode placed on a sync square region of the monitor that alternated between black and white every 60 frames, and via digital synchronization pulses sent to a National Instruments digital board. The full stimulus code, Bonsai workflow, and parameter files are available on the project's GitHub repository ([https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing)). For SLAP2 recordings, the stimulation screen was smaller to account for physical constraints of the SLAP2 rig. <span class="manuscript-wip-inline"><strong>Work in progress:</strong> verify and add the SLAP2 display model, pixel dimensions, physical size, and visual-angle coverage.</span>
 
 For each session, a stimulus table (CSV file) was generated programmatically by a Python script (generate_experiment_csv.py) using a session-specific random seed derived from the session UUID and timestamp, ensuring unique trial sequences across sessions while maintaining reproducibility. This CSV table specified all trial parameters (orientation, spatial frequency, temporal frequency, contrast, duration, delay, position, phase, trial type, and block membership) and was read by the Bonsai workflow (generic_oddball.bonsai) to drive stimulus presentation in sequence.
 
@@ -328,7 +339,7 @@ All neural recordings were carried out with Neuropixels 1.0 probes [@jun2017neur
 
 #### Neuropixels probe insertion
 
-Our custom experimental rig can insert up to six Neuropixels probes simultaneously (see **Figure 2**). Each probe is mounted on a separate 3-axis micromanipulator with a 15 mm travel range (New Scale Technologies, Victor, NY). Probes are driven to their target holes and lowered to the surface of the brain while the experimentalist monitores a camera feed to avoid vasculature and watches real-time signals on the OpenEphys GUI to identify activity indicative of the brain surface. If the probe need adjustment when attempting to insert (e.g. to avoid vessels), the probe are completely retracted out of the silicon oil to prevent probe bending. Once all probes reach the brain surface, each probe is zeroed and set to insert 3100 μm deep at 200 μm/min and then retracted 100 μm to their final depths to reduce tissue compression and subsequent electrode zdrift relative to the brain. Once all probes reach their final depth, the probes are allowed to settle for ∼30 minutes, and a photo documentation of the inserted probes is captured. Sometimes a probe can not be inserted into its assigned hole, failures are generally due to dura regrowth. Overall, we achieved a penetration success of 5.8 probes per session.
+Our custom experimental rig can insert up to six Neuropixels probes simultaneously (see [Figure 4](#fig-multimodal-pipelines)). Each probe is mounted on a separate 3-axis micromanipulator with a 15 mm travel range (New Scale Technologies, Victor, NY). Probes are driven to their target holes and lowered to the surface of the brain while the experimentalist monitores a camera feed to avoid vasculature and watches real-time signals on the OpenEphys GUI to identify activity indicative of the brain surface. If the probe need adjustment when attempting to insert (e.g. to avoid vessels), the probe are completely retracted out of the silicon oil to prevent probe bending. Once all probes reach the brain surface, each probe is zeroed and set to insert 3100 μm deep at 200 μm/min and then retracted 100 μm to their final depths to reduce tissue compression and subsequent electrode zdrift relative to the brain. Once all probes reach their final depth, the probes are allowed to settle for ∼30 minutes, and a photo documentation of the inserted probes is captured. Sometimes a probe can not be inserted into its assigned hole, failures are generally due to dura regrowth. Overall, we achieved a penetration success of 5.8 probes per session.
 
 #### Data acquisition and synchronization.
 

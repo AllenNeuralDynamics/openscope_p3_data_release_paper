@@ -146,11 +146,48 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
     assert len(figures) == 7
-    assert manuscript.count(":::{figure} ./images/figures/imported/") == 7
-    assert manuscript.count(":::{figure} ./images/figures/generated/") == 0
+    assert manuscript.count(":::{figure} ./images/figures/imported/") == 5
+    assert manuscript.count(":::{figure} ./images/figures/generated/") == 2
+    assert "./images/figures/generated/figure-01-overview.svg" in manuscript
+    assert "./images/figures/generated/figure-02-experimental-design.svg" in manuscript
     for options in figures:
         assert ":label:" in options
         assert ":alt:" in options
+
+    assert (
+        "Distributed predictive-processing hypotheses motivate multimodal recordings"
+        in manuscript
+    )
+    assert "Predictive contexts distributed across modalities and cohorts" in manuscript
+    assert "Within-session architecture for cross-context comparison" in manuscript
+    assert "see [Figure 1](#fig-graphical-abstract)" in manuscript
+    assert "see [Figure 4](#fig-multimodal-pipelines)" in manuscript
+
+
+def test_importer_preserves_opening_figure_narrative() -> None:
+    importer = runpy.run_path(str(REPO_ROOT / "scripts" / "import_google_doc.py"))
+    render_figure = importer["render_figure"]
+    normalize = importer["normalize_figure_references"]
+
+    figure_1 = render_figure("image12.png")
+    assert "./images/figures/generated/figure-01-overview.svg" in figure_1
+    assert "Distributed predictive-processing hypotheses" in figure_1
+    assert "**B,** To sample these nested scales" in figure_1
+
+    figure_2 = render_figure("image10.png")
+    assert "./images/figures/generated/figure-02-experimental-design.svg" in figure_2
+    assert "Predictive contexts distributed across modalities" in figure_2
+    assert "mesoscope repeated each context twice" in figure_2
+
+    source = (
+        "brain fixation and brain histology (see **Figure 2**). "
+        "The screen was positioned 15 cm from the mouse's right eye (see **Figure 2**). "
+        "The rig can insert six Neuropixels probes simultaneously (see **Figure 2**)."
+    )
+    normalized = normalize(source)
+    assert "[Figure 1](#fig-graphical-abstract)" in normalized
+    assert "[Figure 4](#fig-multimodal-pipelines)" in normalized
+    assert "see **Figure 2**" not in normalized
 
 
 def test_bibliography_uses_resolved_myst_citations() -> None:
@@ -233,7 +270,8 @@ def test_methods_are_collapsed_as_one_section() -> None:
     )
     assert methods.rstrip().endswith("::::")
     assert "## Experimental animals" in methods
-    assert "fig-multimodal-pipelines" not in methods
+    assert ":label: fig-multimodal-pipelines" not in methods
+    assert "[Figure 4](#fig-multimodal-pipelines)" in methods
     assert "#### Neuropixels Ephys NWB Packaging Pipeline" in methods
 
     import_script = runpy.run_path(
@@ -376,7 +414,16 @@ def test_figure_captions_and_interactive_placement() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
     assert "A visual sequence establishes an expectation" in manuscript
-    assert "**A,** Animals progressed from surgery" in manuscript
+    assert "**B,** To sample these nested scales" in manuscript
+    assert "Neuropixels sampled every context once" in manuscript
+    assert "mesoscope repeated each context twice" in manuscript
+    assert "SLAP2 sampled the motor-habituated cohort" in manuscript
+    assert "eight outlined habituation and training sessions" in manuscript
+    assert "a standard control precedes each context" in manuscript
+    assert "control and system-identification stimuli" in manuscript
+    assert "vertical selector above\nthe Context block" in manuscript
+    assert "Sources: pinned\n[example tables]" in manuscript
+    assert "generate_experiment_csv.py" in manuscript
     assert "**D,** Context panels summarize" not in manuscript
     assert "Rows summarize Neuropixels, mesoscope two-photon" in manuscript
     assert "searchable, filterable tables for 39 mice and 164" in manuscript
@@ -469,6 +516,8 @@ def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:
     assert "#fig-graphical-abstract" in stylesheet
     assert "#fig-experimental-design" in stylesheet
     assert "#fig-interactive-experimental-design .relative.inline-block" in stylesheet
+    assert "height: 704px" in stylesheet
+    assert "height: 560px" in stylesheet
     assert "#fig-supp-neuropixels-unit-yield" in stylesheet
     assert "max-width: 660px" in stylesheet
     assert "grid-template-columns: minmax(0, 660px) minmax(0, 1fr)" in stylesheet
@@ -561,7 +610,8 @@ def test_interactive_figure_has_static_fallback() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     assert ":::{iframe} ./interactive/experimental-design.html" in manuscript
     assert (
-        ":placeholder: ./images/figures/generated/experimental-design-panel-d.png"
+        ":placeholder: ./images/figures/generated/figure-03-context-controls.svg"
         in manuscript
     )
-    assert "Toggle between Interactive and Static" in manuscript
+    assert "The **Interactive** view" in manuscript
+    assert "control and system-identification stimuli" in manuscript

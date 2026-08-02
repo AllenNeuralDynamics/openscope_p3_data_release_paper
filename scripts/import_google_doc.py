@@ -215,6 +215,59 @@ FIGURE_ASSETS = (
     ),
 )
 ASSET_BY_SOURCE = {asset.source_name: asset for asset in FIGURE_ASSETS}
+FIGURE_PRESENTATION_OVERRIDES = {
+    "image12.png": {
+        "path": "./images/figures/generated/figure-01-overview.svg",
+        "alt": (
+            "Predictive-processing computations across spatial scales and the "
+            "multimodal experimental workflow used to sample them."
+        ),
+        "caption": (
+            "Distributed predictive-processing hypotheses motivate multimodal recordings. "
+            "**A,** A visual sequence establishes an expectation (blue), whereas an "
+            "unexpected oddball produces a prediction-error signal (red). Predictions and "
+            "errors may be expressed through reciprocal brain-wide pathways, within local "
+            "cortical populations, and across the dendritic and somatic compartments of "
+            "individual neurons. **B,** To sample these nested scales within one standardized "
+            "project, animals progressed from surgery through intrinsic-signal-imaging mapping "
+            "and habituation before recording with mesoscope two-photon imaging, Neuropixels "
+            "electrophysiology, or SLAP2 dendritic imaging."
+        ),
+    },
+    "image10.png": {
+        "path": "./images/figures/generated/figure-02-experimental-design.svg",
+        "alt": (
+            "Motor- and sequence-habituated cohorts distributed across Neuropixels, "
+            "mesoscope, and SLAP2 recording contexts."
+        ),
+        "caption": (
+            "Predictive contexts distributed across modalities and cohorts. Each dedicated "
+            "cohort line begins with eight outlined habituation and training sessions; indigo "
+            "outlines identify the motor-habituated cohort and brown outlines identify the "
+            "sequence-habituated cohort. Filled boxes denote neural recording sessions. "
+            "Neuropixels and mesoscope sampled both cohorts in opposite context orders. "
+            "Neuropixels sampled every context once, whereas mesoscope repeated each context "
+            "twice to support cell-matched replication. SLAP2 sampled the motor-habituated "
+            "cohort once per context. Indigo, teal, brown, and gold filled boxes consistently "
+            "identify sensorimotor, standard-oddball, sequence, and duration recording "
+            "contexts, respectively."
+        ),
+    },
+}
+FIGURE_REFERENCE_REPLACEMENTS = {
+    "brain fixation and brain histology (see **Figure 2**)": (
+        "brain fixation and brain histology (see [Figure 1](#fig-graphical-abstract))"
+    ),
+    "mouse’s right eye (see **Figure 2**)": (
+        "mouse’s right eye (see [Figure 1](#fig-graphical-abstract))"
+    ),
+    "mouse's right eye (see **Figure 2**)": (
+        "mouse's right eye (see [Figure 1](#fig-graphical-abstract))"
+    ),
+    "six Neuropixels probes simultaneously (see **Figure 2**)": (
+        "six Neuropixels probes simultaneously (see [Figure 4](#fig-multimodal-pipelines))"
+    ),
+}
 
 IMAGE_PATTERN = re.compile(
     r'<img\s+src="[^"]*/(?P<name>image\d+\.png)"[^>]*/?>', re.IGNORECASE
@@ -236,16 +289,27 @@ INTERACTIVE_DESIGN_BLOCK = """:::{iframe} ./interactive/experimental-design.html
 :label: fig-interactive-experimental-design
 :width: 100%
 :title: Predictive-processing stimulus viewer
-:placeholder: ./images/figures/generated/experimental-design-panel-d.png
+:placeholder: ./images/figures/generated/figure-03-context-controls.svg
 
-Interactive reconstruction and static panel D summary of the four recording
-contexts and shared control blocks. Toggle between Interactive and Static for
-direct comparison. Context playback follows contiguous rows from the pinned generated
-stimulus tables in their source (pseudo-randomized) order, with the source trial
-number shown for each frame. The Movie block plays an excerpt of the canonical
-zebra stimulus, and receptive-field mapping uses the stated 120° × 95° angular
-projection. Source links resolve to the pinned generator, Bonsai workflow,
-example tables, and public NWB intervals.
+Within-session architecture for cross-context comparison. In the **Static** view,
+**A** shows the common session sequence: a standard control precedes each context
+block and is repeated immediately afterward, followed by shared randomized,
+duration, open-loop, receptive-field, and zebra-movie blocks. **B** details the
+four contexts and the control and system-identification stimuli used to measure
+context-induced changes in response properties. The **Interactive** view
+mirrors panel A: select one of the four contexts from the vertical selector above
+the Context block or select any shared control or system-identification block
+directly. It reconstructs
+contiguous rows from the pinned generated stimulus tables in their source
+pseudo-randomized order, with the source trial number shown for each frame.
+The Movie block plays an excerpt of the canonical zebra stimulus, and receptive-field
+mapping uses the stated 120° × 95° angular projection. Sources: pinned
+[example tables](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/tree/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples),
+[generator](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generate_experiment_csv.py),
+[Bonsai workflow](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generic_oddball.bonsai),
+and public NWB intervals for
+[electrophysiology](https://dandiarchive.org/dandiset/001637/draft/files) and
+[mesoscope](https://dandiarchive.org/dandiset/001768/draft/files).
 :::"""
 
 STIMULUS_REVISION = "0365ae32f0f0473320ed202b7c5d2bce6cf5df6b"
@@ -626,9 +690,11 @@ def render_figure(source_name: str) -> str:
     asset = ASSET_BY_SOURCE[source_name]
     if asset.status == "removed":
         return ""
-    path = f"./images/figures/imported/{asset.filename}"
+    presentation = FIGURE_PRESENTATION_OVERRIDES.get(source_name, {})
+    path = presentation.get("path", f"./images/figures/imported/{asset.filename}")
     supplementary_option = ""
-    caption = asset.caption
+    caption = presentation.get("caption", asset.caption)
+    alt = presentation.get("alt", asset.alt)
     if asset.supplementary_number is not None:
         supplementary_option = ":enumerated: false\n"
         caption = (
@@ -637,7 +703,7 @@ def render_figure(source_name: str) -> str:
     figure = (
         f":::{'{'}figure{'}'} {path}\n"
         f":label: {asset.label}\n"
-        f":alt: {asset.alt}\n"
+        f":alt: {alt}\n"
         f"{supplementary_option}"
         ":width: 100%\n\n"
         f"{caption}\n"
@@ -914,6 +980,12 @@ def replace_supplementary_text(markdown: str) -> str:
     return pattern.sub(replacement, markdown, count=1)
 
 
+def normalize_figure_references(markdown: str) -> str:
+    for old, new in FIGURE_REFERENCE_REPLACEMENTS.items():
+        markdown = markdown.replace(old, new)
+    return markdown
+
+
 def normalize_known_export_artifacts(markdown: str) -> str:
     replacements = {
         "# Background & Rationale ": "# Background & Rationale",
@@ -946,6 +1018,7 @@ def normalize_known_export_artifacts(markdown: str) -> str:
     for old, new in replacements.items():
         markdown = markdown.replace(old, new)
 
+    markdown = normalize_figure_references(markdown)
     markdown = normalize_text_export_artifacts(markdown)
     markdown = move_interrupted_analysis_figure(markdown)
     markdown = RAW_HTML_TABLE_PATTERN.sub(

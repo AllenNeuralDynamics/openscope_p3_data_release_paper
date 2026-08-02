@@ -9,7 +9,7 @@
       "crop_box_px": [20, 55, 1128, 835],
       "source_dimensions_px": [2048, 1024],
       "output_dimensions_px": [1108, 780],
-      "purpose": "Retain panels A-C after moving panel D into the interactive figure."
+      "purpose": "Preserve the former panels A-C as a source crop; workflow panel A is embedded in the generated two-panel Figure 1."
     },
     "image10-panel-d": {
       "output_path": "images/figures/generated/experimental-design-panel-d.png",
@@ -18,7 +18,7 @@
       "crop_box_px": [1128, 55, 2040, 835],
       "source_dimensions_px": [2048, 1024],
       "output_dimensions_px": [912, 780],
-      "purpose": "Provide panel D in the interactive viewer and as its static PDF fallback."
+      "purpose": "Retain the former panel D crop for historical provenance after Figure 3 moved to dedicated timeline and detailed-block sources."
     },
     "image8.png": {
       "output_path": "figure_sources/derived/figure-04-multimodal-pipelines-no-traces.png",

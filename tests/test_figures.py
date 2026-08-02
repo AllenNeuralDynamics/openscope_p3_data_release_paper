@@ -28,6 +28,7 @@ from openscope_p3_publication.figures import (
     ZEBRA_MOVIE_SOURCE,
     ZEBRA_POSTER_SOURCE,
     load_behavior_excerpts,
+    load_experimental_design_sources,
     load_experimental_session_records,
     load_neural_excerpts,
     load_publication_table_data,
@@ -40,11 +41,14 @@ from openscope_p3_publication.figures import (
     total_duration_minutes,
     write_behavior_static_svg,
     write_behavior_viewer_html,
+    write_context_controls_svg,
     write_data_explorer_html,
     write_interactive_html,
     write_literature_comparison_html,
+    write_merged_figure_1_svg,
     write_neural_static_svg,
     write_neural_viewer_html,
+    write_reduced_figure_2_svg,
     write_session_inventory_svg,
     write_static_svg,
     write_unit_yield_html,
@@ -211,16 +215,26 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert 'data-view="static"' in html
     assert ">Interactive</button>" in html
     assert ">Static</button>" in html
+    assert 'class="view-button active" data-view="static" aria-pressed="true"' in html
+    assert '<div id="playback-view" hidden>' in html
+    assert 'selectView("static")' in html
     assert 'id="static-panel"' in html
-    assert "data:image/png;base64," in html
+    assert "data:image/svg+xml;base64," in html
+    assert "detailed context, control, receptive-field, and zebra-movie blocks" in html
     assert "selectView" in html
     assert 'id="stimulus-canvas"' in html
     assert 'id="session-selector"' in html
     assert 'id="play-toggle"' in html
     assert 'id="block-track"' in html
-    assert 'id="table-source"' in html
+    assert html.index('id="session-selector"') < html.index('id="block-track"')
+    assert html.index('id="block-track"') < html.index('id="stimulus-canvas"')
+    assert 'id="context-selector"' in html
+    assert "--context-start" in html
+    assert "contextButton.textContent = sessionLabels[index]" in html
+    assert "grid-template-columns: minmax(0, 1fr);" in html
     assert 'id="stimulus-video"' in html
-    assert 'id="workflow-source"' in html
+    assert 'class="source-links"' not in html
+    assert "updateSourceLinks" not in html
     assert "0365ae32f0f0473320ed202b7c5d2bce6cf5df6b" in html
     assert "setInterval" in html
     assert "Standard oddball" in html
@@ -233,14 +247,13 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert "max-width: 760px;" in html
     assert "width: min(100%, 380px);" in html
     assert "--tab-text-color" in html
-    assert "white-space: normal;" in html
+    assert "white-space: nowrap;" in html
     for context_color in ("#008F80", "#3157B7", "#C65D13", "#A47C00"):
         assert context_color in html
     assert 'width="480" height="380"' in html
     assert "stimulusTableExcerpts" in html
     assert "sharedTableExcerpts" in html
     assert '"trialNumber":572' in html
-    assert "pinned table (source order)" in html
     assert "angularDistanceDegrees" in html
     assert "normalizedX * 120 / 2" in html
     assert "normalizedY * 95 / 2" in html
@@ -250,7 +263,8 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert "display: none !important" in html
     assert "Open-loop playback" in html
     assert "nextRow.phaseCycles" in html
-    assert ".block-tab.context {\n  background: var(--accent);" in html
+    assert ".block-tab.context {" in html
+    assert "background: var(--accent);" in html
     assert 'id="sync-square"' not in html
     assert "drawZebraFallback" not in html
     for removed_function in (
@@ -282,6 +296,55 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     first_render = html
     write_interactive_html(html_path)
     assert html_path.read_text(encoding="utf-8") == first_render
+
+
+def test_opening_figures_are_source_backed(tmp_path: Path) -> None:
+    assets = load_experimental_design_sources()
+    assert set(assets) == {
+        "figure_3_detailed_blocks",
+        "figure_3_stimulus_timeline",
+    }
+
+    figure_1 = write_merged_figure_1_svg(tmp_path / "figure-01-overview.svg").read_text(
+        encoding="utf-8"
+    )
+    assert 'width="2000" height="800"' in figure_1
+    assert figure_1.count("data:image/png;base64,") == 2
+    assert 'viewBox="0 60 590 460"' in figure_1
+    assert figure_1.count('class="panel-label"') == 2
+    assert "Predictive-processing framework and experimental workflow" in figure_1
+
+    figure_2 = write_reduced_figure_2_svg(
+        tmp_path / "figure-02-experimental-design.svg"
+    ).read_text(encoding="utf-8")
+    assert 'width="1600" height="780"' in figure_2
+    assert figure_2.count('class="modality-cohort" data-modality=') == 3
+    assert figure_2.count('class="platform-logo"') == 3
+    assert figure_2.count('class="cohort-line"') == 5
+    assert figure_2.count('class="habituation-session"') == 40
+    assert figure_2.count('class="cohort-session"') == 28
+    session_dimensions = re.findall(
+        r'class="(?:habituation|cohort)-session"[^>]+width="([^"]+)" '
+        r'height="([^"]+)"',
+        figure_2,
+    )
+    assert session_dimensions == [("38", "38")] * 68
+    assert len(re.findall(r'class="cohort-session" data-cohort="1"', figure_2)) == 16
+    assert len(re.findall(r'class="cohort-session" data-cohort="2"', figure_2)) == 12
+    for context in ("sensorimotor", "standard oddball", "sequence", "duration"):
+        assert figure_2.count(f'data-context="{context}"') == 7
+    assert "Habituation / training" in figure_2
+    assert "Habituation without mismatch" in figure_2
+    assert "#F6F8F7" not in figure_2
+
+    figure_3 = write_context_controls_svg(
+        tmp_path / "figure-03-context-controls.svg"
+    ).read_text(encoding="utf-8")
+    assert 'width="1600" height="1600"' in figure_3
+    assert figure_3.count("data:image/png;base64,") == 2
+    assert figure_3.count('class="panel-label"') == 2
+    assert "Shared session architecture" in figure_3
+    assert "Context, control, and system-identification blocks" in figure_3
 
 
 def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
@@ -1171,6 +1234,8 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert "VISl · 4 planes" in svg
     assert "DMD1 · 91 µm · green + red composite" in svg
     assert "DMD2 · 123.75 µm · green + red composite" in svg
+    assert svg.count(">50 µm</text>") == 1
+    assert svg.count(">25 µm</text>") == 1
     assert "6 probe recordings · all raw excerpts stacked" in svg
     assert "8 planes · 4 VISp + 4 VISl · all raw frames stacked" in svg
     assert "2 VISp planes · merged green + red channels" in svg

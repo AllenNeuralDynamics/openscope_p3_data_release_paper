@@ -12,12 +12,21 @@ __SIMULATOR_CSS__
 <body>
   <main class="viewer" id="stimulus-viewer">
     <div class="view-switch" role="group" aria-label="Interactive or static view">
-      <button type="button" class="view-button active" data-view="playback" aria-pressed="true">Interactive</button>
-      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
+      <button type="button" class="view-button" data-view="playback" aria-pressed="false">Interactive</button>
+      <button type="button" class="view-button active" data-view="static" aria-pressed="true">Static</button>
     </div>
 
-    <div id="playback-view">
-      <nav class="session-tabs" id="session-selector" aria-label="Stimulus session"></nav>
+    <div id="playback-view" hidden>
+      <section class="playback-bar" aria-label="Shared session architecture">
+        <div class="context-selector" id="context-selector">
+          <span class="context-selector-label">Select context block</span>
+          <nav class="session-tabs" id="session-selector" aria-label="Stimulus context"></nav>
+        </div>
+        <div class="block-track" id="block-track" aria-label="Session blocks"></div>
+        <div class="playback-meta">
+          <time id="playback-time">00:00 / 00:24</time>
+        </div>
+      </section>
 
       <section class="screen-section" aria-labelledby="session-title">
         <header class="screen-heading">
@@ -33,29 +42,11 @@ __SIMULATOR_CSS__
             <span id="play-icon" aria-hidden="true">&#9654;</span>
           </button>
         </div>
-
-        <footer class="playback-bar">
-          <div class="block-track" id="block-track" aria-label="Session blocks"></div>
-          <div class="playback-meta">
-            <time id="playback-time">00:00 / 00:24</time>
-            <span class="source-links">
-              Source:
-              <a id="table-source" href="#" target="_blank" rel="noopener">example table</a>
-              <span aria-hidden="true">&#183;</span>
-              <a id="generator-source" href="#" target="_blank" rel="noopener">generator</a>
-              <span aria-hidden="true">&#183;</span>
-              <a id="workflow-source" href="#" target="_blank" rel="noopener">workflow</a>
-              <span aria-hidden="true">&#183;</span>
-              NWB
-              <a id="ecephys-source" href="#" target="_blank" rel="noopener">ephys</a>/<a id="mesoscope-source" href="#" target="_blank" rel="noopener">2P</a>
-            </span>
-          </div>
-        </footer>
       </section>
     </div>
 
-    <section class="static-panel" id="static-panel" aria-label="Static experimental-design summary" hidden>
-      <img src="__PANEL_D_IMAGE__" alt="Panel D showing the four context blocks and shared control blocks.">
+    <section class="static-panel" id="static-panel" aria-label="Static experimental-design summary">
+      <img src="__PANEL_D_IMAGE__" alt="Two panels showing the shared session timeline and detailed context, control, receptive-field, and zebra-movie blocks.">
     </section>
   </main>
 

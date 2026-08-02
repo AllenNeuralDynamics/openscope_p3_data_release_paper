@@ -8,8 +8,10 @@ uv run build-publication-figures
 
 The experimental-design generator writes:
 
+- `images/figures/generated/figure-01-overview.svg`: horizontal conceptual-framework and multimodal-workflow composition.
+- `images/figures/generated/figure-02-experimental-design.svg`: context allocation across Neuropixels, mesoscope, and SLAP2 cohorts.
+- `images/figures/generated/figure-03-context-controls.svg`: static session timeline and detailed control architecture.
 - `interactive/experimental-design.html`: self-contained JavaScript stimulus viewer for the MyST site.
-- `images/figures/generated/experimental-design-panel-d.png`: static panel shown by the viewer toggle and used for PDF exports.
 - `images/figures/generated/experimental-design.svg`: accessible generated timeline summary.
 
 Its structured inputs are `figure_sources/data/experimental-design-sessions.csv` and `figure_sources/data/experimental-design-blocks.csv`.

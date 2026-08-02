@@ -1,5 +1,5 @@
 #fig-interactive-experimental-design .relative.inline-block {
-  height: 550px;
+  height: 704px;
   padding-bottom: 0 !important;
 }
 
@@ -82,7 +82,7 @@ article > figure.table-hover-source {
 
 @media (max-width: 640px) {
   #fig-interactive-experimental-design .relative.inline-block {
-    height: 520px;
+    height: 560px;
   }
 }
 
