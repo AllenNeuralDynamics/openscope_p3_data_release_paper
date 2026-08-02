@@ -44,6 +44,7 @@ project:
     -
       id: "jerome-lecoq"
       name: "Jérôme Lecoq"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594d77af2970519865a80_jerome_lecoq_web-new.jpeg"
       orcid: "0000-0002-0131-0938"
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
@@ -95,6 +96,7 @@ project:
     -
       id: "r-carter-peene"
       name: "R. Carter Peene"
+      avatar_url: "https://cdn.prod.website-files.com/691fabdb8ba70248dd5b7fa8/691fabdb8ba70248dd5b829a_66fb361f83edc9d7b39abe9e_Carter_Peene_SQ.jpeg"
       orcid: "0009-0000-6660-2264"
       affiliations: []
       roles: []
@@ -171,6 +173,7 @@ project:
     -
       id: "ali-williford"
       name: "Ali Williford"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594af62e9adaba8af040f_ali_williford-135.jpeg"
       orcid: "0009-0000-7282-7515"
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
@@ -244,6 +247,7 @@ project:
     -
       id: "severine-durand"
       name: "Severine Durand"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594a0538ad4ccf898bf0c_Severine_Durand_SQ.jpeg"
       orcid: "0000-0001-7788-0200"
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
@@ -299,6 +303,7 @@ project:
     -
       id: "jackie-swapp"
       name: "Jackie Swapp"
+      avatar_url: "https://cdn.prod.website-files.com/691fabdb8ba70248dd5b7fa8/691fabdb8ba70248dd5b82e9_Jackie_Swapp.jpg"
       orcid: "0009-0008-4965-6242"
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
@@ -327,6 +332,7 @@ project:
     -
       id: "alex-stearns"
       name: "Alex Stearns"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5945e7008ab73995a04a6_Alex_Stearns_SQ.webp"
       orcid: "0009-0001-8861-5290"
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
@@ -359,6 +365,7 @@ project:
     -
       id: "julie-weber"
       name: "Julie Weber"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594e084410c99688fe84e_Julie_Weber_SQ.jpeg"
       orcid: "0009-0002-1060-3828"
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
@@ -393,6 +400,7 @@ project:
     -
       id: "dean-rette"
       name: "Dean Rette"
+      avatar_url: "https://cdn.prod.website-files.com/691fabdb8ba70248dd5b7fa8/691fabdb8ba70248dd5b8347_Dean-Rette-5U2A0646-WB-Web-Square.webp"
       orcid: "0009-0002-5202-6627"
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
@@ -416,6 +424,7 @@ project:
     -
       id: "hannah-belski"
       name: "Hannah  Belski"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594765831f7ba5e2691d5_Hannah_Belski_SQ.jpeg"
       orcid: "0009-0001-5422-5964"
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
@@ -445,6 +454,7 @@ project:
     -
       id: "shiella-caldejon"
       name: "Shiella Caldejon"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5951c1e21cae5b6318cf1_shiella_caldejon-27-web.jpeg"
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
       roles:
@@ -505,6 +515,7 @@ project:
     -
       id: "peter-a-groblewski"
       name: "Peter A Groblewski"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c59509881d0cfefba78bbf_Peter_Groblewski_W-SQ.webp"
       orcid: "0000-0002-8415-1118"
       affiliations: []
       roles:

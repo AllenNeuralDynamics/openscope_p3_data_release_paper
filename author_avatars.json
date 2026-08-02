@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "policy": "Remote-only portraits from authoritative public staff profiles; no image files are bundled with the publication.",
+  "verified_on": "2026-08-02",
+  "contributors": {
+    "jerome-lecoq": {
+      "name": "Jérôme Lecoq",
+      "source_page": "https://alleninstitute.org/person/jerome-lecoq",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594d77af2970519865a80_jerome_lecoq_web-new.jpeg",
+      "width": 653,
+      "height": 653
+    },
+    "r-carter-peene": {
+      "name": "R. Carter Peene",
+      "source_page": "https://www.allenneuraldynamics.org/people/carter-peene",
+      "avatar_url": "https://cdn.prod.website-files.com/691fabdb8ba70248dd5b7fa8/691fabdb8ba70248dd5b829a_66fb361f83edc9d7b39abe9e_Carter_Peene_SQ.jpeg",
+      "width": 800,
+      "height": 800
+    },
+    "ali-williford": {
+      "name": "Ali Williford",
+      "source_page": "https://alleninstitute.org/person/ali-williford",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594af62e9adaba8af040f_ali_williford-135.jpeg",
+      "width": 400,
+      "height": 400
+    },
+    "severine-durand": {
+      "name": "Severine Durand",
+      "source_page": "https://alleninstitute.org/person/severine-durand",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594a0538ad4ccf898bf0c_Severine_Durand_SQ.jpeg",
+      "width": 800,
+      "height": 800
+    },
+    "jackie-swapp": {
+      "name": "Jackie Swapp",
+      "source_page": "https://www.allenneuraldynamics.org/people/jackie-swapp",
+      "avatar_url": "https://cdn.prod.website-files.com/691fabdb8ba70248dd5b7fa8/691fabdb8ba70248dd5b82e9_Jackie_Swapp.jpg",
+      "width": 1500,
+      "height": 1000
+    },
+    "alex-stearns": {
+      "name": "Alex Stearns",
+      "source_page": "https://alleninstitute.org/person/alex-stearns",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5945e7008ab73995a04a6_Alex_Stearns_SQ.webp",
+      "width": 800,
+      "height": 800
+    },
+    "julie-weber": {
+      "name": "Julie Weber",
+      "source_page": "https://alleninstitute.org/person/julie-weber",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594e084410c99688fe84e_Julie_Weber_SQ.jpeg",
+      "width": 800,
+      "height": 800
+    },
+    "dean-rette": {
+      "name": "Dean Rette",
+      "source_page": "https://www.allenneuraldynamics.org/people/dean-rette",
+      "avatar_url": "https://cdn.prod.website-files.com/691fabdb8ba70248dd5b7fa8/691fabdb8ba70248dd5b8347_Dean-Rette-5U2A0646-WB-Web-Square.webp",
+      "width": 1522,
+      "height": 1522
+    },
+    "hannah-belski": {
+      "name": "Hannah Belski",
+      "source_page": "https://alleninstitute.org/person/hannah-belski",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594765831f7ba5e2691d5_Hannah_Belski_SQ.jpeg",
+      "width": 800,
+      "height": 800
+    },
+    "shiella-caldejon": {
+      "name": "Shiella Caldejon",
+      "source_page": "https://alleninstitute.org/person/shiella-caldejon",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5951c1e21cae5b6318cf1_shiella_caldejon-27-web.jpeg",
+      "width": 1000,
+      "height": 1000
+    },
+    "peter-a-groblewski": {
+      "name": "Peter A Groblewski",
+      "source_page": "https://alleninstitute.org/person/peter-groblewski",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c59509881d0cfefba78bbf_Peter_Groblewski_W-SQ.webp",
+      "width": 800,
+      "height": 800
+    }
+  },
+  "unresolved": {
+    "ryan-gillis": {
+      "name": "Ryan Gillis",
+      "source_page": "https://www.allenneuraldynamics.org/people/ryan-gillis",
+      "reason": "The authoritative staff profile currently uses the generic people placeholder."
+    },
+    "casey-lennon-jones": {
+      "name": "Casey Lennon-Jones",
+      "source_page": "https://www.allenneuraldynamics.org/people/casey-lennon-jones",
+      "reason": "The authoritative staff profile currently uses the generic people placeholder."
+    },
+    "jimin-park": {
+      "name": "Jimin Park",
+      "source_page": "https://www.allenneuraldynamics.org/people/jimin-park",
+      "reason": "The authoritative staff profile currently uses the generic people placeholder."
+    }
+  }
+}

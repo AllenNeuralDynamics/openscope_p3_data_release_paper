@@ -1413,7 +1413,7 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
 
     svg_path = write_neural_static_svg(tmp_path / "raw-neural-recordings.svg")
     svg = svg_path.read_text(encoding="utf-8")
-    assert 'width="1800" height="690"' in svg
+    assert 'width="1800" height="700"' in svg
     assert svg.count("data:image/png;base64,") == 19
     assert svg.count('class="platform-heading" data-modality=') == 3
     assert_modality_title_scale(svg)
@@ -1439,10 +1439,13 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert "8 planes · 4 VISp + 4 VISl · all raw frames stacked" in svg
     assert "2 VISp planes · merged green + red channels" in svg
     assert svg.count('class="neural-detail-label"') == 3
-    assert svg.count(f'y="{111 + FIGURE_TEXT_MARGIN}"') == 3
-    assert '<rect x="650.00" y="130.00" width="255"' in svg
-    assert '<rect x="1240.00" y="130.00" width="500"' in svg
-    assert '<rect x="1255.00" y="341.00" width="500"' in svg
+    assert re.findall(
+        r'class="neural-detail-label"[^>]+\sy="([^"]+)"[^>]+font-size="([^"]+)"',
+        svg,
+    ) == [("122", "18")] * 3
+    assert '<rect x="650.00" y="135.00" width="255"' in svg
+    assert '<rect x="1240.00" y="135.00" width="500"' in svg
+    assert '<rect x="1255.00" y="346.00" width="500"' in svg
     assert "scale-card" not in svg
     assert "playback" not in svg.lower()
     assert "event onset" not in svg.lower()

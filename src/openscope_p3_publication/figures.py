@@ -2497,7 +2497,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
     frame_paths = load_neural_static_frames(payload)
     logo_paths = load_platform_logos()
     width = 1800
-    height = 690
+    height = 700
     panel_lefts = {"neuropixels": 35, "mesoscope": 645, "slap2": 1235}
     svg = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
@@ -2556,8 +2556,8 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
     mesoscope_options = {
         option["id"]: option for option in sessions["mesoscope"]["options"]
     }
-    detail_label_y = 111 + FIGURE_TEXT_MARGIN
-    detail_card_y = 122 + FIGURE_TEXT_MARGIN
+    detail_label_y = 122
+    detail_card_y = 135
     mesoscope_stacks = (
         ("VISp · 4 planes", 650, ("visp_2", "visp_0", "visp_1", "visp_3")),
         ("VISl · 4 planes", 915, ("visl_6", "visl_4", "visl_5", "visl_7")),
@@ -2566,7 +2566,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         svg.append(
             f'<text class="neural-detail-label" x="{left}" y="{detail_label_y}" '
             'font-family="Source Sans 3, sans-serif" '
-            f'font-size="14" font-weight="700" fill="#303536">{stack_label}</text>'
+            f'font-size="12" font-weight="700" fill="#303536">{stack_label}</text>'
         )
         for index, option_id in enumerate(option_ids):
             option = mesoscope_options[option_id]
@@ -2591,7 +2591,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
     svg.append(
         f'<text class="neural-detail-label" x="1240" y="{detail_label_y}" '
         'font-family="Source Sans 3, sans-serif" '
-        'font-size="14" font-weight="700" fill="#303536">'
+        'font-size="12" font-weight="700" fill="#303536">'
         'iGluSnFR4f (green) + RCaMP3 (red)</text>'
     )
     for index, (composite_id, source_option_ids) in enumerate(

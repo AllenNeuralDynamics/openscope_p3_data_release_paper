@@ -29,6 +29,7 @@ The GitHub Actions workflow runs the same checks and deploys the static site fro
 
 - `index.md`: canonical MyST manuscript.
 - `authors.yml`: generated snapshot of portal-managed contributor, affiliation, CRediT, and section-level authorship metadata.
+- `author_avatars.json`: verified remote portrait URLs and source-page provenance; images remain hosted by the Allen Institute and are not bundled with the publication.
 - `myst.yml`: publication, plugin, navigation, and static-asset configuration.
 - `src/openscope_p3_publication/`: installable Python package for publication figures and data transforms.
 - `interactive/`: generated JavaScript/HTML figures copied into the site at stable URLs.

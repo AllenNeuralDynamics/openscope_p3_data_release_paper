@@ -49,6 +49,7 @@ def test_manuscript_marks_unfinished_content() -> None:
 
 def test_authorship_snapshot_is_portal_backed() -> None:
     authors = (REPO_ROOT / "authors.yml").read_text(encoding="utf-8")
+    avatars = json.loads((REPO_ROOT / "author_avatars.json").read_text(encoding="utf-8"))
 
     commit = re.search(r'^  commit: "([0-9a-f]{32})"$', authors, re.MULTILINE)
     assert commit
@@ -57,6 +58,33 @@ def test_authorship_snapshot_is_portal_backed() -> None:
     assert authors.count('\n      name: "') == 14
     assert 'name: "Jérôme Lecoq"' in authors
     assert 'name: "Peter A Groblewski"' in authors
+    assert avatars["version"] == 1
+    assert len(avatars["contributors"]) == 11
+    assert len(avatars["unresolved"]) == 3
+    assert set(avatars["contributors"]).isdisjoint(avatars["unresolved"])
+    assert authors.count('\n      avatar_url: "https://') == 11
+    for author_id, record in avatars["contributors"].items():
+        assert record["source_page"].startswith("https://")
+        assert record["avatar_url"].startswith(
+            "https://cdn.prod.website-files.com/"
+        )
+        assert record["width"] >= 400
+        assert record["height"] >= 400
+        author_block = re.search(
+            rf'      id: "{re.escape(author_id)}"\n(.*?)(?=\n    -|\Z)',
+            authors,
+            re.DOTALL,
+        )
+        assert author_block
+        assert f'avatar_url: "{record["avatar_url"]}"' in author_block.group(1)
+    for author_id in avatars["unresolved"]:
+        author_block = re.search(
+            rf'      id: "{re.escape(author_id)}"\n(.*?)(?=\n    -|\Z)',
+            authors,
+            re.DOTALL,
+        )
+        assert author_block
+        assert "avatar_url:" not in author_block.group(1)
 
 
 def test_imported_figure_manifest_matches_files() -> None:

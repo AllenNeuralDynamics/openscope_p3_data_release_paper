@@ -16,6 +16,7 @@ API_ROOT = "https://metadata-portal.allenneuraldynamics.org/contributions"
 CONTRIBUTION_FORM = "https://data.allenneuraldynamics.org/contributions/add"
 DEFAULT_PROJECT = "p3_data_release"
 DEFAULT_OUTPUT = Path(__file__).resolve().parents[1] / "authors.yml"
+DEFAULT_AVATAR_MANIFEST = Path(__file__).resolve().parents[1] / "author_avatars.json"
 
 CREDIT_ROLE_NAMES = {
     "conceptualization": "Conceptualization",
@@ -52,6 +53,31 @@ def fetch_json(url: str) -> Any:
         return json.load(response)
 
 
+def load_avatar_manifest(path: Path) -> dict[str, Any]:
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    if manifest.get("version") != 1:
+        raise ValueError("Author avatar manifest version is not supported")
+    portraits = manifest.get("contributors") or {}
+    unresolved = manifest.get("unresolved") or {}
+    if not isinstance(portraits, dict) or not isinstance(unresolved, dict):
+        raise ValueError("Author avatar manifest records must be mappings")
+    overlap = set(portraits) & set(unresolved)
+    if overlap:
+        raise ValueError(f"Avatar records cannot be both resolved and unresolved: {overlap}")
+    for contributor_id, record in portraits.items():
+        if not isinstance(record, dict) or not record.get("name"):
+            raise ValueError(f"Avatar record is invalid: {contributor_id}")
+        for field in ("avatar_url", "source_page"):
+            parsed = urllib.parse.urlparse(str(record.get(field) or ""))
+            if parsed.scheme != "https" or not parsed.netloc:
+                raise ValueError(
+                    f"Avatar {field} must be an HTTPS URL: {contributor_id}"
+                )
+        if int(record.get("width") or 0) <= 0 or int(record.get("height") or 0) <= 0:
+            raise ValueError(f"Avatar dimensions are invalid: {contributor_id}")
+    return manifest
+
+
 def canonical_role(role: str) -> str:
     return CREDIT_ROLE_NAMES.get(role, role.replace("-", " ").capitalize())
 
@@ -81,16 +107,31 @@ def clean_orcid(value: Any) -> str | None:
     return None
 
 
-def transform_contributor(entry: dict[str, Any], used_ids: set[str]) -> dict[str, Any]:
+def transform_contributor(
+    entry: dict[str, Any],
+    used_ids: set[str],
+    avatar_records: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     author = entry.get("author") or {}
     name = str(author.get("name") or "").strip()
     if not name:
         raise ValueError("Contribution record is missing author.name")
 
+    contributor_id = unique_author_id(name, used_ids)
     contributor: dict[str, Any] = {
-        "id": unique_author_id(name, used_ids),
+        "id": contributor_id,
         "name": name,
     }
+    avatar = (avatar_records or {}).get(contributor_id)
+    if avatar:
+        portal_name = re.sub(r"\s+", " ", name).strip()
+        avatar_name = re.sub(r"\s+", " ", str(avatar["name"])).strip()
+        if portal_name != avatar_name:
+            raise ValueError(
+                f"Avatar identity mismatch for {contributor_id}: "
+                f"{avatar_name!r} != {portal_name!r}"
+            )
+        contributor["avatar_url"] = str(avatar["avatar_url"])
     orcid = clean_orcid(author.get("registry_identifier"))
     if orcid:
         contributor["orcid"] = orcid
@@ -147,16 +188,26 @@ def transform_contributor(entry: dict[str, Any], used_ids: set[str]) -> dict[str
 
 
 def transform_payload(
-    payload: dict[str, Any], source_url: str, source_commit: dict[str, str]
+    payload: dict[str, Any],
+    source_url: str,
+    source_commit: dict[str, str],
+    avatar_manifest: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     project = str(payload.get("project_name") or "")
     if not project:
         raise ValueError("Contribution payload is missing project_name")
 
     used_ids: set[str] = set()
+    avatar_records = (avatar_manifest or {}).get("contributors") or {}
     contributors = [
-        transform_contributor(entry, used_ids) for entry in payload.get("contributors") or []
+        transform_contributor(entry, used_ids, avatar_records)
+        for entry in payload.get("contributors") or []
     ]
+    contributor_ids = {contributor["id"] for contributor in contributors}
+    manifest_ids = set(avatar_records) | set((avatar_manifest or {}).get("unresolved") or {})
+    unknown_ids = manifest_ids - contributor_ids
+    if unknown_ids:
+        raise ValueError(f"Avatar manifest contains unknown contributors: {unknown_ids}")
     portal_settings = {
         key: payload.get(key)
         for key in (
@@ -240,7 +291,11 @@ def dump_yaml(data: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def sync_authors(project: str, output: Path) -> tuple[int, str]:
+def sync_authors(
+    project: str,
+    output: Path,
+    avatar_manifest_path: Path = DEFAULT_AVATAR_MANIFEST,
+) -> tuple[int, str]:
     history_url = api_url("get", project=project, history="true")
     history = fetch_json(history_url)
     if not history:
@@ -252,7 +307,8 @@ def sync_authors(project: str, output: Path) -> tuple[int, str]:
     payload = fetch_json(source_url)
     if payload.get("project_name") != project:
         raise ValueError(f"Requested {project}, received {payload.get('project_name')}")
-    data = transform_payload(payload, source_url, source_commit)
+    avatar_manifest = load_avatar_manifest(avatar_manifest_path)
+    data = transform_payload(payload, source_url, source_commit, avatar_manifest)
     output.write_text(dump_yaml(data), encoding="utf-8")
     return len(data["project"]["contributors"]), source_commit["commit"]
 
@@ -261,8 +317,18 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", default=DEFAULT_PROJECT)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--avatar-manifest",
+        type=Path,
+        default=DEFAULT_AVATAR_MANIFEST,
+        help="Remote-only author avatar URL manifest",
+    )
     arguments = parser.parse_args()
-    count, commit = sync_authors(arguments.project, arguments.output)
+    count, commit = sync_authors(
+        arguments.project,
+        arguments.output,
+        arguments.avatar_manifest,
+    )
     print(f"Wrote {arguments.output} with {count} contributors from commit {commit}")
 
 
