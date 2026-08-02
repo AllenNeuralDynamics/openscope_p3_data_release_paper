@@ -20,6 +20,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 FIGURE_SANS_FONT = "Myriad Pro, Arial, sans-serif"
 FIGURE_MONO_FONT = "IBM Plex Mono, monospace"
 FIGURE_REFERENCE_WIDTH = 1200
+FIGURE_TEXT_MARGIN = 8
+HARDWARE_DESCRIPTION_FONT_SIZE = 12
 FIGURE_TYPE_SCALE = {
     "panel": 34,
     "title": 28,
@@ -562,7 +564,12 @@ def append_hardware_image(
 
 
 def append_hardware_caption(
-    svg: list[str], *, x: float, y: float, lines: tuple[str, ...], font_size: int = 15
+    svg: list[str],
+    *,
+    x: float,
+    y: float,
+    lines: tuple[str, ...],
+    font_size: int = HARDWARE_DESCRIPTION_FONT_SIZE,
 ) -> None:
     svg.append(
         f'<text class="hardware-caption" x="{x}" y="{y}" text-anchor="middle" '
@@ -620,9 +627,8 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             "rig": (220, 505, 515, 365),
             "platform": (765, 525, 430, 312),
             "target": (1235, 505, 520, 350),
-            "caption_y": 480,
+            "caption_y": 490,
             "caption": ("8 imaging planes across VISp and VISlm",),
-            "caption_font_size": 13,
         },
         {
             "modality": "slap2",
@@ -701,7 +707,6 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             x=1510,
             y=row["caption_y"],
             lines=row["caption"],
-            font_size=row.get("caption_font_size", 15),
         )
     neuropixels_bounds = fitted_image_bounds(
         assets["neuropixels_brain_targeting"], rows[0]["target"]
@@ -855,6 +860,16 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             f'y2="{rendered_y + y2 * rendered_height:.2f}" '
             f'stroke="{color}" stroke-width="7" stroke-linecap="round"/>'
         )
+    slap2_plane_label_x = (
+        image_point(slap2_bounds, 426 / assets["slap2_brain_targeting"]["width"], 0)[0]
+        + FIGURE_TEXT_MARGIN
+    )
+    apical_plane_label_y = image_point(
+        slap2_bounds, 0, 115 / assets["slap2_brain_targeting"]["height"]
+    )[1] + 6
+    proximal_plane_label_y = image_point(
+        slap2_bounds, 0, 242 / assets["slap2_brain_targeting"]["height"]
+    )[1] + 6
     svg.extend(
         [
             '<g class="mesoscope-target-legend">',
@@ -879,11 +894,15 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             '<text x="1460" y="716" font-family="Source Sans 3, sans-serif" '
             'font-size="15" font-weight="700" fill="#293133">VISp</text>',
             '</g>',
-            '<text class="slap2-plane-label" x="1680" y="1009" '
-            'font-family="Source Sans 3, sans-serif" font-size="11" font-weight="700" '
+            f'<text class="slap2-plane-label" x="{slap2_plane_label_x:.2f}" '
+            f'y="{apical_plane_label_y:.2f}" '
+            'font-family="Source Sans 3, sans-serif" '
+            f'font-size="{HARDWARE_DESCRIPTION_FONT_SIZE}" font-weight="700" '
             'fill="#293133">Apical plane</text>',
-            '<text class="slap2-plane-label" x="1680" y="1117" '
-            'font-family="Source Sans 3, sans-serif" font-size="11" font-weight="700" '
+            f'<text class="slap2-plane-label" x="{slap2_plane_label_x:.2f}" '
+            f'y="{proximal_plane_label_y:.2f}" '
+            'font-family="Source Sans 3, sans-serif" '
+            f'font-size="{HARDWARE_DESCRIPTION_FONT_SIZE}" font-weight="700" '
             'fill="#293133">Proximal plane</text>',
         ]
     )
@@ -2478,7 +2497,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
     frame_paths = load_neural_static_frames(payload)
     logo_paths = load_platform_logos()
     width = 1800
-    height = 660
+    height = 690
     panel_lefts = {"neuropixels": 35, "mesoscope": 645, "slap2": 1235}
     svg = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
@@ -2537,13 +2556,16 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
     mesoscope_options = {
         option["id"]: option for option in sessions["mesoscope"]["options"]
     }
+    detail_label_y = 111 + FIGURE_TEXT_MARGIN
+    detail_card_y = 122 + FIGURE_TEXT_MARGIN
     mesoscope_stacks = (
         ("VISp · 4 planes", 650, ("visp_2", "visp_0", "visp_1", "visp_3")),
         ("VISl · 4 planes", 915, ("visl_6", "visl_4", "visl_5", "visl_7")),
     )
     for stack_index, (stack_label, left, option_ids) in enumerate(mesoscope_stacks):
         svg.append(
-            f'<text x="{left}" y="111" font-family="Source Sans 3, sans-serif" '
+            f'<text class="neural-detail-label" x="{left}" y="{detail_label_y}" '
+            'font-family="Source Sans 3, sans-serif" '
             f'font-size="14" font-weight="700" fill="#303536">{stack_label}</text>'
         )
         for index, option_id in enumerate(option_ids):
@@ -2551,7 +2573,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
             append_microscopy_raw_card(
                 svg,
                 x=left + index * 8,
-                y=122 + index * 45,
+                y=detail_card_y + index * 45,
                 card_width=255,
                 option=option,
                 path=frame_paths[("mesoscope", option_id)],
@@ -2567,7 +2589,8 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         option["id"]: option for option in sessions["slap2"]["options"]
     }
     svg.append(
-        '<text x="1240" y="111" font-family="Source Sans 3, sans-serif" '
+        f'<text class="neural-detail-label" x="1240" y="{detail_label_y}" '
+        'font-family="Source Sans 3, sans-serif" '
         'font-size="14" font-weight="700" fill="#303536">'
         'iGluSnFR4f (green) + RCaMP3 (red)</text>'
     )
@@ -2580,7 +2603,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         append_microscopy_raw_card(
             svg,
             x=1240 + index * 10,
-            y=122 + index * 205,
+            y=detail_card_y + index * 205,
             card_width=500,
             option=option,
             path=frame_paths[("slap2", composite_id)],
@@ -3073,6 +3096,7 @@ def append_session_block(
     context: str,
     qc_kind: str,
     element_class: str | None = None,
+    overlays: list[str] | None = None,
 ) -> None:
     color = SESSION_CONTEXT_COLORS[context]
     class_attribute = f' class="{element_class}"' if element_class else ""
@@ -3089,7 +3113,13 @@ def append_session_block(
             f'<rect{class_attribute} x="{x:.2f}" y="{y:.2f}" '
             f'width="{width:.2f}" height="{height:.2f}" '
             f'fill="url(#hatch-{context.replace("/", "-").replace(" ", "-")})" '
-            f'stroke="{border_colors[qc_kind]}" stroke-width="2"/>'
+            'stroke="#FFFFFF" stroke-width="1"/>'
+        )
+        overlay_target = overlays if overlays is not None else svg
+        overlay_target.append(
+            f'<rect class="session-qc-outline" data-qc-kind="{qc_kind}" '
+            f'x="{x:.2f}" y="{y:.2f}" width="{width:.2f}" height="{height:.2f}" '
+            f'fill="none" stroke="{border_colors[qc_kind]}" stroke-width="2"/>'
         )
     else:
         svg.append(
@@ -3098,7 +3128,8 @@ def append_session_block(
             f'fill="{color}" stroke="#FFFFFF" stroke-width="1"/>'
         )
     if qc_kind == "probe-fail":
-        svg.append(
+        overlay_target = overlays if overlays is not None else svg
+        overlay_target.append(
             f'<polygon points="{svg_star(x + width / 2, y + height / 2)}" '
             'fill="#FFFFFF" stroke="#222829" stroke-width="1"/>'
         )
@@ -3236,6 +3267,7 @@ def write_session_inventory_svg(
                 'font-family="IBM Plex Mono, monospace" font-size="12" '
                 f'text-anchor="end" fill="#4D5553">{escape(row["mouseId"])}</text>'
             )
+            session_overlays = []
             for index, session in enumerate(row["sessions"]):
                 record = session["record"]
                 append_session_block(
@@ -3247,7 +3279,9 @@ def write_session_inventory_svg(
                     context=session["context"],
                     qc_kind=session_qc_kind(record, modality),
                     element_class="session-block",
+                    overlays=session_overlays,
                 )
+            svg.extend(session_overlays)
             y += row_step
 
         if modality == "neuropixels":

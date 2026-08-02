@@ -17,7 +17,9 @@ from openscope_p3_publication.figures import (
     FIGURE_MONO_FONT,
     FIGURE_REFERENCE_WIDTH,
     FIGURE_SANS_FONT,
+    FIGURE_TEXT_MARGIN,
     FIGURE_TYPE_SCALE,
+    HARDWARE_DESCRIPTION_FONT_SIZE,
     NEURAL_EXCERPTS_PATH,
     NEURAL_MEDIA_DIR,
     NEURAL_STATIC_FRAME_DIR,
@@ -84,6 +86,8 @@ def test_experimental_design_data() -> None:
     assert FIGURE_SANS_FONT == "Myriad Pro, Arial, sans-serif"
     assert FIGURE_MONO_FONT == "IBM Plex Mono, monospace"
     assert FIGURE_REFERENCE_WIDTH == 1200
+    assert FIGURE_TEXT_MARGIN == 8
+    assert HARDWARE_DESCRIPTION_FONT_SIZE == 12
     assert FIGURE_TYPE_SCALE == {
         "panel": 34,
         "title": 28,
@@ -427,9 +431,9 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert "Mouse platform" in svg
     assert "Brain targeting" in svg
     assert '<text class="hardware-caption" x="1510" y="88"' in svg
-    assert '<text class="hardware-caption" x="1510" y="480"' in svg
+    assert '<text class="hardware-caption" x="1510" y="490"' in svg
     assert re.search(
-        r'<text class="hardware-caption" x="1510" y="480"[^>]+font-size="19.5"',
+        r'<text class="hardware-caption" x="1510" y="490"[^>]+font-size="18"',
         svg,
     )
     assert "pan-neuronal calcium imaging" not in svg
@@ -466,11 +470,16 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert svg.count('data-layer="IV"') == 2
     assert svg.count('data-layer="V"') == 2
     assert svg.count('class="slap2-plane-label"') == 2
-    assert '<text class="slap2-plane-label" x="1680" y="1009"' in svg
-    assert '<text class="slap2-plane-label" x="1680" y="1117"' in svg
-    assert re.findall(
-        r'class="slap2-plane-label"[^>]+font-size="([^"]+)"', svg
-    ) == ["16.5", "16.5"]
+    hardware_description_sizes = re.findall(
+        r'class="(?:hardware-caption|slap2-plane-label)"[^>]+font-size="([^"]+)"',
+        svg,
+    )
+    assert hardware_description_sizes == ["18"] * 5
+    plane_label_positions = re.findall(
+        r'class="slap2-plane-label" x="([^"]+)" y="([^"]+)"', svg
+    )
+    assert len(plane_label_positions) == 2
+    assert len({position[0] for position in plane_label_positions}) == 1
     assert 'class="slap2-plane-label" x="1680" y="1009" text-anchor=' not in svg
     for label in (
         "Layer I",
@@ -638,6 +647,15 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert "One probe failed" in svg
     assert "Motion correction partially failed" in svg
     assert "SLAP2 stopped halfway" in svg
+    assert svg.count('class="session-qc-outline"') == 22
+    assert svg.count('class="session-qc-outline" data-qc-kind="session-fail"') == 12
+    assert len(
+        re.findall(r'<rect class="session-qc-outline"[^>]+stroke="#FF0000"', svg)
+    ) == 17
+    assert re.search(r'<rect class="session-block"[^>]+stroke="#FF0000"', svg) is None
+    assert re.search(
+        r'<rect class="session-qc-outline"[^>]+stroke="#FF0000"', svg
+    )
     assert "Recording sessions per mouse</text>" not in svg
     assert "worksheet rows ·" not in svg
     assert "Static panels follow" not in svg
@@ -1395,7 +1413,7 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
 
     svg_path = write_neural_static_svg(tmp_path / "raw-neural-recordings.svg")
     svg = svg_path.read_text(encoding="utf-8")
-    assert 'width="1800" height="660"' in svg
+    assert 'width="1800" height="690"' in svg
     assert svg.count("data:image/png;base64,") == 19
     assert svg.count('class="platform-heading" data-modality=') == 3
     assert_modality_title_scale(svg)
@@ -1420,6 +1438,11 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert "6 probe recordings · all raw excerpts stacked" in svg
     assert "8 planes · 4 VISp + 4 VISl · all raw frames stacked" in svg
     assert "2 VISp planes · merged green + red channels" in svg
+    assert svg.count('class="neural-detail-label"') == 3
+    assert svg.count(f'y="{111 + FIGURE_TEXT_MARGIN}"') == 3
+    assert '<rect x="650.00" y="130.00" width="255"' in svg
+    assert '<rect x="1240.00" y="130.00" width="500"' in svg
+    assert '<rect x="1255.00" y="341.00" width="500"' in svg
     assert "scale-card" not in svg
     assert "playback" not in svg.lower()
     assert "event onset" not in svg.lower()
