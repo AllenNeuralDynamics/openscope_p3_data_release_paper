@@ -24,6 +24,7 @@ FIGURE_TYPE_SCALE = {
     "panel": 34,
     "title": 28,
     "heading": 24,
+    "modality": 20,
     "label": 15,
     "small": 12,
 }
@@ -319,6 +320,11 @@ def write_merged_figure_1_svg(output: Path = MERGED_FIGURE_1_OUTPUT) -> Path:
         '<svg x="1040" y="60" width="924" height="720" viewBox="0 60 580 460" '
         'overflow="hidden" preserveAspectRatio="xMidYMid meet">',
         f'<image href="{experimental_design}" x="0" y="0" width="1108" height="780"/>',
+        '<rect class="workflow-label-mask" x="464" y="188" width="124" height="22" '
+        'fill="#FFFFFF"/>',
+        '<text class="workflow-modality-label" x="526" y="203" text-anchor="middle" '
+        'font-family="Source Sans 3, sans-serif" font-size="8" font-weight="600" '
+        'fill="#303536">Mesoscope</text>',
         '</svg>',
         '<text class="panel-label" x="20" y="48" font-family="Source Sans 3, sans-serif" '
         'font-size="28" font-weight="700" fill="#293133">A</text>',
@@ -414,8 +420,9 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
         svg.extend(
             [
                 f'<g class="modality-cohort" data-modality="{modality}">',
-                f'<text x="42" y="{heading_y}" '
-                'font-family="Source Sans 3, sans-serif" font-size="24" '
+                f'<text class="modality-title" x="42" y="{heading_y}" '
+                'font-family="Source Sans 3, sans-serif" '
+                f'font-size="{FIGURE_TYPE_SCALE["modality"]}" '
                 f'font-weight="700" fill="#293133">{label}</text>',
                 f'<text x="42" y="{heading_y + 30}" '
                 'font-family="Source Sans 3, sans-serif" font-size="15" '
@@ -555,11 +562,11 @@ def append_hardware_image(
 
 
 def append_hardware_caption(
-    svg: list[str], *, x: float, y: float, lines: tuple[str, ...]
+    svg: list[str], *, x: float, y: float, lines: tuple[str, ...], font_size: int = 15
 ) -> None:
     svg.append(
         f'<text class="hardware-caption" x="{x}" y="{y}" text-anchor="middle" '
-        'font-family="Source Sans 3, sans-serif" font-size="15" '
+        f'font-family="Source Sans 3, sans-serif" font-size="{font_size}" '
         'font-weight="600" fill="#4D5553">'
     )
     for line_index, line in enumerate(lines):
@@ -613,8 +620,9 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             "rig": (220, 505, 515, 365),
             "platform": (765, 525, 430, 312),
             "target": (1235, 505, 520, 350),
-            "caption_y": 468,
-            "caption": ("8 imaging planes across VISp and VISlm", "pan-neuronal calcium imaging"),
+            "caption_y": 480,
+            "caption": ("8 imaging planes across VISp and VISlm",),
+            "caption_font_size": 13,
         },
         {
             "modality": "slap2",
@@ -651,8 +659,9 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
         svg.extend(
             [
                 f'<g class="hardware-modality" data-modality="{modality}">',
-                f'<text x="15" y="{row["top"] + 32}" '
-                'font-family="Source Sans 3, sans-serif" font-size="24" '
+                f'<text class="modality-title" x="15" y="{row["top"] + 32}" '
+                'font-family="Source Sans 3, sans-serif" '
+                f'font-size="{FIGURE_TYPE_SCALE["modality"]}" '
                 f'font-weight="700" fill="#293133">{row["label"]}</text>',
                 f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
                 f'x="15" y="{row["top"] + 48}" width="190" height="190" '
@@ -692,6 +701,7 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             x=1510,
             y=row["caption_y"],
             lines=row["caption"],
+            font_size=row.get("caption_font_size", 15),
         )
     neuropixels_bounds = fitted_image_bounds(
         assets["neuropixels_brain_targeting"], rows[0]["target"]
@@ -869,11 +879,11 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             '<text x="1460" y="716" font-family="Source Sans 3, sans-serif" '
             'font-size="15" font-weight="700" fill="#293133">VISp</text>',
             '</g>',
-            '<text class="slap2-plane-label" x="1785" y="1018" text-anchor="end" '
-            'font-family="Source Sans 3, sans-serif" font-size="15" font-weight="700" '
+            '<text class="slap2-plane-label" x="1680" y="1009" '
+            'font-family="Source Sans 3, sans-serif" font-size="11" font-weight="700" '
             'fill="#293133">Apical plane</text>',
-            '<text class="slap2-plane-label" x="1785" y="1165" text-anchor="end" '
-            'font-family="Source Sans 3, sans-serif" font-size="15" font-weight="700" '
+            '<text class="slap2-plane-label" x="1680" y="1117" '
+            'font-family="Source Sans 3, sans-serif" font-size="11" font-weight="700" '
             'fill="#293133">Proximal plane</text>',
         ]
     )
@@ -1933,8 +1943,10 @@ def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
                 f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
                 f'x="63" y="{row_top - 38}" width="54" height="54" '
                 'preserveAspectRatio="xMidYMid meet"/>',
-                f'<text x="125" y="{row_top}" font-family="Source Sans 3, sans-serif" '
-                'font-size="24" font-weight="700" fill="#293133">'
+                f'<text class="modality-title" x="125" y="{row_top}" '
+                'font-family="Source Sans 3, sans-serif" '
+                f'font-size="{FIGURE_TYPE_SCALE["modality"]}" '
+                'font-weight="700" fill="#293133">'
                 f'{modality_labels[modality]} · mouse {escape(profile["mouse_id"])}</text>',
                 "</g>",
             ]
@@ -2499,8 +2511,9 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
                 f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
                 f'x="{left + 28}" y="1" width="{logo_size}" height="{logo_size}" '
                 'preserveAspectRatio="xMidYMid meet"/>',
-                f'<text x="{left + 136}" y="35" '
-                'font-family="Source Sans 3, sans-serif" font-size="24" '
+                f'<text class="modality-title" x="{left + 136}" y="35" '
+                'font-family="Source Sans 3, sans-serif" '
+                f'font-size="{FIGURE_TYPE_SCALE["modality"]}" '
                 f'font-weight="700" fill="#293133">{label}</text>',
                 f'<text class="modality-scale" x="{left + 136}" y="67" '
                 'font-family="Source Sans 3, sans-serif" font-size="12" '
@@ -3195,9 +3208,11 @@ def write_session_inventory_svg(
                 f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
                 f'x="{title_x + 24:.2f}" y="1" width="54" height="54" '
                 'preserveAspectRatio="xMidYMid meet"/>',
-                f'<text class="platform-title" x="{title_x + 86:.2f}" y="47" '
+                f'<text class="platform-title modality-title" '
+                f'x="{title_x + 86:.2f}" y="47" '
                 'font-family="Source Sans 3, sans-serif" '
-                f'font-size="22" font-weight="700" fill="#293133">{panel_title}</text>',
+                f'font-size="{FIGURE_TYPE_SCALE["modality"]}" font-weight="700" '
+                f'fill="#293133">{panel_title}</text>',
                 "</g>",
             ]
         )

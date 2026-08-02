@@ -66,6 +66,20 @@ from openscope_p3_publication.figures import (
 )
 
 
+def assert_modality_title_scale(svg: str, expected_count: int = 3) -> None:
+    canvas_width = float(re.search(r'<svg[^>]+width="([^"]+)"', svg).group(1))
+    font_sizes = [
+        float(size)
+        for size in re.findall(
+            r'<text class="[^"]*modality-title[^"]*"[^>]*font-size="([^"]+)"',
+            svg,
+        )
+    ]
+    expected_size = canvas_width / FIGURE_REFERENCE_WIDTH * FIGURE_TYPE_SCALE["modality"]
+    assert len(font_sizes) == expected_count
+    assert font_sizes == pytest.approx([expected_size] * expected_count, abs=0.01)
+
+
 def test_experimental_design_data() -> None:
     assert FIGURE_SANS_FONT == "Myriad Pro, Arial, sans-serif"
     assert FIGURE_MONO_FONT == "IBM Plex Mono, monospace"
@@ -74,6 +88,7 @@ def test_experimental_design_data() -> None:
         "panel": 34,
         "title": 28,
         "heading": 24,
+        "modality": 20,
         "label": 15,
         "small": 12,
     }
@@ -338,6 +353,10 @@ def test_opening_figures_are_source_backed(tmp_path: Path) -> None:
     assert figure_1.count("data:image/svg+xml;base64,") == 1
     assert 'viewBox="0 60 580 460"' in figure_1
     assert figure_1.count('class="panel-label"') == 3
+    assert figure_1.count('class="workflow-label-mask"') == 1
+    assert figure_1.count('class="workflow-modality-label"') == 1
+    assert 'class="workflow-modality-label" x="526" y="203"' in figure_1
+    assert '>Mesoscope</text>' in figure_1
     assert "Predictive-processing framework and experimental workflow" in figure_1
 
     panel_c = write_figure_1_panel_c_svg(
@@ -345,6 +364,8 @@ def test_opening_figures_are_source_backed(tmp_path: Path) -> None:
     ).read_text(encoding="utf-8")
     assert 'width="1600" height="640"' in panel_c
     assert panel_c.count('class="modality-cohort" data-modality=') == 3
+    assert panel_c.count('class="modality-title"') == 3
+    assert_modality_title_scale(panel_c)
     assert panel_c.count('class="platform-logo"') == 3
     assert panel_c.count('class="cohort-line"') == 5
     assert panel_c.count('class="habituation-session"') == 40
@@ -361,7 +382,8 @@ def test_opening_figures_are_source_backed(tmp_path: Path) -> None:
         assert panel_c.count(f'data-context="{context}"') == 7
     assert "Habituation / training" in panel_c
     assert "Habituation without mismatch" in panel_c
-    assert panel_c.count('font-size="32"') == 5
+    assert panel_c.count('font-size="26.67"') == 3
+    assert panel_c.count('font-size="32"') == 2
     assert panel_c.count('font-size="20"') == 13
     assert panel_c.count('width="110" height="110"') == 3
     assert "#F6F8F7" not in panel_c
@@ -395,6 +417,8 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert 'width="1800" height="1310"' in svg
     assert svg.count('class="hardware-image"') == 9
     assert svg.count('class="hardware-modality" data-modality=') == 3
+    assert svg.count('class="modality-title"') == 3
+    assert_modality_title_scale(svg)
     assert svg.count('class="platform-logo"') == 3
     assert svg.count('width="190" height="190"') == 3
     assert svg.count("data:image/png;base64,") == 12
@@ -403,7 +427,12 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert "Mouse platform" in svg
     assert "Brain targeting" in svg
     assert '<text class="hardware-caption" x="1510" y="88"' in svg
-    assert '<text class="hardware-caption" x="1510" y="468"' in svg
+    assert '<text class="hardware-caption" x="1510" y="480"' in svg
+    assert re.search(
+        r'<text class="hardware-caption" x="1510" y="480"[^>]+font-size="19.5"',
+        svg,
+    )
+    assert "pan-neuronal calcium imaging" not in svg
     assert '<text class="hardware-caption" x="1510" y="1272"' in svg
     assert "Behavior cohorts" not in svg
     assert "motor cohort" not in svg.lower()
@@ -437,8 +466,12 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert svg.count('data-layer="IV"') == 2
     assert svg.count('data-layer="V"') == 2
     assert svg.count('class="slap2-plane-label"') == 2
-    assert '<text class="slap2-plane-label" x="1785"' in svg
-    assert svg.count('class="slap2-plane-label"') == svg.count('text-anchor="end"')
+    assert '<text class="slap2-plane-label" x="1680" y="1009"' in svg
+    assert '<text class="slap2-plane-label" x="1680" y="1117"' in svg
+    assert re.findall(
+        r'class="slap2-plane-label"[^>]+font-size="([^"]+)"', svg
+    ) == ["16.5", "16.5"]
+    assert 'class="slap2-plane-label" x="1680" y="1009" text-anchor=' not in svg
     for label in (
         "Layer I",
         "Layer II/III",
@@ -586,6 +619,7 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     svg = svg_path.read_text(encoding="utf-8")
     assert 'width="1150" height="640"' in svg
     assert svg.count('class="platform-heading" data-modality=') == 3
+    assert_modality_title_scale(svg)
     assert svg.count('class="platform-logo"') == 3
     assert svg.count('y="1" width="54" height="54"') == 3
     assert svg.count('class="panel-title"') == 3
@@ -867,6 +901,7 @@ def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert svg.count("data:image/jpeg;base64,") == 10
     assert svg.count("data:image/png;base64,") == 3
     assert svg.count('class="platform-heading" data-modality=') == 3
+    assert_modality_title_scale(svg)
     assert svg.count('class="platform-logo"') == 3
     assert svg.count('width="54" height="54"') == 3
     assert svg.count('class="behavior-camera-card" data-modality="neuropixels"') == 3
@@ -1363,6 +1398,7 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert 'width="1800" height="660"' in svg
     assert svg.count("data:image/png;base64,") == 19
     assert svg.count('class="platform-heading" data-modality=') == 3
+    assert_modality_title_scale(svg)
     assert svg.count('class="platform-logo"') == 3
     assert svg.count('y="1" width="96" height="96"') == 3
     assert svg.count('class="raw-image-card" data-modality="neuropixels"') == 6
