@@ -52,6 +52,12 @@ EXPERIMENTAL_DESIGN_SOURCE_PROVENANCE_PATH = (
 CONTEXT_CONTROLS_STATIC_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "figure-02-context-controls.svg"
 )
+HARDWARE_SOURCE_PROVENANCE_PATH = (
+    REPO_ROOT / "figure_sources" / "powerpoint" / "hardware" / "provenance.json"
+)
+HARDWARE_STATIC_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "multimodal-hardware.svg"
+)
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
 BEHAVIOR_EXCERPTS_PATH = DATA_DIR / "behavior-excerpts.json"
@@ -158,6 +164,41 @@ def platform_logo_data_uris() -> dict[str, str]:
         modality: f"data:image/png;base64,{base64.b64encode(path.read_bytes()).decode()}"
         for modality, path in load_platform_logos().items()
     }
+
+
+def load_hardware_sources() -> dict[str, dict]:
+    provenance = json.loads(HARDWARE_SOURCE_PROVENANCE_PATH.read_text(encoding="utf-8"))
+    assets = provenance.get("assets", {})
+    expected_assets = {
+        f"{modality}_{panel}"
+        for modality in ("neuropixels", "mesoscope", "slap2")
+        for panel in ("rig_geometry", "mouse_platform", "brain_targeting")
+    }
+    source_path = REPO_ROOT / provenance["source_path"]
+    if (
+        provenance.get("version") != 1
+        or provenance.get("slide_count") != 1
+        or set(assets) != expected_assets
+        or hashlib.sha256(source_path.read_bytes()).hexdigest()
+        != provenance["source_sha256"]
+    ):
+        raise RuntimeError("Hardware PowerPoint provenance is not supported.")
+
+    validated = {}
+    for asset_id, record in assets.items():
+        path = REPO_ROOT / record["output_path"]
+        data = path.read_bytes()
+        dimensions = struct.unpack(">II", data[16:24])
+        if (
+            hashlib.sha256(data).hexdigest() != record["sha256"]
+            or not data.startswith(b"\x89PNG\r\n\x1a\n")
+            or dimensions != (record["width"], record["height"])
+            or record["mode"] != "RGBA"
+            or data[25] != 6
+        ):
+            raise RuntimeError(f"Hardware PowerPoint asset is invalid: {asset_id}")
+        validated[asset_id] = {**record, "path": path}
+    return validated
 
 
 def png_data_uri(path: Path, expected_dimensions: tuple[int, int]) -> str:
@@ -417,6 +458,363 @@ def write_context_controls_svg(output: Path = CONTEXT_CONTROLS_STATIC_OUTPUT) ->
         'preserveAspectRatio="xMidYMid meet"/>',
         '</svg>',
     ]
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    return output
+
+
+def append_hardware_image(
+    svg: list[str],
+    *,
+    asset_id: str,
+    asset: dict,
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+) -> None:
+    image_data = base64.b64encode(asset["path"].read_bytes()).decode()
+    href = f"data:image/png;base64,{image_data}"
+    crop_left, crop_top, crop_right, crop_bottom = asset["crop_fractions"]
+    if any((crop_left, crop_top, crop_right, crop_bottom)):
+        source_x = asset["width"] * crop_left
+        source_y = asset["height"] * crop_top
+        source_width = asset["width"] * (1 - crop_left - crop_right)
+        source_height = asset["height"] * (1 - crop_top - crop_bottom)
+        svg.extend(
+            [
+                f'<svg class="hardware-image" data-asset="{asset_id}" '
+                f'x="{x}" y="{y}" width="{width}" height="{height}" '
+                f'viewBox="{source_x:.2f} {source_y:.2f} '
+                f'{source_width:.2f} {source_height:.2f}" overflow="hidden" '
+                'preserveAspectRatio="xMidYMid meet">',
+                f'<image href="{href}" width="{asset["width"]}" '
+                f'height="{asset["height"]}"/>',
+                "</svg>",
+            ]
+        )
+        return
+    svg.append(
+        f'<image class="hardware-image" data-asset="{asset_id}" href="{href}" '
+        f'x="{x}" y="{y}" width="{width}" height="{height}" '
+        'preserveAspectRatio="xMidYMid meet"/>'
+    )
+
+
+def append_hardware_caption(
+    svg: list[str], *, x: float, y: float, lines: tuple[str, ...]
+) -> None:
+    svg.append(
+        f'<text class="hardware-caption" x="{x}" y="{y}" text-anchor="middle" '
+        'font-family="Source Sans 3, sans-serif" font-size="17" '
+        'font-weight="600" fill="#4D5553">'
+    )
+    for line_index, line in enumerate(lines):
+        dy = 0 if line_index == 0 else 21
+        svg.append(f'<tspan x="{x}" dy="{dy}">{escape(line)}</tspan>')
+    svg.append("</text>")
+
+
+def fitted_image_bounds(asset: dict, box: tuple[float, float, float, float]) -> tuple[float, ...]:
+    x, y, width, height = box
+    aspect_ratio = asset["width"] / asset["height"]
+    rendered_width = min(width, height * aspect_ratio)
+    rendered_height = rendered_width / aspect_ratio
+    return (
+        x + (width - rendered_width) / 2,
+        y + (height - rendered_height) / 2,
+        rendered_width,
+        rendered_height,
+    )
+
+
+def image_point(bounds: tuple[float, ...], x: float, y: float) -> tuple[float, float]:
+    return bounds[0] + x * bounds[2], bounds[1] + y * bounds[3]
+
+
+def line_intersection_y(
+    start: tuple[float, float], end: tuple[float, float], y: float
+) -> tuple[float, float]:
+    fraction = (y - start[1]) / (end[1] - start[1])
+    return start[0] + fraction * (end[0] - start[0]), y
+
+
+def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
+    assets = load_hardware_sources()
+    logo_paths = load_platform_logos()
+    rows = (
+        {
+            "modality": "neuropixels",
+            "label": "Neuropixels",
+            "top": 100,
+            "rig": (220, 105, 515, 360),
+            "platform": (775, 112, 410, 343),
+            "target": (1320, 108, 390, 330),
+            "caption_y": 82,
+            "caption": ("6 probes spanning cortical and", "subcortical structures"),
+        },
+        {
+            "modality": "mesoscope",
+            "label": "Mesoscope",
+            "top": 500,
+            "rig": (220, 505, 515, 365),
+            "platform": (765, 525, 430, 312),
+            "target": (1235, 505, 520, 350),
+            "caption_y": 468,
+            "caption": ("8 imaging planes across VISp and VISlm", "pan-neuronal calcium imaging"),
+        },
+        {
+            "modality": "slap2",
+            "label": "SLAP2",
+            "top": 900,
+            "rig": (220, 920, 515, 335),
+            "platform": (765, 925, 430, 312),
+            "target": (1290, 905, 380, 345),
+            "caption_y": 1272,
+            "caption": ("Dual-plane dendritic imaging of a VISp", "layer II/III pyramidal neuron"),
+        },
+    )
+    svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1310" '
+        'viewBox="0 0 1800 1310" role="img" aria-labelledby="title description">',
+        '<title id="title">Multimodal recording hardware and brain targeting</title>',
+        '<desc id="description">Neuropixels, mesoscope, and SLAP2 rows compare rig '
+        'geometry, the head-fixed mouse platform, and the corresponding brain-targeting '
+        'strategy using nine source images extracted directly from the hardware PowerPoint.</desc>',
+        '<rect width="1800" height="1310" fill="#FFFFFF"/>',
+        '<text x="458" y="58" text-anchor="middle" '
+        'font-family="Source Sans 3, sans-serif" font-size="30" font-weight="700" '
+        'fill="#293133">Rig geometry</text>',
+        '<text x="980" y="58" text-anchor="middle" '
+        'font-family="Source Sans 3, sans-serif" font-size="30" font-weight="700" '
+        'fill="#293133">Mouse platform</text>',
+        '<text x="1490" y="58" text-anchor="middle" '
+        'font-family="Source Sans 3, sans-serif" font-size="30" font-weight="700" '
+        'fill="#293133">Brain targeting</text>',
+    ]
+    for row in rows:
+        modality = row["modality"]
+        logo_data = base64.b64encode(logo_paths[modality].read_bytes()).decode()
+        svg.extend(
+            [
+                f'<g class="hardware-modality" data-modality="{modality}">',
+                f'<text x="15" y="{row["top"] + 32}" '
+                'font-family="Source Sans 3, sans-serif" font-size="25" '
+                f'font-weight="700" fill="#293133">{row["label"]}</text>',
+                f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
+                f'x="15" y="{row["top"] + 48}" width="190" height="190" '
+                'preserveAspectRatio="xMidYMid meet"/>',
+                "</g>",
+            ]
+        )
+        append_hardware_image(
+            svg,
+            asset_id=f"{modality}_rig_geometry",
+            asset=assets[f"{modality}_rig_geometry"],
+            x=row["rig"][0],
+            y=row["rig"][1],
+            width=row["rig"][2],
+            height=row["rig"][3],
+        )
+        append_hardware_image(
+            svg,
+            asset_id=f"{modality}_mouse_platform",
+            asset=assets[f"{modality}_mouse_platform"],
+            x=row["platform"][0],
+            y=row["platform"][1],
+            width=row["platform"][2],
+            height=row["platform"][3],
+        )
+        append_hardware_image(
+            svg,
+            asset_id=f"{modality}_brain_targeting",
+            asset=assets[f"{modality}_brain_targeting"],
+            x=row["target"][0],
+            y=row["target"][1],
+            width=row["target"][2],
+            height=row["target"][3],
+        )
+        append_hardware_caption(
+            svg,
+            x=1510,
+            y=row["caption_y"],
+            lines=row["caption"],
+        )
+    neuropixels_bounds = fitted_image_bounds(
+        assets["neuropixels_brain_targeting"], rows[0]["target"]
+    )
+    mesoscope_bounds = fitted_image_bounds(
+        assets["mesoscope_brain_targeting"], rows[1]["target"]
+    )
+    slap2_bounds = fitted_image_bounds(
+        assets["slap2_brain_targeting"], rows[2]["target"]
+    )
+    focus_boxes = (
+        (
+            "neuropixels",
+            neuropixels_bounds,
+            (0.478519, 0.286880, 0.252385, 0.236911),
+            "#000000",
+            0,
+        ),
+        (
+            "mesoscope",
+            mesoscope_bounds,
+            (0.396731, 0.211857, 0.134138, 0.092089),
+            "#FFFFFF",
+            -18,
+        ),
+    )
+    mesoscope_focus_geometry = None
+    for modality, bounds, (x, y, width, height), color, rotation in focus_boxes:
+        rect_x = bounds[0] + x * bounds[2]
+        rect_y = bounds[1] + y * bounds[3]
+        rect_width = width * bounds[2]
+        rect_height = height * bounds[3]
+        center_x = rect_x + rect_width / 2
+        center_y = rect_y + rect_height / 2
+        transform = (
+            f' transform="rotate({rotation} {center_x:.2f} {center_y:.2f})"'
+            if rotation
+            else ""
+        )
+        svg.append(
+            f'<rect class="zoom-focus-box" data-modality="{modality}" '
+            f'x="{rect_x:.2f}" y="{rect_y:.2f}" width="{rect_width:.2f}" '
+            f'height="{rect_height:.2f}" fill="none" stroke="{color}" '
+            f'stroke-width="4"{transform}/>'
+        )
+        if modality == "mesoscope":
+            mesoscope_focus_geometry = (
+                rect_x,
+                rect_y,
+                rect_width,
+                rect_height,
+                center_x,
+                center_y,
+                rotation,
+            )
+    svg.append(
+        f'<rect class="mesoscope-target-border" x="{mesoscope_bounds[0]:.2f}" '
+        f'y="{mesoscope_bounds[1]:.2f}" width="{mesoscope_bounds[2]:.2f}" '
+        f'height="{mesoscope_bounds[3]:.2f}" fill="none" stroke="#000000" '
+        'stroke-width="3"/>'
+    )
+    top_connectors = (
+        ((0.480969, 0.524737), (-0.004021, -0.001210)),
+        ((0.730887, 0.524737), (0.999592, -0.001210)),
+    )
+    for start, end in top_connectors:
+        x1, y1 = image_point(neuropixels_bounds, *start)
+        x2, y2 = image_point(mesoscope_bounds, *end)
+        svg.append(
+            '<line class="zoom-connector" data-stage="neuropixels-to-mesoscope" '
+            f'x1="{x1:.2f}" y1="{y1:.2f}" x2="{x2:.2f}" y2="{y2:.2f}" '
+            'stroke="#000000" stroke-width="4" stroke-linecap="round" '
+            'stroke-dasharray="2 10"/>'
+        )
+    if mesoscope_focus_geometry is None:
+        raise RuntimeError("Mesoscope focus geometry is missing.")
+    rect_x, rect_y, rect_width, rect_height, center_x, center_y, rotation = (
+        mesoscope_focus_geometry
+    )
+    angle = math.radians(rotation)
+
+    def rotate_focus_point(x: float, y: float) -> tuple[float, float]:
+        offset_x = x - center_x
+        offset_y = y - center_y
+        return (
+            center_x + offset_x * math.cos(angle) - offset_y * math.sin(angle),
+            center_y + offset_x * math.sin(angle) + offset_y * math.cos(angle),
+        )
+
+    focus_corners = (
+        rotate_focus_point(rect_x, rect_y + rect_height),
+        rotate_focus_point(rect_x + rect_width, rect_y + rect_height),
+    )
+    middle_connectors = (
+        ((0.036540, 0.197174), (0.042669, 0.210744)),
+        ((0.957882, 0.132872), (0.954828, 0.126090)),
+    )
+    mesoscope_bottom = mesoscope_bounds[1] + mesoscope_bounds[3]
+    for start_point, (dark_end, white_end) in zip(
+        focus_corners, middle_connectors, strict=True
+    ):
+        dark_end_point = image_point(slap2_bounds, *dark_end)
+        white_end_point = image_point(slap2_bounds, *white_end)
+        white_intersection = line_intersection_y(
+            start_point, white_end_point, mesoscope_bottom
+        )
+        dark_intersection = line_intersection_y(
+            start_point, dark_end_point, mesoscope_bottom
+        )
+        svg.extend(
+            [
+                '<line class="zoom-connector" data-stage="mesoscope-internal" '
+                f'x1="{start_point[0]:.2f}" y1="{start_point[1]:.2f}" '
+                f'x2="{white_intersection[0]:.2f}" y2="{white_intersection[1]:.2f}" '
+                'stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" '
+                'stroke-dasharray="2 10"/>',
+                '<line class="zoom-connector" data-stage="mesoscope-to-slap2" '
+                f'x1="{dark_intersection[0]:.2f}" y1="{dark_intersection[1]:.2f}" '
+                f'x2="{dark_end_point[0]:.2f}" y2="{dark_end_point[1]:.2f}" '
+                'stroke="#000000" stroke-width="4" stroke-linecap="round" '
+                'stroke-dasharray="2 10"/>',
+            ]
+        )
+    rendered_x, rendered_y, rendered_width, rendered_height = mesoscope_bounds
+    layer_segments = (
+        ("I", "#8CC63F", 0.493417, 0.229884, 0.424762, 0.269578),
+        ("II/III", "#CCE8F8", 0.505738, 0.258951, 0.437083, 0.298644),
+        ("IV", "#53A8DC", 0.518471, 0.295771, 0.449816, 0.335465),
+        ("V", "#2B388D", 0.530740, 0.329113, 0.462085, 0.368806),
+        ("I", "#8CC63F", 0.277891, 0.368789, 0.209253, 0.408468),
+        ("II/III", "#CCE8F8", 0.295134, 0.393071, 0.226495, 0.432749),
+        ("IV", "#53A8DC", 0.314185, 0.424745, 0.245547, 0.464424),
+        ("V", "#2B388D", 0.332154, 0.453192, 0.263515, 0.492871),
+    )
+    for layer, color, x1, y1, x2, y2 in layer_segments:
+        svg.append(
+            f'<line class="mesoscope-layer-plane" data-layer="{layer}" '
+            f'x1="{rendered_x + x1 * rendered_width:.2f}" '
+            f'y1="{rendered_y + y1 * rendered_height:.2f}" '
+            f'x2="{rendered_x + x2 * rendered_width:.2f}" '
+            f'y2="{rendered_y + y2 * rendered_height:.2f}" '
+            f'stroke="{color}" stroke-width="7" stroke-linecap="round"/>'
+        )
+    svg.extend(
+        [
+            '<g class="mesoscope-target-legend">',
+            '<line x1="1288" y1="525" x2="1317" y2="525" '
+            'stroke="#8FD246" stroke-width="4"/>',
+            '<text x="1325" y="531" font-family="Source Sans 3, sans-serif" '
+            'font-size="15" fill="#303536">Layer I</text>',
+            '<line x1="1288" y1="548" x2="1317" y2="548" '
+            'stroke="#B8E3F5" stroke-width="4"/>',
+            '<text x="1325" y="554" font-family="Source Sans 3, sans-serif" '
+            'font-size="15" fill="#303536">Layer II/III</text>',
+            '<line x1="1288" y1="571" x2="1317" y2="571" '
+            'stroke="#5DBCEB" stroke-width="4"/>',
+            '<text x="1325" y="577" font-family="Source Sans 3, sans-serif" '
+            'font-size="15" fill="#303536">Layer IV</text>',
+            '<line x1="1288" y1="594" x2="1317" y2="594" '
+            'stroke="#334DB3" stroke-width="4"/>',
+            '<text x="1325" y="600" font-family="Source Sans 3, sans-serif" '
+            'font-size="15" fill="#303536">Layer V</text>',
+            '<text x="1372" y="746" font-family="Source Sans 3, sans-serif" '
+            'font-size="18" font-weight="700" fill="#293133">VISlm</text>',
+            '<text x="1510" y="716" font-family="Source Sans 3, sans-serif" '
+            'font-size="18" font-weight="700" fill="#293133">VISp</text>',
+            '</g>',
+            '<text class="slap2-plane-label" x="1680" y="1018" '
+            'font-family="Source Sans 3, sans-serif" font-size="18" font-weight="700" '
+            'fill="#293133">Apical plane</text>',
+            '<text class="slap2-plane-label" x="1680" y="1165" '
+            'font-family="Source Sans 3, sans-serif" font-size="18" font-weight="700" '
+            'fill="#293133">Proximal plane</text>',
+        ]
+    )
+    svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(svg) + "\n", encoding="utf-8")
     return output
@@ -3026,6 +3424,7 @@ def write_unit_yield_svg(
 def main() -> None:
     merged_figure_1_path = write_merged_figure_1_svg()
     figure_1_panel_c_path = write_figure_1_panel_c_svg()
+    hardware_path = write_hardware_figure_svg()
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
     literature_comparison_path = write_literature_comparison_html()
@@ -3036,6 +3435,7 @@ def main() -> None:
     unit_yield_svg_path = write_unit_yield_svg()
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {figure_1_panel_c_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")

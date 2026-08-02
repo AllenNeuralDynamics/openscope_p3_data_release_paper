@@ -30,6 +30,7 @@ from openscope_p3_publication.figures import (
     load_behavior_excerpts,
     load_experimental_design_sources,
     load_experimental_session_records,
+    load_hardware_sources,
     load_neural_excerpts,
     load_publication_table_data,
     load_running_statistics,
@@ -44,6 +45,7 @@ from openscope_p3_publication.figures import (
     write_context_controls_svg,
     write_data_explorer_html,
     write_figure_1_panel_c_svg,
+    write_hardware_figure_svg,
     write_interactive_html,
     write_literature_comparison_html,
     write_merged_figure_1_svg,
@@ -349,6 +351,68 @@ def test_opening_figures_are_source_backed(tmp_path: Path) -> None:
     assert figure_3.count('class="panel-label"') == 2
     assert "Shared session architecture" in figure_3
     assert "Context, control, and system-identification blocks" in figure_3
+
+
+def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
+    assets = load_hardware_sources()
+    assert len(assets) == 9
+    assert {
+        asset_id.rsplit("_", maxsplit=2)[0]
+        for asset_id in assets
+    } == {"neuropixels", "mesoscope", "slap2"}
+    assert {asset["mode"] for asset in assets.values()} == {"RGBA"}
+    assert sum(asset["width"] == 2048 for asset in assets.values()) == 7
+    assert assets["slap2_brain_targeting"]["width"] == 448
+    assert assets["neuropixels_brain_targeting"]["width"] == 1172
+    assert all(len(asset["slide_box_inches"]) == 4 for asset in assets.values())
+
+    svg = write_hardware_figure_svg(tmp_path / "multimodal-hardware.svg").read_text(
+        encoding="utf-8"
+    )
+    assert 'width="1800" height="1310"' in svg
+    assert svg.count('class="hardware-image"') == 9
+    assert svg.count('class="hardware-modality" data-modality=') == 3
+    assert svg.count('class="platform-logo"') == 3
+    assert svg.count('width="190" height="190"') == 3
+    assert svg.count("data:image/png;base64,") == 12
+    assert svg.count('viewBox="') == 4
+    assert "Rig geometry" in svg
+    assert "Mouse platform" in svg
+    assert "Brain targeting" in svg
+    assert '<text class="hardware-caption" x="1510" y="82"' in svg
+    assert '<text class="hardware-caption" x="1510" y="468"' in svg
+    assert '<text class="hardware-caption" x="1510" y="1272"' in svg
+    assert "Behavior cohorts" not in svg
+    assert "motor cohort" not in svg.lower()
+    assert svg.count('class="zoom-focus-box"') == 2
+    assert 'data-modality="mesoscope"' in svg
+    assert 'transform="rotate(-18 ' in svg
+    assert svg.count('class="mesoscope-target-border"') == 1
+    assert svg.count('class="zoom-connector"') == 6
+    assert svg.count('data-stage="neuropixels-to-mesoscope"') == 2
+    assert svg.count('data-stage="mesoscope-internal"') == 2
+    assert svg.count('data-stage="mesoscope-to-slap2"') == 2
+    assert svg.count('stroke-dasharray="2 10"') == 6
+    assert svg.count('class="mesoscope-layer-plane"') == 8
+    assert svg.count('data-layer="I"') == 2
+    assert svg.count('data-layer="II/III"') == 2
+    assert svg.count('data-layer="IV"') == 2
+    assert svg.count('data-layer="V"') == 2
+    assert svg.count('class="slap2-plane-label"') == 2
+    assert '<text class="slap2-plane-label" x="1680"' in svg
+    for label in (
+        "Layer I",
+        "Layer II/III",
+        "Layer IV",
+        "Layer V",
+        "VISlm",
+        "VISp",
+        "Apical plane",
+        "Proximal plane",
+    ):
+        assert label in svg
+    for asset_id in assets:
+        assert f'data-asset="{asset_id}"' in svg
 
 
 def test_data_explorer_is_deterministic(tmp_path: Path) -> None:

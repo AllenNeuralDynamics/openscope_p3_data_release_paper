@@ -146,8 +146,8 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
     assert len(figures) == 6
-    assert manuscript.count(":::{figure} ./images/figures/imported/") == 5
-    assert manuscript.count(":::{figure} ./images/figures/generated/") == 1
+    assert manuscript.count(":::{figure} ./images/figures/imported/") == 4
+    assert manuscript.count(":::{figure} ./images/figures/generated/") == 2
     assert "./images/figures/generated/figure-01-overview.svg" in manuscript
     assert "./images/figures/generated/figure-01-panel-c-cohorts.svg" not in manuscript
     assert ":label: fig-experimental-design" not in manuscript
@@ -163,6 +163,13 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     assert "Within-session architecture for cross-context comparison" in manuscript
     assert "see [Figure 1](#fig-graphical-abstract)" in manuscript
     assert "see [Figure 3](#fig-multimodal-pipelines)" in manuscript
+    assert "./images/figures/generated/multimodal-hardware.svg" in manuscript
+    assert "nine native-resolution images" in manuscript
+    hardware_start = manuscript.index("## Multimodal recording hardware")
+    methods_start = manuscript.index("# Methods")
+    hardware_section = manuscript[hardware_start:methods_start]
+    assert "Behavior cohorts" not in hardware_section
+    assert "cohort-specific order" not in hardware_section
 
 
 def test_importer_preserves_opening_figure_narrative() -> None:
@@ -178,6 +185,12 @@ def test_importer_preserves_opening_figure_narrative() -> None:
 
     figure_2 = render_figure("image10.png")
     assert figure_2 == ""
+
+    hardware = render_figure("image8.png")
+    assert "./images/figures/generated/multimodal-hardware.svg" in hardware
+    assert "Multimodal recording hardware" in hardware
+    assert "nine native-resolution images" in hardware
+    assert "cohort-specific order" not in hardware
 
     source = (
         "brain fixation and brain histology (see **Figure 2**). "
@@ -263,7 +276,7 @@ def test_methods_are_collapsed_as_one_section() -> None:
     hardware = manuscript[hardware_start:methods_start]
 
     assert hardware_start < methods_start
-    assert ":::{figure} ./images/figures/imported/figure-03-multimodal-pipelines.png" in hardware
+    assert ":::{figure} ./images/figures/generated/multimodal-hardware.svg" in hardware
     assert methods.startswith(
         "# Methods\n\n::::{dropdown} Show complete Methods\n"
         ":class: manuscript-methods-dropdown\n"
@@ -425,7 +438,9 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "Sources: pinned\n[example tables]" in manuscript
     assert "generate_experiment_csv.py" in manuscript
     assert "**D,** Context panels summarize" not in manuscript
-    assert "Rows summarize Neuropixels, mesoscope two-photon" in manuscript
+    assert "Rows compare Neuropixels electrophysiology" in manuscript
+    assert "Columns show each rig geometry" in manuscript
+    assert "nine native-resolution images" in manuscript
     assert "searchable, filterable tables for 39 mice and 164" in manuscript
     assert "./interactive/neural-viewer.html" in manuscript
     assert ":label: fig-aligned-neural-signals" in manuscript

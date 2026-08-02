@@ -169,12 +169,12 @@ All four session types shared an identical set of control blocks presented befor
 
 ## Multimodal recording hardware
 
-:::{figure} ./images/figures/imported/figure-03-multimodal-pipelines.png
+:::{figure} ./images/figures/generated/multimodal-hardware.svg
 :label: fig-multimodal-pipelines
-:alt: Neuropixels, mesoscope, and SLAP2 pipelines from behavioral cohort through rig geometry, mouse platform, and brain targeting.
+:alt: Neuropixels, mesoscope, and SLAP2 rig geometry, mouse platforms, and brain-targeting strategies.
 :width: 100%
 
-Multimodal experimental pipelines. Rows summarize Neuropixels, mesoscope two-photon calcium imaging, and SLAP2 dendritic imaging. Colored blocks indicate the cohort-specific order of predictive contexts across recording days. The central columns show each rig and head-fixed mouse platform. Brain-targeting schematics show six acute Neuropixels trajectories spanning cortical and subcortical structures, eight chronic mesoscope planes across VISp and VISlm, and dual-plane SLAP2 sampling of proximal and apical dendritic compartments in a layer II/III pyramidal neuron.
+Multimodal recording hardware. Rows compare Neuropixels electrophysiology, mesoscope two-photon calcium imaging, and SLAP2 dendritic imaging. Columns show each rig geometry, the corresponding head-fixed mouse platform, and the brain-targeting strategy. Neuropixels uses six acute trajectories spanning cortical and subcortical structures; mesoscope uses eight chronic imaging planes across VISp and VISlm; and SLAP2 samples proximal and apical dendritic compartments in a layer II/III pyramidal neuron. The figure is reconstructed from nine native-resolution images extracted directly from the editable PowerPoint source.
 :::
 
 # Methods

@@ -242,6 +242,24 @@ FIGURE_PRESENTATION_OVERRIDES = {
     "image10.png": {
         "merged_into": "image12.png",
     },
+    "image8.png": {
+        "path": "./images/figures/generated/multimodal-hardware.svg",
+        "alt": (
+            "Neuropixels, mesoscope, and SLAP2 rig geometry, mouse platforms, "
+            "and brain-targeting strategies."
+        ),
+        "caption": (
+            "Multimodal recording hardware. Rows compare Neuropixels electrophysiology, "
+            "mesoscope two-photon calcium imaging, and SLAP2 dendritic imaging. Columns show "
+            "each rig geometry, the corresponding head-fixed mouse platform, and the "
+            "brain-targeting strategy. Neuropixels uses six acute trajectories spanning "
+            "cortical and subcortical structures; mesoscope uses eight chronic imaging planes "
+            "across VISp and VISlm; and SLAP2 samples proximal and apical dendritic "
+            "compartments in a layer II/III pyramidal neuron. The figure is reconstructed "
+            "from nine native-resolution images extracted directly from the editable "
+            "PowerPoint source."
+        ),
+    },
 }
 FIGURE_REFERENCE_REPLACEMENTS = {
     "brain fixation and brain histology (see **Figure 2**)": (

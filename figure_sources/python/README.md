@@ -11,6 +11,7 @@ The experimental-design generator writes:
 - `images/figures/generated/figure-01-overview.svg`: horizontal conceptual-framework and multimodal-workflow composition.
 - `images/figures/generated/figure-01-panel-c-cohorts.svg`: context allocation across Neuropixels, mesoscope, and SLAP2 cohorts, embedded as Figure 1C.
 - `images/figures/generated/figure-02-context-controls.svg`: static session timeline and detailed control architecture.
+- `images/figures/generated/multimodal-hardware.svg`: Figure 3 rig, mouse-platform, and targeting composition built from nine checksum-verified PowerPoint PNG sources.
 - `interactive/experimental-design.html`: self-contained JavaScript stimulus viewer for the MyST site.
 - `images/figures/generated/experimental-design.svg`: accessible generated timeline summary.
 

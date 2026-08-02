@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "source_path": "figure_sources/powerpoint/hardware/Presentation_ALL_HARDWARE.pptx",
+  "source_filename": "Presentation_ALL_HARDWARE.pptx",
+  "source_sha256": "20eaba0ad656ce4ea64a75692bb60f41570b2e1614b5313b3918e02106e5922a",
+  "slide_count": 1,
+  "slide_width_inches": 13.333333,
+  "slide_height_inches": 7.5,
+  "extraction_method": "Direct OOXML media extraction with Python standard library",
+  "assets": {
+    "neuropixels_rig_geometry": {
+      "role": "Neuropixels rig geometry",
+      "source_media": "image5.png",
+      "output_path": "figure_sources/powerpoint/hardware/images/neuropixels-rig-geometry.png",
+      "sha256": "c64f4a236fce19624363234ff89115b72f47b21608f4afe286dc94c07eaae490",
+      "width": 2048,
+      "height": 1507,
+      "mode": "RGBA",
+      "shape_index": 38,
+      "slide_box_inches": [
+        3.328259,
+        1.496687,
+        2.200944,
+        1.619542
+      ],
+      "crop_fractions": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "mesoscope_rig_geometry": {
+      "role": "Mesoscope rig geometry",
+      "source_media": "image1.png",
+      "output_path": "figure_sources/powerpoint/hardware/images/mesoscope-rig-geometry.png",
+      "sha256": "e8a35a31e2eeaf76ac447e7a4ddb9a8eda60dbc66394757aeb1f7c2c72676940",
+      "width": 2048,
+      "height": 1504,
+      "mode": "RGBA",
+      "shape_index": 0,
+      "slide_box_inches": [
+        3.380877,
+        3.206539,
+        2.200944,
+        1.616318
+      ],
+      "crop_fractions": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "slap2_rig_geometry": {
+      "role": "SLAP2 rig geometry",
+      "source_media": "image6.png",
+      "output_path": "figure_sources/powerpoint/hardware/images/slap2-rig-geometry.png",
+      "sha256": "b9c9362a72b43ad412c113957fc2bd4bcef936ea47d067707ce672005c244d71",
+      "width": 2048,
+      "height": 1312,
+      "mode": "RGBA",
+      "shape_index": 39,
+      "slide_box_inches": [
+        3.466886,
+        4.898807,
+        2.200944,
+        1.409979
+      ],
+      "crop_fractions": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "neuropixels_mouse_platform": {
+      "role": "Neuropixels mouse platform",
+      "source_media": "image7.png",
+      "output_path": "figure_sources/powerpoint/hardware/images/neuropixels-mouse-platform.png",
+      "sha256": "be733b86a042e2caad5bc91fada342e7a8a01fd4b627fa72426d4838169a8ea3",
+      "width": 2048,
+      "height": 1510,
+      "mode": "RGBA",
+      "shape_index": 40,
+      "slide_box_inches": [
+        5.695225,
+        1.668874,
+        1.725662,
+        1.445448
+      ],
+      "crop_fractions": [
+        0.21577,
+        0.29912,
+        0.36048,
+        0.21951
+      ]
+    },
+    "mesoscope_mouse_platform": {
+      "role": "Mesoscope mouse platform",
+      "source_media": "image8.png",
+      "output_path": "figure_sources/powerpoint/hardware/images/mesoscope-mouse-platform.png",
+      "sha256": "0bf51952e4548cf168fb3490554eeb9e3b9068cd35f74a0d0340dbd239cb21e7",
+      "width": 2048,
+      "height": 1489,
+      "mode": "RGBA",
+      "shape_index": 41,
+      "slide_box_inches": [
+        5.695225,
+        3.445221,
+        1.725661,
+        1.251842
+      ],
+      "crop_fractions": [
+        0.2472,
+        0.27895,
+        0.32907,
+        0.29827
+      ]
+    },
+    "slap2_mouse_platform": {
+      "role": "SLAP2 mouse platform",
+      "source_media": "image9.png",
+      "output_path": "figure_sources/powerpoint/hardware/images/slap2-mouse-platform.png",
+      "sha256": "8b1c969df20d5497515fd3e5b12b99003a2d58f10c6553d3271a0d7aecb6c4b0",
+      "width": 2048,
+      "height": 1446,
+      "mode": "RGBA",
+      "shape_index": 42,
+      "slide_box_inches": [
+        5.695229,
+        5.01725,
+        1.725655,
+        1.251835
+      ],
+      "crop_fractions": [
+        0.26363,
+        0.26347,
+        0.31266,
+        0.30118
+      ]
+    },
+    "neuropixels_brain_targeting": {
+      "role": "Neuropixels probe trajectories and brain targets",
+      "source_media": "image4.png",
+      "output_path": "figure_sources/powerpoint/hardware/images/neuropixels-brain-targeting.png",
+      "sha256": "e868bc584a5b77de75694a74193bae47f365948aefb22e4f50d12afca0fbd2a6",
+      "width": 1172,
+      "height": 994,
+      "mode": "RGBA",
+      "shape_index": 9,
+      "slide_box_inches": [
+        7.818659,
+        1.684675,
+        1.808742,
+        1.534037
+      ],
+      "crop_fractions": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "mesoscope_brain_targeting": {
+      "role": "Mesoscope cortical targets",
+      "source_media": "image3.png",
+      "output_path": "figure_sources/powerpoint/hardware/images/mesoscope-brain-targeting.png",
+      "sha256": "6cf3435c1eddb261b3e9e341c764d73eeefcdeee1d66970f122b80636fe7365b",
+      "width": 2048,
+      "height": 1546,
+      "mode": "RGBA",
+      "shape_index": 4,
+      "slide_box_inches": [
+        7.755468,
+        3.400498,
+        1.775108,
+        1.339995
+      ],
+      "crop_fractions": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "slap2_brain_targeting": {
+      "role": "SLAP2 proximal and apical dendritic planes",
+      "source_media": "image2.png",
+      "output_path": "figure_sources/powerpoint/hardware/images/slap2-brain-targeting.png",
+      "sha256": "c4fd6e82f55bbd3c32a5423e6bc9cd9a4869d5bcda0daac18007ef2a75901298",
+      "width": 448,
+      "height": 406,
+      "mode": "RGBA",
+      "shape_index": 1,
+      "slide_box_inches": [
+        7.999171,
+        4.958938,
+        1.442988,
+        1.307709
+      ],
+      "crop_fractions": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  }
+}
