@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract synchronized camera stills for Figure 9's static view."""
+"""Extract synchronized camera stills for Figure 8's static view."""
 
 from __future__ import annotations
 
@@ -298,7 +298,7 @@ def main() -> None:
             for camera in session["cameras"]
         ],
         "notes": (
-            "Camera frames decoded from ETag-pinned public MP4 sources for Figure 9's "
+            "Camera frames decoded from ETag-pinned public MP4 sources for Figure 8's "
             "static view. Neuropixels and mesoscope retain the common synchronized "
             "excerpt time; SLAP2 uses the same session and mouse as its full-session "
             "running profile. Each still is independently illuminated from luminance "

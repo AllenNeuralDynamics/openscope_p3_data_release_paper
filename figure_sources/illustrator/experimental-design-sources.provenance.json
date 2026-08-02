@@ -1,28 +1,28 @@
 {
   "assets": {
-    "figure_2_modality_cohorts": {
+    "figure_1_panel_c_modality_cohorts": {
       "role": "Editable design reference for the cross-modality cohort layout",
-      "source_path": "figure_sources/illustrator/figure-02-modality-cohorts.ai",
+      "source_path": "figure_sources/illustrator/figure-01-panel-c-modality-cohorts.ai",
       "source_sha256": "fd1d35d558666c8f57bdb19b19fc3061d54f37bd7861c013023f1f9647c450e2"
     },
-    "figure_2_training_cohorts": {
+    "figure_1_panel_c_training_cohorts": {
       "role": "Editable design reference for cohort training and recording order",
-      "source_path": "figure_sources/illustrator/figure-02-training-cohorts.ai",
+      "source_path": "figure_sources/illustrator/figure-01-panel-c-training-cohorts.ai",
       "source_sha256": "0d7cf91ecd403b67bc2b76ca04be6d16abac202e0324a8fa7d1a48245f9636bc"
     },
-    "figure_3_detailed_blocks": {
+    "figure_2_detailed_blocks": {
       "height": 1628,
-      "rendered_path": "figure_sources/illustrator/figure-03-detailed-blocks.png",
+      "rendered_path": "figure_sources/illustrator/figure-02-detailed-blocks.png",
       "rendered_sha256": "a74e81fd19f73277e6d859134a9d0221d0ee479be581057e5781a3dc4d609a90",
-      "source_path": "figure_sources/illustrator/figure-03-detailed-blocks.ai",
+      "source_path": "figure_sources/illustrator/figure-02-detailed-blocks.ai",
       "source_sha256": "37fcef2d2c9c4f85553f6c836bc151531b5a1b63ab1498632b33d04590dc9769",
       "width": 2250
     },
-    "figure_3_stimulus_timeline": {
+    "figure_2_stimulus_timeline": {
       "height": 375,
-      "rendered_path": "figure_sources/illustrator/figure-03-stimulus-timeline.png",
+      "rendered_path": "figure_sources/illustrator/figure-02-stimulus-timeline.png",
       "rendered_sha256": "4c8cd8fdfd966ec40eb26844b8b2d21694dc1585d26ab76ae1a5d2ff5b52274d",
-      "source_path": "figure_sources/illustrator/figure-03-stimulus-timeline.ai",
+      "source_path": "figure_sources/illustrator/figure-02-stimulus-timeline.ai",
       "source_sha256": "ac9b97436317eee657af3714a1f89cc040ecfc507a6483616094bacf15edb7af",
       "width": 1836
     }

@@ -28,10 +28,10 @@ The abstract has not yet been drafted.
 
 :::{figure} ./images/figures/generated/figure-01-overview.svg
 :label: fig-graphical-abstract
-:alt: Predictive-processing computations across spatial scales and the multimodal experimental workflow used to sample them.
+:alt: Predictive-processing computations across spatial scales, the multimodal experimental workflow, and context allocation across recording cohorts.
 :width: 100%
 
-Distributed predictive-processing hypotheses motivate multimodal recordings. **A,** A visual sequence establishes an expectation (blue), whereas an unexpected oddball produces a prediction-error signal (red). Predictions and errors may be expressed through reciprocal brain-wide pathways, within local cortical populations, and across the dendritic and somatic compartments of individual neurons. **B,** To sample these nested scales within one standardized project, animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels electrophysiology, or SLAP2 dendritic imaging.
+Distributed predictive-processing hypotheses motivate multimodal recordings. **A,** A visual sequence establishes an expectation (blue), whereas an unexpected oddball produces a prediction-error signal (red). Predictions and errors may be expressed through reciprocal brain-wide pathways, within local cortical populations, and across the dendritic and somatic compartments of individual neurons. **B,** To sample these nested scales within one standardized project, animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels electrophysiology, or SLAP2 dendritic imaging. **C,** Five cohort timelines show eight outlined habituation and training sessions followed by filled neural-recording sessions. Neuropixels and mesoscope sampled motor- and sequence-habituated cohorts in opposite context orders. Neuropixels sampled every context once, whereas mesoscope repeated each context twice; SLAP2 sampled the motor-habituated cohort only.
 :::
 
 ## The challenge of predictive processing research
@@ -87,17 +87,9 @@ To investigate whether prior experience with a specific predictive context influ
 
   4.  Sensorimotor mismatch.
 
-In both cohorts, the session that matched the habituation context was presented first, ensuring maximal learned expectation for the primary mismatch type. The remaining three sessions were presented in a counterbalanced order across cohorts. Each session was run in immediate succession: once for Neuropixels electrophysiology and twice for mesoscope two-photon calcium imaging, resulting in four or eight total recording sessions per animal. Given a limited throughput, experiments with the SLAP2 platform focused on the motor cohort. Each platform was used in a way that leverage their respective strengths: Experiments using the Mesoscope modality aimed to target the same exact population of neurons across all sessions types twice for a total of 8 cell-matched sessions; experiments using the Neuropixels modality were new probe insertions each day and aimed to record from the same areas (but not the same units) across all 4 types exactly once; experiments on the SLAP2 modality aimed to record the same neuron across all 4 sessions types exactly once. Across all modalities, those goals were met with pass/failure rates that are shared below. QC-passing unit yields across the four Neuropixels recording days are summarized in [Supplementary Figure 2](#fig-supp-neuropixels-unit-yield).
+In both cohorts, the session that matched the habituation context was presented first, ensuring maximal learned expectation for the primary mismatch type. The remaining three sessions were presented in a counterbalanced order across cohorts. Each session was run in immediate succession: once for Neuropixels electrophysiology and twice for mesoscope two-photon calcium imaging, resulting in four or eight total recording sessions per animal. Given a limited throughput, experiments with the SLAP2 platform focused on the motor cohort. Each platform was used in a way that leverage their respective strengths: Experiments using the Mesoscope modality aimed to target the same exact population of neurons across all sessions types twice for a total of 8 cell-matched sessions; experiments using the Neuropixels modality were new probe insertions each day and aimed to record from the same areas (but not the same units) across all 4 types exactly once; experiments on the SLAP2 modality aimed to record the same neuron across all 4 sessions types exactly once. Across all modalities, those goals were met with pass/failure rates that are shared below. This cross-modality allocation is summarized in [Figure 1C](#fig-graphical-abstract). QC-passing unit yields across the four Neuropixels recording days are summarized in [Supplementary Figure 2](#fig-supp-neuropixels-unit-yield).
 
 **Four predictive contexts**
-
-:::{figure} ./images/figures/generated/figure-02-experimental-design.svg
-:label: fig-experimental-design
-:alt: Motor- and sequence-habituated cohorts distributed across Neuropixels, mesoscope, and SLAP2 recording contexts.
-:width: 100%
-
-Predictive contexts distributed across modalities and cohorts. Each dedicated cohort line begins with eight outlined habituation and training sessions; indigo outlines identify the motor-habituated cohort and brown outlines identify the sequence-habituated cohort. Filled boxes denote neural recording sessions. Neuropixels and mesoscope sampled both cohorts in opposite context orders. Neuropixels sampled every context once, whereas mesoscope repeated each context twice to support cell-matched replication. SLAP2 sampled the motor-habituated cohort once per context. Indigo, teal, brown, and gold filled boxes consistently identify sensorimotor, standard-oddball, sequence, and duration recording contexts, respectively.
-:::
 
 The four distinct session contexts each targeted a different aspect of predictive processing. For all 4 contexts, the stimuli table containing both recurring and deviant trials were created at the onset of each session. The resulting tables were then subsequently shuffled so that the mouse could not predict the exact occurrence of deviants (pseudo-random). The order of stimuli blocks (deviant vs control blocks) were maintained across all sessions.
 
@@ -105,7 +97,7 @@ The four distinct session contexts each targeted a different aspect of predictiv
 :label: fig-interactive-experimental-design
 :width: 100%
 :title: Predictive-processing stimulus viewer
-:placeholder: ./images/figures/generated/figure-03-context-controls.svg
+:placeholder: ./images/figures/generated/figure-02-context-controls.svg
 
 Within-session architecture for cross-context comparison. In the **Static** view,
 **A** shows the common session sequence: a standard control precedes each context
@@ -339,7 +331,7 @@ All neural recordings were carried out with Neuropixels 1.0 probes [@jun2017neur
 
 #### Neuropixels probe insertion
 
-Our custom experimental rig can insert up to six Neuropixels probes simultaneously (see [Figure 4](#fig-multimodal-pipelines)). Each probe is mounted on a separate 3-axis micromanipulator with a 15 mm travel range (New Scale Technologies, Victor, NY). Probes are driven to their target holes and lowered to the surface of the brain while the experimentalist monitores a camera feed to avoid vasculature and watches real-time signals on the OpenEphys GUI to identify activity indicative of the brain surface. If the probe need adjustment when attempting to insert (e.g. to avoid vessels), the probe are completely retracted out of the silicon oil to prevent probe bending. Once all probes reach the brain surface, each probe is zeroed and set to insert 3100 μm deep at 200 μm/min and then retracted 100 μm to their final depths to reduce tissue compression and subsequent electrode zdrift relative to the brain. Once all probes reach their final depth, the probes are allowed to settle for ∼30 minutes, and a photo documentation of the inserted probes is captured. Sometimes a probe can not be inserted into its assigned hole, failures are generally due to dura regrowth. Overall, we achieved a penetration success of 5.8 probes per session.
+Our custom experimental rig can insert up to six Neuropixels probes simultaneously (see [Figure 3](#fig-multimodal-pipelines)). Each probe is mounted on a separate 3-axis micromanipulator with a 15 mm travel range (New Scale Technologies, Victor, NY). Probes are driven to their target holes and lowered to the surface of the brain while the experimentalist monitores a camera feed to avoid vasculature and watches real-time signals on the OpenEphys GUI to identify activity indicative of the brain surface. If the probe need adjustment when attempting to insert (e.g. to avoid vessels), the probe are completely retracted out of the silicon oil to prevent probe bending. Once all probes reach the brain surface, each probe is zeroed and set to insert 3100 μm deep at 200 μm/min and then retracted 100 μm to their final depths to reduce tissue compression and subsequent electrode zdrift relative to the brain. Once all probes reach their final depth, the probes are allowed to settle for ∼30 minutes, and a photo documentation of the inserted probes is captured. Sometimes a probe can not be inserted into its assigned hole, failures are generally due to dura regrowth. Overall, we achieved a penetration success of 5.8 probes per session.
 
 #### Data acquisition and synchronization.
 
@@ -625,7 +617,7 @@ and hatching denote partially failed motion correction, stress, sleep, or an
 acquisition that stopped halfway. Across panels, indigo, teal, brown, and gold
 denote sensorimotor, standard oddball, sequence, and duration sessions,
 respectively. Mice are ordered by cohort; where both are present, whitespace
-separates the motor-first and sequence-first groups defined in Figure 2.
+separates the motor-first and sequence-first groups defined in [Figure 1C](#fig-graphical-abstract).
 Repeated and aborted worksheet rows are retained in the Static view, so its rows
 do not map one-to-one to the 164-record Interactive inventory.
 :::
@@ -1024,7 +1016,7 @@ and SLAP2
 
 :::{warning} Work in progress
 :class: manuscript-wip
-Figure 7 and the modality subsections below remain an analysis outline. The Neuropixels unit-yield result is current; the other signal-quality, stability, extraction, and cross-session analyses still need final results and prose.
+Figure 6 and the modality subsections below remain an analysis outline. The Neuropixels unit-yield result is current; the other signal-quality, stability, extraction, and cross-session analyses still need final results and prose.
 :::
 
 :::{figure} ./images/figures/imported/figure-04-unit-extraction-plan.png
@@ -1079,7 +1071,7 @@ GROUP3
 
 :::{warning} Work in progress
 :class: manuscript-wip
-This analysis and Figure 8 are planning placeholders. Receptive-field methods, cross-modality results, and final figure panels still need to be added.
+This analysis and Figure 7 are planning placeholders. Receptive-field methods, cross-modality results, and final figure panels still need to be added.
 :::
 
 :::{figure} ./images/figures/imported/figure-05-basic-stimuli-plan.png
@@ -1158,7 +1150,7 @@ the publication.
 
 :::{warning} Work in progress
 :class: manuscript-wip
-This analysis, the questions below, and Figure 10 are planning placeholders. Final cross-modality oddball-response results and figure panels still need to be added.
+This analysis, the questions below, and Figure 9 are planning placeholders. Final cross-modality oddball-response results and figure panels still need to be added.
 :::
 
 - Stability across the session for all modalities ?

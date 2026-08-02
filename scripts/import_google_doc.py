@@ -220,7 +220,7 @@ FIGURE_PRESENTATION_OVERRIDES = {
         "path": "./images/figures/generated/figure-01-overview.svg",
         "alt": (
             "Predictive-processing computations across spatial scales and the "
-            "multimodal experimental workflow used to sample them."
+            "multimodal experimental workflow and context allocation used to sample them."
         ),
         "caption": (
             "Distributed predictive-processing hypotheses motivate multimodal recordings. "
@@ -231,27 +231,16 @@ FIGURE_PRESENTATION_OVERRIDES = {
             "individual neurons. **B,** To sample these nested scales within one standardized "
             "project, animals progressed from surgery through intrinsic-signal-imaging mapping "
             "and habituation before recording with mesoscope two-photon imaging, Neuropixels "
-            "electrophysiology, or SLAP2 dendritic imaging."
+            "electrophysiology, or SLAP2 dendritic imaging. **C,** Five cohort timelines show "
+            "eight outlined habituation and training sessions followed by filled neural-recording "
+            "sessions. Neuropixels and mesoscope sampled motor- and sequence-habituated cohorts "
+            "in opposite context orders. Neuropixels sampled every context once, whereas "
+            "mesoscope repeated each context twice; SLAP2 sampled the motor-habituated cohort "
+            "only."
         ),
     },
     "image10.png": {
-        "path": "./images/figures/generated/figure-02-experimental-design.svg",
-        "alt": (
-            "Motor- and sequence-habituated cohorts distributed across Neuropixels, "
-            "mesoscope, and SLAP2 recording contexts."
-        ),
-        "caption": (
-            "Predictive contexts distributed across modalities and cohorts. Each dedicated "
-            "cohort line begins with eight outlined habituation and training sessions; indigo "
-            "outlines identify the motor-habituated cohort and brown outlines identify the "
-            "sequence-habituated cohort. Filled boxes denote neural recording sessions. "
-            "Neuropixels and mesoscope sampled both cohorts in opposite context orders. "
-            "Neuropixels sampled every context once, whereas mesoscope repeated each context "
-            "twice to support cell-matched replication. SLAP2 sampled the motor-habituated "
-            "cohort once per context. Indigo, teal, brown, and gold filled boxes consistently "
-            "identify sensorimotor, standard-oddball, sequence, and duration recording "
-            "contexts, respectively."
-        ),
+        "merged_into": "image12.png",
     },
 }
 FIGURE_REFERENCE_REPLACEMENTS = {
@@ -265,7 +254,7 @@ FIGURE_REFERENCE_REPLACEMENTS = {
         "mouse's right eye (see [Figure 1](#fig-graphical-abstract))"
     ),
     "six Neuropixels probes simultaneously (see **Figure 2**)": (
-        "six Neuropixels probes simultaneously (see [Figure 4](#fig-multimodal-pipelines))"
+        "six Neuropixels probes simultaneously (see [Figure 3](#fig-multimodal-pipelines))"
     ),
 }
 
@@ -289,7 +278,7 @@ INTERACTIVE_DESIGN_BLOCK = """:::{iframe} ./interactive/experimental-design.html
 :label: fig-interactive-experimental-design
 :width: 100%
 :title: Predictive-processing stimulus viewer
-:placeholder: ./images/figures/generated/figure-03-context-controls.svg
+:placeholder: ./images/figures/generated/figure-02-context-controls.svg
 
 Within-session architecture for cross-context comparison. In the **Static** view,
 **A** shows the common session sequence: a standard control precedes each context
@@ -356,7 +345,8 @@ and hatching denote partially failed motion correction, stress, sleep, or an
 acquisition that stopped halfway. Across panels, indigo, teal, brown, and gold
 denote sensorimotor, standard oddball, sequence, and duration sessions,
 respectively. Mice are ordered by cohort; where both are present, whitespace
-separates the motor-first and sequence-first groups defined in Figure 2.
+separates the motor-first and sequence-first groups defined in
+[Figure 1C](#fig-graphical-abstract).
 Repeated and aborted worksheet rows are retained in the Static view, so its rows
 do not map one-to-one to the 164-record Interactive inventory.
 :::"""
@@ -691,6 +681,8 @@ def render_figure(source_name: str) -> str:
     if asset.status == "removed":
         return ""
     presentation = FIGURE_PRESENTATION_OVERRIDES.get(source_name, {})
+    if presentation.get("merged_into"):
+        return ""
     path = presentation.get("path", f"./images/figures/imported/{asset.filename}")
     supplementary_option = ""
     caption = presentation.get("caption", asset.caption)
@@ -1002,15 +994,11 @@ def normalize_known_export_artifacts(markdown: str) -> str:
             "All data from this project are packaged as Neurodata Without Borders"
         ),
         "SUPP figures": "## Supplementary figures",
-        "shared below.Four predictive contexts": "shared below.\n\n**Four predictive contexts**",
+        "shared below.Four predictive contexts": (
+            "shared below. This cross-modality allocation is summarized in "
+            "[Figure 1C](#fig-graphical-abstract).\n\n**Four predictive contexts**"
+        ),
         " (see **Figure 11**)": "",
-        "Figure 6 and the modality subsections below": (
-            "Figure 7 and the modality subsections below"
-        ),
-        "This analysis and Figure 7 are planning placeholders": (
-            "This analysis and Figure 8 are planning placeholders"
-        ),
-        "Figure 9 are planning placeholders": "Figure 10 are planning placeholders",
         "\nDescription of the multi-modal animal experimentation pipelines\n": "\n",
         "\n## \n": "\n",
         "\n\\\n=\n": "\n",

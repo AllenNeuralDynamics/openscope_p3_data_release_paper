@@ -43,12 +43,12 @@ from openscope_p3_publication.figures import (
     write_behavior_viewer_html,
     write_context_controls_svg,
     write_data_explorer_html,
+    write_figure_1_panel_c_svg,
     write_interactive_html,
     write_literature_comparison_html,
     write_merged_figure_1_svg,
     write_neural_static_svg,
     write_neural_viewer_html,
-    write_reduced_figure_2_svg,
     write_session_inventory_svg,
     write_static_svg,
     write_unit_yield_html,
@@ -301,44 +301,48 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
 def test_opening_figures_are_source_backed(tmp_path: Path) -> None:
     assets = load_experimental_design_sources()
     assert set(assets) == {
-        "figure_3_detailed_blocks",
-        "figure_3_stimulus_timeline",
+        "figure_2_detailed_blocks",
+        "figure_2_stimulus_timeline",
     }
 
     figure_1 = write_merged_figure_1_svg(tmp_path / "figure-01-overview.svg").read_text(
         encoding="utf-8"
     )
-    assert 'width="2000" height="800"' in figure_1
+    assert 'width="2000" height="1620"' in figure_1
     assert figure_1.count("data:image/png;base64,") == 2
-    assert 'viewBox="0 60 590 460"' in figure_1
-    assert figure_1.count('class="panel-label"') == 2
+    assert figure_1.count("data:image/svg+xml;base64,") == 1
+    assert 'viewBox="0 60 580 460"' in figure_1
+    assert figure_1.count('class="panel-label"') == 3
     assert "Predictive-processing framework and experimental workflow" in figure_1
 
-    figure_2 = write_reduced_figure_2_svg(
-        tmp_path / "figure-02-experimental-design.svg"
+    panel_c = write_figure_1_panel_c_svg(
+        tmp_path / "figure-01-panel-c-cohorts.svg"
     ).read_text(encoding="utf-8")
-    assert 'width="1600" height="780"' in figure_2
-    assert figure_2.count('class="modality-cohort" data-modality=') == 3
-    assert figure_2.count('class="platform-logo"') == 3
-    assert figure_2.count('class="cohort-line"') == 5
-    assert figure_2.count('class="habituation-session"') == 40
-    assert figure_2.count('class="cohort-session"') == 28
+    assert 'width="1600" height="640"' in panel_c
+    assert panel_c.count('class="modality-cohort" data-modality=') == 3
+    assert panel_c.count('class="platform-logo"') == 3
+    assert panel_c.count('class="cohort-line"') == 5
+    assert panel_c.count('class="habituation-session"') == 40
+    assert panel_c.count('class="cohort-session"') == 28
     session_dimensions = re.findall(
         r'class="(?:habituation|cohort)-session"[^>]+width="([^"]+)" '
         r'height="([^"]+)"',
-        figure_2,
+        panel_c,
     )
     assert session_dimensions == [("38", "38")] * 68
-    assert len(re.findall(r'class="cohort-session" data-cohort="1"', figure_2)) == 16
-    assert len(re.findall(r'class="cohort-session" data-cohort="2"', figure_2)) == 12
+    assert len(re.findall(r'class="cohort-session" data-cohort="1"', panel_c)) == 16
+    assert len(re.findall(r'class="cohort-session" data-cohort="2"', panel_c)) == 12
     for context in ("sensorimotor", "standard oddball", "sequence", "duration"):
-        assert figure_2.count(f'data-context="{context}"') == 7
-    assert "Habituation / training" in figure_2
-    assert "Habituation without mismatch" in figure_2
-    assert "#F6F8F7" not in figure_2
+        assert panel_c.count(f'data-context="{context}"') == 7
+    assert "Habituation / training" in panel_c
+    assert "Habituation without mismatch" in panel_c
+    assert panel_c.count('font-size="30"') == 3
+    assert panel_c.count('font-size="21"') == 5
+    assert panel_c.count('width="110" height="110"') == 3
+    assert "#F6F8F7" not in panel_c
 
     figure_3 = write_context_controls_svg(
-        tmp_path / "figure-03-context-controls.svg"
+        tmp_path / "figure-02-context-controls.svg"
     ).read_text(encoding="utf-8")
     assert 'width="1600" height="1600"' in figure_3
     assert figure_3.count("data:image/png;base64,") == 2
@@ -445,6 +449,8 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert svg.count('class="platform-heading" data-modality=') == 3
     assert svg.count('class="platform-logo"') == 3
     assert svg.count('y="1" width="54" height="54"') == 3
+    assert svg.count('class="panel-title"') == 3
+    assert svg.count('y="34"') == 3
     assert svg.count("data:image/png;base64,") == 3
     assert '>A</text>' in svg and '>Neuropixels</text>' in svg
     assert '>B</text>' in svg and '>Mesoscope</text>' in svg

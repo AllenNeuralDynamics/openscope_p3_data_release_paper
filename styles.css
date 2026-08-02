@@ -43,8 +43,7 @@ html[data-theme="dark"] .manuscript-wip-inline {
   color: #fde68a;
 }
 
-#fig-graphical-abstract,
-#fig-experimental-design {
+#fig-graphical-abstract {
   grid-column: body-outset-start / body-outset-end;
 }
 

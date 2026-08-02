@@ -145,11 +145,12 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
-    assert len(figures) == 7
+    assert len(figures) == 6
     assert manuscript.count(":::{figure} ./images/figures/imported/") == 5
-    assert manuscript.count(":::{figure} ./images/figures/generated/") == 2
+    assert manuscript.count(":::{figure} ./images/figures/generated/") == 1
     assert "./images/figures/generated/figure-01-overview.svg" in manuscript
-    assert "./images/figures/generated/figure-02-experimental-design.svg" in manuscript
+    assert "./images/figures/generated/figure-01-panel-c-cohorts.svg" not in manuscript
+    assert ":label: fig-experimental-design" not in manuscript
     for options in figures:
         assert ":label:" in options
         assert ":alt:" in options
@@ -158,10 +159,10 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         "Distributed predictive-processing hypotheses motivate multimodal recordings"
         in manuscript
     )
-    assert "Predictive contexts distributed across modalities and cohorts" in manuscript
+    assert "**C,** Five cohort timelines" in manuscript
     assert "Within-session architecture for cross-context comparison" in manuscript
     assert "see [Figure 1](#fig-graphical-abstract)" in manuscript
-    assert "see [Figure 4](#fig-multimodal-pipelines)" in manuscript
+    assert "see [Figure 3](#fig-multimodal-pipelines)" in manuscript
 
 
 def test_importer_preserves_opening_figure_narrative() -> None:
@@ -173,11 +174,10 @@ def test_importer_preserves_opening_figure_narrative() -> None:
     assert "./images/figures/generated/figure-01-overview.svg" in figure_1
     assert "Distributed predictive-processing hypotheses" in figure_1
     assert "**B,** To sample these nested scales" in figure_1
+    assert "**C,** Five cohort timelines" in figure_1
 
     figure_2 = render_figure("image10.png")
-    assert "./images/figures/generated/figure-02-experimental-design.svg" in figure_2
-    assert "Predictive contexts distributed across modalities" in figure_2
-    assert "mesoscope repeated each context twice" in figure_2
+    assert figure_2 == ""
 
     source = (
         "brain fixation and brain histology (see **Figure 2**). "
@@ -186,7 +186,7 @@ def test_importer_preserves_opening_figure_narrative() -> None:
     )
     normalized = normalize(source)
     assert "[Figure 1](#fig-graphical-abstract)" in normalized
-    assert "[Figure 4](#fig-multimodal-pipelines)" in normalized
+    assert "[Figure 3](#fig-multimodal-pipelines)" in normalized
     assert "see **Figure 2**" not in normalized
 
 
@@ -271,7 +271,7 @@ def test_methods_are_collapsed_as_one_section() -> None:
     assert methods.rstrip().endswith("::::")
     assert "## Experimental animals" in methods
     assert ":label: fig-multimodal-pipelines" not in methods
-    assert "[Figure 4](#fig-multimodal-pipelines)" in methods
+    assert "[Figure 3](#fig-multimodal-pipelines)" in methods
     assert "#### Neuropixels Ephys NWB Packaging Pipeline" in methods
 
     import_script = runpy.run_path(
@@ -467,9 +467,9 @@ def test_figure_captions_and_interactive_placement() -> None:
         < manuscript.index("## Receptive field analysis across modalities")
         < manuscript.index("fig-basic-stimuli-plan")
     )
-    assert "Figure 7 and the modality subsections below" in manuscript
-    assert "This analysis and Figure 8 are planning placeholders" in manuscript
-    assert "Figure 10 are planning placeholders" in manuscript
+    assert "Figure 6 and the modality subsections below" in manuscript
+    assert "This analysis and Figure 7 are planning placeholders" in manuscript
+    assert "Figure 9 are planning placeholders" in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert ":placeholder: ./images/figures/generated/synchronized-behavior.svg" in manuscript
     assert "Synchronized behavior and running across recording modalities" in manuscript
@@ -501,10 +501,11 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "per-frame Harp timestamps for SLAP2" in manuscript
     assert "- Motion energy of the face?" not in manuscript
 
-    figure_2 = manuscript.index(":label: fig-experimental-design")
+    figure_1 = manuscript.index(":label: fig-graphical-abstract")
+    cohort_link = manuscript.index("[Figure 1C](#fig-graphical-abstract)")
     explanation = manuscript.index("The four distinct session contexts")
     viewer = manuscript.index(":label: fig-interactive-experimental-design")
-    assert figure_2 < explanation < viewer
+    assert figure_1 < cohort_link < explanation < viewer
 
 
 def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:
@@ -514,7 +515,7 @@ def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:
     assert "display: none !important" in stylesheet
     assert "minmax(10ch, 20ch)" in stylesheet
     assert "#fig-graphical-abstract" in stylesheet
-    assert "#fig-experimental-design" in stylesheet
+    assert "#fig-experimental-design" not in stylesheet
     assert "#fig-interactive-experimental-design .relative.inline-block" in stylesheet
     assert "height: 704px" in stylesheet
     assert "height: 560px" in stylesheet
@@ -610,7 +611,7 @@ def test_interactive_figure_has_static_fallback() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     assert ":::{iframe} ./interactive/experimental-design.html" in manuscript
     assert (
-        ":placeholder: ./images/figures/generated/figure-03-context-controls.svg"
+        ":placeholder: ./images/figures/generated/figure-02-context-controls.svg"
         in manuscript
     )
     assert "The **Interactive** view" in manuscript

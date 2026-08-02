@@ -40,8 +40,8 @@ EXPERIMENTAL_DESIGN_SOURCE = (
 MERGED_FIGURE_1_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "figure-01-overview.svg"
 )
-REDUCED_FIGURE_2_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-02-experimental-design.svg"
+FIGURE_1_PANEL_C_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-01-panel-c-cohorts.svg"
 )
 EXPERIMENTAL_DESIGN_SOURCE_PROVENANCE_PATH = (
     REPO_ROOT
@@ -50,7 +50,7 @@ EXPERIMENTAL_DESIGN_SOURCE_PROVENANCE_PATH = (
     / "experimental-design-sources.provenance.json"
 )
 CONTEXT_CONTROLS_STATIC_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-03-context-controls.svg"
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-02-context-controls.svg"
 )
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
@@ -174,10 +174,10 @@ def load_experimental_design_sources() -> dict[str, Path]:
     )
     assets = provenance.get("assets", {})
     expected_assets = {
-        "figure_2_modality_cohorts",
-        "figure_2_training_cohorts",
-        "figure_3_detailed_blocks",
-        "figure_3_stimulus_timeline",
+        "figure_1_panel_c_modality_cohorts",
+        "figure_1_panel_c_training_cohorts",
+        "figure_2_detailed_blocks",
+        "figure_2_stimulus_timeline",
     }
     if provenance.get("version") != 1 or set(assets) != expected_assets:
         raise RuntimeError("Experimental-design source provenance is not supported.")
@@ -205,18 +205,24 @@ def load_experimental_design_sources() -> dict[str, Path]:
 def write_merged_figure_1_svg(output: Path = MERGED_FIGURE_1_OUTPUT) -> Path:
     graphical_abstract = png_data_uri(GRAPHICAL_ABSTRACT_SOURCE, (3200, 2400))
     experimental_design = png_data_uri(EXPERIMENTAL_DESIGN_SOURCE, (1108, 780))
+    cohort_panel_path = write_figure_1_panel_c_svg()
+    cohort_panel = (
+        "data:image/svg+xml;base64,"
+        f"{base64.b64encode(cohort_panel_path.read_bytes()).decode()}"
+    )
     svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="800" '
-        'viewBox="0 0 2000 800" role="img" aria-labelledby="title description">',
+        '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1620" '
+        'viewBox="0 0 2000 1620" role="img" aria-labelledby="title description">',
         '<title id="title">Predictive-processing framework and experimental workflow</title>',
         '<desc id="description">Panel A links predictions and errors across brain-wide, '
         'local-circuit, and single-cell scales. Panel B follows animals from surgery through '
         'intrinsic-signal-imaging mapping and habituation to one of three recording '
-        'modalities.</desc>',
-        '<rect width="2000" height="800" fill="#FFFFFF"/>',
+        'modalities. Panel C shows habituation and recording-context order across modalities '
+        'and cohorts.</desc>',
+        '<rect width="2000" height="1620" fill="#FFFFFF"/>',
         f'<image href="{graphical_abstract}" x="40" y="60" width="960" height="720" '
         'preserveAspectRatio="xMidYMid meet"/>',
-        '<svg x="1040" y="60" width="924" height="720" viewBox="0 60 590 460" '
+        '<svg x="1040" y="60" width="924" height="720" viewBox="0 60 580 460" '
         'overflow="hidden" preserveAspectRatio="xMidYMid meet">',
         f'<image href="{experimental_design}" x="0" y="0" width="1108" height="780"/>',
         '</svg>',
@@ -224,6 +230,10 @@ def write_merged_figure_1_svg(output: Path = MERGED_FIGURE_1_OUTPUT) -> Path:
         'font-size="34" font-weight="700" fill="#293133">A</text>',
         '<text class="panel-label" x="1020" y="48" font-family="Source Sans 3, sans-serif" '
         'font-size="34" font-weight="700" fill="#293133">B</text>',
+        f'<image href="{cohort_panel}" x="40" y="825" width="1920" height="768" '
+        'preserveAspectRatio="xMidYMid meet"/>',
+        '<text class="panel-label" x="20" y="818" font-family="Source Sans 3, sans-serif" '
+        'font-size="34" font-weight="700" fill="#293133">C</text>',
         '</svg>',
     ]
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -231,7 +241,7 @@ def write_merged_figure_1_svg(output: Path = MERGED_FIGURE_1_OUTPUT) -> Path:
     return output
 
 
-def write_reduced_figure_2_svg(output: Path = REDUCED_FIGURE_2_OUTPUT) -> Path:
+def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
     load_experimental_design_sources()
     logo_paths = load_platform_logos()
     modality_groups = (
@@ -239,39 +249,45 @@ def write_reduced_figure_2_svg(output: Path = REDUCED_FIGURE_2_OUTPUT) -> Path:
             "neuropixels",
             "Neuropixels",
             "4 recording days · each context once",
-            ((1, 205), (2, 290)),
+            ((1, 190), (2, 245)),
             1,
+            125,
+            160,
         ),
         (
             "mesoscope",
             "Mesoscope",
             "8 recording sessions · each context twice",
-            ((1, 425), (2, 510)),
+            ((1, 365), (2, 420)),
             2,
+            300,
+            335,
         ),
         (
             "slap2",
             "SLAP2",
             "4 recording sessions · motor cohort only",
-            ((1, 680),),
+            ((1, 565),),
             1,
+            480,
+            515,
         ),
     )
     session_square_size = 38
     svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="780" '
-        'viewBox="0 0 1600 780" role="img" aria-labelledby="title description">',
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="640" '
+        'viewBox="0 0 1600 640" role="img" aria-labelledby="title description">',
         '<title id="title">Predictive-context cohorts across recording modalities</title>',
         '<desc id="description">Five dedicated cohort timelines show eight outlined '
         'habituation sessions followed by filled recording sessions. Neuropixels and '
         'mesoscope sampled motor- and sequence-habituated cohorts in opposite context orders; '
         'SLAP2 sampled the motor-habituated cohort only.</desc>',
-        '<rect width="1600" height="780" fill="#FFFFFF"/>',
-        '<text x="680" y="155" text-anchor="middle" '
-        'font-family="Source Sans 3, sans-serif" font-size="20" font-weight="700" '
+        '<rect width="1600" height="640" fill="#FFFFFF"/>',
+        '<text x="680" y="105" text-anchor="middle" '
+        'font-family="Source Sans 3, sans-serif" font-size="22" font-weight="700" '
         'fill="#4D5553">Habituation / training</text>',
-        '<text x="1110" y="155" text-anchor="middle" '
-        'font-family="Source Sans 3, sans-serif" font-size="20" font-weight="700" '
+        '<text x="1110" y="105" text-anchor="middle" '
+        'font-family="Source Sans 3, sans-serif" font-size="22" font-weight="700" '
         'fill="#4D5553">Neural recording contexts</text>',
     ]
 
@@ -281,39 +297,38 @@ def write_reduced_figure_2_svg(output: Path = REDUCED_FIGURE_2_OUTPUT) -> Path:
         color = SESSION_CONTEXT_COLORS[context]
         svg.extend(
             [
-                f'<rect x="{legend_x}" y="38" width="24" height="24" rx="2" '
+                f'<rect x="{legend_x}" y="27" width="26" height="26" rx="2" '
                 f'fill="{color}"/>',
-                f'<text x="{legend_x + 34}" y="57" '
-                'font-family="Source Sans 3, sans-serif" font-size="17" '
+                f'<text x="{legend_x + 36}" y="48" '
+                'font-family="Source Sans 3, sans-serif" font-size="19" '
                 f'font-weight="600" fill="#4D5553">{label}</text>',
             ]
         )
         legend_x += 120 + len(label) * 7
     svg.extend(
         [
-            '<rect x="1225" y="38" width="24" height="24" rx="2" '
+            '<rect x="1225" y="27" width="26" height="26" rx="2" '
             'fill="#FFFFFF" stroke="#283185" stroke-width="3"/>',
-            '<text x="1259" y="57" font-family="Source Sans 3, sans-serif" '
-            'font-size="17" font-weight="600" fill="#4D5553">'
+            '<text x="1261" y="48" font-family="Source Sans 3, sans-serif" '
+            'font-size="19" font-weight="600" fill="#4D5553">'
             'Habituation without mismatch</text>',
         ]
     )
 
-    for modality, label, summary, cohort_lines, repeats in modality_groups:
-        center_y = sum(line_y for _, line_y in cohort_lines) / len(cohort_lines)
+    for modality, label, summary, cohort_lines, repeats, heading_y, icon_y in modality_groups:
         logo_data = base64.b64encode(logo_paths[modality].read_bytes()).decode()
         svg.extend(
             [
                 f'<g class="modality-cohort" data-modality="{modality}">',
-                f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
-                f'x="42" y="{center_y - 60}" width="120" height="120" '
-                'preserveAspectRatio="xMidYMid meet"/>',
-                f'<text x="182" y="{center_y - 12}" '
-                'font-family="Source Sans 3, sans-serif" font-size="28" '
+                f'<text x="42" y="{heading_y}" '
+                'font-family="Source Sans 3, sans-serif" font-size="30" '
                 f'font-weight="700" fill="#293133">{label}</text>',
-                f'<text x="182" y="{center_y + 22}" '
-                'font-family="Source Sans 3, sans-serif" font-size="17" '
+                f'<text x="42" y="{heading_y + 27}" '
+                'font-family="Source Sans 3, sans-serif" font-size="19" '
                 f'font-weight="600" fill="#68706E">{summary}</text>',
+                f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
+                f'x="42" y="{icon_y}" width="110" height="110" '
+                'preserveAspectRatio="xMidYMid meet"/>',
                 '</g>',
             ]
         )
@@ -323,8 +338,8 @@ def write_reduced_figure_2_svg(output: Path = REDUCED_FIGURE_2_OUTPUT) -> Path:
                 [
                     f'<g class="cohort-line" data-modality="{modality}" '
                     f'data-cohort="{cohort}">',
-                    f'<text x="360" y="{line_y + 6}" text-anchor="end" '
-                    'font-family="Source Sans 3, sans-serif" font-size="19" '
+                    f'<text x="360" y="{line_y + 7}" text-anchor="end" '
+                    'font-family="Source Sans 3, sans-serif" font-size="21" '
                     f'font-weight="700" fill="#4D5553">'
                     f'{"Motor cohort" if cohort == 1 else "Sequence cohort"}</text>',
                     f'<line x1="405" y1="{line_y}" x2="1540" y2="{line_y}" '
@@ -373,8 +388,8 @@ def write_reduced_figure_2_svg(output: Path = REDUCED_FIGURE_2_OUTPUT) -> Path:
 
 def write_context_controls_svg(output: Path = CONTEXT_CONTROLS_STATIC_OUTPUT) -> Path:
     assets = load_experimental_design_sources()
-    timeline = png_data_uri(assets["figure_3_stimulus_timeline"], (1836, 375))
-    details = png_data_uri(assets["figure_3_detailed_blocks"], (2250, 1628))
+    timeline = png_data_uri(assets["figure_2_stimulus_timeline"], (1836, 375))
+    details = png_data_uri(assets["figure_2_detailed_blocks"], (2250, 1628))
     svg = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600" '
         'viewBox="0 0 1600 1600" role="img" aria-labelledby="title description">',
@@ -2628,7 +2643,7 @@ def write_session_inventory_svg(
         svg.extend(
             [
                 f'<g class="platform-heading" data-modality="{modality}">',
-                f'<text class="panel-title" x="{title_x:.2f}" y="48" '
+                f'<text class="panel-title" x="{title_x:.2f}" y="34" '
                 'font-family="Source Sans 3, sans-serif" '
                 f'font-size="22" font-weight="700" fill="#293133">'
                 f"{panel_letter}</text>",
@@ -3010,7 +3025,7 @@ def write_unit_yield_svg(
 
 def main() -> None:
     merged_figure_1_path = write_merged_figure_1_svg()
-    reduced_figure_2_path = write_reduced_figure_2_svg()
+    figure_1_panel_c_path = write_figure_1_panel_c_svg()
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
     literature_comparison_path = write_literature_comparison_html()
@@ -3020,7 +3035,7 @@ def main() -> None:
     svg_path = write_static_svg()
     unit_yield_svg_path = write_unit_yield_svg()
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
-    print(f"Wrote {reduced_figure_2_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {figure_1_panel_c_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")
