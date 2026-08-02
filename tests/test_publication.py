@@ -146,8 +146,8 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
     assert len(figures) == 6
-    assert manuscript.count(":::{figure} ./images/figures/imported/") == 4
-    assert manuscript.count(":::{figure} ./images/figures/generated/") == 2
+    assert manuscript.count(":::{figure} ./images/figures/imported/") == 1
+    assert manuscript.count(":::{figure} ./images/figures/generated/") == 5
     assert "./images/figures/generated/figure-01-overview.svg" in manuscript
     assert "./images/figures/generated/figure-01-panel-c-cohorts.svg" not in manuscript
     assert ":label: fig-experimental-design" not in manuscript
@@ -164,6 +164,9 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     assert "see [Figure 1](#fig-graphical-abstract)" in manuscript
     assert "see [Figure 3](#fig-multimodal-pipelines)" in manuscript
     assert "./images/figures/generated/multimodal-hardware.svg" in manuscript
+    assert "./images/figures/generated/figure-06-unit-extraction-plan.svg" in manuscript
+    assert "./images/figures/generated/figure-07-basic-stimuli-plan.svg" in manuscript
+    assert "./images/figures/generated/figure-09-standard-oddball-plan.svg" in manuscript
     assert "nine native-resolution images" in manuscript
     hardware_start = manuscript.index("## Multimodal recording hardware")
     methods_start = manuscript.index("# Methods")
@@ -191,6 +194,13 @@ def test_importer_preserves_opening_figure_narrative() -> None:
     assert "Multimodal recording hardware" in hardware
     assert "nine native-resolution images" in hardware
     assert "cohort-specific order" not in hardware
+    assert "[Figure 2](#fig-interactive-experimental-design)" in importer[
+        "INTERACTIVE_DESIGN_BLOCK"
+    ]
+    assert "[Figure 4](#fig-recording-session-inventory)" in importer[
+        "DATA_EXPLORER_BLOCK"
+    ]
+    assert "[Figure 5](#fig-aligned-neural-signals)" in importer["NEURAL_VIEWER_BLOCK"]
 
     source = (
         "brain fixation and brain histology (see **Figure 2**). "
@@ -482,9 +492,9 @@ def test_figure_captions_and_interactive_placement() -> None:
         < manuscript.index("## Receptive field analysis across modalities")
         < manuscript.index("fig-basic-stimuli-plan")
     )
-    assert "Figure 6 and the modality subsections below" in manuscript
-    assert "This analysis and Figure 7 are planning placeholders" in manuscript
-    assert "Figure 9 are planning placeholders" in manuscript
+    assert "[Figure 6](#fig-unit-extraction-plan) and the modality subsections below" in manuscript
+    assert "This analysis and [Figure 7](#fig-basic-stimuli-plan)" in manuscript
+    assert "[Figure 9](#fig-standard-oddball-plan) are planning placeholders" in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert ":placeholder: ./images/figures/generated/synchronized-behavior.svg" in manuscript
     assert "Synchronized behavior and running across recording modalities" in manuscript
@@ -505,7 +515,21 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "Event-centered excerpts from real Neuropixels" not in manuscript
     assert "figure-06-behavior-tracking-plan.png" not in manuscript
     assert "continuous raw\nbehavioral videos" in manuscript
-    assert "[](#fig-behavior-tracking) show these streams" in manuscript
+    assert "[Figure 8](#fig-behavior-tracking) show these streams" in manuscript
+    assert "[](#fig-behavior-tracking)" not in manuscript
+    for number, label in (
+        (1, "fig-graphical-abstract"),
+        (2, "fig-interactive-experimental-design"),
+        (3, "fig-multimodal-pipelines"),
+        (4, "fig-recording-session-inventory"),
+        (5, "fig-aligned-neural-signals"),
+        (6, "fig-unit-extraction-plan"),
+        (7, "fig-basic-stimuli-plan"),
+        (8, "fig-behavior-tracking"),
+        (9, "fig-standard-oddball-plan"),
+    ):
+        assert f"[Figure {number}](#{label})" in manuscript
+    assert re.search(r"\[\]\(#fig-", manuscript) is None
     assert "NWB running\nspeed and stimulus rows share the sync-file clock" in manuscript
     assert "reported dropped frames are removed before mapping" in manuscript
     assert "per-frame Harp timestamps on the acquisition clock" in manuscript

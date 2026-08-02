@@ -17,6 +17,46 @@ from html import escape
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+FIGURE_SANS_FONT = "Myriad Pro, Arial, sans-serif"
+FIGURE_MONO_FONT = "IBM Plex Mono, monospace"
+FIGURE_REFERENCE_WIDTH = 1200
+FIGURE_TYPE_SCALE = {
+    "panel": 34,
+    "title": 28,
+    "heading": 24,
+    "label": 15,
+    "small": 12,
+}
+
+
+def write_svg_output(output: Path, svg: list[str]) -> None:
+    content = "\n".join(svg)
+    for previous_font in (
+        "Source Sans 3, sans-serif",
+        "IBM Plex Sans, sans-serif",
+    ):
+        content = content.replace(previous_font, FIGURE_SANS_FONT)
+
+    width_match = re.search(r'<svg\b[^>]*\bwidth="([0-9.]+)"', content)
+    if width_match is None:
+        raise RuntimeError("Generated SVG is missing a numeric canvas width.")
+    font_scale = float(width_match.group(1)) / FIGURE_REFERENCE_WIDTH
+
+    def normalized_font_size(match: re.Match[str]) -> str:
+        value = float(match.group(1)) * font_scale
+        formatted = f"{value:.2f}".rstrip("0").rstrip(".")
+        return f'font-size="{formatted}"'
+
+    def normalized_text_tag(match: re.Match[str]) -> str:
+        tag = match.group(0)
+        if f'font-family="{FIGURE_SANS_FONT}"' not in tag:
+            return tag
+        return re.sub(r'font-size="([0-9.]+)"', normalized_font_size, tag)
+
+    content = re.sub(r"<text\b[^>]*>", normalized_text_tag, content)
+    output.write_text(content + "\n", encoding="utf-8")
+
+
 DATA_DIR = REPO_ROOT / "figure_sources" / "data"
 JAVASCRIPT_DIR = REPO_ROOT / "figure_sources" / "javascript"
 STIMULUS_SOURCES_PATH = DATA_DIR / "stimulus-viewer-sources.json"
@@ -57,6 +97,19 @@ HARDWARE_SOURCE_PROVENANCE_PATH = (
 )
 HARDWARE_STATIC_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "multimodal-hardware.svg"
+)
+IMPORTED_FIGURE_DIR = REPO_ROOT / "images" / "figures" / "imported"
+UNIT_EXTRACTION_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-04-unit-extraction-plan.png"
+BASIC_STIMULI_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-05-basic-stimuli-plan.png"
+STANDARD_ODDBALL_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-07-standard-oddball-plan.png"
+UNIT_EXTRACTION_PLAN_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-06-unit-extraction-plan.svg"
+)
+BASIC_STIMULI_PLAN_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-07-basic-stimuli-plan.svg"
+)
+STANDARD_ODDBALL_PLAN_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-09-standard-oddball-plan.svg"
 )
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
@@ -268,17 +321,17 @@ def write_merged_figure_1_svg(output: Path = MERGED_FIGURE_1_OUTPUT) -> Path:
         f'<image href="{experimental_design}" x="0" y="0" width="1108" height="780"/>',
         '</svg>',
         '<text class="panel-label" x="20" y="48" font-family="Source Sans 3, sans-serif" '
-        'font-size="34" font-weight="700" fill="#293133">A</text>',
+        'font-size="28" font-weight="700" fill="#293133">A</text>',
         '<text class="panel-label" x="1020" y="48" font-family="Source Sans 3, sans-serif" '
-        'font-size="34" font-weight="700" fill="#293133">B</text>',
+        'font-size="28" font-weight="700" fill="#293133">B</text>',
         f'<image href="{cohort_panel}" x="40" y="825" width="1920" height="768" '
         'preserveAspectRatio="xMidYMid meet"/>',
         '<text class="panel-label" x="20" y="818" font-family="Source Sans 3, sans-serif" '
-        'font-size="34" font-weight="700" fill="#293133">C</text>',
+        'font-size="28" font-weight="700" fill="#293133">C</text>',
         '</svg>',
     ]
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    write_svg_output(output, svg)
     return output
 
 
@@ -325,10 +378,10 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
         'SLAP2 sampled the motor-habituated cohort only.</desc>',
         '<rect width="1600" height="640" fill="#FFFFFF"/>',
         '<text x="680" y="105" text-anchor="middle" '
-        'font-family="Source Sans 3, sans-serif" font-size="22" font-weight="700" '
+        'font-family="Source Sans 3, sans-serif" font-size="24" font-weight="700" '
         'fill="#4D5553">Habituation / training</text>',
         '<text x="1110" y="105" text-anchor="middle" '
-        'font-family="Source Sans 3, sans-serif" font-size="22" font-weight="700" '
+        'font-family="Source Sans 3, sans-serif" font-size="24" font-weight="700" '
         'fill="#4D5553">Neural recording contexts</text>',
     ]
 
@@ -341,7 +394,7 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
                 f'<rect x="{legend_x}" y="27" width="26" height="26" rx="2" '
                 f'fill="{color}"/>',
                 f'<text x="{legend_x + 36}" y="48" '
-                'font-family="Source Sans 3, sans-serif" font-size="19" '
+                'font-family="Source Sans 3, sans-serif" font-size="15" '
                 f'font-weight="600" fill="#4D5553">{label}</text>',
             ]
         )
@@ -351,7 +404,7 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
             '<rect x="1225" y="27" width="26" height="26" rx="2" '
             'fill="#FFFFFF" stroke="#283185" stroke-width="3"/>',
             '<text x="1261" y="48" font-family="Source Sans 3, sans-serif" '
-            'font-size="19" font-weight="600" fill="#4D5553">'
+            'font-size="15" font-weight="600" fill="#4D5553">'
             'Habituation without mismatch</text>',
         ]
     )
@@ -362,10 +415,10 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
             [
                 f'<g class="modality-cohort" data-modality="{modality}">',
                 f'<text x="42" y="{heading_y}" '
-                'font-family="Source Sans 3, sans-serif" font-size="30" '
+                'font-family="Source Sans 3, sans-serif" font-size="24" '
                 f'font-weight="700" fill="#293133">{label}</text>',
-                f'<text x="42" y="{heading_y + 27}" '
-                'font-family="Source Sans 3, sans-serif" font-size="19" '
+                f'<text x="42" y="{heading_y + 30}" '
+                'font-family="Source Sans 3, sans-serif" font-size="15" '
                 f'font-weight="600" fill="#68706E">{summary}</text>',
                 f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
                 f'x="42" y="{icon_y}" width="110" height="110" '
@@ -380,7 +433,7 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
                     f'<g class="cohort-line" data-modality="{modality}" '
                     f'data-cohort="{cohort}">',
                     f'<text x="360" y="{line_y + 7}" text-anchor="end" '
-                    'font-family="Source Sans 3, sans-serif" font-size="21" '
+                    'font-family="Source Sans 3, sans-serif" font-size="15" '
                     f'font-weight="700" fill="#4D5553">'
                     f'{"Motor cohort" if cohort == 1 else "Sequence cohort"}</text>',
                     f'<line x1="405" y1="{line_y}" x2="1540" y2="{line_y}" '
@@ -423,7 +476,7 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
             svg.append('</g>')
     svg.append('</svg>')
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    write_svg_output(output, svg)
     return output
 
 
@@ -459,7 +512,7 @@ def write_context_controls_svg(output: Path = CONTEXT_CONTROLS_STATIC_OUTPUT) ->
         '</svg>',
     ]
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    write_svg_output(output, svg)
     return output
 
 
@@ -506,11 +559,11 @@ def append_hardware_caption(
 ) -> None:
     svg.append(
         f'<text class="hardware-caption" x="{x}" y="{y}" text-anchor="middle" '
-        'font-family="Source Sans 3, sans-serif" font-size="17" '
+        'font-family="Source Sans 3, sans-serif" font-size="15" '
         'font-weight="600" fill="#4D5553">'
     )
     for line_index, line in enumerate(lines):
-        dy = 0 if line_index == 0 else 21
+        dy = 0 if line_index == 0 else 24
         svg.append(f'<tspan x="{x}" dy="{dy}">{escape(line)}</tspan>')
     svg.append("</text>")
 
@@ -549,8 +602,8 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             "top": 100,
             "rig": (220, 105, 515, 360),
             "platform": (775, 112, 410, 343),
-            "target": (1320, 108, 390, 330),
-            "caption_y": 82,
+            "target": (1320, 120, 390, 330),
+            "caption_y": 88,
             "caption": ("6 probes spanning cortical and", "subcortical structures"),
         },
         {
@@ -583,13 +636,13 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
         'strategy using nine source images extracted directly from the hardware PowerPoint.</desc>',
         '<rect width="1800" height="1310" fill="#FFFFFF"/>',
         '<text x="458" y="58" text-anchor="middle" '
-        'font-family="Source Sans 3, sans-serif" font-size="30" font-weight="700" '
+        'font-family="Source Sans 3, sans-serif" font-size="28" font-weight="700" '
         'fill="#293133">Rig geometry</text>',
         '<text x="980" y="58" text-anchor="middle" '
-        'font-family="Source Sans 3, sans-serif" font-size="30" font-weight="700" '
+        'font-family="Source Sans 3, sans-serif" font-size="28" font-weight="700" '
         'fill="#293133">Mouse platform</text>',
         '<text x="1490" y="58" text-anchor="middle" '
-        'font-family="Source Sans 3, sans-serif" font-size="30" font-weight="700" '
+        'font-family="Source Sans 3, sans-serif" font-size="28" font-weight="700" '
         'fill="#293133">Brain targeting</text>',
     ]
     for row in rows:
@@ -599,7 +652,7 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             [
                 f'<g class="hardware-modality" data-modality="{modality}">',
                 f'<text x="15" y="{row["top"] + 32}" '
-                'font-family="Source Sans 3, sans-serif" font-size="25" '
+                'font-family="Source Sans 3, sans-serif" font-size="24" '
                 f'font-weight="700" fill="#293133">{row["label"]}</text>',
                 f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
                 f'x="15" y="{row["top"] + 48}" width="190" height="190" '
@@ -649,6 +702,26 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
     slap2_bounds = fitted_image_bounds(
         assets["slap2_brain_targeting"], rows[2]["target"]
     )
+    layer_segments = (
+        ("I", "#8CC63F", 0.493417, 0.229884, 0.424762, 0.269578),
+        ("II/III", "#CCE8F8", 0.505738, 0.258951, 0.437083, 0.298644),
+        ("IV", "#53A8DC", 0.518471, 0.295771, 0.449816, 0.335465),
+        ("V", "#2B388D", 0.530740, 0.329113, 0.462085, 0.368806),
+        ("I", "#8CC63F", 0.277891, 0.368789, 0.209253, 0.408468),
+        ("II/III", "#CCE8F8", 0.295134, 0.393071, 0.226495, 0.432749),
+        ("IV", "#53A8DC", 0.314185, 0.424745, 0.245547, 0.464424),
+        ("V", "#2B388D", 0.332154, 0.453192, 0.263515, 0.492871),
+    )
+    _, _, layer_x1, layer_y1, layer_x2, layer_y2 = layer_segments[0]
+    mesoscope_layer_angle = round(
+        math.degrees(
+            math.atan2(
+                (layer_y1 - layer_y2) * mesoscope_bounds[3],
+                (layer_x1 - layer_x2) * mesoscope_bounds[2],
+            )
+        ),
+        2,
+    )
     focus_boxes = (
         (
             "neuropixels",
@@ -662,7 +735,7 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             mesoscope_bounds,
             (0.396731, 0.211857, 0.134138, 0.092089),
             "#FFFFFF",
-            -18,
+            mesoscope_layer_angle,
         ),
     )
     mesoscope_focus_geometry = None
@@ -763,16 +836,6 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             ]
         )
     rendered_x, rendered_y, rendered_width, rendered_height = mesoscope_bounds
-    layer_segments = (
-        ("I", "#8CC63F", 0.493417, 0.229884, 0.424762, 0.269578),
-        ("II/III", "#CCE8F8", 0.505738, 0.258951, 0.437083, 0.298644),
-        ("IV", "#53A8DC", 0.518471, 0.295771, 0.449816, 0.335465),
-        ("V", "#2B388D", 0.530740, 0.329113, 0.462085, 0.368806),
-        ("I", "#8CC63F", 0.277891, 0.368789, 0.209253, 0.408468),
-        ("II/III", "#CCE8F8", 0.295134, 0.393071, 0.226495, 0.432749),
-        ("IV", "#53A8DC", 0.314185, 0.424745, 0.245547, 0.464424),
-        ("V", "#2B388D", 0.332154, 0.453192, 0.263515, 0.492871),
-    )
     for layer, color, x1, y1, x2, y2 in layer_segments:
         svg.append(
             f'<line class="mesoscope-layer-plane" data-layer="{layer}" '
@@ -788,36 +851,120 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             '<line x1="1288" y1="525" x2="1317" y2="525" '
             'stroke="#8FD246" stroke-width="4"/>',
             '<text x="1325" y="531" font-family="Source Sans 3, sans-serif" '
-            'font-size="15" fill="#303536">Layer I</text>',
+            'font-size="12" fill="#303536">Layer I</text>',
             '<line x1="1288" y1="548" x2="1317" y2="548" '
             'stroke="#B8E3F5" stroke-width="4"/>',
             '<text x="1325" y="554" font-family="Source Sans 3, sans-serif" '
-            'font-size="15" fill="#303536">Layer II/III</text>',
+            'font-size="12" fill="#303536">Layer II/III</text>',
             '<line x1="1288" y1="571" x2="1317" y2="571" '
             'stroke="#5DBCEB" stroke-width="4"/>',
             '<text x="1325" y="577" font-family="Source Sans 3, sans-serif" '
-            'font-size="15" fill="#303536">Layer IV</text>',
+            'font-size="12" fill="#303536">Layer IV</text>',
             '<line x1="1288" y1="594" x2="1317" y2="594" '
             'stroke="#334DB3" stroke-width="4"/>',
             '<text x="1325" y="600" font-family="Source Sans 3, sans-serif" '
-            'font-size="15" fill="#303536">Layer V</text>',
-            '<text x="1372" y="746" font-family="Source Sans 3, sans-serif" '
-            'font-size="18" font-weight="700" fill="#293133">VISlm</text>',
-            '<text x="1510" y="716" font-family="Source Sans 3, sans-serif" '
-            'font-size="18" font-weight="700" fill="#293133">VISp</text>',
+            'font-size="12" fill="#303536">Layer V</text>',
+            '<text x="1318" y="746" font-family="Source Sans 3, sans-serif" '
+            'font-size="15" font-weight="700" fill="#293133">VISlm</text>',
+            '<text x="1460" y="716" font-family="Source Sans 3, sans-serif" '
+            'font-size="15" font-weight="700" fill="#293133">VISp</text>',
             '</g>',
-            '<text class="slap2-plane-label" x="1680" y="1018" '
-            'font-family="Source Sans 3, sans-serif" font-size="18" font-weight="700" '
+            '<text class="slap2-plane-label" x="1785" y="1018" text-anchor="end" '
+            'font-family="Source Sans 3, sans-serif" font-size="15" font-weight="700" '
             'fill="#293133">Apical plane</text>',
-            '<text class="slap2-plane-label" x="1680" y="1165" '
-            'font-family="Source Sans 3, sans-serif" font-size="18" font-weight="700" '
+            '<text class="slap2-plane-label" x="1785" y="1165" text-anchor="end" '
+            'font-family="Source Sans 3, sans-serif" font-size="15" font-weight="700" '
             'fill="#293133">Proximal plane</text>',
         ]
     )
     svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    write_svg_output(output, svg)
     return output
+
+
+def write_placeholder_plan_svg(
+    source: Path,
+    output: Path,
+    *,
+    title_lines: tuple[str, ...],
+    mask_height: int,
+    first_baseline: int,
+    font_size: int,
+    line_gap: int,
+) -> Path:
+    image_data = png_data_uri(source, (2048, 1024))
+    svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="1024" '
+        'viewBox="0 0 2048 1024" role="img" aria-labelledby="title description">',
+        f'<title id="title">{escape(" ".join(title_lines))}</title>',
+        '<desc id="description">Draft analysis-panel plan retained as a work-in-progress '
+        'placeholder; its obsolete embedded figure number is masked so manuscript numbering '
+        'is supplied only by MyST.</desc>',
+        '<rect width="2048" height="1024" fill="#FFFFFF"/>',
+        f'<image href="{image_data}" width="2048" height="1024"/>',
+        f'<rect class="stale-title-mask" x="0" y="0" width="2048" '
+        f'height="{mask_height}" fill="#FFFFFF"/>',
+    ]
+    for line_index, line in enumerate(title_lines):
+        svg.append(
+            f'<text class="placeholder-title" x="64" '
+            f'y="{first_baseline + line_index * line_gap}" '
+            'font-family="Source Sans 3, sans-serif" '
+            f'font-size="{font_size}" font-weight="600" fill="#111111">'
+            f'{escape(line)}</text>'
+        )
+    svg.append("</svg>")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    write_svg_output(output, svg)
+    return output
+
+
+def write_unit_extraction_plan_svg(output: Path = UNIT_EXTRACTION_PLAN_OUTPUT) -> Path:
+    return write_placeholder_plan_svg(
+        UNIT_EXTRACTION_PLAN_SOURCE,
+        output,
+        title_lines=(
+            "Unit extraction → signal and noise amplitude",
+            "Distributions across areas, sessions, and modalities",
+        ),
+        mask_height=140,
+        first_baseline=52,
+        font_size=FIGURE_TYPE_SCALE["title"],
+        line_gap=60,
+    )
+
+
+def write_basic_stimuli_plan_svg(output: Path = BASIC_STIMULI_PLAN_OUTPUT) -> Path:
+    return write_placeholder_plan_svg(
+        BASIC_STIMULI_PLAN_SOURCE,
+        output,
+        title_lines=(
+            "Basic stimuli → unit/system identification → distributions across areas and "
+            "modalities",
+        ),
+        mask_height=94,
+        first_baseline=62,
+        font_size=FIGURE_TYPE_SCALE["title"],
+        line_gap=44,
+    )
+
+
+def write_standard_oddball_plan_svg(
+    output: Path = STANDARD_ODDBALL_PLAN_OUTPUT,
+) -> Path:
+    return write_placeholder_plan_svg(
+        STANDARD_ODDBALL_PLAN_SOURCE,
+        output,
+        title_lines=(
+            "Responses to standard oddball stimuli",
+            "Demonstrate stimulus alignment",
+        ),
+        mask_height=285,
+        first_baseline=118,
+        font_size=FIGURE_TYPE_SCALE["title"],
+        line_gap=82,
+    )
 
 
 @dataclass(frozen=True)
@@ -1839,7 +1986,7 @@ def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
     svg.append("</g>")
     svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    write_svg_output(output, svg)
     return output
 
 
@@ -2355,8 +2502,8 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
                 f'<text x="{left + 136}" y="35" '
                 'font-family="Source Sans 3, sans-serif" font-size="24" '
                 f'font-weight="700" fill="#293133">{label}</text>',
-                f'<text class="modality-scale" x="{left + 136}" y="61" '
-                'font-family="Source Sans 3, sans-serif" font-size="15" '
+                f'<text class="modality-scale" x="{left + 136}" y="67" '
+                'font-family="Source Sans 3, sans-serif" font-size="12" '
                 f'font-weight="600" fill="#59615F">{escape(summaries[modality])}</text>',
                 "</g>",
             ]
@@ -2430,7 +2577,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         )
     svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    write_svg_output(output, svg)
     return output
 
 
@@ -3175,7 +3322,7 @@ def write_session_inventory_svg(
         ]
     )
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    write_svg_output(output, svg)
     return output
 
 
@@ -3198,7 +3345,7 @@ def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
         '<desc id="description">Four horizontal session timelines with a context-specific '
         'mismatch block and seven shared control and characterization blocks.</desc>',
         '<rect width="1200" height="500" fill="#FFFFFF"/>',
-        '<text x="40" y="52" font-family="IBM Plex Sans, sans-serif" font-size="28" '
+        f'<text x="40" y="52" font-family="{FIGURE_SANS_FONT}" font-size="28" '
         'font-weight="600" fill="#172126">Shared structure of the four predictive-processing '
         "sessions</text>",
     ]
@@ -3206,11 +3353,11 @@ def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
     for session_index, session in enumerate(SESSIONS):
         y = top + session_index * row_height
         svg.append(
-            f'<text x="40" y="{y + 18}" font-family="IBM Plex Sans, sans-serif" '
+            f'<text x="40" y="{y + 18}" font-family="{FIGURE_SANS_FONT}" '
             f'font-size="17" font-weight="600" fill="#172126">Session {session.number}</text>'
         )
         svg.append(
-            f'<text x="40" y="{y + 39}" font-family="IBM Plex Sans, sans-serif" '
+            f'<text x="40" y="{y + 39}" font-family="{FIGURE_SANS_FONT}" '
             f'font-size="14" fill="#49565C">{escape(session.name)}</text>'
         )
         x = label_width
@@ -3225,7 +3372,7 @@ def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
             if block_width >= 80:
                 svg.append(
                     f'<text x="{x + block_width / 2:.2f}" y="{y + 27}" '
-                    'font-family="IBM Plex Sans, sans-serif" font-size="11" '
+                    f'font-family="{FIGURE_SANS_FONT}" font-size="11" '
                     f'text-anchor="middle" fill="#172126">{escape(block.name)}</text>'
                 )
             x += block_width
@@ -3244,12 +3391,12 @@ def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
                 f'<line x1="{x:.2f}" y1="{axis_y}" x2="{x:.2f}" y2="{axis_y + 6}" '
                 'stroke="#49565C" stroke-width="1"/>',
                 f'<text x="{x:.2f}" y="{axis_y + 24}" '
-                'font-family="IBM Plex Sans, sans-serif" font-size="12" '
+                f'font-family="{FIGURE_SANS_FONT}" font-size="12" '
                 f'text-anchor="middle" fill="#49565C">{minute} min</text>',
             ]
         )
     svg.append("</svg>")
-    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    write_svg_output(output, svg)
     return output
 
 
@@ -3417,7 +3564,7 @@ def write_unit_yield_svg(
             "</svg>",
         ]
     )
-    output.write_text("\n".join(svg) + "\n", encoding="utf-8")
+    write_svg_output(output, svg)
     return output
 
 
@@ -3425,6 +3572,9 @@ def main() -> None:
     merged_figure_1_path = write_merged_figure_1_svg()
     figure_1_panel_c_path = write_figure_1_panel_c_svg()
     hardware_path = write_hardware_figure_svg()
+    unit_extraction_plan_path = write_unit_extraction_plan_svg()
+    basic_stimuli_plan_path = write_basic_stimuli_plan_svg()
+    standard_oddball_plan_path = write_standard_oddball_plan_svg()
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
     literature_comparison_path = write_literature_comparison_html()
@@ -3436,6 +3586,9 @@ def main() -> None:
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {figure_1_panel_c_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {unit_extraction_plan_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {basic_stimuli_plan_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {standard_oddball_plan_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")

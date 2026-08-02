@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import json
+import math
 import re
 from pathlib import Path
 
@@ -13,6 +14,10 @@ from openscope_p3_publication.figures import (
     BEHAVIOR_STATIC_FRAME_DIR,
     BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH,
     BLOCKS,
+    FIGURE_MONO_FONT,
+    FIGURE_REFERENCE_WIDTH,
+    FIGURE_SANS_FONT,
+    FIGURE_TYPE_SCALE,
     NEURAL_EXCERPTS_PATH,
     NEURAL_MEDIA_DIR,
     NEURAL_STATIC_FRAME_DIR,
@@ -40,6 +45,7 @@ from openscope_p3_publication.figures import (
     modality_session_records,
     session_panel_rows,
     total_duration_minutes,
+    write_basic_stimuli_plan_svg,
     write_behavior_static_svg,
     write_behavior_viewer_html,
     write_context_controls_svg,
@@ -52,13 +58,25 @@ from openscope_p3_publication.figures import (
     write_neural_static_svg,
     write_neural_viewer_html,
     write_session_inventory_svg,
+    write_standard_oddball_plan_svg,
     write_static_svg,
+    write_unit_extraction_plan_svg,
     write_unit_yield_html,
     write_unit_yield_svg,
 )
 
 
 def test_experimental_design_data() -> None:
+    assert FIGURE_SANS_FONT == "Myriad Pro, Arial, sans-serif"
+    assert FIGURE_MONO_FONT == "IBM Plex Mono, monospace"
+    assert FIGURE_REFERENCE_WIDTH == 1200
+    assert FIGURE_TYPE_SCALE == {
+        "panel": 34,
+        "title": 28,
+        "heading": 24,
+        "label": 15,
+        "small": 12,
+    }
     assert len(SESSIONS) == 4
     assert len(BLOCKS) == 8
     assert total_duration_minutes() == pytest.approx(71.3)
@@ -287,6 +305,11 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert "__SIMULATOR_" not in html
     assert 'role="img"' in svg
     assert "Session 4" in svg
+    assert "Source Sans 3" not in html
+    assert 'font-family: "Myriad Pro", Arial, sans-serif;' in html
+    assert "IBM Plex Sans" not in svg
+    assert "Source Sans 3" not in svg
+    assert 'font-family="Myriad Pro, Arial, sans-serif"' in svg
 
     assert hashlib.sha256(
         (tmp_path / ZEBRA_MOVIE_SOURCE.name).read_bytes()
@@ -338,8 +361,8 @@ def test_opening_figures_are_source_backed(tmp_path: Path) -> None:
         assert panel_c.count(f'data-context="{context}"') == 7
     assert "Habituation / training" in panel_c
     assert "Habituation without mismatch" in panel_c
-    assert panel_c.count('font-size="30"') == 3
-    assert panel_c.count('font-size="21"') == 5
+    assert panel_c.count('font-size="32"') == 5
+    assert panel_c.count('font-size="20"') == 13
     assert panel_c.count('width="110" height="110"') == 3
     assert "#F6F8F7" not in panel_c
 
@@ -379,14 +402,29 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert "Rig geometry" in svg
     assert "Mouse platform" in svg
     assert "Brain targeting" in svg
-    assert '<text class="hardware-caption" x="1510" y="82"' in svg
+    assert '<text class="hardware-caption" x="1510" y="88"' in svg
     assert '<text class="hardware-caption" x="1510" y="468"' in svg
     assert '<text class="hardware-caption" x="1510" y="1272"' in svg
     assert "Behavior cohorts" not in svg
     assert "motor cohort" not in svg.lower()
     assert svg.count('class="zoom-focus-box"') == 2
     assert 'data-modality="mesoscope"' in svg
-    assert 'transform="rotate(-18 ' in svg
+    focus_angle = float(
+        re.search(
+            r'data-modality="mesoscope"[^>]+transform="rotate\(([-0-9.]+)',
+            svg,
+        ).group(1)
+    )
+    layer_segment = re.search(
+        r'class="mesoscope-layer-plane"[^>]+x1="([^"]+)" y1="([^"]+)" '
+        r'x2="([^"]+)" y2="([^"]+)"',
+        svg,
+    )
+    layer_x1, layer_y1, layer_x2, layer_y2 = map(float, layer_segment.groups())
+    layer_angle = math.degrees(
+        math.atan2(layer_y1 - layer_y2, layer_x1 - layer_x2)
+    )
+    assert focus_angle == pytest.approx(layer_angle, abs=0.02)
     assert svg.count('class="mesoscope-target-border"') == 1
     assert svg.count('class="zoom-connector"') == 6
     assert svg.count('data-stage="neuropixels-to-mesoscope"') == 2
@@ -399,7 +437,8 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert svg.count('data-layer="IV"') == 2
     assert svg.count('data-layer="V"') == 2
     assert svg.count('class="slap2-plane-label"') == 2
-    assert '<text class="slap2-plane-label" x="1680"' in svg
+    assert '<text class="slap2-plane-label" x="1785"' in svg
+    assert svg.count('class="slap2-plane-label"') == svg.count('text-anchor="end"')
     for label in (
         "Layer I",
         "Layer II/III",
@@ -411,8 +450,44 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
         "Proximal plane",
     ):
         assert label in svg
+    assert '<text x="1318" y="746"' in svg
+    assert '<text x="1460" y="716"' in svg
     for asset_id in assets:
         assert f'data-asset="{asset_id}"' in svg
+
+
+def test_placeholder_plans_mask_obsolete_figure_numbers(tmp_path: Path) -> None:
+    cases = (
+        (
+            write_unit_extraction_plan_svg,
+            "figure-06-unit-extraction-plan.svg",
+            "Unit extraction → signal and noise amplitude",
+            "Figure 4",
+            2,
+        ),
+        (
+            write_basic_stimuli_plan_svg,
+            "figure-07-basic-stimuli-plan.svg",
+            "Basic stimuli → unit/system identification",
+            "Figure 5",
+            1,
+        ),
+        (
+            write_standard_oddball_plan_svg,
+            "figure-09-standard-oddball-plan.svg",
+            "Responses to standard oddball stimuli",
+            "Figure 7",
+            2,
+        ),
+    )
+    for writer, filename, expected_title, obsolete_title, title_lines in cases:
+        svg = writer(tmp_path / filename).read_text(encoding="utf-8")
+        assert 'width="2048" height="1024"' in svg
+        assert svg.count("data:image/png;base64,") == 1
+        assert svg.count('class="stale-title-mask"') == 1
+        assert svg.count('class="placeholder-title"') == title_lines
+        assert expected_title in svg
+        assert obsolete_title not in svg
 
 
 def test_data_explorer_is_deterministic(tmp_path: Path) -> None:

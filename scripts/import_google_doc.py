@@ -260,6 +260,15 @@ FIGURE_PRESENTATION_OVERRIDES = {
             "PowerPoint source."
         ),
     },
+    "image5.png": {
+        "path": "./images/figures/generated/figure-06-unit-extraction-plan.svg",
+    },
+    "image3.png": {
+        "path": "./images/figures/generated/figure-07-basic-stimuli-plan.svg",
+    },
+    "image4.png": {
+        "path": "./images/figures/generated/figure-09-standard-oddball-plan.svg",
+    },
 }
 FIGURE_REFERENCE_REPLACEMENTS = {
     "brain fixation and brain histology (see **Figure 2**)": (
@@ -273,6 +282,17 @@ FIGURE_REFERENCE_REPLACEMENTS = {
     ),
     "six Neuropixels probes simultaneously (see **Figure 2**)": (
         "six Neuropixels probes simultaneously (see [Figure 3](#fig-multimodal-pipelines))"
+    ),
+    "Figure 6 and the modality subsections below remain an analysis outline.": (
+        "[Figure 6](#fig-unit-extraction-plan) and the modality subsections below remain "
+        "an analysis outline."
+    ),
+    "This analysis and Figure 7 are planning placeholders.": (
+        "This analysis and [Figure 7](#fig-basic-stimuli-plan) are planning placeholders."
+    ),
+    "This analysis, the questions below, and Figure 9 are planning placeholders.": (
+        "This analysis, the questions below, and "
+        "[Figure 9](#fig-standard-oddball-plan) are planning placeholders."
     ),
 }
 
@@ -292,7 +312,11 @@ AUTHORSHIP_BLOCK = """:::{authorship-explorer}
 :height: 800px
 :::"""
 
-INTERACTIVE_DESIGN_BLOCK = """:::{iframe} ./interactive/experimental-design.html
+INTERACTIVE_DESIGN_BLOCK = """The shared within-session architecture and
+context-specific stimulus selection are summarized in
+[Figure 2](#fig-interactive-experimental-design).
+
+:::{iframe} ./interactive/experimental-design.html
 :label: fig-interactive-experimental-design
 :width: 100%
 :title: Predictive-processing stimulus viewer
@@ -344,7 +368,11 @@ STIMULUS_PROVENANCE_BLOCK = "\n".join(
     ]
 )
 
-DATA_EXPLORER_BLOCK = """:::{iframe} ./interactive/data-explorer.html
+DATA_EXPLORER_BLOCK = """Animal and session coverage, recording context, and
+quality-control status are summarized in
+[Figure 4](#fig-recording-session-inventory).
+
+:::{iframe} ./interactive/data-explorer.html
 :label: fig-recording-session-inventory
 :width: 100%
 :title: Recording-session inventory and quality control across modalities
@@ -383,6 +411,9 @@ MESOSCOPE_RAW_SOURCE = (
 )
 
 NEURAL_VIEWER_BLOCK = f"""## Raw data across recording modalities
+
+Representative native acquisition formats and source-backed excerpts are shown
+in [Figure 5](#fig-aligned-neural-signals).
 
 :::{{iframe}} ./interactive/neural-viewer.html
 :label: fig-aligned-neural-signals
@@ -482,7 +513,7 @@ behavioral videos together with synchronized running-wheel signals, processed
 eye-tracking outputs, and stimulus-presentation intervals. Depending on the
 recording platform, the available views include body or behavior, face, eye,
 and nose cameras. The synchronized multimodal examples in
-[](#fig-behavior-tracking) show these streams alongside the wheel signal and
+[Figure 8](#fig-behavior-tracking) show these streams alongside the wheel signal and
 current stimulus state. Existing NWB products provide wheel rotation and
 running speed, plus pupil, corneal-reflection, and eye-ellipse fits with
 likely-blink flags. The underlying videos remain available so investigators can

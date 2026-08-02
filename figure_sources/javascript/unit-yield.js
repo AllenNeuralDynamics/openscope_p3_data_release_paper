@@ -131,7 +131,7 @@
         }),
         svgElement("text", {
           x: margin.left - 12, y: tickY + 4, "text-anchor": "end",
-          fill: "#68706E", "font-family": "Source Sans 3, sans-serif", "font-size": 12,
+          fill: "#68706E", "font-family": "Myriad Pro, Arial, sans-serif", "font-size": 12,
         }, state.metric === "percent" ? `${Math.round(value)}` : formatValue(value, 0)),
       );
     }
@@ -199,30 +199,30 @@
         }),
         svgElement("text", {
           x: dayX, y: axisY + 26, "text-anchor": "middle", fill: "#303536",
-          "font-family": "Source Sans 3, sans-serif", "font-size": 14, "font-weight": 600,
+          "font-family": "Myriad Pro, Arial, sans-serif", "font-size": 14, "font-weight": 600,
         }, `Day ${day}`),
         svgElement("text", {
           x: dayX, y: axisY + 44, "text-anchor": "middle", fill: "#68706E",
-          "font-family": "Source Sans 3, sans-serif", "font-size": 12,
+          "font-family": "Myriad Pro, Arial, sans-serif", "font-size": 12,
         }, `n=${count}`),
       );
     }
     elements.chart.append(svgElement("text", {
       x: 20, y: margin.top + plotHeight / 2, "text-anchor": "middle", fill: "#303536",
       transform: `rotate(-90 20 ${margin.top + plotHeight / 2})`,
-      "font-family": "Source Sans 3, sans-serif", "font-size": 14,
+      "font-family": "Myriad Pro, Arial, sans-serif", "font-size": 14,
     }, yLabel));
 
     elements.chart.append(
       svgElement("line", { x1: 722, y1: 16, x2: 756, y2: 16, stroke: "#222829", "stroke-width": 5 }),
       svgElement("circle", { cx: 739, cy: 16, r: 6, fill: "#222829", stroke: "#fff", "stroke-width": 2 }),
       svgElement("text", {
-        x: 765, y: 21, fill: "#303536", "font-family": "Source Sans 3, sans-serif", "font-size": 13,
+        x: 765, y: 21, fill: "#303536", "font-family": "Myriad Pro, Arial, sans-serif", "font-size": 13,
       }, "Daily mean"),
       svgElement("line", { x1: 854, y1: 16, x2: 888, y2: 16, stroke: "#53758C", "stroke-width": 2 }),
       svgElement("circle", { cx: 871, cy: 16, r: 4, fill: "#53758C" }),
       svgElement("text", {
-        x: 897, y: 21, fill: "#303536", "font-family": "Source Sans 3, sans-serif", "font-size": 13,
+        x: 897, y: 21, fill: "#303536", "font-family": "Myriad Pro, Arial, sans-serif", "font-size": 13,
       }, "Mouse"),
     );
   }

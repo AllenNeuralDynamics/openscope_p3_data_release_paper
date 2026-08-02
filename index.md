@@ -93,6 +93,8 @@ In both cohorts, the session that matched the habituation context was presented 
 
 The four distinct session contexts each targeted a different aspect of predictive processing. For all 4 contexts, the stimuli table containing both recurring and deviant trials were created at the onset of each session. The resulting tables were then subsequently shuffled so that the mouse could not predict the exact occurrence of deviants (pseudo-random). The order of stimuli blocks (deviant vs control blocks) were maintained across all sessions.
 
+The shared within-session architecture and context-specific stimulus selection are summarized in [Figure 2](#fig-interactive-experimental-design).
+
 :::{iframe} ./interactive/experimental-design.html
 :label: fig-interactive-experimental-design
 :width: 100%
@@ -598,6 +600,8 @@ A secondary pipeline, also run on the CodeOcean platform, took the output spike 
 
 ## Data tables
 
+Animal and session coverage, recording context, and quality-control status are summarized in [Figure 4](#fig-recording-session-inventory).
+
 :::{iframe} ./interactive/data-explorer.html
 :label: fig-recording-session-inventory
 :width: 100%
@@ -969,6 +973,8 @@ the electrophysiology, imaging, and behavioral objects introduced here.
 
 ## Raw data across recording modalities
 
+Representative native acquisition formats and source-backed excerpts are shown in [Figure 5](#fig-aligned-neural-signals).
+
 :::{iframe} ./interactive/neural-viewer.html
 :label: fig-aligned-neural-signals
 :width: 100%
@@ -1016,10 +1022,10 @@ and SLAP2
 
 :::{warning} Work in progress
 :class: manuscript-wip
-Figure 6 and the modality subsections below remain an analysis outline. The Neuropixels unit-yield result is current; the other signal-quality, stability, extraction, and cross-session analyses still need final results and prose.
+[Figure 6](#fig-unit-extraction-plan) and the modality subsections below remain an analysis outline. The Neuropixels unit-yield result is current; the other signal-quality, stability, extraction, and cross-session analyses still need final results and prose.
 :::
 
-:::{figure} ./images/figures/imported/figure-04-unit-extraction-plan.png
+:::{figure} ./images/figures/generated/figure-06-unit-extraction-plan.svg
 :label: fig-unit-extraction-plan
 :alt: Draft panel plan for unit extraction and signal-to-noise analysis across modalities.
 :width: 100%
@@ -1071,10 +1077,10 @@ GROUP3
 
 :::{warning} Work in progress
 :class: manuscript-wip
-This analysis and Figure 7 are planning placeholders. Receptive-field methods, cross-modality results, and final figure panels still need to be added.
+This analysis and [Figure 7](#fig-basic-stimuli-plan) are planning placeholders. Receptive-field methods, cross-modality results, and final figure panels still need to be added.
 :::
 
-:::{figure} ./images/figures/imported/figure-05-basic-stimuli-plan.png
+:::{figure} ./images/figures/generated/figure-07-basic-stimuli-plan.svg
 :label: fig-basic-stimuli-plan
 :alt: Draft panel plan for basic stimulus responses across recording modalities.
 :width: 100%
@@ -1089,7 +1095,7 @@ behavioral videos together with synchronized running-wheel signals, processed
 eye-tracking outputs, and stimulus-presentation intervals. Depending on the
 recording platform, the available views include body or behavior, face, eye,
 and nose cameras. The synchronized multimodal examples in
-[](#fig-behavior-tracking) show these streams alongside the wheel signal and
+[Figure 8](#fig-behavior-tracking) show these streams alongside the wheel signal and
 current stimulus state. Existing NWB products provide wheel rotation and
 running speed, plus pupil, corneal-reflection, and eye-ellipse fits with
 likely-blink flags. The underlying videos remain available so investigators can
@@ -1150,14 +1156,14 @@ the publication.
 
 :::{warning} Work in progress
 :class: manuscript-wip
-This analysis, the questions below, and Figure 9 are planning placeholders. Final cross-modality oddball-response results and figure panels still need to be added.
+This analysis, the questions below, and [Figure 9](#fig-standard-oddball-plan) are planning placeholders. Final cross-modality oddball-response results and figure panels still need to be added.
 :::
 
 - Stability across the session for all modalities ?
 
 - Orientation tuning plots?
 
-:::{figure} ./images/figures/imported/figure-07-standard-oddball-plan.png
+:::{figure} ./images/figures/generated/figure-09-standard-oddball-plan.svg
 :label: fig-standard-oddball-plan
 :alt: Placeholder slide for standard oddball responses and stimulus alignment.
 :width: 100%

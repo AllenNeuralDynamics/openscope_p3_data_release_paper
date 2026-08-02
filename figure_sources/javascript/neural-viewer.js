@@ -104,7 +104,7 @@
   function drawText(text, x, y, options = {}) {
     context.save();
     context.fillStyle = options.color || "#303536";
-    context.font = `${options.weight || 500} ${options.size || 13}px "Source Sans 3", sans-serif`;
+    context.font = `${options.weight || 500} ${options.size || 13}px "Myriad Pro", Arial, sans-serif`;
     context.textAlign = options.align || "left";
     context.textBaseline = options.baseline || "alphabetic";
     context.fillText(text, x, y);

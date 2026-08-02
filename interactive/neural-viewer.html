@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light">
   <title>Raw data across recording modalities</title>
   <style>
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=Source+Sans+3:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap");
 
 :root {
   color-scheme: light;
@@ -26,7 +26,7 @@ body {
   min-width: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: "Source Sans 3", "Avenir Next", sans-serif;
+  font-family: "Myriad Pro", Arial, sans-serif;
 }
 
 button,
@@ -465,7 +465,7 @@ html.is-embedded .viewer { min-height: 0; }
   function drawText(text, x, y, options = {}) {
     context.save();
     context.fillStyle = options.color || "#303536";
-    context.font = `${options.weight || 500} ${options.size || 13}px "Source Sans 3", sans-serif`;
+    context.font = `${options.weight || 500} ${options.size || 13}px "Myriad Pro", Arial, sans-serif`;
     context.textAlign = options.align || "left";
     context.textBaseline = options.baseline || "alphabetic";
     context.fillText(text, x, y);
