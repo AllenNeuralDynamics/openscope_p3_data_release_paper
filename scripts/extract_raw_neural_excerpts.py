@@ -41,18 +41,24 @@ DEFAULT_OUTPUT = REPO_ROOT / "figure_sources" / "data" / "raw-neural-excerpts.js
 DEFAULT_MEDIA_DIR = REPO_ROOT / "figure_sources" / "media" / "neural-viewer"
 WINDOW_START_SECONDS = -1.0
 WINDOW_END_SECONDS = 3.0
-RETRIEVED_DATE = "2026-07-30"
+RETRIEVED_DATE = "2026-08-03"
 
 NEUROPIXELS_NWB = {
     "url": (
         "https://dandiarchive.s3.amazonaws.com/blobs/"
-        "afa/8c6/afa8c6bd-518f-4daf-a2b1-67cbcdd0af65"
+        "1a3/a02/1a3a0214-c40e-49ed-9ada-9379c9fca1e8"
     ),
-    "sha256": "b6c3642387c872c5a6a10e3530e72d8a8bf14ec5117107eace3823a0f679b497",
+    "sha256": "75c425992a9443a6b7bb19b00469469788d6be4dd8c721714d0692e214fe7bf9",
     "dandiUrl": "https://dandiarchive.org/dandiset/001637/draft/files",
 }
+NEUROPIXELS_SESSION = {
+    "context": "Sequence mismatch",
+    "interval": "Sequence mismatch block_presentations",
+    "session": "ecephys_830846_2026-03-09_10-32-54",
+    "subject": "830846",
+}
 NEUROPIXELS_AP_PREFIX = (
-    "ecephys_820459_2025-11-10_15-07-13/ecephys/ecephys_compressed"
+    "ecephys_830846_2026-03-09_10-32-54/ecephys/ecephys_compressed"
 )
 NEUROPIXELS_AP_STORES = {
     "A": "experiment1_Record Node 101#Neuropix-PXI-100.ProbeA-AP.zarr",
@@ -64,28 +70,28 @@ NEUROPIXELS_AP_STORES = {
 }
 NEUROPIXELS_ANATOMY = {
     "A": {
-        "selector": "MOp / LD / CA3",
-        "summary": "MOp L1–L6a · LD · CA3",
+        "selector": "MOs / ACA / TH",
+        "summary": "MOs L1–L5 · ACA · TH",
     },
     "B": {
-        "selector": "VISrl / CA3 / SSp-bfd",
-        "summary": "VISrl L1–L5 · SSp-bfd L5–L6a · CA3",
+        "selector": "VISa / CA / LGv",
+        "summary": "VISa L1–L6b · CA1–CA3 · LGv / RT",
     },
     "C": {
-        "selector": "VISp / MG / DG",
-        "summary": "VISp L1–L6b · MG · DG",
+        "selector": "VISp / CA / LGd",
+        "summary": "VISp L1–L6a · CA1–CA3 / DG · LGd / VPM",
     },
     "D": {
-        "selector": "VISlm / DG / CA1",
-        "summary": "VISlm L1–L6b · DG · CA1",
+        "selector": "VISp / CA / LGd",
+        "summary": "VISp L1–L6b · CA1 / CA3 / DG · LGd",
     },
     "E": {
-        "selector": "MOp / CP / LSr",
-        "summary": "MOp L1–L6b · CP · LSr",
+        "selector": "MOp / MOs / OLF",
+        "summary": "MOp L1–L5 · MOs L5–L6b · OLF",
     },
     "F": {
-        "selector": "MOs / STR / OLF",
-        "summary": "MOs L1–L6b · STR · OLF",
+        "selector": "MOs / PFC / STR",
+        "summary": "MOs L1–L5 · ACA / PL / ILA · STR / OLF",
     },
 }
 MESOSCOPE_NWB = {
@@ -207,6 +213,52 @@ def event_time(nwb: h5py.File) -> float:
     trial_types = np.asarray(table["TrialType"][:]).astype("U")
     mismatch_indices = np.flatnonzero(trial_types != "standard")
     return float(table["start_time"][int(mismatch_indices[0])])
+
+
+def neuropixels_event(nwb: h5py.File) -> tuple[float, dict, list[dict]]:
+    table = nwb[f"intervals/{NEUROPIXELS_SESSION['interval']}"]
+    trial_types = np.asarray(table["TrialType"][:]).astype("U")
+    mismatch_indices = np.flatnonzero(trial_types != "standard")
+    if not len(mismatch_indices):
+        raise RuntimeError("Neuropixels session has no nonstandard sequence event.")
+    event_index = int(mismatch_indices[0])
+    aligned_event = float(table["start_time"][event_index])
+    starts = np.asarray(table["start_time"][:], dtype=float)
+    stops = np.asarray(table["stop_time"][:], dtype=float)
+    included = np.flatnonzero(
+        (starts < aligned_event + WINDOW_END_SECONDS)
+        & (stops >= aligned_event + WINDOW_START_SECONDS)
+    )
+    stimulus = []
+    for index in included:
+        stimulus.append(
+            {
+                "contrast": round(float(table["contrast"][index]), 4),
+                "end": round(float(stops[index] - aligned_event), 6),
+                "orientationDegrees": round(
+                    math.degrees(float(table["Orientation"][index])) % 360, 3
+                ),
+                "phaseCycles": round(
+                    float(table["phase"][index]) / (2 * math.pi), 6
+                ),
+                "spatialFrequency": round(
+                    float(table["SpatialFrequency"][index]), 4
+                ),
+                "start": round(float(starts[index] - aligned_event), 6),
+                "temporalFrequency": round(
+                    float(table["TemporalFrequency"][index]), 4
+                ),
+                "trialNumber": int(float(table["TrialNumber"][index])),
+                "trialType": str(trial_types[index]),
+            }
+        )
+    event_trial_type = str(trial_types[event_index])
+    event = {
+        "label": event_trial_type.replace("_", " ").capitalize(),
+        "time": 0.0,
+        "trialNumber": int(float(table["TrialNumber"][event_index])),
+    }
+    return aligned_event, event, stimulus
 
 
 def excerpt_stimulus(session: dict) -> list[dict]:
@@ -385,13 +437,13 @@ def extract_ap_excerpt(
     return excerpt, source
 
 
-def extract_neuropixels(session: dict) -> dict:
+def extract_neuropixels() -> dict:
     options = []
     ap_sources = []
     file_system = s3fs.S3FileSystem(anon=True)
     with closing(remfile.File(NEUROPIXELS_NWB["url"])) as remote:
         with h5py.File(remote, mode="r") as nwb:
-            aligned_event = event_time(nwb)
+            aligned_event, event, stimulus = neuropixels_event(nwb)
             channel_locations = neuropixels_channel_locations(nwb)
             for probe_id in sorted(NEUROPIXELS_AP_STORES):
                 anatomy = NEUROPIXELS_ANATOMY[probe_id]
@@ -418,25 +470,31 @@ def extract_neuropixels(session: dict) -> dict:
             "event-centered excerpt. CCF structure and layer boundaries come from the "
             "NWB electrode-location annotations."
         ),
-        "context": session["context"],
-        "event": {**session["event"], "time": 0.0},
+        "context": NEUROPIXELS_SESSION["context"],
+        "event": event,
         "id": "neuropixels",
         "label": "Neuropixels",
         "optionLabel": "Probe",
         "options": options,
-        "session": session["session"],
+        "session": NEUROPIXELS_SESSION["session"],
         "signalLabel": "Raw AP acquisition voltage",
         "signalUnit": "uV",
         "sourceLinks": [
             {"label": "DANDI:001637", "url": NEUROPIXELS_NWB["dandiUrl"]},
-            *session["sourceLinks"],
+            {
+                "label": "Raw S3 session",
+                "url": (
+                    "https://open.quiltdata.com/b/aind-open-data/tree/"
+                    f"{NEUROPIXELS_SESSION['session']}/"
+                ),
+            },
         ],
         "sources": [
             {"sha256": NEUROPIXELS_NWB["sha256"], "url": NEUROPIXELS_NWB["url"]},
             *ap_sources,
         ],
-        "stimulus": excerpt_stimulus(session),
-        "subject": session["subject"],
+        "stimulus": stimulus,
+        "subject": NEUROPIXELS_SESSION["subject"],
         "viewType": "heatmap",
     }
 
@@ -944,7 +1002,7 @@ def main() -> None:
             "behaviorExcerptSha256": hashlib.sha256(behavior_bytes).hexdigest(),
             "retrievedDate": RETRIEVED_DATE,
             "sessions": [
-                extract_neuropixels(sessions["neuropixels"]),
+                extract_neuropixels(),
                 extract_mesoscope(sessions["mesoscope"], temporary_media),
                 extract_slap2(sessions["slap2"], temporary_media),
             ],
