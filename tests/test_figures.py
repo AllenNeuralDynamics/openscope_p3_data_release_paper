@@ -1,4 +1,5 @@
 import base64
+import csv
 import hashlib
 import json
 import math
@@ -14,6 +15,8 @@ from openscope_p3_publication.figures import (
     BEHAVIOR_STATIC_FRAME_DIR,
     BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH,
     BLOCKS,
+    DATA_ACCESS_PATH,
+    DATA_ACCESS_PROVENANCE_PATH,
     FIGURE_MONO_FONT,
     FIGURE_REFERENCE_WIDTH,
     FIGURE_SANS_FONT,
@@ -39,6 +42,7 @@ from openscope_p3_publication.figures import (
     ZEBRA_MOVIE_SOURCE,
     ZEBRA_POSTER_SOURCE,
     load_behavior_excerpts,
+    load_data_access_table,
     load_experimental_design_sources,
     load_experimental_session_records,
     load_hardware_sources,
@@ -732,6 +736,77 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
     assert explorer_path.read_text(encoding="utf-8") == html
 
 
+def test_data_access_table_uses_modality_specific_columns(tmp_path: Path) -> None:
+    headers = (
+        "Session ID,Mouse ID,Date,Modality,Context,Dandiset ID,DANDI path,"
+        "DANDI link,Source session S3 asset,Spike-sorted S3 asset,CCF S3 asset,"
+        "Behavior S3 asset,Behavior videos S3 asset,Motion-corrected S3 asset,"
+        "Annotated S3 asset,Processed S3 asset,NWB S3 asset\n"
+    )
+    rows = (
+        "ecephys_1_2026-01-01_00-00-00,1,2026-01-01,Neuropixels,Sequence,"
+        "001637,path-a,https://dandi/a,https://s3/source,https://s3/sorted,"
+        "INTERNAL,,,,,,https://s3/nwb\n"
+        "multiplane-ophys_2_2026-01-02_00-00-00,2,2026-01-02,Mesoscope,Duration,"
+        "001768,path-b,https://dandi/b,https://s3/source,,,https://s3/behavior,"
+        "https://s3/videos,,,https://s3/processed,https://s3/nwb\n"
+        "SLAP2_3_2026-01-03_00-00-00,3,2026-01-03,SLAP2,Sensorimotor,001424,"
+        "path-c,https://dandi/c,https://s3/source,,,,,https://s3/motion,"
+        "https://s3/annotated,https://s3/processed,https://s3/nwb\n"
+    )
+    source = tmp_path / "data-access.csv"
+    source.write_text(headers + rows, encoding="utf-8")
+    provenance = tmp_path / "data-access.provenance.json"
+    provenance.write_text(
+        json.dumps(
+            {
+                "rows": 3,
+                "source_url": "https://example.org/data-access.csv",
+                "vendored_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+            }
+        ),
+        encoding="utf-8",
+    )
+    table = load_data_access_table(source, provenance)
+
+    assert len(table["rows"]) == 3
+    assert {row["modality"] for row in table["rows"]} == {
+        "neuropixels", "mesoscope", "slap2"
+    }
+    assert "CCF S3 asset" in table["columnViews"]["neuropixels"]
+    assert "Annotated S3 asset" not in table["columnViews"]["mesoscope"]
+    assert table["columnViews"]["slap2"][-5:] == [
+        "Source session S3 asset",
+        "Motion-corrected S3 asset",
+        "Annotated S3 asset",
+        "Processed S3 asset",
+        "NWB S3 asset",
+    ]
+
+
+def test_data_access_snapshot_is_source_backed() -> None:
+    provenance = json.loads(DATA_ACCESS_PROVENANCE_PATH.read_text(encoding="utf-8"))
+    assert hashlib.sha256(DATA_ACCESS_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
+    )
+    with DATA_ACCESS_PATH.open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream))
+    assert len(rows) == provenance["rows"]
+    assert all(len(row["Dandiset ID"]) == 6 for row in rows)
+
+
+def test_data_access_explorer_source_has_required_controls() -> None:
+    javascript = (
+        Path(__file__).parents[1] / "figure_sources" / "javascript" / "data-explorer.js"
+    ).read_text(encoding="utf-8")
+
+    assert '["animals", "sessions", "dataAccess"]' in javascript
+    assert 'dataAccess: "Data Access"' in javascript
+    assert 'table.columnViews[elements.modality.value]' in javascript
+    assert 'state.kind === "sessions" || state.kind === "dataAccess"' in javascript
+    assert 'appendLinks(cell, value, header)' in javascript
+
+
 def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None:
     provenance = json.loads(
         SESSION_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8")
@@ -739,22 +814,25 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert hashlib.sha256(SESSION_RECORDS_PATH.read_bytes()).hexdigest() == (
         provenance["vendored_sha256"]
     )
-    assert provenance["rows"] == 198
-    assert provenance["source_rows"] == 198
+    assert provenance["worksheet_rows"] == 198
+    assert provenance["rows"] == 197
+    assert provenance["source_rows"] == 197
     assert provenance["modality_rows"] == {
-        "mesoscope": 92,
+        "mesoscope": 91,
         "neuropixels": 62,
         "slap2": 44,
     }
 
     payload = load_experimental_session_records()
     records = payload["records"]
-    assert len(records) == 198
-    assert [int(record["source_row"]) for record in records] == list(range(3, 201))
+    assert len(records) == 197
+    assert [int(record["source_row"]) for record in records] == [
+        row for row in range(3, 201) if row != 82
+    ]
     assert {
         modality: len(modality_session_records(records, modality))
         for modality in ("neuropixels", "mesoscope", "slap2")
-    } == {"neuropixels": 62, "mesoscope": 92, "slap2": 28}
+    } == {"neuropixels": 62, "mesoscope": 91, "slap2": 28}
 
     mesoscope_rows = session_panel_rows(records, "mesoscope")
     assert [row["mouseId"] for row in mesoscope_rows] == [
@@ -773,7 +851,7 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
         8,
         8,
         12,
-        9,
+        8,
         8,
         11,
         8,
