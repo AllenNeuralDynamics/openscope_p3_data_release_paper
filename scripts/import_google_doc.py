@@ -398,9 +398,9 @@ do not map one-to-one to the 164-record Interactive inventory.
 :::"""
 
 NEUROPIXELS_RAW_SOURCE = (
-    "[ecephys_820459_2025-11-10_15-07-13]"
+    "[ecephys_830846_2026-03-09_10-32-54]"
     "(https://open.quiltdata.com/b/aind-open-data/tree/"
-    "ecephys_820459_2025-11-10_15-07-13/) "
+    "ecephys_830846_2026-03-09_10-32-54/) "
     "([DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files))"
 )
 MESOSCOPE_RAW_SOURCE = (

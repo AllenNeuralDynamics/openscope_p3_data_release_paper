@@ -1012,7 +1012,7 @@ structures and layers for each probe; area, layer, and depth for each mesoscope
 plane; and indicator plus remote-focus depth below pia (91 µm for DMD1 and
 123.75 µm for DMD2) for each SLAP2 field. Microscopy intensity is pseudocolored
 and contrast-scaled independently for display. Source sessions are Neuropixels
-[ecephys_820459_2025-11-10_15-07-13](https://open.quiltdata.com/b/aind-open-data/tree/ecephys_820459_2025-11-10_15-07-13/) ([DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files));
+[ecephys_830846_2026-03-09_10-32-54](https://open.quiltdata.com/b/aind-open-data/tree/ecephys_830846_2026-03-09_10-32-54/) ([DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files));
 mesoscope [multiplane-ophys_832700_2026-01-29_11-18-09](https://open.quiltdata.com/b/aind-open-data/tree/multiplane-ophys_832700_2026-01-29_11-18-09/) ([DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files));
 and SLAP2
 [796630_2025-08-28_14-25-34](https://open.quiltdata.com/b/aind-open-data/tree/796630_2025-08-28_14-25-34/).

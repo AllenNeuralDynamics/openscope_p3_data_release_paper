@@ -501,7 +501,8 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "raw AP acquisition stream supplied to spike sorting" in manuscript
     assert "AP samples are not median-corrected" in manuscript
     assert "remain visible as vertical stripes" in manuscript
-    assert "ecephys_820459_2025-11-10_15-07-13" in manuscript
+    assert "ecephys_830846_2026-03-09_10-32-54" in manuscript
+    assert "ecephys_820459_2025-11-10_15-07-13" not in manuscript
     assert "multiplane-ophys_832700_2026-01-29_11-18-09" in manuscript
     assert "796630_2025-08-28_14-25-34" in manuscript
     assert ":label: fig-interactive-experimental-design\n:width: 100%" in manuscript

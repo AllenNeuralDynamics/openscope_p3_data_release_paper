@@ -1127,7 +1127,7 @@ def test_running_statistics_are_source_backed_and_mouse_aggregated() -> None:
 
 def test_neural_excerpts_are_source_backed_and_aligned() -> None:
     assert hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest() == (
-        "65a5c35e30634d0c261697a728aec7ca6fbdc3c94b2e326a61771238492480f8"
+        "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c"
     )
     payload = load_neural_excerpts(NEURAL_EXCERPTS_PATH)
 
@@ -1147,6 +1147,14 @@ def test_neural_excerpts_are_source_backed_and_aligned() -> None:
         "detector counts",
         "detector counts",
     ]
+    assert payload["sessions"][0]["session"] == "ecephys_830846_2026-03-09_10-32-54"
+    assert payload["sessions"][0]["subject"] == "830846"
+    assert payload["sessions"][0]["context"] == "Sequence mismatch"
+    assert payload["sessions"][0]["event"] == {
+        "label": "Sequence omission",
+        "time": 0.0,
+        "trialNumber": 549,
+    }
     for session in payload["sessions"]:
         assert session["event"]["time"] == 0.0
         assert any(row["start"] <= 0 <= row["end"] for row in session["stimulus"])
@@ -1172,27 +1180,31 @@ def test_neural_excerpts_are_source_backed_and_aligned() -> None:
     assert [
         len(option["anatomySegments"])
         for option in payload["sessions"][0]["options"]
-    ] == [13, 16, 22, 19, 12, 11]
+    ] == [17, 18, 21, 19, 13, 13]
     assert [
         segment["label"]
         for segment in payload["sessions"][0]["options"][0]["anatomySegments"]
     ] == [
         "void",
-        "MOp1",
-        "MOp2/3",
-        "MOp5",
-        "MOp6a",
+        "MOs1",
+        "MOs2/3",
+        "MOs5",
+        "ACAd5",
+        "ACAd6a",
+        "ACAv6a",
+        "ACAv5",
+        "ACAv6a",
         "cing",
         "ccb",
-        "alv",
-        "CA2",
-        "CA3",
-        "alv",
-        "root",
-        "LD",
+        "LSc",
+        "fi",
+        "V3",
+        "sm",
+        "TH",
+        "IAD",
     ]
     assert payload["sessions"][0]["options"][2]["anatomyLabel"] == (
-        "VISp L1–L6b · MG · DG"
+        "VISp L1–L6a · CA1–CA3 / DG · LGd / VPM"
     )
     movie_options = [
         option for session in payload["sessions"][1:] for option in session["options"]
