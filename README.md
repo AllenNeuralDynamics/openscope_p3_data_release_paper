@@ -37,7 +37,7 @@ The GitHub Actions workflow runs the same checks and deploys the static site fro
 - `figure_sources/`: editable sources, input data, and provenance manifests.
 - `manuscript_sources/google-doc/`: preserved Google Doc export and import notes.
 - `scripts/import_google_doc.py`: deterministic but destructive Google Doc importer.
-- `scripts/sync_authors.py`: refreshes `authors.yml` from the versioned `p3_data_release` contribution record.
+- `scripts/sync_authors.py`: maintainer-only tool that refreshes `authors.yml` from the versioned `p3_data_release` contribution record.
 - `tests/`: publication and figure regression checks.
 
 ## Manuscript source policy
@@ -54,7 +54,7 @@ We welcome contributions from OpenScope Predictive Processing Community members.
 4. Keep prose, figure, and data-snapshot changes narrowly scoped. Separate unrelated scientific revisions into different pull requests when practical.
 5. Every figure needs a manuscript caption. For generated figures, commit the editable or versioned source, provenance or checksums, reproducible generation code, rendered web asset, alternative text, and caption. Every interactive figure also requires a scientifically complete static counterpart for PDF and other noninteractive exports.
 6. Update generated files in the same pull request as their source. Do not edit files in `interactive/` or `images/figures/generated/` without updating the owning source or generator.
-7. Manage authorship through the [P3 data-release contribution form](https://data.allenneuraldynamics.org/contributions/add?project=p3_data_release), not by editing generated author records directly.
+7. Manage authorship through the [P3 data-release contribution form](https://data.allenneuraldynamics.org/contributions/add?project=p3_data_release), not by editing generated author records directly. After updating the form, notify the repository maintainer; only the maintainer should run `scripts/sync_authors.py` and commit the refreshed snapshot.
 8. In the pull request, summarize the scientific change, identify source data or references, list regenerated assets, and report validation commands. Request review from the relevant section or data owner.
 
 Before opening a pull request, run:

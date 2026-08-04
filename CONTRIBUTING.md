@@ -10,13 +10,9 @@ During the Google Doc cutover, `scripts/import_google_doc.py` is destructive: it
 
 Add or update your contribution through the [P3 data-release contribution form](https://data.allenneuraldynamics.org/contributions/add?project=p3_data_release). Do not edit contributor records directly in `authors.yml`; it is a generated snapshot of the contribution portal.
 
-Refresh the repository snapshot after portal changes:
+After changing your portal record, notify the repository maintainer and request an authorship snapshot refresh. Do not run `scripts/sync_authors.py`; authorship synchronization and the resulting commit are maintainer-only operations.
 
-```bash
-uv run python scripts/sync_authors.py
-```
-
-The sync pins the newest portal commit and maps its ORCID, affiliation, CRediT-level, and section-level records into the structure consumed by [AuthorshipExtractor](https://github.com/AllenNeuralDynamics/AuthorshipExtractor). Do not infer or assign contributions on another person's behalf; authors should review their own portal record.
+The maintainer-run sync pins the newest portal commit and maps its ORCID, affiliation, CRediT-level, and section-level records into the structure consumed by [AuthorshipExtractor](https://github.com/AllenNeuralDynamics/AuthorshipExtractor). Do not infer or assign contributions on another person's behalf; authors should review their own portal record.
 
 ## Figures
 
