@@ -141,6 +141,15 @@ html.is-embedded .explorer { min-height: 0; }
   outline-offset: -3px;
 }
 
+.data-access-note {
+  margin: 0;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
+  background: #eef3f4;
+  color: #4d5759;
+  font-size: 0.8rem;
+}
+
 .table-tools {
   min-height: 58px;
   padding: 10px 12px;
@@ -249,6 +258,22 @@ tbody tr:hover td {
 
 tbody td:first-child {
   font-weight: 650;
+}
+
+.asset-link {
+  color: #315f78;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.asset-link:hover { color: #183f55; }
+
+.internal-asset {
+  color: #6e7472;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
 }
 
 tr.modality-mesoscope td:first-child {

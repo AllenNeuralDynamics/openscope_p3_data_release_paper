@@ -75,6 +75,8 @@ ANIMAL_RECORDS_PATH = DATA_DIR / "experimental-animals.csv"
 ANIMAL_RECORDS_PROVENANCE_PATH = DATA_DIR / "experimental-animals.provenance.json"
 SESSION_RECORDS_PATH = DATA_DIR / "experimental-sessions.csv"
 SESSION_RECORDS_PROVENANCE_PATH = SESSION_RECORDS_PATH.with_suffix(".provenance.json")
+DATA_ACCESS_PATH = DATA_DIR / "data-access.csv"
+DATA_ACCESS_PROVENANCE_PATH = DATA_ACCESS_PATH.with_suffix(".provenance.json")
 INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "experimental-design.html"
 DATA_EXPLORER_OUTPUT = REPO_ROOT / "interactive" / "data-explorer.html"
 SESSION_INVENTORY_STATIC_OUTPUT = (
@@ -1288,10 +1290,12 @@ def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
 def write_data_explorer_html(
     output: Path = DATA_EXPLORER_OUTPUT,
     static_output: Path = SESSION_INVENTORY_STATIC_OUTPUT,
+    refresh_static: bool = True,
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_publication_table_data()
-    write_session_inventory_svg(static_output)
+    if refresh_static:
+        write_session_inventory_svg(static_output)
     static_data = base64.b64encode(static_output.read_bytes()).decode()
     template = (JAVASCRIPT_DIR / "data-explorer.html").read_text(encoding="utf-8")
     stylesheet = (JAVASCRIPT_DIR / "data-explorer.css").read_text(encoding="utf-8")
@@ -2772,9 +2776,120 @@ def load_publication_table_data(manuscript_path: Path = REPO_ROOT / "index.md") 
     summary_mouse_ids = split_grouped_identifiers(grouped_tables["animals"], count_index=4)
     animal_table = load_individual_animal_table(summary_mouse_ids)
     session_table = expand_individual_session_table(grouped_tables["sessions"])
+    data_access_table = load_data_access_table()
     return {
-        "tables": {"animals": animal_table, "sessions": session_table},
-        "version": 2,
+        "tables": {
+            "animals": animal_table,
+            "sessions": session_table,
+            "dataAccess": data_access_table,
+        },
+        "version": 3,
+    }
+
+
+def load_data_access_table(
+    data_path: Path = DATA_ACCESS_PATH,
+    provenance_path: Path = DATA_ACCESS_PROVENANCE_PATH,
+) -> dict:
+    """Load the vendored Data Access Summary snapshot."""
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    checksum = hashlib.sha256(data_path.read_bytes()).hexdigest()
+    if checksum != provenance["vendored_sha256"]:
+        raise RuntimeError("Data Access checksum does not match its provenance record.")
+    with data_path.open(newline="", encoding="utf-8-sig") as stream:
+        source_rows = list(csv.DictReader(stream))
+    if not source_rows:
+        raise RuntimeError("Vendored Data Access Summary is empty.")
+    if len(source_rows) != provenance["rows"]:
+        raise RuntimeError("Data Access row count does not match its provenance record.")
+
+    expected_headers = [
+        "Session ID",
+        "Mouse ID",
+        "Date",
+        "Modality",
+        "Context",
+        "Dandiset ID",
+        "DANDI path",
+        "DANDI link",
+        "Source session S3 asset",
+        "Spike-sorted S3 asset",
+        "CCF S3 asset",
+        "Behavior S3 asset",
+        "Behavior videos S3 asset",
+        "Motion-corrected S3 asset",
+        "Annotated S3 asset",
+        "Processed S3 asset",
+        "NWB S3 asset",
+    ]
+    if list(source_rows[0]) != expected_headers:
+        raise RuntimeError("Vendored Data Access Summary schema is not supported.")
+
+    modality_lookup = {
+        "Mesoscope": "mesoscope",
+        "Neuropixels": "neuropixels",
+        "SLAP2": "slap2",
+    }
+    column_views = {
+        "neuropixels": [
+            "Session ID", "Mouse ID", "Date", "Context", "Dandiset ID",
+            "DANDI path", "DANDI link", "Source session S3 asset",
+            "Spike-sorted S3 asset", "CCF S3 asset", "NWB S3 asset",
+        ],
+        "mesoscope": [
+            "Session ID", "Mouse ID", "Date", "Context", "Dandiset ID",
+            "DANDI path", "DANDI link", "Source session S3 asset",
+            "Behavior S3 asset", "Processed S3 asset",
+            "Behavior videos S3 asset", "NWB S3 asset",
+        ],
+        "slap2": [
+            "Session ID", "Mouse ID", "Date", "Context", "Dandiset ID",
+            "DANDI path", "DANDI link", "Source session S3 asset",
+            "Motion-corrected S3 asset", "Annotated S3 asset",
+            "Processed S3 asset", "NWB S3 asset",
+        ],
+    }
+    rows = []
+    session_ids = set()
+    for source in source_rows:
+        modality = modality_lookup.get(source["Modality"].strip())
+        session_id = source["Session ID"].strip()
+        if modality is None or not session_id:
+            raise RuntimeError(f"Invalid Data Access row: {source}")
+        if session_id in session_ids:
+            raise RuntimeError(f"Duplicate Data Access session ID: {session_id}")
+        session_ids.add(session_id)
+        values = [source[header].strip() for header in expected_headers]
+        rows.append(
+            {
+                "context": source["Context"].strip().lower(),
+                "csvValues": values,
+                "details": [],
+                "modality": modality,
+                "qc": "",
+                "values": values,
+            }
+        )
+    rows.sort(key=lambda row: (row["modality"], row["values"][2], row["values"][0]))
+    return {
+        "columnViews": column_views,
+        "csvHeaders": expected_headers,
+        "detailsColumn": None,
+        "headers": expected_headers,
+        "linkColumns": [
+            "DANDI link",
+            "Source session S3 asset",
+            "Spike-sorted S3 asset",
+            "CCF S3 asset",
+            "Behavior S3 asset",
+            "Behavior videos S3 asset",
+            "Motion-corrected S3 asset",
+            "Annotated S3 asset",
+            "Processed S3 asset",
+            "NWB S3 asset",
+        ],
+        "rows": rows,
+        "sourceUrl": provenance["source_url"],
     }
 
 

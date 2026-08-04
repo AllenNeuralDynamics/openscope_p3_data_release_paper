@@ -6,6 +6,8 @@ import runpy
 import struct
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -17,6 +19,75 @@ def png_dimensions(path: Path) -> tuple[int, int]:
     data = path.read_bytes()[:24]
     assert data[:8] == b"\x89PNG\r\n\x1a\n"
     return struct.unpack(">II", data[16:24])
+
+
+def publication_snapshot_updater() -> dict:
+    return runpy.run_path(
+        str(REPO_ROOT / "scripts" / "update_publication_snapshots.py")
+    )
+
+
+def test_session_snapshot_refresh_repins_derived_provenance(tmp_path: Path) -> None:
+    updater = publication_snapshot_updater()
+    session_path = tmp_path / "experimental-sessions.csv"
+    running_path = tmp_path / "running-statistics.json"
+    behavior_path = tmp_path / "behavior-static-frames.provenance.json"
+    previous = (
+        b"source_session_id,mouse_id,date,modality,session_stimulus,qc,source_row\n"
+        b"session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,8\n"
+        b"session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,12\n"
+    )
+    session_path.write_text(
+        "source_session_id,mouse_id,date,modality,session_stimulus,qc,source_row\n"
+        "session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,8\n",
+        encoding="utf-8",
+    )
+    running_path.write_text(
+        json.dumps(
+            {
+                "source_session_records": {"sha256": "old"},
+                "sessions": [
+                    {
+                        "modality": "mesoscope",
+                        "source_row": 12,
+                        "source_session_id": "session-a",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    behavior_path.write_text(
+        json.dumps({"running_statistics_sha256": "old"}), encoding="utf-8"
+    )
+    updater["refresh_session_snapshot_dependents"].__globals__.update(
+        {
+            "RUNNING_STATISTICS_PATH": running_path,
+            "BEHAVIOR_STATIC_PROVENANCE_PATH": behavior_path,
+        }
+    )
+
+    updater["refresh_session_snapshot_dependents"](session_path, previous)
+
+    running = json.loads(running_path.read_text(encoding="utf-8"))
+    behavior = json.loads(behavior_path.read_text(encoding="utf-8"))
+    assert running["source_session_records"]["sha256"] == file_sha256(session_path)
+    assert running["sessions"][0]["source_row"] == 8
+    assert behavior["running_statistics_sha256"] == file_sha256(running_path)
+
+
+def test_session_snapshot_refresh_rejects_semantic_changes(tmp_path: Path) -> None:
+    updater = publication_snapshot_updater()
+    session_path = tmp_path / "experimental-sessions.csv"
+    session_path.write_text(
+        "source_session_id,mouse_id,date,modality,session_stimulus,qc,source_row\n"
+        "session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,8\n",
+        encoding="utf-8",
+    )
+    previous = session_path.read_bytes().replace(b",Pass,", b",Fail,")
+
+    with pytest.raises(RuntimeError, match="Session semantics changed"):
+        updater["refresh_session_snapshot_dependents"](session_path, previous)
 
 
 def test_manuscript_marks_author_list_as_provisional() -> None:

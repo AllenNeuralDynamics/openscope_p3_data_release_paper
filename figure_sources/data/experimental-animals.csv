@@ -18,7 +18,7 @@ Mouse id,Modality,QC (true/false),Sex,Transgenic details,Virus(es),Birth date,Su
 839909,MESO,,Male,Snap25-IRES2-Cre/wt;Oi4(TIT2L-jGCaMP8s-RiboL1-WPRE-ICL-IRES-tTA2-WPRE)/wt,None,11/17/25,1/12/26,
 851452,SLAP2,False (1 session),Male,wt/wt,1E12 PHP.eB-hSyn-DIO-ASAP7y + 1E12 PHP.eB-hSyn-FLEX-HaloTag-WPRE + 1.2E8 PHP.eB-CamKII0.4.Cre.SV40,12/9/25,2/10/26,
 851453,SLAP2,True(3 sessions),Male,wt/wt,1E12 PHP.eB-hSyn-DIO-ASAP7y + 1E12 PHP.eB-hSyn-FLEX-HaloTag-WPRE + 1.2E8 PHP.eB-CamKII0.4.Cre.SV40,12/9/25,2/10/26,
-841193,SLAP2,FAILED,?,wt/wt,?,12/01/25,?,"Mouse had a lot of issues. Stress, slap2 stopping mid-way. Some of the behavior stopped. We decided to delete the data. "
+841193,SLAP2,FAILED,?,wt/wt,?,12/01/25,?,"Mouse had a lot of issues. Stress, slap2 stopping mid-way. Some of the behavior stopped. We decided to delete the data."
 830795,EPHYS,,Male,Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt,None,9/24/25,1/13/26; 2/20/26,
 830852,EPHYS,,Female,Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt,None,9/25/25,1/15/26; 2/20/26,
 830848,EPHYS,,Female,Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt,None,9/25/25,1/20/26; 2/27/26,

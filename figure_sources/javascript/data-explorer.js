@@ -9,6 +9,7 @@
     empty: document.getElementById("empty-state"),
     headers: document.getElementById("table-headers"),
     interactiveView: document.getElementById("interactive-view"),
+    note: document.getElementById("data-access-note"),
     modality: document.getElementById("modality-filter"),
     search: document.getElementById("table-search"),
     status: document.getElementById("row-count"),
@@ -20,6 +21,11 @@
     mesoscope: "Two-photon",
     neuropixels: "Neuropixels",
     slap2: "SLAP2",
+  };
+  const tableLabels = {
+    animals: "Animals",
+    sessions: "Sessions",
+    dataAccess: "Data Access",
   };
   const state = { kind: "animals", view: "static", visibleRows: [] };
 
@@ -35,12 +41,12 @@
   }
 
   function buildTabs() {
-    ["animals", "sessions"].forEach((kind) => {
+    ["animals", "sessions", "dataAccess"].forEach((kind) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "dataset-tab";
       button.dataset.kind = kind;
-      const label = kind === "animals" ? "Animals" : "Sessions";
+      const label = tableLabels[kind];
       button.innerHTML = `${label}<span>${data.tables[kind].rows.length}</span>`;
       button.addEventListener("click", () => selectTable(kind));
       elements.tabs.append(button);
@@ -50,20 +56,28 @@
   function selectTable(kind) {
     state.kind = kind;
     elements.search.value = "";
-    elements.search.placeholder = kind === "animals" ? "Search animals" : "Search sessions";
+    elements.search.placeholder = kind === "animals"
+      ? "Search animals"
+      : kind === "sessions" ? "Search sessions" : "Search data access";
     elements.tabs.querySelectorAll("button").forEach((button) => {
       const active = button.dataset.kind === kind;
       button.classList.toggle("active", active);
       button.setAttribute("aria-pressed", String(active));
     });
+    elements.note.hidden = kind !== "dataAccess";
     populateFilters();
     renderTable();
   }
 
   function populateFilters() {
     const rows = data.tables[state.kind].rows;
-    setOptions(elements.modality, "All modalities", unique(rows, "modality"), modalityLabels);
-    if (state.kind === "sessions") {
+    if (state.kind === "dataAccess") {
+      setOptions(elements.modality, null, ["neuropixels", "mesoscope", "slap2"], modalityLabels);
+      elements.modality.value = "neuropixels";
+    } else {
+      setOptions(elements.modality, "All modalities", unique(rows, "modality"), modalityLabels);
+    }
+    if (state.kind === "sessions" || state.kind === "dataAccess") {
       setOptions(elements.context, "All contexts", unique(rows, "context"));
       elements.context.setAttribute("aria-label", "Filter by stimulus context");
     } else {
@@ -74,19 +88,21 @@
 
   function renderTable() {
     const table = data.tables[state.kind];
+    const columns = visibleColumns(table);
     const query = normalize(elements.search.value);
     state.visibleRows = table.rows.filter((row) => {
       const matchesSearch = !query || normalize(row.csvValues.join(" ")).includes(query);
       const matchesModality = !elements.modality.value
         || row.modality === elements.modality.value;
-      const secondaryValue = state.kind === "sessions" ? row.context : row.qc;
+      const secondaryValue = state.kind === "sessions" || state.kind === "dataAccess"
+        ? row.context : row.qc;
       const matchesContext = !elements.context.value
         || secondaryValue === elements.context.value;
       return matchesSearch && matchesModality && matchesContext;
     });
 
     elements.headers.replaceChildren();
-    table.headers.forEach((header) => {
+    columns.forEach(({ header }) => {
       const cell = document.createElement("th");
       cell.scope = "col";
       cell.textContent = header;
@@ -94,17 +110,18 @@
     });
 
     elements.body.replaceChildren();
-    state.visibleRows.forEach((row) => elements.body.append(renderRow(row, table)));
+    state.visibleRows.forEach((row) => elements.body.append(renderRow(row, table, columns)));
     elements.status.value = `${state.visibleRows.length} of ${table.rows.length}`;
     elements.status.textContent = elements.status.value;
     elements.empty.hidden = state.visibleRows.length !== 0;
     updateDownloadLink();
   }
 
-  function renderRow(row, table) {
+  function renderRow(row, table, columns) {
     const tableRow = document.createElement("tr");
     tableRow.className = `modality-${row.modality}`;
-    row.values.forEach((value, index) => {
+    columns.forEach(({ header, index }) => {
+      const value = row.values[index];
       const cell = document.createElement("td");
       if (index === table.detailsColumn) {
         const details = document.createElement("details");
@@ -122,6 +139,8 @@
         });
         details.append(summary, list);
         cell.append(details);
+      } else if (table.linkColumns?.includes(header)) {
+        appendLinks(cell, value, header);
       } else {
         cell.textContent = value;
       }
@@ -130,8 +149,37 @@
     return tableRow;
   }
 
+  function visibleColumns(table) {
+    const headers = state.kind === "dataAccess"
+      ? table.columnViews[elements.modality.value]
+      : table.headers;
+    return headers.map((header) => ({ header, index: table.headers.indexOf(header) }));
+  }
+
+  function appendLinks(cell, value, header) {
+    if (!value) return;
+    String(value).split("\n").filter(Boolean).forEach((url, linkIndex) => {
+      if (linkIndex) cell.append(document.createElement("br"));
+      if (url === "INTERNAL") {
+        const label = document.createElement("span");
+        label.className = "internal-asset";
+        label.textContent = "INTERNAL";
+        cell.append(label);
+        return;
+      }
+      const link = document.createElement("a");
+      link.className = "asset-link";
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = header === "DANDI link" ? "Open on DANDI" : "Open S3 asset";
+      cell.append(link);
+    });
+  }
+
   function setOptions(select, allLabel, values, labels = {}) {
-    select.replaceChildren(new Option(allLabel, ""));
+    select.replaceChildren();
+    if (allLabel !== null) select.append(new Option(allLabel, ""));
     values.forEach((value) => select.append(new Option(labels[value] ?? titleCase(value), value)));
   }
 
@@ -149,11 +197,17 @@
 
   function updateDownloadLink() {
     const table = data.tables[state.kind];
-    const csv = [table.csvHeaders, ...state.visibleRows.map((row) => row.csvValues)]
+    const columns = visibleColumns(table);
+    const csv = [
+      columns.map(({ header }) => header),
+      ...state.visibleRows.map((row) => columns.map(({ index }) => row.csvValues[index])),
+    ]
       .map((row) => row.map(csvCell).join(","))
       .join("\n");
     elements.download.href = `data:text/csv;charset=utf-8,%EF%BB%BF${encodeURIComponent(csv)}`;
-    elements.download.download = `openscope-predictive-processing-${state.kind}.csv`;
+    const suffix = state.kind === "dataAccess"
+      ? `${state.kind}-${elements.modality.value}` : state.kind;
+    elements.download.download = `openscope-predictive-processing-${suffix}.csv`;
   }
 
   function csvCell(value) {

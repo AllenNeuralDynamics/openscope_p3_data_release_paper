@@ -164,9 +164,8 @@
 <rect class="session-block" x="463.00" y="189.00" width="32.80" height="20.00" fill="#22BCAD" stroke="#FFFFFF" stroke-width="1"/>
 <rect class="session-block" x="495.80" y="189.00" width="32.80" height="20.00" fill="#B16027" stroke="#FFFFFF" stroke-width="1"/>
 <rect class="session-block" x="528.60" y="189.00" width="32.80" height="20.00" fill="#B16027" stroke="#FFFFFF" stroke-width="1"/>
-<rect class="session-block" x="561.40" y="189.00" width="32.80" height="20.00" fill="#B16027" stroke="#FFFFFF" stroke-width="1"/>
+<rect class="session-block" x="561.40" y="189.00" width="32.80" height="20.00" fill="#CCAF2D" stroke="#FFFFFF" stroke-width="1"/>
 <rect class="session-block" x="594.20" y="189.00" width="32.80" height="20.00" fill="#CCAF2D" stroke="#FFFFFF" stroke-width="1"/>
-<rect class="session-block" x="627.00" y="189.00" width="32.80" height="20.00" fill="#CCAF2D" stroke="#FFFFFF" stroke-width="1"/>
 <text x="352.6" y="241.00" font-family="IBM Plex Mono, monospace" font-size="12" text-anchor="end" fill="#4D5553">846289</text>
 <rect class="session-block" x="364.60" y="227.00" width="32.80" height="20.00" fill="#283185" stroke="#FFFFFF" stroke-width="1"/>
 <rect class="session-block" x="397.40" y="227.00" width="32.80" height="20.00" fill="#283185" stroke="#FFFFFF" stroke-width="1"/>

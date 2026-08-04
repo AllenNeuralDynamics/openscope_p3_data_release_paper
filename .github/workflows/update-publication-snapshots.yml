@@ -1,0 +1,54 @@
+name: Update publication table snapshots
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-publication-snapshots-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install session worksheet readers
+        run: python -m pip install pandas python-calamine
+
+      - name: Download and validate publication worksheets
+        run: python scripts/update_publication_snapshots.py
+
+      - name: Commit refreshed snapshots
+        shell: bash
+        run: |
+          snapshots=(
+            figure_sources/data/data-access.csv
+            figure_sources/data/data-access.provenance.json
+            figure_sources/data/experimental-animals.csv
+            figure_sources/data/experimental-animals.provenance.json
+            figure_sources/data/experimental-sessions.csv
+            figure_sources/data/experimental-sessions.provenance.json
+            figure_sources/data/running-statistics.json
+            figure_sources/data/behavior-static-frames.provenance.json
+            images/figures/generated/session-inventory.svg
+            interactive/data-explorer.html
+          )
+          if [[ -z "$(git status --porcelain -- "${snapshots[@]}")" ]]; then
+            echo "Publication table snapshots are already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${snapshots[@]}"
+          git commit -m "Update publication table snapshots"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
