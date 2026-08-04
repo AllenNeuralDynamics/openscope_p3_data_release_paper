@@ -1520,6 +1520,16 @@ The conclusion has not yet been drafted.
 **Supplementary Figure 2.** Neuropixels unit yield across recording days. Individual lines show 60 sessions from 16 mice; the bold line shows the daily mean, and *n* is the number of sessions represented on each day. Units passed all three quality-control thresholds (ISI-violations ratio < 0.5, presence ratio > 0.8, and amplitude cutoff < 0.1). QC-passing units were divided by the number of recorded probes and normalized to each mouse's day-1 value. Mean yield declined from 100% on day 1 to 80.9% on day 4. Values were derived from the public draft of Dandiset 001637 retrieved July 30, 2026.
 :::
 
+:::{iframe} ./interactive/neuropixels-trajectories.html
+:label: fig-supp-neuropixels-recorded-trajectories
+:enumerated: false
+:width: 100%
+:title: Supplementary Figure 3. Recorded Neuropixels trajectories in the Allen CCF.
+:placeholder: ./images/figures/generated/supplementary-neuropixels-trajectories.svg
+
+**Supplementary Figure 3.** Recorded Neuropixels trajectories in the Allen Mouse Brain Common Coordinate Framework (CCF) 2017. The **Interactive** view renders all CCF-localized insertions within a semi-transparent whole-brain surface and supports mouse, probe-port, camera-orientation, and brain-opacity controls. Selecting a trajectory shows its session, localized shank length, source NWB, and contiguous CCF area profile from the dorsal shank end to the tip. Line color denotes the nominal probe port (A-F). The **Static** view shows semi-transparent, depth-shaded oblique and dorsal projections of the same Allen CCF whole-brain surface, with anatomical direction markers and calibrated 2 mm scale bars. Electrode coordinates and area annotations come from the public draft of Dandiset 001637; the brain surface is a 100-micrometer mesh derived from the Allen CCF 2017 25-micrometer annotation volume. In total, 332 probe trajectories from 57 sessions and 16 mice had finite CCF coordinates. Three of the 60 source sessions are excluded because their NWB electrode tables lack `x`, `y`, and `z` coordinates.
+:::
+
 # Supplementary Text 1: Published oddball paradigms and sampling ranges
 
 [Supplementary Table 1](#table-supplementary-oddball-studies) compares five published visual oddball paradigms with respect to stimulus design, timing, sample size, recording method, statistical test, habituation, and sampling.

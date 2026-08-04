@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Neuropixels insertions in the Allen CCF</title>
+  <style>
+__NEUROPIXELS_TRAJECTORY_CSS__
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.min.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.179.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main class="viewer" id="trajectory-viewer">
+    <section class="toolbar" aria-label="Trajectory controls">
+      <div class="mode-switch" role="group" aria-label="Figure view">
+        <button type="button" class="mode-button active" data-view="interactive" aria-pressed="true">Interactive</button>
+        <button type="button" class="mode-button" data-view="static" aria-pressed="false">Static</button>
+      </div>
+      <label for="mouse-select">Mouse</label>
+      <select id="mouse-select"></select>
+      <label for="camera-select">View</label>
+      <select id="camera-select">
+        <option value="oblique">Oblique</option>
+        <option value="dorsal">Dorsal</option>
+        <option value="coronal">Coronal</option>
+        <option value="sagittal">Sagittal</option>
+      </select>
+      <label class="opacity-control" for="brain-opacity">
+        <span>Brain</span>
+        <input id="brain-opacity" type="range" min="0" max="45" value="18" step="1">
+      </label>
+      <button id="reset-view" class="command-button" type="button">Reset view</button>
+    </section>
+    <section class="probe-filter" aria-label="Probe filters">
+      <span class="filter-label">Probes</span>
+      <label><input type="checkbox" data-probe="A" checked><span class="swatch probe-a"></span>A</label>
+      <label><input type="checkbox" data-probe="B" checked><span class="swatch probe-b"></span>B</label>
+      <label><input type="checkbox" data-probe="C" checked><span class="swatch probe-c"></span>C</label>
+      <label><input type="checkbox" data-probe="D" checked><span class="swatch probe-d"></span>D</label>
+      <label><input type="checkbox" data-probe="E" checked><span class="swatch probe-e"></span>E</label>
+      <label><input type="checkbox" data-probe="F" checked><span class="swatch probe-f"></span>F</label>
+      <output id="visible-count" aria-live="polite"></output>
+    </section>
+    <section id="interactive-view" class="interactive-layout">
+      <section class="scene-shell" aria-label="Three-dimensional Allen CCF trajectory view">
+        <canvas id="brain-canvas"></canvas>
+        <canvas id="orientation-canvas" class="orientation" width="88" height="88" aria-label="Camera-relative axes: dorsal, lateral, and anterior"></canvas>
+        <output id="render-status" class="render-status" aria-live="polite">Loading 3D scene</output>
+      </section>
+      <aside class="profile-panel" aria-label="Selected probe area profile">
+        <header class="selection-header">
+          <span id="selection-probe" class="selection-probe">Probe A</span>
+          <h2 id="selection-title">Mouse</h2>
+          <p id="selection-meta"></p>
+          <a id="selection-source" target="_blank" rel="noreferrer">Open source NWB</a>
+        </header>
+        <div class="profile-heading">
+          <span>CCF area profile</span>
+          <span>Dorsal to tip</span>
+        </div>
+        <div class="profile-content">
+          <div id="area-bar" class="area-bar" aria-hidden="true"></div>
+          <ol id="area-list" class="area-list"></ol>
+        </div>
+      </aside>
+    </section>
+    <section id="static-view" class="static-view" hidden>
+      <img src="__NEUROPIXELS_TRAJECTORY_STATIC_IMAGE__" alt="Semi-transparent, depth-shaded oblique and dorsal projections of all localized Neuropixels insertions on the Allen CCF whole-brain surface, with 2 millimeter scale bars">
+    </section>
+    <footer class="source-strip">
+      <span id="source-summary"></span>
+      <span>Allen CCF 2017 · DANDI:001637</span>
+    </footer>
+  </main>
+  <script id="neuropixels-trajectory-data" type="application/json">__NEUROPIXELS_TRAJECTORY_DATA__</script>
+  <script type="module">
+__NEUROPIXELS_TRAJECTORY_JS__
+  </script>
+  <script>
+__EMBED_AUTO_HEIGHT_JS__
+  </script>
+</body>
+</html>

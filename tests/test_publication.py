@@ -229,6 +229,8 @@ def test_importer_preserves_opening_figure_narrative() -> None:
         "DATA_EXPLORER_BLOCK"
     ]
     assert "[Figure 5](#fig-aligned-neural-signals)" in importer["NEURAL_VIEWER_BLOCK"]
+    assert "Supplementary Figure 3" in importer["NEUROPIXELS_TRAJECTORY_BLOCK"]
+    assert "332 probe" in importer["NEUROPIXELS_TRAJECTORY_BLOCK"]
 
     source = (
         "brain fixation and brain histology (see **Figure 2**). "
@@ -394,7 +396,7 @@ def test_supplementary_studies_table_is_complete() -> None:
 def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
-    for number in range(1, 3):
+    for number in range(1, 4):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
     assert manuscript.count(":enumerated: false\n:width: 100%") >= 2
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
@@ -405,6 +407,15 @@ def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     ) == 2
     assert "images/figures/generated/supplementary-neuropixels-unit-yield.svg" not in manuscript
     assert "60 sessions from 16 mice" in manuscript
+    assert "./interactive/neuropixels-trajectories.html" in manuscript
+    assert ":label: fig-supp-neuropixels-recorded-trajectories" in manuscript
+    assert (
+        ":placeholder: ./images/figures/generated/"
+        "supplementary-neuropixels-trajectories.svg"
+    ) in manuscript
+    assert "332 probe trajectories from 57 sessions and 16 mice" in manuscript
+    assert "Three of the 60 source sessions are excluded" in manuscript
+    assert "100-micrometer mesh derived from the Allen CCF 2017" in manuscript
     assert "supplementary-neuropixels-unit-yield.png" not in manuscript
     assert "supplementary-neuropixels-targeting.png" not in manuscript
     assert "figure-11-analysis-framework.png" not in manuscript
@@ -589,6 +600,8 @@ def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:
     assert "height: 560px" in stylesheet
     assert "#fig-supp-neuropixels-unit-yield" in stylesheet
     assert "max-width: 660px" in stylesheet
+    assert "#fig-supp-neuropixels-recorded-trajectories" in stylesheet
+    assert "max-width: 1200px" in stylesheet
     assert "grid-template-columns: minmax(0, 660px) minmax(0, 1fr)" in stylesheet
     assert "@media (min-width: 1280px)" in stylesheet
     assert "@media (max-width: 1100px)" not in stylesheet

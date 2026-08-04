@@ -468,6 +468,30 @@ profile of one study. Search filters the visible records in either view, and
 CSV export contains exactly the displayed subset.
 :::"""
 
+NEUROPIXELS_TRAJECTORY_BLOCK = """:::{iframe} ./interactive/neuropixels-trajectories.html
+:label: fig-supp-neuropixels-recorded-trajectories
+:enumerated: false
+:width: 100%
+:title: Supplementary Figure 3. Recorded Neuropixels trajectories in the Allen CCF.
+:placeholder: ./images/figures/generated/supplementary-neuropixels-trajectories.svg
+
+**Supplementary Figure 3.** Recorded Neuropixels trajectories in the Allen Mouse
+Brain Common Coordinate Framework (CCF) 2017. The **Interactive** view renders
+all CCF-localized insertions within a semi-transparent whole-brain surface and
+supports mouse, probe-port, camera-orientation, and brain-opacity controls.
+Selecting a trajectory shows its session, localized shank length, source NWB,
+and contiguous CCF area profile from the dorsal shank end to the tip. Line color
+denotes the nominal probe port (A-F). The **Static** view shows semi-transparent,
+depth-shaded oblique and dorsal projections of the same Allen CCF whole-brain
+surface, with anatomical direction markers and calibrated 2 mm scale bars. Electrode coordinates
+and area annotations come from the public draft of Dandiset 001637; the brain
+surface is a 100-micrometer mesh derived from the Allen CCF 2017 25-micrometer
+annotation volume. In total, 332 probe
+trajectories from 57 sessions and 16 mice had finite CCF coordinates. Three of
+the 60 source sessions are excluded because their NWB electrode tables lack
+`x`, `y`, and `z` coordinates.
+:::"""
+
 BEHAVIOR_VIEWER_BLOCK = """:::{iframe} ./interactive/behavior-viewer.html
 :label: fig-behavior-tracking
 :width: 100%
@@ -1110,6 +1134,19 @@ def relocate_supplementary_implant_figure(markdown: str) -> str:
     return markdown.replace(heading, f"{heading}\n\n{match.group('figure')}", 1)
 
 
+def add_neuropixels_trajectory_figure(markdown: str) -> str:
+    heading = "# Supplementary Text 1: Published oddball paradigms and sampling ranges"
+    if markdown.count(heading) != 1:
+        raise RuntimeError("Expected one Supplementary Text 1 heading.")
+    if "fig-supp-neuropixels-recorded-trajectories" in markdown:
+        return markdown
+    return markdown.replace(
+        heading,
+        f"{NEUROPIXELS_TRAJECTORY_BLOCK}\n\n{heading}",
+        1,
+    )
+
+
 def move_glossary_to_end(markdown: str) -> str:
     pattern = re.compile(
         r"\n## Glossary\n(?P<body>.*?)\n# Data validation\n",
@@ -1220,6 +1257,7 @@ def build_index(markdown: str) -> str:
     markdown = normalize_known_export_artifacts(markdown)
     markdown = replace_behavior_analysis_text(markdown)
     markdown = relocate_supplementary_implant_figure(markdown)
+    markdown = add_neuropixels_trajectory_figure(markdown)
     markdown = move_glossary_to_end(markdown)
     data_validation_heading = "# Data validation"
     if markdown.count(data_validation_heading) != 1:
