@@ -37,12 +37,20 @@ The GitHub Actions workflow runs the same checks and deploys the static site fro
 - `figure_sources/`: editable sources, input data, and provenance manifests.
 - `manuscript_sources/google-doc/`: preserved Google Doc export and import notes.
 - `scripts/import_google_doc.py`: deterministic but destructive Google Doc importer.
-- `scripts/sync_authors.py`: refreshes `authors.yml` from the versioned `p3_data_release` contribution record.
+- `scripts/sync_authors.py`: maintainer-only tool that refreshes `authors.yml` from the versioned `p3_data_release` contribution record.
 - `tests/`: publication and figure regression checks.
 
 ## Manuscript source policy
 
 The repository should become the canonical manuscript after the transition is accepted. Until that cutover, importing the Google Doc overwrites `index.md`; reconcile repository-only edits first. See `docs/MIGRATION.md` for unresolved source and editorial work.
+
+## Contributing to the manuscript
+
+We welcome contributions from OpenScope Predictive Processing Community members. Start from the latest `main`, keep each pull request focused, and coordinate substantial scientific or structural changes before editing. Manuscript text belongs in `index.md`; generated assets must be updated through their owning source or generator.
+
+All analyses must be reproducible from versioned public P3 DANDI/NWB or project S3 data. Every figure needs a caption, and every interactive figure needs a scientifically complete static counterpart for noninteractive exports. Manage authorship through the [P3 data-release contribution form](https://data.allenneuraldynamics.org/contributions/add?project=p3_data_release); authorship synchronization is maintainer-only.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete manuscript workflow, MyST patterns, figure and provenance requirements, cloud-data/intermediate policy, AI-assisted contribution practices, and validation commands.
 
 ## Publish
 
