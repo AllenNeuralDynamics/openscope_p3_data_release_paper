@@ -69,6 +69,22 @@ myst build --html
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for authorship, figure provenance, interactive-figure, and data-size requirements.
 
+### Using AI assistants effectively
+
+AI assistants can help navigate the repository, draft focused edits, trace figure-generation paths, update tests, and run validation. They should accelerate reviewable work, not replace scientific judgment or provenance checks.
+
+- Start with a concrete task, file, figure label, failing test, or expected behavior. Ask the assistant to inspect the owning source before editing.
+- State the scientific source of truth and any constraints explicitly. Do not ask an assistant to infer results, citations, authorship, or data provenance.
+- Ask for the smallest source-level change. Generated files should be rebuilt through their owning script or `uv run build-publication-figures`, not edited by hand.
+- Keep source data, generators, static fallbacks, interactive outputs, captions, and regression tests synchronized in one pull request.
+- Require the assistant to preserve unrelated local changes and to show the final diff, validation results, and any assumptions or exclusions.
+- Verify every scientific statement, citation, numerical value, image interpretation, and authorship change yourself. AI-generated text may be fluent but unsupported.
+- Never provide credentials, private data, unpublished participant information, or other restricted material to an external AI service. Follow Allen Institute policies for approved tools and data handling.
+
+A useful request includes the target, source of truth, required outputs, and checks. For example:
+
+> Update Figure 4's session colors to the supplied RGB values. Trace the palette to its source, update static and interactive outputs without changing unrelated figures, add a regression test, run the publication checks, and summarize the diff for review.
+
 ## Publish
 
 Pushes to `main` deploy to [AllenNeuralDynamics GitHub Pages](https://allenneuraldynamics.github.io/openscope_p3_data_release_paper/). In the repository settings, configure **Pages > Source** as **GitHub Actions** before the first deployment.
