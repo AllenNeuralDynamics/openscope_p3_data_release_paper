@@ -119,8 +119,16 @@ The repository must contain everything needed to understand and rebuild the manu
 - Derive analyses from public P3 cloud sources: DANDI/NWB assets or versioned project S3 files. Record stable asset paths, URLs or Dandiset versions, retrieval dates, and checksums where practical.
 - Do not depend on files that exist only on a contributor's desktop, Downloads folder, private network drive, interactive notebook state, or uncommitted environment. A fresh clone must be able to run the documented build after installing declared dependencies.
 - Keep large primary files in DANDI or S3 rather than Git. If a build streams or extracts a subset, commit the extraction code and enough provenance to reproduce that subset.
+- When reading the primary NWB/S3 sources is too slow for routine builds, commit a compact intermediate under `figure_sources/data/` or `figure_sources/media/`. Commit the extraction script beside it, plus source asset identifiers, URLs, versions, retrieval dates, checksums, parameters, exclusions, and the intermediate's checksum. Normal figure builds should read the committed intermediate; maintainers can rerun the extractor when the source or analysis changes.
 - Pin software dependencies and external source revisions. Avoid manual post-processing of generated figures; encode display transformations in scripts and record relevant parameters.
 - Treat local caches as optional performance aids. Deleting a cache may make a build slower, but must not change scientific values or rendered outputs.
+
+The behavior figure demonstrates this pattern:
+
+1. `scripts/extract_behavior_excerpts.py` streams representative Neuropixels and mesoscope NWB data from DANDI and SLAP2 behavior/Harp data from project S3, then writes the compact synchronized `figure_sources/data/behavior-excerpts.json` snapshot.
+2. `scripts/extract_running_statistics.py` streams NWB running-speed series and interval tables, plus SLAP2 Harp encoder/stimulus files, and writes `figure_sources/data/running-statistics.json`. The committed JSON contains block-aware session summaries and downsampled example profiles; the optional cache only avoids repeated downloads.
+3. `scripts/extract_behavior_static_frames.py` reads the verified public camera streams and committed snapshots, then writes the static JPEGs under `figure_sources/media/behavior-viewer-static/` and their checksum-bearing provenance record.
+4. `uv run build-publication-figures` reads those committed intermediates to deterministically generate both `interactive/behavior-viewer.html` and `images/figures/generated/synchronized-behavior.svg`. A normal manuscript build therefore does not need to stream multi-gigabyte NWBs or videos, while every intermediate remains traceable to cloud data and reproducible from committed code.
 
 ### Using AI assistants effectively
 

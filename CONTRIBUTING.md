@@ -42,8 +42,19 @@ All analysis code and derived manuscript outputs must be reproducible from publi
 - Commit analysis and extraction code, declared dependencies, tests, small derived snapshots, generated outputs, and provenance/checksum records.
 - Do not depend on untracked desktop files, private paths, mounted drives, hidden notebook state, or manual image edits. Builds must work from a fresh clone after installing declared dependencies.
 - Keep primary NWB, imaging, video, and other large acquisition files in DANDI or S3. Stream them or generate a documented, checksum-verified subset when a compact input is needed.
+- If cloud extraction is too expensive for every build, commit the smallest scientifically sufficient intermediate under `figure_sources/data/` or `figure_sources/media/`. The same pull request must include extraction code and provenance recording source asset IDs/paths, Dandiset or S3 URLs, versions, retrieval dates, checksums, analysis parameters, exclusions, and the intermediate checksum.
+- Figure generators should consume committed intermediates by default. Do not make ordinary tests, MyST builds, or figure generation depend on downloading full NWBs, videos, or imaging stores. Provide a separate documented refresh command for maintainers.
 - Local caches are permitted only as optional accelerators; cache presence must not affect results.
 - When an upstream cloud asset changes, refresh all dependent snapshots, provenance hashes, static figures, interactive outputs, and tests in the same pull request.
+
+### Behavior-figure example
+
+Figure 8 uses committed intermediates so routine builds remain fast and deterministic:
+
+- `scripts/extract_behavior_excerpts.py` reads synchronized behavior/running/stimulus data from public DANDI NWBs and project S3/Harp sources, producing `figure_sources/data/behavior-excerpts.json`.
+- `scripts/extract_running_statistics.py` reads full-session NWB running series and named interval tables, plus SLAP2 Harp encoder and stimulus files, producing `figure_sources/data/running-statistics.json`. Its cache directory is optional and is never the source of truth.
+- `scripts/extract_behavior_static_frames.py` extracts representative public camera frames into `figure_sources/media/behavior-viewer-static/` and records source URLs, ETags, target/decoded times, display transforms, and output checksums in `behavior-static-frames.provenance.json`.
+- `uv run build-publication-figures` consumes these committed intermediates to produce the interactive behavior viewer and its static SVG counterpart. Contributors should rerun the extraction scripts only when changing source data or analysis logic, then commit the refreshed intermediates, provenance, generated outputs, and tests together.
 
 ## Checks
 
