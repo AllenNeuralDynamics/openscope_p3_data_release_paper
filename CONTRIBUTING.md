@@ -117,13 +117,15 @@ Use the same architecture for future figures that aggregate units, receptive fie
 
 This repository is structured to support agentic AI workflows: the manuscript, source data snapshots, provenance, figure generators, generated outputs, tests, and build commands are all available in one clone. We currently recommend using **5.6 SOL**.
 
-1. Clone the repository locally and create a focused branch from the latest `main`.
-2. Open the repository root in an agentic coding environment and give the assistant access to the complete clone.
-3. Describe the requested manuscript, analysis, or figure change and point to the relevant issue, file, figure label, source data, or expected behavior.
-4. Ask the assistant to trace the owning source or generator before editing and to preserve unrelated changes.
-5. Ask it to implement the change end to end: update source data or code, regenerate static and interactive outputs, update captions and provenance, and add or update tests.
-6. Have the assistant run the repository checks and report the changed files, validation results, and any assumptions or exclusions.
-7. Review the manuscript text, scientific values, figures, captions, source links, and final diff. Correct any mistakes before opening or merging the pull request.
+1. Clone the repository locally, open the repository root in an agentic coding environment, and give the assistant access to the complete clone.
+2. Ask the assistant to read `README.md`, `CONTRIBUTING.md`, and any repository or directory-specific instruction files before planning or editing.
+3. Create a focused branch from the latest `main`.
+4. Describe the requested manuscript, analysis, or figure change and point to the relevant issue, file, figure label, source data, or expected behavior.
+5. Ask the assistant to trace the owning source or generator before editing and to preserve unrelated changes.
+6. Ask it to implement the change end to end: update source data or code, regenerate static and interactive outputs, update captions and provenance, and add or update tests.
+7. Have the assistant run the repository checks and report the changed files, validation results, and any assumptions or exclusions.
+8. Review the manuscript text, scientific values, figures, captions, source links, and final diff. Correct any mistakes.
+9. Ask the assistant to open a focused pull request containing only the related source, generated outputs, provenance, and tests. The pull request description should summarize the scientific change and validation results.
 
 For example:
 
