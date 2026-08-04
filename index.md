@@ -230,7 +230,7 @@ Image acquisition and illumination were controlled via custom Python software. I
 
 ### Intrinsic imaging visual stimulus
 
-The lambda–bregma axis of the skull was oriented at a 30° pitch relative to horizontal, corresponding to an eye position approximately 60° lateral to the midline and 20° above the horizon [@oommen2008eye]. A 24″ monitor was positioned 10 cm from the right eye to maximize visual field coverage. The monitor was rotated 30° relative to the dorsoventral axis and tilted 70° relative to the horizon to maintain perpendicularity to the optic axis.
+The lambda–bregma axis of the skull was oriented at a 30° pitch relative to horizontal, corresponding to an eye position approximately 60° lateral to the midline and 20° above the horizon [@oommen2008eye]. A 24″ monitor was positioned 10 cm from the right eye to maximize visual field coverage. The monitor was rotated 30° relative to the dorsoventral  axis and tilted 70° relative to the horizon to maintain perpendicularity to the optic axis.
 
 The visual stimulus consisted of a drifting bar containing a contrast-reversing checkerboard pattern on a gray background. The bar swept across the four cardinal directions at 0.1 Hz, with 10 repetitions per direction [@kalatsky2003intrinsic]. The bar measured 20° × 155°, with individual checker squares of 25°. Stimuli were spatially warped to approximate a spherical visual field projection on a flat display [@marshel2011specialization].
 
