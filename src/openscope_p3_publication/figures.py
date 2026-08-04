@@ -30,6 +30,12 @@ FIGURE_TYPE_SCALE = {
     "label": 15,
     "small": 12,
 }
+SESSION_TYPE_COLORS = {
+    "sensorimotor": "#283185",
+    "standard": "#22BCAD",
+    "sequence": "#B16027",
+    "duration": "#CCAF2D",
+}
 
 
 def write_svg_output(output: Path, svg: list[str]) -> None:
@@ -1066,14 +1072,11 @@ SHARED_COLORS = (
     "#6F858F",
 )
 PROTOCOL_CONTEXT_COLORS = {
-    "standard": "#008F80",
-    "sensorimotor": "#3157B7",
-    "sequence": "#C65D13",
-    "duration": "#A47C00",
+    **SESSION_TYPE_COLORS,
 }
 PROTOCOL_BLOCK_COLORS = {
     "standard": SHARED_COLORS[0],
-    "context": PROTOCOL_CONTEXT_COLORS["sensorimotor"],
+    "context": "#68706E",
     "standard_repeat": SHARED_COLORS[1],
     "sequence": SHARED_COLORS[2],
     "jitter": SHARED_COLORS[3],
@@ -1753,6 +1756,11 @@ def running_profile_svg(
         'fill="#FFFFFF" stroke="#D0D4D2"/>',
     ]
     for block in profile["blocks"]:
+        block_color = (
+            SESSION_TYPE_COLORS[profile["context"]]
+            if block["id"] == "context"
+            else PROTOCOL_BLOCK_COLORS[block["id"]]
+        )
         block_left = x(block["start_seconds"])
         block_right = x(block["end_seconds"])
         svg.extend(
@@ -1760,10 +1768,10 @@ def running_profile_svg(
                 f'<rect class="running-profile-block" data-block="{block["id"]}" '
                 f'x="{block_left:.2f}" y="{top + 1}" '
                 f'width="{max(0, block_right - block_left):.2f}" height="{height - 2}" '
-                f'fill="{PROTOCOL_BLOCK_COLORS[block["id"]]}" fill-opacity="0.18"/>',
+                f'fill="{block_color}" fill-opacity="0.18"/>',
                 f'<rect x="{block_left:.2f}" y="{top + 1}" '
                 f'width="{max(0, block_right - block_left):.2f}" height="18" '
-                f'fill="{PROTOCOL_BLOCK_COLORS[block["id"]]}"/>',
+                f'fill="{block_color}"/>',
                 f'<line x1="{block_left:.2f}" y1="{top}" x2="{block_left:.2f}" '
                 f'y2="{top + height}" stroke="#C8CECB"/>',
             ]
@@ -3044,10 +3052,10 @@ def expand_individual_session_table(grouped_table: dict) -> dict:
 
 
 SESSION_CONTEXT_COLORS = {
-    "sensorimotor": "#283185",
-    "standard oddball": "#22BCAD",
-    "sequence": "#B16027",
-    "duration": "#CCAF2D",
+    "sensorimotor": SESSION_TYPE_COLORS["sensorimotor"],
+    "standard oddball": SESSION_TYPE_COLORS["standard"],
+    "sequence": SESSION_TYPE_COLORS["sequence"],
+    "duration": SESSION_TYPE_COLORS["duration"],
     "other/pilot": "#9CA3AF",
 }
 SESSION_CONTEXT_LABELS = {

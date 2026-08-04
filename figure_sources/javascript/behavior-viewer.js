@@ -42,8 +42,10 @@
     videoToken: 0,
   };
   const contextColors = {
-    "Sensorimotor mismatch": "#3157b7",
-    "Standard oddball": "#008f80",
+    "Sensorimotor mismatch": "#283185",
+    "Standard oddball": "#22bcad",
+    "Sequence mismatch": "#b16027",
+    "Duration mismatch": "#ccaf2d",
   };
 
   function currentSession() {

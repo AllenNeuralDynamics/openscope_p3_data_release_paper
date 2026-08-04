@@ -26,9 +26,11 @@ from openscope_p3_publication.figures import (
     NEURAL_STATIC_FRAME_PROVENANCE_PATH,
     NEUROPIXELS_TRAJECTORY_DATA_PATH,
     NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH,
+    REPO_ROOT,
     RUNNING_STATISTICS_PATH,
     SESSION_RECORDS_PATH,
     SESSION_RECORDS_PROVENANCE_PATH,
+    SESSION_TYPE_COLORS,
     SESSIONS,
     STIMULUS_EXCERPT_PROVENANCE_PATH,
     STIMULUS_SOURCES_PATH,
@@ -104,6 +106,36 @@ def test_experimental_design_data() -> None:
     assert len(SESSIONS) == 4
     assert len(BLOCKS) == 8
     assert total_duration_minutes() == pytest.approx(71.3)
+    assert SESSION_TYPE_COLORS == {
+        "sensorimotor": "#283185",
+        "standard": "#22BCAD",
+        "sequence": "#B16027",
+        "duration": "#CCAF2D",
+    }
+    assert {session.name: session.color for session in SESSIONS} == {
+        "Standard oddball": "#22BCAD",
+        "Sensorimotor mismatch": "#283185",
+        "Sequence mismatch": "#B16027",
+        "Duration mismatch": "#CCAF2D",
+    }
+
+
+def test_session_type_colors_are_consistent_across_figure_surfaces() -> None:
+    context_surfaces = (
+        REPO_ROOT / "figure_sources/data/experimental-design-sessions.csv",
+        REPO_ROOT / "figure_sources/javascript/behavior-viewer.css",
+        REPO_ROOT / "figure_sources/javascript/behavior-viewer.js",
+        REPO_ROOT / "interactive/behavior-viewer.html",
+        REPO_ROOT / "interactive/experimental-design.html",
+        REPO_ROOT / "images/figures/generated/experimental-design.svg",
+        REPO_ROOT / "images/figures/generated/figure-01-panel-c-cohorts.svg",
+        REPO_ROOT / "images/figures/generated/session-inventory.svg",
+        REPO_ROOT / "images/figures/generated/synchronized-behavior.svg",
+    )
+    legacy_colors = ("#008F80", "#3157B7", "#C65D13", "#A47C00")
+    combined = "\n".join(path.read_text(encoding="utf-8") for path in context_surfaces)
+    assert not any(color.lower() in combined.lower() for color in legacy_colors)
+    assert all(color.lower() in combined.lower() for color in SESSION_TYPE_COLORS.values())
 
 
 def test_unit_yield_calculation_uses_calendar_days_and_day_one_baseline(
@@ -425,7 +457,7 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert "width: min(100%, 380px);" in html
     assert "--tab-text-color" in html
     assert "white-space: nowrap;" in html
-    for context_color in ("#008F80", "#3157B7", "#C65D13", "#A47C00"):
+    for context_color in ("#283185", "#22BCAD", "#B16027", "#CCAF2D"):
         assert context_color in html
     assert 'width="480" height="380"' in html
     assert "stimulusTableExcerpts" in html
@@ -1004,6 +1036,15 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "@media (max-width: 560px)" in html
     assert 'id="alignment-label"' not in html
     assert "offsetSeconds" not in html
+    for label, color in {
+        "Sensorimotor mismatch": "#283185",
+        "Standard oddball": "#22bcad",
+        "Sequence mismatch": "#b16027",
+        "Duration mismatch": "#ccaf2d",
+    }.items():
+        assert f'"{label}": "{color}"' in html
+    assert "#3157b7" not in html
+    assert "#008f80" not in html
     assert "__EMBED_AUTO_HEIGHT_JS__" not in html
     assert "__BEHAVIOR_" not in html
     copied_static = tmp_path / "media" / "behavior-viewer" / static_path.name
@@ -1074,7 +1115,7 @@ def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert svg.count(">60m</text>") == 1
     for block, color in {
         "standard": "#D9DFE3",
-        "context": "#3157B7",
+        "context": "#283185",
         "standard_repeat": "#C7D0D6",
         "sequence": "#B5C1C8",
         "jitter": "#A4B2BA",
@@ -1086,6 +1127,10 @@ def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
             rf'class="running-profile-block" data-block="{block}"[^>]+fill="{color}"',
             svg,
         )
+    assert re.search(
+        r'class="running-block-region" data-block="context"[^>]+fill="#68706E"',
+        svg,
+    )
     assert "Wheel encoder velocity (counts/s)" not in svg
     assert "Average running speed across blocks" not in svg
     assert svg.count('class="running-summary-plot" data-shared-y-axis="true"') == 1
