@@ -50,9 +50,9 @@ We welcome contributions from OpenScope Predictive Processing Community members.
 
 1. Create a focused branch from the latest `main` and edit `index.md` using MyST Markdown.
 2. Preserve the manuscript's existing section structure, MyST labels, citations, terminology, and figure numbering unless the pull request explicitly proposes a coordinated change.
-3. Support scientific claims with a citation or a source-backed project record. Do not commit unpublished primary data, NWB files, credentials, or personally identifying information.
+3. Support scientific claims with a citation or a source-backed project record. Analyses must derive from versioned P3 data available through DANDI/NWB or public project S3 assets, with source URLs and checksums recorded in the repository. Do not commit unpublished primary data, NWB files, credentials, or personally identifying information.
 4. Keep prose, figure, and data-snapshot changes narrowly scoped. Separate unrelated scientific revisions into different pull requests when practical.
-5. For figures, commit the editable or versioned source, provenance or checksums, reproducible generation code, rendered web asset, static fallback for interactive views, alternative text, and caption.
+5. Every figure needs a manuscript caption. For generated figures, commit the editable or versioned source, provenance or checksums, reproducible generation code, rendered web asset, alternative text, and caption. Every interactive figure also requires a scientifically complete static counterpart for PDF and other noninteractive exports.
 6. Update generated files in the same pull request as their source. Do not edit files in `interactive/` or `images/figures/generated/` without updating the owning source or generator.
 7. Manage authorship through the [P3 data-release contribution form](https://data.allenneuraldynamics.org/contributions/add?project=p3_data_release), not by editing generated author records directly.
 8. In the pull request, summarize the scientific change, identify source data or references, list regenerated assets, and report validation commands. Request review from the relevant section or data owner.
@@ -75,7 +75,7 @@ Choose the simplest format that communicates the scientific result clearly:
 
 - Use a **static figure** for a fixed result, comparison, schematic, or composition that should read completely in HTML, PDF, print, and archival exports.
 - Use an **interactive figure** when selection, filtering, synchronized playback, 3D rotation, or access to many records materially improves interpretation. Interactivity should expose additional detail, not hide the primary conclusion.
-- When both are useful, build them from the same validated data and generator. The static view should be a meaningful standalone figure, not a screenshot of controls or an instruction to open the website.
+- Every interactive figure must have a static counterpart. Build both from the same validated data and generator. The static view must communicate the primary result as a meaningful standalone figure, not a screenshot of controls or an instruction to open the website.
 
 For a static asset, use MyST's `figure` directive with a stable label, descriptive alternative text, width, and caption:
 
@@ -110,6 +110,17 @@ MyST guidance for this repository:
 - Give the interactive HTML semantic controls, keyboard access, accessible names, responsive layout, and a useful initial state. Avoid duplicating usage instructions as visible figure content.
 - Generate both outputs deterministically, commit them with their source, and verify HTML plus static rendering at desktop and mobile sizes.
 - Preview interactively with `myst start`; use `myst build --html` to catch path and static-asset errors. The committed placeholder is what noninteractive exports and many reviewers will see.
+
+### Reproducible and self-contained analyses
+
+The repository must contain everything needed to understand and rebuild the manuscript except the versioned primary data themselves:
+
+- Commit manuscript text, bibliography, figure/data transforms, configuration, tests, small derived snapshots, generated assets, and provenance records.
+- Derive analyses from public P3 cloud sources: DANDI/NWB assets or versioned project S3 files. Record stable asset paths, URLs or Dandiset versions, retrieval dates, and checksums where practical.
+- Do not depend on files that exist only on a contributor's desktop, Downloads folder, private network drive, interactive notebook state, or uncommitted environment. A fresh clone must be able to run the documented build after installing declared dependencies.
+- Keep large primary files in DANDI or S3 rather than Git. If a build streams or extracts a subset, commit the extraction code and enough provenance to reproduce that subset.
+- Pin software dependencies and external source revisions. Avoid manual post-processing of generated figures; encode display transformations in scripts and record relevant parameters.
+- Treat local caches as optional performance aids. Deleting a cache may make a build slower, but must not change scientific values or rendered outputs.
 
 ### Using AI assistants effectively
 
