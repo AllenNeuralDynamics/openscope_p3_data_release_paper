@@ -1,0 +1,50 @@
+{
+  "ccf_annotation": {
+    "contentLength": 4035363,
+    "contentType": "binary/octet-stream",
+    "etag": "5012b7fa0c0fd23dc455462e9b6298f4",
+    "lastModified": "Wed, 19 Feb 2025 01:34:54 GMT",
+    "sha256": "c620cbcc562183e4dcd40250d440130501781f74b41de35b1c1bdabace290c42",
+    "url": "https://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/annotation_25.nrrd"
+  },
+  "ccf_structure_graph": {
+    "contentLength": 637735,
+    "contentType": "application/json; charset=utf-8",
+    "etag": "2edb440f2c6afd463f6261712ba5bb6f",
+    "lastModified": null,
+    "sha256": "b5f0d024d1df09ee18aef15093f55240f4a70b3924ee9689add612dadff80386",
+    "url": "https://api.brain-map.org/api/v2/structure_graph_download/1.json"
+  },
+  "dandiset_id": "001637",
+  "dandiset_version": "draft",
+  "exclusions": [
+    {
+      "asset_id": "ed0a9668-90f7-45bd-9b2f-c62905a24f07",
+      "path": "sub-832691/sub-832691_ses-ecephys-832691-2026-03-23-11-28-47_ecephys.nwb",
+      "reason": "missing-ccf-coordinates:x,y,z",
+      "session_id": "832691_2026-03-23_11-28-47"
+    },
+    {
+      "asset_id": "ececeb0e-42cd-401f-9545-b666356e8b6d",
+      "path": "sub-834687/sub-834687_ses-ecephys-834687-2026-03-18-15-50-10_ecephys.nwb",
+      "reason": "missing-ccf-coordinates:x,y,z",
+      "session_id": "834687_2026-03-18_15-50-10"
+    },
+    {
+      "asset_id": "bf725c9c-38cd-4c41-b632-5347bcc18954",
+      "path": "sub-834687/sub-834687_ses-ecephys-834687-2026-03-19-16-06-07_ecephys.nwb",
+      "reason": "missing-ccf-coordinates:x,y,z",
+      "session_id": "834687_2026-03-19_16-06-07"
+    }
+  ],
+  "localized_sessions": 57,
+  "notes": "Each trajectory follows finite electrode x/y/z coordinates in the session NWB CCF frame. Area profiles follow contiguous electrode location annotations from the dorsal shank end toward the tip.",
+  "retrieved_date": "2026-08-03",
+  "session_inventory_sha256": "7f0b57f1c9441d023438b3620c9604905a423b94867c815664eb9d4d3041444e",
+  "session_provenance_sha256": "4852b095358edb0bd661b38c0eea11e1ab87cd1857ae2c2fff632c4bae8cd343",
+  "source_sessions": 60,
+  "subjects": 16,
+  "trajectories": 332,
+  "vendored_sha256": "80dcb0b1bb3d99b16a62f0c03ce5ae1844f599fb5c4e46fa3d49587ca8be9769",
+  "version": 1
+}

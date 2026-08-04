@@ -177,6 +177,20 @@ UNIT_YIELD_STATIC_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "supplementary-neuropixels-unit-yield.svg"
 )
 UNIT_YIELD_INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "unit-yield.html"
+NEUROPIXELS_TRAJECTORY_DATA_PATH = DATA_DIR / "neuropixels-trajectories.json"
+NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH = (
+    NEUROPIXELS_TRAJECTORY_DATA_PATH.with_suffix(".provenance.json")
+)
+NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT = (
+    REPO_ROOT
+    / "images"
+    / "figures"
+    / "generated"
+    / "supplementary-neuropixels-trajectories.svg"
+)
+NEUROPIXELS_TRAJECTORY_INTERACTIVE_OUTPUT = (
+    REPO_ROOT / "interactive" / "neuropixels-trajectories.html"
+)
 MEDIA_DIR = REPO_ROOT / "figure_sources" / "media"
 PLATFORM_LOGO_PROVENANCE_PATH = (
     REPO_ROOT / "figure_sources" / "illustrator" / "platform-logos.provenance.json"
@@ -1356,6 +1370,50 @@ def write_unit_yield_html(
     output.write_text(html, encoding="utf-8")
     return output
 
+def write_neuropixels_trajectory_html(
+    output: Path = NEUROPIXELS_TRAJECTORY_INTERACTIVE_OUTPUT,
+    static_output: Path = NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT,
+    data_path: Path = NEUROPIXELS_TRAJECTORY_DATA_PATH,
+    provenance_path: Path = NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH,
+) -> Path:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    payload = load_neuropixels_trajectory_data(data_path, provenance_path)
+    write_neuropixels_trajectory_svg(static_output, data_path, provenance_path)
+    template = (JAVASCRIPT_DIR / "neuropixels-trajectories.html").read_text(
+        encoding="utf-8"
+    )
+    stylesheet = (JAVASCRIPT_DIR / "neuropixels-trajectories.css").read_text(
+        encoding="utf-8"
+    )
+    javascript = (JAVASCRIPT_DIR / "neuropixels-trajectories.js").read_text(
+        encoding="utf-8"
+    )
+    html = (
+        template.replace("__NEUROPIXELS_TRAJECTORY_CSS__", stylesheet)
+        .replace(
+            "__NEUROPIXELS_TRAJECTORY_STATIC_IMAGE__",
+            f"media/neuropixels-trajectories/{static_output.name}",
+        )
+        .replace(
+            "__NEUROPIXELS_TRAJECTORY_DATA__",
+            json.dumps(
+                payload,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+            ),
+        )
+        .replace("__NEUROPIXELS_TRAJECTORY_JS__", javascript)
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+    )
+    output.write_text(html, encoding="utf-8")
+    media_output = output.parent / "media" / "neuropixels-trajectories"
+    if media_output.exists():
+        shutil.rmtree(media_output)
+    media_output.mkdir(parents=True)
+    shutil.copy2(static_output, media_output / static_output.name)
+    return output
+
 
 def load_behavior_excerpts(path: Path = BEHAVIOR_EXCERPTS_PATH) -> dict:
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -2206,6 +2264,24 @@ def encode_rgb_png(width: int, height: int, pixels: bytes) -> bytes:
     )
 
 
+def encode_rgba_png(width: int, height: int, pixels: bytes) -> bytes:
+    if len(pixels) != width * height * 4:
+        raise RuntimeError("RGBA pixel buffer does not match its declared dimensions.")
+    stride = width * 4
+    scanlines = b"".join(
+        b"\x00" + pixels[row * stride : (row + 1) * stride]
+        for row in range(height)
+    )
+    return b"".join(
+        (
+            b"\x89PNG\r\n\x1a\n",
+            png_chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)),
+            png_chunk(b"IDAT", zlib.compress(scanlines, level=9)),
+            png_chunk(b"IEND", b""),
+        )
+    )
+
+
 def neural_voltage_rgb(encoded: int) -> tuple[int, int, int]:
     centered = max(-1.0, min(1.0, (encoded - 127.5) / 127.5))
     if centered < 0:
@@ -2861,6 +2937,78 @@ def load_unit_yield_data(
         "summary": summary,
         "version": 1,
     }
+
+
+def load_neuropixels_trajectory_data(
+    data_path: Path = NEUROPIXELS_TRAJECTORY_DATA_PATH,
+    provenance_path: Path = NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH,
+) -> dict:
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    data_bytes = data_path.read_bytes()
+    checksum = hashlib.sha256(data_bytes).hexdigest()
+    if provenance.get("version") != 1 or checksum != provenance.get(
+        "vendored_sha256"
+    ):
+        raise RuntimeError(
+            "Neuropixels trajectory checksum does not match its provenance record."
+        )
+    payload = json.loads(data_bytes)
+    summary = payload.get("summary", {})
+    if (
+        payload.get("version") != 1
+        or summary.get("insertions") != provenance.get("trajectories")
+        or summary.get("sourceSessions") != provenance.get("source_sessions")
+        or summary.get("localizedSessions")
+        != provenance.get("localized_sessions")
+        or summary.get("subjects") != provenance.get("subjects")
+        or summary.get("excludedSessions")
+        != len(provenance.get("exclusions", []))
+    ):
+        raise RuntimeError("Neuropixels trajectory summary does not match provenance.")
+
+    surface = payload.get("brainSurface", {})
+    vertices = surface.get("vertices", [])
+    faces = surface.get("faces", [])
+    if (
+        not vertices
+        or not faces
+        or any(len(vertex) != 3 for vertex in vertices)
+        or any(
+            len(face) != 3
+            or min(face) < 0
+            or max(face) >= len(vertices)
+            for face in faces
+        )
+    ):
+        raise RuntimeError("Neuropixels trajectory brain surface is invalid.")
+
+    insertions = payload.get("insertions", [])
+    if len(insertions) != summary["insertions"]:
+        raise RuntimeError("Neuropixels trajectory insertion count changed.")
+    insertion_ids = [record.get("id") for record in insertions]
+    if len(insertion_ids) != len(set(insertion_ids)):
+        raise RuntimeError("Neuropixels trajectory IDs are not unique.")
+    probe_colors = payload.get("probeColors", {})
+    if set(probe_colors) != set("ABCDEF"):
+        raise RuntimeError("Neuropixels trajectory probe palette changed.")
+    for record in insertions:
+        points = record.get("points", [])
+        areas = record.get("areas", [])
+        if (
+            record.get("probe") not in probe_colors
+            or record.get("color") != probe_colors[record["probe"]]
+            or len(points) < 2
+            or any(len(point) != 3 for point in points)
+            or not areas
+            or any(
+                area.get("endDepthUm", -1) < area.get("startDepthUm", 0)
+                for area in areas
+            )
+        ):
+            raise RuntimeError(
+                f"Neuropixels trajectory record is invalid: {record.get('id')}"
+            )
+    return payload
 
 
 def expand_individual_session_table(grouped_table: dict) -> dict:
@@ -3616,6 +3764,398 @@ def write_unit_yield_svg(
     write_svg_output(output, svg)
     return output
 
+CCF_STATIC_SURFACE_OPACITY = 0.42
+_CCF_SURFACE_RENDER_CACHE: dict[tuple[str, str, int, int, float], bytes] = {}
+
+
+def vector_dot(
+    first: tuple[float, float, float],
+    second: tuple[float, float, float],
+) -> float:
+    return sum(left * right for left, right in zip(first, second, strict=True))
+
+
+def vector_cross(
+    first: tuple[float, float, float],
+    second: tuple[float, float, float],
+) -> tuple[float, float, float]:
+    return (
+        first[1] * second[2] - first[2] * second[1],
+        first[2] * second[0] - first[0] * second[2],
+        first[0] * second[1] - first[1] * second[0],
+    )
+
+
+def normalized_vector(
+    vector: tuple[float, float, float],
+) -> tuple[float, float, float]:
+    length = math.sqrt(vector_dot(vector, vector))
+    if length == 0:
+        raise RuntimeError("Cannot normalize a zero-length vector.")
+    return tuple(component / length for component in vector)
+
+
+def ccf_static_view_axes(
+    view: str,
+) -> tuple[
+    tuple[float, float, float],
+    tuple[float, float, float],
+    tuple[float, float, float],
+]:
+    if view == "dorsal":
+        return (1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0)
+    if view != "oblique":
+        raise RuntimeError(f"Unsupported static CCF view: {view}")
+    toward_camera = normalized_vector((11_200.0, 7_300.0, 11_600.0))
+    right = normalized_vector(vector_cross((0.0, 1.0, 0.0), toward_camera))
+    up = normalized_vector(vector_cross(toward_camera, right))
+    return right, up, toward_camera
+
+
+def ccf_static_projection(
+    point: tuple[float, float, float],
+    view: str,
+) -> tuple[float, float, float]:
+    right, up, toward_camera = ccf_static_view_axes(view)
+    return (
+        vector_dot(point, right),
+        vector_dot(point, up),
+        vector_dot(point, toward_camera),
+    )
+
+
+def render_ccf_surface_png(
+    surface: dict,
+    world_vertices: list[tuple[float, float, float]],
+    projected_vertices: list[tuple[float, float, float]],
+    transform,
+    view: str,
+    width: int,
+    height: int,
+    surface_digest: str,
+) -> bytes:
+    cache_key = (surface_digest, view, width, height, CCF_STATIC_SURFACE_OPACITY)
+    cached = _CCF_SURFACE_RENDER_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+
+    pixels = bytearray((0, 0, 0, 0) * (width * height))
+    z_buffer = [-math.inf] * (width * height)
+    screen_vertices = [
+        (*transform((horizontal, vertical)), depth)
+        for horizontal, vertical, depth in projected_vertices
+    ]
+    minimum_depth = min(point[2] for point in projected_vertices)
+    depth_range = max(point[2] for point in projected_vertices) - minimum_depth
+    light = normalized_vector((0.4, 0.82, 0.4))
+    _, _, toward_camera = ccf_static_view_axes(view)
+
+    normal_sums = [[0.0, 0.0, 0.0] for _ in world_vertices]
+    for first_index, second_index, third_index in surface["faces"]:
+        first_world = world_vertices[first_index]
+        second_world = world_vertices[second_index]
+        third_world = world_vertices[third_index]
+        first_edge = tuple(
+            second_world[index] - first_world[index] for index in range(3)
+        )
+        second_edge = tuple(
+            third_world[index] - first_world[index] for index in range(3)
+        )
+        face_normal = vector_cross(first_edge, second_edge)
+        for vertex_index in (first_index, second_index, third_index):
+            for component in range(3):
+                normal_sums[vertex_index][component] += face_normal[component]
+
+    vertex_shades = []
+    for normal_sum, projected in zip(
+        normal_sums,
+        projected_vertices,
+        strict=True,
+    ):
+        normal_length = math.sqrt(sum(component**2 for component in normal_sum))
+        normal = (
+            tuple(component / normal_length for component in normal_sum)
+            if normal_length
+            else toward_camera
+        )
+        facing = abs(vector_dot(normal, toward_camera))
+        lambert = abs(vector_dot(normal, light))
+        depth_fraction = (projected[2] - minimum_depth) / depth_range
+        vertex_shades.append(
+            0.68 + 0.2 * lambert + 0.08 * facing + 0.08 * depth_fraction
+        )
+
+    for first_index, second_index, third_index in surface["faces"]:
+        first = screen_vertices[first_index]
+        second = screen_vertices[second_index]
+        third = screen_vertices[third_index]
+        denominator = (second[1] - third[1]) * (first[0] - third[0]) + (
+            third[0] - second[0]
+        ) * (first[1] - third[1])
+        if abs(denominator) < 1e-6:
+            continue
+        minimum_x = max(0, math.floor(min(first[0], second[0], third[0])))
+        maximum_x = min(width - 1, math.ceil(max(first[0], second[0], third[0])))
+        minimum_y = max(0, math.floor(min(first[1], second[1], third[1])))
+        maximum_y = min(height - 1, math.ceil(max(first[1], second[1], third[1])))
+        if minimum_x > maximum_x or minimum_y > maximum_y:
+            continue
+
+        for pixel_y in range(minimum_y, maximum_y + 1):
+            vertical = pixel_y + 0.5
+            for pixel_x in range(minimum_x, maximum_x + 1):
+                horizontal = pixel_x + 0.5
+                first_weight = (
+                    (second[1] - third[1]) * (horizontal - third[0])
+                    + (third[0] - second[0]) * (vertical - third[1])
+                ) / denominator
+                second_weight = (
+                    (third[1] - first[1]) * (horizontal - third[0])
+                    + (first[0] - third[0]) * (vertical - third[1])
+                ) / denominator
+                third_weight = 1 - first_weight - second_weight
+                if min(first_weight, second_weight, third_weight) < -1e-6:
+                    continue
+                depth = (
+                    first_weight * first[2]
+                    + second_weight * second[2]
+                    + third_weight * third[2]
+                )
+                pixel_index = pixel_y * width + pixel_x
+                if depth <= z_buffer[pixel_index]:
+                    continue
+                z_buffer[pixel_index] = depth
+                shade = (
+                    first_weight * vertex_shades[first_index]
+                    + second_weight * vertex_shades[second_index]
+                    + third_weight * vertex_shades[third_index]
+                )
+                brain_color = tuple(
+                    min(255, round(component * shade))
+                    for component in (174, 197, 188)
+                )
+                color = (*brain_color, round(CCF_STATIC_SURFACE_OPACITY * 255))
+                offset = pixel_index * 4
+                pixels[offset : offset + 4] = bytes(color)
+
+    outlined = bytearray(pixels)
+    outline_color = (103, 124, 117, 171)
+    for pixel_y in range(1, height - 1):
+        for pixel_x in range(1, width - 1):
+            pixel_index = pixel_y * width + pixel_x
+            depth = z_buffer[pixel_index]
+            if not math.isfinite(depth):
+                continue
+            neighbors = (
+                z_buffer[pixel_index - 1],
+                z_buffer[pixel_index + 1],
+                z_buffer[pixel_index - width],
+                z_buffer[pixel_index + width],
+            )
+            if any(not math.isfinite(neighbor) for neighbor in neighbors) or any(
+                abs(depth - neighbor) > 450 for neighbor in neighbors
+            ):
+                offset = pixel_index * 4
+                outlined[offset : offset + 4] = bytes(outline_color)
+
+    encoded = encode_rgba_png(width, height, bytes(outlined))
+    _CCF_SURFACE_RENDER_CACHE[cache_key] = encoded
+    return encoded
+
+def write_neuropixels_trajectory_svg(
+    output: Path = NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT,
+    data_path: Path = NEUROPIXELS_TRAJECTORY_DATA_PATH,
+    provenance_path: Path = NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH,
+) -> Path:
+    payload = load_neuropixels_trajectory_data(data_path, provenance_path)
+    surface = payload["brainSurface"]
+    shape = surface["annotationShape"]
+    center = (shape[0] * 12.5, shape[1] * 12.5, shape[2] * 12.5)
+    panels = {
+        "oblique": (50.0, 100.0, 975.0, 710.0),
+        "dorsal": (1060.0, 100.0, 490.0, 710.0),
+    }
+
+    def atlas_coordinates(point: list[int]) -> tuple[float, float, float]:
+        anterior_posterior, dorsal_ventral, medial_lateral = point
+        return (
+            medial_lateral - center[2],
+            center[1] - dorsal_ventral,
+            center[0] - anterior_posterior,
+        )
+
+    world_vertices = [atlas_coordinates(point) for point in surface["vertices"]]
+
+    def panel_transform(view: str):
+        left, top, width, height = panels[view]
+        projected = [ccf_static_projection(point, view) for point in world_vertices]
+        minimum_x = min(point[0] for point in projected)
+        maximum_x = max(point[0] for point in projected)
+        minimum_y = min(point[1] for point in projected)
+        maximum_y = max(point[1] for point in projected)
+        scale = min(
+            (width - 36) / (maximum_x - minimum_x),
+            (height - 46) / (maximum_y - minimum_y),
+        )
+        content_width = (maximum_x - minimum_x) * scale
+        content_height = (maximum_y - minimum_y) * scale
+        offset_x = left + (width - content_width) / 2
+        offset_y = top + (height - content_height) / 2
+
+        def local_transform(point: tuple[float, float]) -> tuple[float, float]:
+            return (
+                offset_x - left + (point[0] - minimum_x) * scale,
+                offset_y - top + content_height - (point[1] - minimum_y) * scale,
+            )
+
+        def transform(point: tuple[float, float]) -> tuple[float, float]:
+            horizontal, vertical = local_transform(point)
+            return left + horizontal, top + vertical
+
+        return projected, local_transform, transform, scale
+
+    transforms = {}
+    scales = {}
+    brain_images = {}
+    surface_digest = hashlib.sha256(
+        json.dumps(surface, separators=(",", ":"), sort_keys=True).encode()
+    ).hexdigest()
+    for view in panels:
+        projected, local_transform, transform, scale = panel_transform(view)
+        transforms[view] = transform
+        scales[view] = scale
+        _, _, width, height = panels[view]
+        rendered = render_ccf_surface_png(
+            surface,
+            world_vertices,
+            projected,
+            local_transform,
+            view,
+            int(width),
+            int(height),
+            surface_digest,
+        )
+        brain_images[view] = base64.b64encode(rendered).decode()
+
+    svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" '
+        'viewBox="0 0 1600 900" role="img" aria-labelledby="title description">',
+        '<title id="title">All localized Neuropixels insertions in the Allen CCF</title>',
+        '<desc id="description">Oblique and dorsal projections show all localized '
+        'Neuropixels insertions over semi-transparent, depth-shaded projections of the '
+        'Allen CCF whole-brain surface. Line color denotes probe A through F; each panel '
+        'includes a 2 millimeter scale bar and anatomical direction marker.</desc>',
+        '<defs><marker id="ccf-arrow" markerWidth="6" markerHeight="6" refX="5" '
+        'refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#41504C"/>'
+        '</marker></defs>',
+        '<rect width="1600" height="900" fill="#FFFFFF"/>',
+        '<rect x="50" y="100" width="975" height="710" fill="#F7F9F8" '
+        'stroke="#CDD3D0"/>',
+        '<rect x="1060" y="100" width="490" height="710" fill="#F7F9F8" '
+        'stroke="#CDD3D0"/>',
+        f'<image class="ccf-brain-render" data-surface-opacity="'
+        f'{CCF_STATIC_SURFACE_OPACITY}" href="data:image/png;base64,'
+        f'{brain_images["oblique"]}" x="50" y="100" width="975" height="710"/>',
+        f'<image class="ccf-brain-render" data-surface-opacity="'
+        f'{CCF_STATIC_SURFACE_OPACITY}" href="data:image/png;base64,'
+        f'{brain_images["dorsal"]}" x="1060" y="100" width="490" height="710"/>',
+    ]
+
+    for view in panels:
+        transform = transforms[view]
+        for record in payload["insertions"]:
+            points = [
+                transform(ccf_static_projection(atlas_coordinates(point), view)[:2])
+                for point in record["points"]
+            ]
+            polyline = " ".join(f"{x:.2f},{y:.2f}" for x, y in points)
+            svg.append(
+                f'<polyline points="{polyline}" fill="none" '
+                f'stroke="{record["color"]}" stroke-width="2.2" '
+                'stroke-opacity="0.32" stroke-linecap="round"/>'
+            )
+
+    for view, (left, top, width, height) in panels.items():
+        scale_length = 2_000 * scales[view]
+        scale_x = left + 28
+        scale_y = top + height - 28
+        svg.extend(
+            [
+                f'<rect x="{scale_x - 10:.2f}" y="{scale_y - 28:.2f}" '
+                f'width="{scale_length + 20:.2f}" height="42" rx="3" '
+                'fill="#FFFFFF" fill-opacity="0.88"/>',
+                f'<line class="ccf-scale-bar" x1="{scale_x:.2f}" y1="{scale_y:.2f}" '
+                f'x2="{scale_x + scale_length:.2f}" y2="{scale_y:.2f}" '
+                'stroke="#293133" stroke-width="4"/>',
+                f'<line x1="{scale_x:.2f}" y1="{scale_y - 5:.2f}" '
+                f'x2="{scale_x:.2f}" y2="{scale_y + 5:.2f}" '
+                'stroke="#293133" stroke-width="2"/>',
+                f'<line x1="{scale_x + scale_length:.2f}" y1="{scale_y - 5:.2f}" '
+                f'x2="{scale_x + scale_length:.2f}" y2="{scale_y + 5:.2f}" '
+                'stroke="#293133" stroke-width="2"/>',
+                f'<text x="{scale_x + scale_length / 2:.2f}" y="{scale_y - 10:.2f}" '
+                'text-anchor="middle" font-family="Source Sans 3, sans-serif" '
+                'font-size="14" font-weight="700" fill="#293133">2 mm</text>',
+            ]
+        )
+
+        origin_x = left + width - 68
+        origin_y = top + 68
+        for label, axis in (
+            ("L", (1.0, 0.0, 0.0)),
+            ("D", (0.0, 1.0, 0.0)),
+            ("A", (0.0, 0.0, 1.0)),
+        ):
+            horizontal, vertical, _ = ccf_static_projection(axis, view)
+            screen_horizontal = horizontal
+            screen_vertical = -vertical
+            length = math.hypot(screen_horizontal, screen_vertical)
+            if length < 0.1:
+                continue
+            end_x = origin_x + 31 * screen_horizontal / length
+            end_y = origin_y + 31 * screen_vertical / length
+            label_x = origin_x + 41 * screen_horizontal / length
+            label_y = origin_y + 41 * screen_vertical / length + 4
+            svg.extend(
+                [
+                    f'<line class="ccf-orientation-axis" x1="{origin_x:.2f}" '
+                    f'y1="{origin_y:.2f}" x2="{end_x:.2f}" y2="{end_y:.2f}" '
+                    'stroke="#41504C" stroke-width="2" marker-end="url(#ccf-arrow)"/>',
+                    f'<text x="{label_x:.2f}" y="{label_y:.2f}" text-anchor="middle" '
+                    'font-family="Source Sans 3, sans-serif" font-size="13" '
+                    f'font-weight="700" fill="#293133">{label}</text>',
+                ]
+            )
+        svg.append(
+            f'<circle cx="{origin_x:.2f}" cy="{origin_y:.2f}" r="3" fill="#41504C"/>'
+        )
+
+    svg.extend(
+        [
+            '<text x="74" y="77" font-family="Source Sans 3, sans-serif" '
+            'font-size="20" font-weight="700" fill="#293133">A  Oblique CCF surface</text>',
+            '<text x="1084" y="77" font-family="Source Sans 3, sans-serif" '
+            'font-size="20" font-weight="700" fill="#293133">B  Dorsal CCF surface</text>',
+        ]
+    )
+    legend_x = 570
+    for index, probe in enumerate("ABCDEF"):
+        x = legend_x + index * 78
+        color = payload["probeColors"][probe]
+        svg.extend(
+            [
+                f'<line x1="{x}" y1="846" x2="{x + 25}" y2="846" '
+                f'stroke="{color}" stroke-width="5"/>',
+                f'<text class="probe-legend-label" x="{x + 32}" y="851" '
+                'font-family="Source Sans 3, sans-serif" font-size="13" '
+                f'fill="#414A48">{probe}</text>',
+            ]
+        )
+    svg.append("</svg>")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    write_svg_output(output, svg)
+    return output
+
 
 def main() -> None:
     merged_figure_1_path = write_merged_figure_1_svg()
@@ -3630,6 +4170,7 @@ def main() -> None:
     behavior_viewer_path = write_behavior_viewer_html()
     neural_viewer_path = write_neural_viewer_html()
     unit_yield_html_path = write_unit_yield_html()
+    trajectory_html_path = write_neuropixels_trajectory_html()
     svg_path = write_static_svg()
     unit_yield_svg_path = write_unit_yield_svg()
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
@@ -3648,6 +4189,8 @@ def main() -> None:
     print(f"Wrote {neural_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEURAL_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {trajectory_html_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")
 

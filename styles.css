@@ -4,7 +4,8 @@
 }
 
 #fig-interactive-experimental-design,
-#fig-supp-neuropixels-unit-yield {
+#fig-supp-neuropixels-unit-yield,
+#fig-supp-neuropixels-recorded-trajectories {
   width: 100%;
   display: block;
   justify-self: center;
@@ -18,13 +19,19 @@
   max-width: 660px;
 }
 
+#fig-supp-neuropixels-recorded-trajectories {
+  max-width: 1200px;
+}
+
 #fig-interactive-experimental-design > div,
-#fig-supp-neuropixels-unit-yield > div {
+#fig-supp-neuropixels-unit-yield > div,
+#fig-supp-neuropixels-recorded-trajectories > div {
   min-width: 0;
 }
 
 #fig-interactive-experimental-design > figcaption,
-#fig-supp-neuropixels-unit-yield > figcaption {
+#fig-supp-neuropixels-unit-yield > figcaption,
+#fig-supp-neuropixels-recorded-trajectories > figcaption {
   margin-top: 0.75rem;
 }
 

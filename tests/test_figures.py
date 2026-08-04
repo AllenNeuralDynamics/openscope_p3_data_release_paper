@@ -24,6 +24,8 @@ from openscope_p3_publication.figures import (
     NEURAL_MEDIA_DIR,
     NEURAL_STATIC_FRAME_DIR,
     NEURAL_STATIC_FRAME_PROVENANCE_PATH,
+    NEUROPIXELS_TRAJECTORY_DATA_PATH,
+    NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH,
     RUNNING_STATISTICS_PATH,
     SESSION_RECORDS_PATH,
     SESSION_RECORDS_PROVENANCE_PATH,
@@ -39,6 +41,7 @@ from openscope_p3_publication.figures import (
     load_experimental_session_records,
     load_hardware_sources,
     load_neural_excerpts,
+    load_neuropixels_trajectory_data,
     load_publication_table_data,
     load_running_statistics,
     load_shared_stimulus_table_excerpts,
@@ -59,6 +62,8 @@ from openscope_p3_publication.figures import (
     write_merged_figure_1_svg,
     write_neural_static_svg,
     write_neural_viewer_html,
+    write_neuropixels_trajectory_html,
+    write_neuropixels_trajectory_svg,
     write_session_inventory_svg,
     write_standard_oddball_plan_svg,
     write_static_svg,
@@ -193,6 +198,126 @@ def test_unit_yield_outputs_are_deterministic_and_inspectable(tmp_path: Path) ->
 
     write_unit_yield_html(html_path)
     write_unit_yield_svg(svg_path)
+    assert html_path.read_text(encoding="utf-8") == html
+    assert svg_path.read_text(encoding="utf-8") == svg
+
+
+def test_neuropixels_trajectory_snapshot_is_source_backed() -> None:
+    payload = load_neuropixels_trajectory_data()
+    provenance = json.loads(
+        NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+
+    assert hashlib.sha256(NEUROPIXELS_TRAJECTORY_DATA_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
+    )
+    assert payload["summary"] == {
+        "excludedSessions": 3,
+        "insertions": 332,
+        "localizedSessions": 57,
+        "sourceSessions": 60,
+        "subjects": 16,
+    }
+    assert [len(payload["brainSurface"][field]) for field in ("vertices", "faces")] == [
+        60_687,
+        121_248,
+    ]
+    assert {record["probe"] for record in payload["insertions"]} == set("ABCDEF")
+    assert all(
+        record["areas"][0]["acronym"] != "void"
+        and record["areas"][-1]["acronym"] != "void"
+        and all(
+            current["endDepthUm"] == following["startDepthUm"]
+            for current, following in zip(
+                record["areas"][:-1],
+                record["areas"][1:],
+                strict=True,
+            )
+        )
+        for record in payload["insertions"]
+    )
+    assert {record["mouseId"] for record in payload["insertions"]} == {
+        "820454",
+        "820459",
+        "830794",
+        "830795",
+        "830846",
+        "830847",
+        "830848",
+        "830849",
+        "830851",
+        "830852",
+        "832691",
+        "834686",
+        "834687",
+        "834691",
+        "848387",
+        "848390",
+    }
+    assert {row["reason"] for row in provenance["exclusions"]} == {
+        "missing-ccf-coordinates:x,y,z"
+    }
+
+
+def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> None:
+    html_path = write_neuropixels_trajectory_html(
+        tmp_path / "neuropixels-trajectories.html",
+        tmp_path / "supplementary-neuropixels-trajectories.svg",
+    )
+    svg_path = tmp_path / "supplementary-neuropixels-trajectories.svg"
+    html = html_path.read_text(encoding="utf-8")
+    svg = svg_path.read_text(encoding="utf-8")
+
+    assert 'id="brain-canvas"' in html
+    assert 'id="orientation-canvas"' in html
+    assert 'id="area-list"' in html
+    assert 'id="brain-opacity"' in html
+    assert 'data-probe="A"' in html
+    assert "three@0.179.1" in html
+    assert "OrbitControls" in html
+    assert "preserveDrawingBuffer: true" in html
+    assert "camera.position.clone().sub(controls.target).normalize()" in html
+    assert "orientationRenderer.render(orientationScene, orientationCamera)" in html
+    assert '<div class="orientation"' not in html
+    assert '"insertions":332' in html
+    assert 'role="img"' in svg
+    assert "A  Oblique CCF surface" in svg
+    assert "B  Dorsal CCF surface" in svg
+    assert svg.count('class="ccf-brain-render"') == 2
+    assert svg.count('data-surface-opacity="0.42"') == 2
+    assert svg.count("data:image/png;base64,") == 2
+    brain_images = re.findall(
+        r'<image class="ccf-brain-render"[^>]+href="data:image/png;base64,([^"]+)"',
+        svg,
+    )
+    assert len(brain_images) == 2
+    assert all(
+        image.startswith(b"\x89PNG\r\n\x1a\n")
+        and image[25] == 6
+        and len(image) > 50_000
+        for image in map(base64.b64decode, brain_images)
+    )
+    assert svg.count('class="ccf-scale-bar"') == 2
+    assert svg.count(">2 mm</text>") == 2
+    assert svg.count('class="ccf-orientation-axis"') == 5
+    assert svg.count('class="probe-legend-label"') == 6
+    assert "100 µm surface mesh" not in svg
+    assert "probe-port colors" not in svg
+    assert "localized insertions ·" not in svg
+    assert ".viewer.static-active .source-strip" in html
+    assert svg.count("<polyline ") == 664
+    assert "__NEUROPIXELS_TRAJECTORY_" not in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+    copied_static = (
+        tmp_path
+        / "media"
+        / "neuropixels-trajectories"
+        / "supplementary-neuropixels-trajectories.svg"
+    )
+    assert copied_static.read_bytes() == svg_path.read_bytes()
+
+    write_neuropixels_trajectory_html(html_path, svg_path)
+    write_neuropixels_trajectory_svg(svg_path)
     assert html_path.read_text(encoding="utf-8") == html
     assert svg_path.read_text(encoding="utf-8") == svg
 
