@@ -55,6 +55,7 @@ from openscope_p3_publication.figures import (
     load_unit_yield_data,
     modality_session_records,
     session_panel_rows,
+    text_sha256_matches,
     total_duration_minutes,
     write_basic_stimuli_plan_svg,
     write_behavior_static_svg,
@@ -91,6 +92,18 @@ def assert_modality_title_scale(svg: str, expected_count: int = 3) -> None:
     expected_size = canvas_width / FIGURE_REFERENCE_WIDTH * FIGURE_TYPE_SCALE["modality"]
     assert len(font_sizes) == expected_count
     assert font_sizes == pytest.approx([expected_size] * expected_count, abs=0.01)
+
+
+def test_text_sha256_matches_platform_line_endings(tmp_path: Path) -> None:
+    path = tmp_path / "snapshot.csv"
+    lf_bytes = b"column_a,column_b\none,two\n"
+    expected = hashlib.sha256(lf_bytes).hexdigest()
+
+    path.write_bytes(lf_bytes.replace(b"\n", b"\r\n"))
+    assert text_sha256_matches(path, expected)
+
+    path.write_bytes(b"column_a,column_b\r\none,changed\r\n")
+    assert not text_sha256_matches(path, expected)
 
 
 def test_experimental_design_data() -> None:
@@ -191,9 +204,7 @@ def test_unit_yield_snapshot_is_source_backed() -> None:
     payload = load_unit_yield_data()
     provenance = json.loads(UNIT_YIELD_PROVENANCE_PATH.read_text(encoding="utf-8"))
 
-    assert hashlib.sha256(UNIT_YIELD_DATA_PATH.read_bytes()).hexdigest() == (
-        provenance["vendored_sha256"]
-    )
+    assert text_sha256_matches(UNIT_YIELD_DATA_PATH, provenance["vendored_sha256"])
     assert provenance["rows"] == 60
     assert provenance["subjects"] == 16
     assert len(provenance["skipped_assets"]) == 2
@@ -244,8 +255,8 @@ def test_neuropixels_trajectory_snapshot_is_source_backed() -> None:
         NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
 
-    assert hashlib.sha256(NEUROPIXELS_TRAJECTORY_DATA_PATH.read_bytes()).hexdigest() == (
-        provenance["vendored_sha256"]
+    assert text_sha256_matches(
+        NEUROPIXELS_TRAJECTORY_DATA_PATH, provenance["vendored_sha256"]
     )
     assert payload["summary"] == {
         "excludedSessions": 3,
@@ -786,9 +797,7 @@ def test_data_access_table_uses_modality_specific_columns(tmp_path: Path) -> Non
 
 def test_data_access_snapshot_is_source_backed() -> None:
     provenance = json.loads(DATA_ACCESS_PROVENANCE_PATH.read_text(encoding="utf-8"))
-    assert hashlib.sha256(DATA_ACCESS_PATH.read_bytes()).hexdigest() == (
-        provenance["vendored_sha256"]
-    )
+    assert text_sha256_matches(DATA_ACCESS_PATH, provenance["vendored_sha256"])
     with DATA_ACCESS_PATH.open(newline="", encoding="utf-8") as stream:
         rows = list(csv.DictReader(stream))
     assert len(rows) == provenance["rows"]
@@ -811,9 +820,7 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     provenance = json.loads(
         SESSION_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
-    assert hashlib.sha256(SESSION_RECORDS_PATH.read_bytes()).hexdigest() == (
-        provenance["vendored_sha256"]
-    )
+    assert text_sha256_matches(SESSION_RECORDS_PATH, provenance["vendored_sha256"])
     assert provenance["worksheet_rows"] == 198
     assert provenance["rows"] == 197
     assert provenance["source_rows"] == 197
@@ -1137,12 +1144,12 @@ def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
         BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
     assert provenance["version"] == 2
-    assert provenance["behavior_excerpts_sha256"] == hashlib.sha256(
-        BEHAVIOR_EXCERPTS_PATH.read_bytes()
-    ).hexdigest()
-    assert provenance["running_statistics_sha256"] == hashlib.sha256(
-        RUNNING_STATISTICS_PATH.read_bytes()
-    ).hexdigest()
+    assert text_sha256_matches(
+        BEHAVIOR_EXCERPTS_PATH, provenance["behavior_excerpts_sha256"]
+    )
+    assert text_sha256_matches(
+        RUNNING_STATISTICS_PATH, provenance["running_statistics_sha256"]
+    )
     assert provenance["local_time_seconds"] == 8.0
     assert len(provenance["frames"]) == 10
     assert {
@@ -1253,9 +1260,9 @@ def test_running_statistics_are_source_backed_and_mouse_aggregated() -> None:
     assert payload["version"] == 2
     assert payload["sample_rate_hz"] == 20
     assert payload["threshold_cm_s"] == 1.0
-    assert payload["source_session_records"]["sha256"] == hashlib.sha256(
-        SESSION_RECORDS_PATH.read_bytes()
-    ).hexdigest()
+    assert text_sha256_matches(
+        SESSION_RECORDS_PATH, payload["source_session_records"]["sha256"]
+    )
     assert [context["id"] for context in payload["contexts"]] == [
         "sensorimotor",
         "standard",
@@ -1387,8 +1394,9 @@ def test_running_statistics_are_source_backed_and_mouse_aggregated() -> None:
 
 
 def test_neural_excerpts_are_source_backed_and_aligned() -> None:
-    assert hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest() == (
-        "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c"
+    assert text_sha256_matches(
+        NEURAL_EXCERPTS_PATH,
+        "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c",
     )
     payload = load_neural_excerpts(NEURAL_EXCERPTS_PATH)
 
@@ -1639,9 +1647,9 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
         NEURAL_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
     assert provenance["version"] == 2
-    assert provenance["raw_neural_excerpts_sha256"] == hashlib.sha256(
-        NEURAL_EXCERPTS_PATH.read_bytes()
-    ).hexdigest()
+    assert text_sha256_matches(
+        NEURAL_EXCERPTS_PATH, provenance["raw_neural_excerpts_sha256"]
+    )
     assert len(provenance["frames"]) == 10
     assert {
         (record["modality"], record["option_id"])
@@ -1745,6 +1753,4 @@ def test_animal_record_provenance() -> None:
     )
 
     assert len(provenance["source_sha256"]) == 64
-    assert provenance["vendored_sha256"] == hashlib.sha256(
-        ANIMAL_RECORDS_PATH.read_bytes()
-    ).hexdigest()
+    assert text_sha256_matches(ANIMAL_RECORDS_PATH, provenance["vendored_sha256"])

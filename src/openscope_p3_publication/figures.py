@@ -327,7 +327,7 @@ def write_merged_figure_1_svg(output: Path = MERGED_FIGURE_1_OUTPUT) -> Path:
     cohort_panel_path = write_figure_1_panel_c_svg()
     cohort_panel = (
         "data:image/svg+xml;base64,"
-        f"{base64.b64encode(cohort_panel_path.read_bytes()).decode()}"
+        f"{base64.b64encode(normalized_text_bytes(cohort_panel_path)).decode()}"
     )
     svg = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1620" '
@@ -1178,8 +1178,7 @@ def load_stimulus_table_excerpts(sources: dict) -> dict[str, dict]:
         filename = source["example_table_url"].rsplit("/", maxsplit=1)[-1]
         metadata = provenance_by_name[filename]
         path = STIMULUS_EXCERPT_DIR / filename
-        checksum = hashlib.sha256(path.read_bytes()).hexdigest()
-        if checksum != metadata["vendored_sha256"]:
+        if not text_sha256_matches(path, metadata["vendored_sha256"]):
             raise RuntimeError(f"Stimulus excerpt checksum mismatch: {filename}")
         if source["sha256"] != metadata["source_sha256"]:
             raise RuntimeError(f"Stimulus source checksum mismatch: {filename}")
@@ -1209,7 +1208,7 @@ def load_shared_stimulus_table_excerpts(sources: dict) -> dict[str, dict]:
     if source["sha256"] != metadata["source_sha256"]:
         raise RuntimeError("Shared stimulus source checksum mismatch.")
     path = STIMULUS_EXCERPT_DIR / metadata["filename"]
-    if hashlib.sha256(path.read_bytes()).hexdigest() != metadata["vendored_sha256"]:
+    if not text_sha256_matches(path, metadata["vendored_sha256"]):
         raise RuntimeError("Shared stimulus excerpt checksum mismatch.")
     with path.open(newline="", encoding="utf-8-sig") as stream:
         source_rows = list(csv.DictReader(stream))
@@ -1272,7 +1271,7 @@ def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
     stylesheet = (JAVASCRIPT_DIR / "stimulus-viewer.css").read_text(encoding="utf-8")
     javascript = (JAVASCRIPT_DIR / "stimulus-viewer.js").read_text(encoding="utf-8")
     static_output = write_context_controls_svg()
-    static_data = base64.b64encode(static_output.read_bytes()).decode()
+    static_data = base64.b64encode(normalized_text_bytes(static_output)).decode()
     html = (
         template.replace("__SIMULATOR_CSS__", stylesheet)
         .replace("__PANEL_D_IMAGE__", f"data:image/svg+xml;base64,{static_data}")
@@ -1296,7 +1295,7 @@ def write_data_explorer_html(
     payload = load_publication_table_data()
     if refresh_static:
         write_session_inventory_svg(static_output)
-    static_data = base64.b64encode(static_output.read_bytes()).decode()
+    static_data = base64.b64encode(normalized_text_bytes(static_output)).decode()
     template = (JAVASCRIPT_DIR / "data-explorer.html").read_text(encoding="utf-8")
     stylesheet = (JAVASCRIPT_DIR / "data-explorer.css").read_text(encoding="utf-8")
     javascript = (JAVASCRIPT_DIR / "data-explorer.js").read_text(encoding="utf-8")
@@ -1319,8 +1318,7 @@ def write_literature_comparison_html(
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     provenance = json.loads(OTHER_STUDIES_PROVENANCE_PATH.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(OTHER_STUDIES_PATH.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(OTHER_STUDIES_PATH, provenance["vendored_sha256"]):
         raise RuntimeError("Other-studies table checksum does not match its provenance.")
     with OTHER_STUDIES_PATH.open(newline="", encoding="utf-8") as stream:
         rows = list(csv.reader(stream))
@@ -1494,8 +1492,7 @@ def load_running_statistics(path: Path = RUNNING_STATISTICS_PATH) -> dict:
         or payload.get("threshold_cm_s") != 1.0
         or [context.get("id") for context in payload.get("contexts", [])]
         != expected_contexts
-        or source.get("sha256")
-        != hashlib.sha256(SESSION_RECORDS_PATH.read_bytes()).hexdigest()
+        or not text_sha256_matches(SESSION_RECORDS_PATH, source.get("sha256", ""))
         or calibration.get("counts_per_revolution") != SLAP2_COUNTS_PER_REVOLUTION
         or calibration.get("wheel_radius_cm") != SLAP2_WHEEL_RADIUS_CM
         or not math.isclose(
@@ -1625,12 +1622,14 @@ def load_behavior_static_frames(
     provenance = json.loads(
         BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
-    source_checksum = hashlib.sha256(BEHAVIOR_EXCERPTS_PATH.read_bytes()).hexdigest()
-    running_checksum = hashlib.sha256(RUNNING_STATISTICS_PATH.read_bytes()).hexdigest()
     if (
         provenance.get("version") != 2
-        or provenance.get("behavior_excerpts_sha256") != source_checksum
-        or provenance.get("running_statistics_sha256") != running_checksum
+        or not text_sha256_matches(
+            BEHAVIOR_EXCERPTS_PATH, provenance.get("behavior_excerpts_sha256", "")
+        )
+        or not text_sha256_matches(
+            RUNNING_STATISTICS_PATH, provenance.get("running_statistics_sha256", "")
+        )
         or provenance.get("local_time_seconds") != BEHAVIOR_STATIC_LOCAL_TIME_SECONDS
     ):
         raise RuntimeError("Static behavior frame provenance is not supported.")
@@ -2131,12 +2130,13 @@ def load_neural_excerpts(
     behavior_path: Path = BEHAVIOR_EXCERPTS_PATH,
 ) -> dict:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    behavior_checksum = hashlib.sha256(behavior_path.read_bytes()).hexdigest()
     if (
         payload.get("version") != 7
         or payload.get("windowStartSeconds") != -1.0
         or payload.get("windowEndSeconds") != 3.0
-        or payload.get("behaviorExcerptSha256") != behavior_checksum
+        or not text_sha256_matches(
+            behavior_path, payload.get("behaviorExcerptSha256", "")
+        )
     ):
         raise RuntimeError("Neural excerpt schema or behavior source is not supported.")
     sessions = payload.get("sessions", [])
@@ -2322,10 +2322,12 @@ def load_neural_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
     provenance = json.loads(
         NEURAL_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
-    source_checksum = hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest()
     if (
         provenance.get("version") != 2
-        or provenance.get("raw_neural_excerpts_sha256") != source_checksum
+        or not text_sha256_matches(
+            NEURAL_EXCERPTS_PATH,
+            provenance.get("raw_neural_excerpts_sha256", ""),
+        )
     ):
         raise RuntimeError("Static neural frame provenance is not supported.")
 
@@ -2793,8 +2795,7 @@ def load_data_access_table(
 ) -> dict:
     """Load the vendored Data Access Summary snapshot."""
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(data_path.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(data_path, provenance["vendored_sha256"]):
         raise RuntimeError("Data Access checksum does not match its provenance record.")
     with data_path.open(newline="", encoding="utf-8-sig") as stream:
         source_rows = list(csv.DictReader(stream))
@@ -2908,6 +2909,20 @@ def split_grouped_identifiers(table: dict, count_index: int) -> set[str]:
     return set(identifiers)
 
 
+def normalized_text_bytes(path: Path) -> bytes:
+    """Read text bytes with platform-specific line endings normalized to LF."""
+    data = path.read_bytes()
+    return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
+def text_sha256_matches(path: Path, expected: str) -> bool:
+    """Match text content regardless of Git's platform-specific line endings."""
+    data = path.read_bytes()
+    lf_data = normalized_text_bytes(path)
+    candidates = (data, lf_data, lf_data.replace(b"\n", b"\r\n"))
+    return any(hashlib.sha256(candidate).hexdigest() == expected for candidate in candidates)
+
+
 def load_individual_animal_table(summary_mouse_ids: set[str]) -> dict:
     modality_lookup = {
         "MESO": ("mesoscope", "Two-photon mesoscope"),
@@ -2915,8 +2930,7 @@ def load_individual_animal_table(summary_mouse_ids: set[str]) -> dict:
         "SLAP2": ("slap2", "SLAP2"),
     }
     provenance = json.loads(ANIMAL_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(ANIMAL_RECORDS_PATH.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(ANIMAL_RECORDS_PATH, provenance["vendored_sha256"]):
         raise RuntimeError("Animal worksheet checksum does not match its provenance record.")
     with ANIMAL_RECORDS_PATH.open(newline="", encoding="utf-8") as stream:
         source_rows = list(csv.DictReader(stream))
@@ -2983,8 +2997,7 @@ def load_unit_yield_data(
     provenance_path: Path = UNIT_YIELD_PROVENANCE_PATH,
 ) -> dict:
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(data_path.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(data_path, provenance["vendored_sha256"]):
         raise RuntimeError("Unit-yield data checksum does not match its provenance record.")
     with data_path.open(newline="", encoding="utf-8") as stream:
         source_rows = list(csv.DictReader(stream))
@@ -3068,9 +3081,8 @@ def load_neuropixels_trajectory_data(
 ) -> dict:
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
     data_bytes = data_path.read_bytes()
-    checksum = hashlib.sha256(data_bytes).hexdigest()
-    if provenance.get("version") != 1 or checksum != provenance.get(
-        "vendored_sha256"
+    if provenance.get("version") != 1 or not text_sha256_matches(
+        data_path, provenance.get("vendored_sha256", "")
     ):
         raise RuntimeError(
             "Neuropixels trajectory checksum does not match its provenance record."
@@ -3201,8 +3213,7 @@ def load_experimental_session_records(
     provenance_path: Path = SESSION_RECORDS_PROVENANCE_PATH,
 ) -> dict:
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(data_path.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(data_path, provenance["vendored_sha256"]):
         raise RuntimeError("Session worksheet checksum does not match its provenance.")
     with data_path.open(newline="", encoding="utf-8") as stream:
         records = list(csv.DictReader(stream))
