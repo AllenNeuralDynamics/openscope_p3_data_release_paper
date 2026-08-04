@@ -416,6 +416,8 @@ def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     assert "332 probe trajectories from 57 sessions and 16 mice" in manuscript
     assert "Three of the 60 source sessions are excluded" in manuscript
     assert "100-micrometer mesh derived from the Allen CCF 2017" in manuscript
+    assert "**A,** an oblique projection" in manuscript
+    assert "**B,** a dorsal projection" in manuscript
     assert "supplementary-neuropixels-unit-yield.png" not in manuscript
     assert "supplementary-neuropixels-targeting.png" not in manuscript
     assert "figure-11-analysis-framework.png" not in manuscript

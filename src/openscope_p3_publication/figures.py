@@ -3764,7 +3764,7 @@ def write_unit_yield_svg(
     write_svg_output(output, svg)
     return output
 
-CCF_STATIC_SURFACE_OPACITY = 0.42
+CCF_STATIC_SURFACE_OPACITY = 0.12
 _CCF_SURFACE_RENDER_CACHE: dict[tuple[str, str, int, int, float], bytes] = {}
 
 
@@ -4049,10 +4049,6 @@ def write_neuropixels_trajectory_svg(
         'refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#41504C"/>'
         '</marker></defs>',
         '<rect width="1600" height="900" fill="#FFFFFF"/>',
-        '<rect x="50" y="100" width="975" height="710" fill="#F7F9F8" '
-        'stroke="#CDD3D0"/>',
-        '<rect x="1060" y="100" width="490" height="710" fill="#F7F9F8" '
-        'stroke="#CDD3D0"/>',
         f'<image class="ccf-brain-render" data-surface-opacity="'
         f'{CCF_STATIC_SURFACE_OPACITY}" href="data:image/png;base64,'
         f'{brain_images["oblique"]}" x="50" y="100" width="975" height="710"/>',
@@ -4133,12 +4129,17 @@ def write_neuropixels_trajectory_svg(
     svg.extend(
         [
             '<text x="74" y="77" font-family="Source Sans 3, sans-serif" '
-            'font-size="20" font-weight="700" fill="#293133">A  Oblique CCF surface</text>',
+            'font-size="24" font-weight="700" fill="#293133">A</text>',
             '<text x="1084" y="77" font-family="Source Sans 3, sans-serif" '
-            'font-size="20" font-weight="700" fill="#293133">B  Dorsal CCF surface</text>',
+            'font-size="24" font-weight="700" fill="#293133">B</text>',
         ]
     )
-    legend_x = 570
+    legend_x = 620
+    svg.append(
+        '<text class="probe-legend-title" x="555" y="851" text-anchor="end" '
+        'font-family="Source Sans 3, sans-serif" font-size="14" '
+        'font-weight="700" fill="#293133">Probe:</text>'
+    )
     for index, probe in enumerate("ABCDEF"):
         x = legend_x + index * 78
         color = payload["probeColors"][probe]

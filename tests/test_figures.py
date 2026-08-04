@@ -223,6 +223,14 @@ def test_neuropixels_trajectory_snapshot_is_source_backed() -> None:
         121_248,
     ]
     assert {record["probe"] for record in payload["insertions"]} == set("ABCDEF")
+    assert payload["probeColors"] == {
+        "A": "#8CC63F",
+        "B": "#C5E9FA",
+        "C": "#25AAE1",
+        "D": "#283892",
+        "E": "#39B54A",
+        "F": "#156C49",
+    }
     assert all(
         record["areas"][0]["acronym"] != "void"
         and record["areas"][-1]["acronym"] != "void"
@@ -281,10 +289,13 @@ def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> Non
     assert '<div class="orientation"' not in html
     assert '"insertions":332' in html
     assert 'role="img"' in svg
-    assert "A  Oblique CCF surface" in svg
-    assert "B  Dorsal CCF surface" in svg
+    assert ">A</text>" in svg
+    assert ">B</text>" in svg
+    assert "Oblique CCF surface</text>" not in svg
+    assert "Dorsal CCF surface</text>" not in svg
+    assert svg.count('fill="#F7F9F8"') == 0
     assert svg.count('class="ccf-brain-render"') == 2
-    assert svg.count('data-surface-opacity="0.42"') == 2
+    assert svg.count('data-surface-opacity="0.12"') == 2
     assert svg.count("data:image/png;base64,") == 2
     brain_images = re.findall(
         r'<image class="ccf-brain-render"[^>]+href="data:image/png;base64,([^"]+)"',
@@ -300,6 +311,8 @@ def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> Non
     assert svg.count('class="ccf-scale-bar"') == 2
     assert svg.count(">2 mm</text>") == 2
     assert svg.count('class="ccf-orientation-axis"') == 5
+    assert svg.count('class="probe-legend-title"') == 1
+    assert ">Probe:</text>" in svg
     assert svg.count('class="probe-legend-label"') == 6
     assert "100 µm surface mesh" not in svg
     assert "probe-port colors" not in svg

@@ -481,9 +481,11 @@ all CCF-localized insertions within a semi-transparent whole-brain surface and
 supports mouse, probe-port, camera-orientation, and brain-opacity controls.
 Selecting a trajectory shows its session, localized shank length, source NWB,
 and contiguous CCF area profile from the dorsal shank end to the tip. Line color
-denotes the nominal probe port (A-F). The **Static** view shows semi-transparent,
-depth-shaded oblique and dorsal projections of the same Allen CCF whole-brain
-surface, with anatomical direction markers and calibrated 2 mm scale bars. Electrode coordinates
+denotes the nominal probe port (A-F). In the **Static** view, **A,** an oblique
+projection shows the trajectories across the depth-shaded Allen CCF whole-brain
+surface; **B,** a dorsal projection shows their anteroposterior and mediolateral
+distribution. Both panels use a semi-transparent brain surface, anatomical
+direction markers, and calibrated 2 mm scale bars. Electrode coordinates
 and area annotations come from the public draft of Dandiset 001637; the brain
 surface is a 100-micrometer mesh derived from the Allen CCF 2017 25-micrometer
 annotation volume. In total, 332 probe
