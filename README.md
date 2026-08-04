@@ -69,6 +69,48 @@ myst build --html
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for authorship, figure provenance, interactive-figure, and data-size requirements.
 
+### Static and interactive figures with MyST
+
+Choose the simplest format that communicates the scientific result clearly:
+
+- Use a **static figure** for a fixed result, comparison, schematic, or composition that should read completely in HTML, PDF, print, and archival exports.
+- Use an **interactive figure** when selection, filtering, synchronized playback, 3D rotation, or access to many records materially improves interpretation. Interactivity should expose additional detail, not hide the primary conclusion.
+- When both are useful, build them from the same validated data and generator. The static view should be a meaningful standalone figure, not a screenshot of controls or an instruction to open the website.
+
+For a static asset, use MyST's `figure` directive with a stable label, descriptive alternative text, width, and caption:
+
+```markdown
+:::{figure} ./images/figures/generated/example.svg
+:label: fig-example
+:alt: Concise description of the plotted data and visual encoding.
+:width: 100%
+
+Caption describing the result, panels, units, sample sizes, and provenance.
+:::
+```
+
+For an interactive figure, keep generated HTML under `interactive/` and embed it with an `iframe`. Always provide a static `:placeholder:` for PDF, print, failed JavaScript, and other noninteractive exports:
+
+```markdown
+:::{iframe} ./interactive/example.html
+:label: fig-example
+:width: 100%
+:title: Short accessible title for the interactive figure
+:placeholder: ./images/figures/generated/example.svg
+
+One caption shared by the interactive and static views.
+:::
+```
+
+MyST guidance for this repository:
+
+- Use page-relative paths and stable, unique labels so references such as `[Figure 2](#fig-example)` survive reordering.
+- Keep `interactive/` listed under `project.static_files` in `myst.yml`; add another static directory only when the site must copy it verbatim.
+- Put explanatory science in the manuscript caption, not only inside the HTML application. Captions must define panels, colors, symbols, units, sample sizes, exclusions, and source data.
+- Give the interactive HTML semantic controls, keyboard access, accessible names, responsive layout, and a useful initial state. Avoid duplicating usage instructions as visible figure content.
+- Generate both outputs deterministically, commit them with their source, and verify HTML plus static rendering at desktop and mobile sizes.
+- Preview interactively with `myst start`; use `myst build --html` to catch path and static-asset errors. The committed placeholder is what noninteractive exports and many reviewers will see.
+
 ### Using AI assistants effectively
 
 AI assistants can help navigate the repository, draft focused edits, trace figure-generation paths, update tests, and run validation. They should accelerate reviewable work, not replace scientific judgment or provenance checks.
