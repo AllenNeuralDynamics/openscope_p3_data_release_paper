@@ -56,6 +56,8 @@ DATA_ACCESS_HEADERS = [
     "NWB S3 asset",
 ]
 SNAPSHOTS = ("experimental-animals", "experimental-sessions", "data-access")
+RUNNING_STATISTICS_PATH = DATA_DIR / "running-statistics.json"
+BEHAVIOR_STATIC_PROVENANCE_PATH = DATA_DIR / "behavior-static-frames.provenance.json"
 
 
 def download(url: str, timeout: int = 180) -> bytes:
@@ -146,11 +148,13 @@ def update_sessions(source_bytes: bytes | None = None) -> Path:
     rows, worksheet_rows = normalized_source_rows(source_bytes)
     if not rows:
         raise RuntimeError("Session worksheet produced no publication records.")
+    output_path = DATA_DIR / "experimental-sessions.csv"
+    previous_bytes = output_path.read_bytes()
     modality_rows = {
         modality: sum(row["modality"] == modality for row in rows)
         for modality in MODALITY_NAMES.values()
     }
-    return write_snapshot(
+    output = write_snapshot(
         "experimental-sessions",
         source_bytes,
         serialize_csv(rows, list(OUTPUT_FIELDS)),
@@ -167,6 +171,89 @@ def update_sessions(source_bytes: bytes | None = None) -> Path:
                 "the interactive explorer remains a separate grouped-session inventory."
             ),
         },
+    )
+    refresh_session_snapshot_dependents(output, previous_bytes)
+    return output
+
+
+def semantic_session_records(content: bytes) -> dict[tuple[str, str], tuple[str, ...]]:
+    """Return unique session semantics without source-row bookkeeping."""
+    with io.StringIO(content.decode("utf-8-sig")) as stream:
+        rows = list(csv.DictReader(stream))
+    records = {}
+    for row in rows:
+        session_id = row["source_session_id"]
+        if session_id in {"", "aborted"}:
+            continue
+        key = (row["modality"], session_id)
+        value = (
+            row["mouse_id"],
+            row["date"],
+            row["session_stimulus"],
+            row["qc"],
+        )
+        if key in records and records[key] != value:
+            raise RuntimeError(f"Session snapshot contains conflicting records: {key}")
+        records[key] = value
+    return records
+
+
+def refresh_session_snapshot_dependents(
+    session_path: Path,
+    previous_session_bytes: bytes | None = None,
+) -> None:
+    """Repin derived snapshots after a session-table-only refresh."""
+    current_bytes = session_path.read_bytes()
+    if (
+        previous_session_bytes is not None
+        and semantic_session_records(previous_session_bytes)
+        != semantic_session_records(current_bytes)
+    ):
+        raise RuntimeError(
+            "Session semantics changed; regenerate running-statistics.json and "
+            "behavior static-frame provenance before committing snapshots."
+        )
+    with session_path.open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream))
+    source_rows = {
+        (row["modality"], row["source_session_id"]): int(row["source_row"])
+        for row in rows
+        if row["source_session_id"] not in {"", "aborted"}
+    }
+    if len(source_rows) != sum(
+        row["source_session_id"] not in {"", "aborted"} for row in rows
+    ):
+        raise RuntimeError(
+            "Session snapshot contains duplicate non-aborted source session IDs."
+        )
+
+    running = json.loads(RUNNING_STATISTICS_PATH.read_text(encoding="utf-8"))
+    running["source_session_records"]["sha256"] = hashlib.sha256(
+        current_bytes
+    ).hexdigest()
+    for record in running.get("sessions", []):
+        key = (record["modality"], record["source_session_id"])
+        try:
+            record["source_row"] = source_rows[key]
+        except KeyError as exc:
+            raise RuntimeError(
+                f"Derived running session is absent from refreshed snapshot: {key}"
+            ) from exc
+    running_bytes = (
+        json.dumps(running, indent=2, ensure_ascii=True, sort_keys=True) + "\n"
+    ).encode()
+    RUNNING_STATISTICS_PATH.write_bytes(running_bytes)
+
+    behavior_provenance = json.loads(
+        BEHAVIOR_STATIC_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    behavior_provenance["running_statistics_sha256"] = hashlib.sha256(
+        running_bytes
+    ).hexdigest()
+    BEHAVIOR_STATIC_PROVENANCE_PATH.write_text(
+        json.dumps(behavior_provenance, indent=2, ensure_ascii=True, sort_keys=True)
+        + "\n",
+        encoding="utf-8",
     )
 
 

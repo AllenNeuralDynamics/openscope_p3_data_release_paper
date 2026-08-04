@@ -20469,7 +20469,7 @@
         "path": "sub-845342/sub-845342_ses-multiplane-ophys-845342-2026-03-31-11-44-28_ophys.nwb",
         "size": 3652259287
       },
-      "source_row": 82,
+      "source_row": 78,
       "source_session_id": "multiplane-ophys_845342_2026-03-31_11-44-28"
     },
     {
@@ -28194,7 +28194,7 @@
     }
   ],
   "source_session_records": {
-    "sha256": "75313ff9bd623a5f5bcd7270d747aa389be14d985032122de91dc8dba4c9fd06",
+    "sha256": "35400ba7c78ef3890f896ddaa722c202e37647d746b6de0269a6d170d60fc91c",
     "source_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/edit?usp=sharing"
   },
   "threshold_cm_s": 1.0,

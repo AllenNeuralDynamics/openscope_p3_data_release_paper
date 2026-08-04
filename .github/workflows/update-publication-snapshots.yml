@@ -38,6 +38,10 @@ jobs:
             figure_sources/data/experimental-animals.provenance.json
             figure_sources/data/experimental-sessions.csv
             figure_sources/data/experimental-sessions.provenance.json
+            figure_sources/data/running-statistics.json
+            figure_sources/data/behavior-static-frames.provenance.json
+            images/figures/generated/session-inventory.svg
+            interactive/data-explorer.html
           )
           if [[ -z "$(git status --porcelain -- "${snapshots[@]}")" ]]; then
             echo "Publication table snapshots are already current."
