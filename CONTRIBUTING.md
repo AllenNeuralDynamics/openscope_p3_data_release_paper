@@ -85,14 +85,33 @@ All analysis code and derived manuscript outputs must be reproducible from publi
 - Local caches are permitted only as optional accelerators; cache presence must not affect results.
 - When an upstream cloud asset changes, refresh all dependent snapshots, provenance hashes, static figures, interactive outputs, and tests in the same pull request.
 
-### Behavior-figure example
+### Example workflow for analyses across many NWB files
 
-Figure 8 uses committed intermediates so routine builds remain fast and deterministic:
+Figure 8 demonstrates the intended pattern for an analysis that must read many large NWB files. Opening and processing every NWB during each test, figure build, or MyST preview would be slow and would make routine builds depend on network availability. Instead, separate the workflow into an expensive **extraction stage** and a fast **presentation stage**:
 
-- `scripts/extract_behavior_excerpts.py` reads synchronized behavior/running/stimulus data from public DANDI NWBs and project S3/Harp sources, producing `figure_sources/data/behavior-excerpts.json`.
-- `scripts/extract_running_statistics.py` reads full-session NWB running series and named interval tables, plus SLAP2 Harp encoder and stimulus files, producing `figure_sources/data/running-statistics.json`. Its cache directory is optional and is never the source of truth.
-- `scripts/extract_behavior_static_frames.py` extracts representative public camera frames into `figure_sources/media/behavior-viewer-static/` and records source URLs, ETags, target/decoded times, display transforms, and output checksums in `behavior-static-frames.provenance.json`.
-- `uv run build-publication-figures` consumes these committed intermediates to produce the interactive behavior viewer and its static SVG counterpart. Contributors should rerun the extraction scripts only when changing source data or analysis logic, then commit the refreshed intermediates, provenance, generated outputs, and tests together.
+1. **Define the intermediate.** Store only the scientifically necessary derived values in a compact, deterministic CSV or JSON file under `figure_sources/data/`. Include stable session/asset identifiers so every row can be traced back to its source NWB.
+2. **Write a cloud-backed extractor.** Commit a script under `scripts/` that discovers or opens the versioned DANDI/NWB or S3 assets, performs the analysis, validates coverage and exclusions, and writes the intermediate plus source URLs, asset IDs/paths, retrieval date, parameters, and checksums.
+3. **Commit the result.** Commit the intermediate and provenance with the extractor. This is an intentional derived publication snapshot, not an untracked cache. Reviewers should be able to inspect its values without rerunning a multi-hour cloud analysis.
+4. **Build figures from the intermediate.** Static and interactive figure generators must read the committed snapshot rather than reopening all NWBs. Tests and `uv run build-publication-figures` must therefore work offline after a fresh clone and dependency installation.
+5. **Refresh deliberately.** Rerun the expensive extractor only when source assets, inclusion rules, or analysis logic change. Commit the refreshed intermediate, provenance/checksums, generated static and interactive outputs, and updated tests in the same pull request. Optional download caches may speed up this refresh but are never committed or treated as the source of truth.
+
+For the behavior figure, the stages map to repository files as follows:
+
+- `scripts/extract_running_statistics.py` streams running-speed series and named interval tables from the public Neuropixels and mesoscope NWBs, and reads the corresponding SLAP2 Harp encoder/stimulus files from project S3. It computes common 50 ms running summaries across the available P3 sessions and writes the committed `figure_sources/data/running-statistics.json` intermediate. The JSON retains session-level block summaries, downsampled example profiles, coverage, exclusions, source asset manifests, calibration, and checksums.
+- Refreshing that many-session intermediate is an explicit maintenance operation:
+
+	```bash
+	uv run --with h5py --with harp-python --with numpy --with remfile \
+		python scripts/extract_running_statistics.py \
+		--cache-dir /tmp/openscope-p3-running-cache
+	```
+
+	The cache is optional. Removing it increases download time but must not change the JSON values.
+- `scripts/extract_behavior_excerpts.py` separately writes `figure_sources/data/behavior-excerpts.json`, a compact synchronized excerpt for representative Neuropixels, mesoscope, and SLAP2 sessions.
+- `scripts/extract_behavior_static_frames.py` extracts representative public S3 camera frames into `figure_sources/media/behavior-viewer-static/` and records source URLs, ETags, target/decoded times, display transforms, and output checksums in `behavior-static-frames.provenance.json`.
+- The routine command `uv run build-publication-figures` reads these committed intermediates and media files to produce both `interactive/behavior-viewer.html` and `images/figures/generated/synchronized-behavior.svg`. It does not recompute the many-NWB running analysis.
+
+Use the same architecture for future figures that aggregate units, receptive fields, anatomical coverage, response metrics, or other values across many NWB files: cloud extractor → committed checksummed intermediate → deterministic static and interactive renderers.
 
 ## Using AI assistants effectively
 
