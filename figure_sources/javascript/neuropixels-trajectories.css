@@ -9,12 +9,12 @@
   --paper: #ffffff;
   --wash: #f4f6f5;
   --brain: #cad8d2;
-  --probe-a: #d1495b;
-  --probe-b: #00798c;
-  --probe-c: #edae49;
-  --probe-d: #5c4d9a;
-  --probe-e: #2a9d6f;
-  --probe-f: #e76f51;
+  --probe-a: #8cc63f;
+  --probe-b: #c5e9fa;
+  --probe-c: #25aae1;
+  --probe-d: #283892;
+  --probe-e: #39b54a;
+  --probe-f: #156c49;
 }
 
 * { box-sizing: border-box; }

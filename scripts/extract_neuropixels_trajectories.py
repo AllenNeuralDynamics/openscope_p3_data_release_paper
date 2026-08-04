@@ -49,12 +49,12 @@ RETRIEVED_DATE = "2026-08-03"
 CCF_VOXEL_SIZE_UM = 25
 BRAIN_MESH_RESOLUTION_UM = 100
 PROBE_COLORS = {
-    "A": "#D1495B",
-    "B": "#00798C",
-    "C": "#EDAE49",
-    "D": "#5C4D9A",
-    "E": "#2A9D6F",
-    "F": "#E76F51",
+    "A": "#8CC63F",
+    "B": "#C5E9FA",
+    "C": "#25AAE1",
+    "D": "#283892",
+    "E": "#39B54A",
+    "F": "#156C49",
 }
 
 
@@ -65,6 +65,11 @@ def parse_args() -> argparse.Namespace:
         "--provenance-output", type=Path, default=DEFAULT_PROVENANCE_OUTPUT
     )
     parser.add_argument("--max-workers", type=int, default=8)
+    parser.add_argument(
+        "--refresh-palette-only",
+        action="store_true",
+        help="Update probe colors in an existing payload without fetching sources.",
+    )
     return parser.parse_args()
 
 
@@ -308,8 +313,32 @@ def brain_surface(annotation_bytes: bytes) -> dict:
     }
 
 
+def refresh_palette(output: Path, provenance_output: Path) -> None:
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    provenance = json.loads(provenance_output.read_text(encoding="utf-8"))
+    if payload.get("version") != 1 or provenance.get("version") != 1:
+        raise RuntimeError("Neuropixels trajectory palette source is not supported.")
+    payload["probeColors"] = PROBE_COLORS
+    for insertion in payload.get("insertions", []):
+        insertion["color"] = PROBE_COLORS[insertion["probe"]]
+    output_bytes = (
+        json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True)
+        + "\n"
+    ).encode()
+    output.write_bytes(output_bytes)
+    provenance["vendored_sha256"] = sha256_bytes(output_bytes)
+    provenance_output.write_text(
+        json.dumps(provenance, indent=2, ensure_ascii=True, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Updated probe palette in {output}")
+
+
 def main() -> None:
     args = parse_args()
+    if args.refresh_palette_only:
+        refresh_palette(args.output, args.provenance_output)
+        return
     session_bytes = SESSION_RECORDS_PATH.read_bytes()
     session_provenance_bytes = SESSION_PROVENANCE_PATH.read_bytes()
     with SESSION_RECORDS_PATH.open(encoding="utf-8", newline="") as stream:
