@@ -115,17 +115,17 @@ Use the same architecture for future figures that aggregate units, receptive fie
 
 ## Using AI assistants effectively
 
-AI assistants can help navigate the repository, draft focused edits, trace generation paths, update tests, and run validation. They accelerate reviewable work but do not replace scientific judgment or provenance checks.
+This repository is structured to support agentic AI workflows: the manuscript, source data snapshots, provenance, figure generators, generated outputs, tests, and build commands are all available in one clone. We currently recommend using **5.6 SOL**.
 
-- Start with a concrete task, file, figure label, failing test, or expected behavior. Ask the assistant to inspect the owning source before editing.
-- State the scientific source of truth and constraints explicitly. Do not ask an assistant to infer results, citations, authorship, or provenance.
-- Ask for the smallest source-level change. Regenerate outputs through their owning script rather than editing them by hand.
-- Keep source data, generators, static counterparts, interactive outputs, captions, and tests synchronized.
-- Require preservation of unrelated changes and a final report of the diff, validation, assumptions, and exclusions.
-- Verify every scientific statement, citation, numerical value, image interpretation, and authorship change yourself.
-- Never provide credentials, private data, unpublished participant information, or restricted material to an external AI service. Follow Allen Institute policies for approved tools and data handling.
+1. Clone the repository locally and create a focused branch from the latest `main`.
+2. Open the repository root in an agentic coding environment and give the assistant access to the complete clone.
+3. Describe the requested manuscript, analysis, or figure change and point to the relevant issue, file, figure label, source data, or expected behavior.
+4. Ask the assistant to trace the owning source or generator before editing and to preserve unrelated changes.
+5. Ask it to implement the change end to end: update source data or code, regenerate static and interactive outputs, update captions and provenance, and add or update tests.
+6. Have the assistant run the repository checks and report the changed files, validation results, and any assumptions or exclusions.
+7. Review the manuscript text, scientific values, figures, captions, source links, and final diff. Correct any mistakes before opening or merging the pull request.
 
-A useful request names the target, source of truth, required outputs, and checks. For example:
+For example:
 
 > Update Figure 4's session colors to the supplied RGB values. Trace the palette to its source, update static and interactive outputs without changing unrelated figures, add a regression test, run the publication checks, and summarize the diff for review.
 
