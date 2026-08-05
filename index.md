@@ -36,7 +36,7 @@ Distributed predictive-processing hypotheses motivate multimodal recordings. **A
 
 ## The challenge of predictive processing research
 
-Predictive    processing theories propose that the brain continuously generates predictions about incoming sensory signals and updates its internal models when those predictions are violated. These prediction errors are thought to drive perception, learning, and behavior. While this framework has gained considerable theoretical support, significant conflicts persist in the experimental literature regarding the neural mechanisms that implement predictive computations.
+Predictive processing theories propose that the brain continuously generates predictions about incoming sensory signals and updates its internal models when those predictions are violated. These prediction errors are thought to drive perception, learning, and behavior. While this framework has gained considerable theoretical support, significant conflicts persist in the experimental literature regarding the neural mechanisms that implement predictive computations.
 
 :::{warning} Work in progress
 :class: manuscript-wip
