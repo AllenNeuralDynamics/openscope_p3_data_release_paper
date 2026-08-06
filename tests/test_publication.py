@@ -484,7 +484,7 @@ def test_supplementary_studies_table_is_complete() -> None:
 def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
-    for number in range(1, 4):
+    for number in range(1, 5):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
     assert manuscript.count(":enumerated: false\n:width: 100%") >= 2
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
@@ -505,6 +505,13 @@ def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     assert "Three of the 60 source sessions are excluded" in manuscript
     assert "100-micrometer mesh derived from the Allen CCF 2017" in manuscript
     assert "**A,** an oblique projection" in manuscript
+    assert "### Eye tracking across modalities" in manuscript
+    assert manuscript.count("[Supplementary Figure 4](#fig-supp-eye-tracking)") == 1
+    assert "./interactive/eye-tracking-viewer.html" in manuscript
+    assert ":label: fig-supp-eye-tracking\n:enumerated: false" in manuscript
+    assert "Pupil fits, blink flags, and stimulus rows" in manuscript
+    assert "standard-oddball Neuropixels, mesoscope, and SLAP2 sessions" in manuscript
+    assert "5th–95th percentile nonblink range" in manuscript
     assert "**B,** a dorsal projection" in manuscript
     assert "supplementary-neuropixels-unit-yield.png" not in manuscript
     assert "supplementary-neuropixels-targeting.png" not in manuscript

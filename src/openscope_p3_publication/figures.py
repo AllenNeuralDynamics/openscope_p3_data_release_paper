@@ -125,6 +125,8 @@ STANDARD_ODDBALL_PLAN_OUTPUT = (
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
 BEHAVIOR_EXCERPTS_PATH = DATA_DIR / "behavior-excerpts.json"
+EYE_TRACKING_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "eye-tracking-viewer.html"
+EYE_TRACKING_EXCERPTS_PATH = DATA_DIR / "eye-tracking-excerpts.json"
 RUNNING_STATISTICS_PATH = DATA_DIR / "running-statistics.json"
 BEHAVIOR_STATIC_LOCAL_TIME_SECONDS = 8.0
 SLAP2_COUNTS_PER_REVOLUTION = 8192
@@ -1471,6 +1473,81 @@ def load_behavior_excerpts(path: Path = BEHAVIOR_EXCERPTS_PATH) -> dict:
     slap2["traceLabel"] = "Running speed"
     slap2["traceUnit"] = "cm/s"
     return payload
+
+
+def load_eye_tracking_excerpts(path: Path = EYE_TRACKING_EXCERPTS_PATH) -> dict:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("version") != 1 or payload.get("durationSeconds") != 16.0:
+        raise RuntimeError("Eye-tracking excerpt schema or duration is not supported.")
+    sessions = payload.get("sessions", [])
+    if [session.get("id") for session in sessions] != [
+        "neuropixels",
+        "mesoscope",
+        "slap2",
+    ]:
+        raise RuntimeError("Eye-tracking excerpts must contain the supported modalities in order.")
+    expected_fields = ["time", "x", "y", "width", "height", "area", "blink"]
+    for session in sessions:
+        samples = session.get("samples", [])
+        mapping = session.get("camera", {}).get("timeMap", [])
+        reference = session.get("fieldReference", {})
+        if session.get("sampleFields") != expected_fields:
+            raise RuntimeError(f"Eye-tracking sample fields are invalid: {session['id']}")
+        if (
+            not samples
+            or samples[0][0] > 0.04
+            or samples[-1][0] < 15.95
+            or not any(sample[-1] for sample in samples)
+            or any(len(sample) != len(expected_fields) for sample in samples)
+        ):
+            raise RuntimeError(f"Eye-tracking samples are incomplete: {session['id']}")
+        if (
+            reference.get("frameWidth", 0) <= 0
+            or reference.get("frameHeight", 0) <= 0
+            or not 0 <= reference.get("medianX", -1) < reference["frameWidth"]
+            or not 0 <= reference.get("medianY", -1) < reference["frameHeight"]
+            or reference.get("areaLow", 0) >= reference.get("areaHigh", 0)
+            or reference.get("validNonblinkSamples", 0) < 100
+        ):
+            raise RuntimeError(f"Eye-tracking field reference is invalid: {session['id']}")
+        if (
+            len(mapping) < 2
+            or mapping[0][0] > 0
+            or mapping[-1][0] < payload["durationSeconds"]
+            or any(
+                current[0] <= previous[0] or current[1] <= previous[1]
+                for previous, current in zip(mapping[:-1], mapping[1:], strict=True)
+            )
+        ):
+            raise RuntimeError(f"Eye-camera frame map is invalid: {session['id']}")
+        event_time = session.get("event", {}).get("time")
+        if event_time != 5.0 or not any(
+            row["start"] <= event_time <= row["end"]
+            for row in session.get("stimulus", [])
+        ):
+            raise RuntimeError(f"Eye-tracking event lacks stimulus coverage: {session['id']}")
+    return payload
+
+
+def write_eye_tracking_viewer_html(
+    output: Path = EYE_TRACKING_VIEWER_OUTPUT,
+) -> Path:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    payload = load_eye_tracking_excerpts()
+    template = (JAVASCRIPT_DIR / "eye-tracking-viewer.html").read_text(encoding="utf-8")
+    stylesheet = (JAVASCRIPT_DIR / "eye-tracking-viewer.css").read_text(encoding="utf-8")
+    javascript = (JAVASCRIPT_DIR / "eye-tracking-viewer.js").read_text(encoding="utf-8")
+    html = (
+        template.replace("__EYE_TRACKING_CSS__", stylesheet)
+        .replace(
+            "__EYE_TRACKING_DATA__",
+            json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
+        )
+        .replace("__EYE_TRACKING_JS__", javascript)
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+    )
+    output.write_text(html, encoding="utf-8")
+    return output
 
 
 def load_running_statistics(path: Path = RUNNING_STATISTICS_PATH) -> dict:
@@ -4292,6 +4369,7 @@ def main() -> None:
     data_explorer_path = write_data_explorer_html()
     literature_comparison_path = write_literature_comparison_html()
     behavior_viewer_path = write_behavior_viewer_html()
+    eye_tracking_viewer_path = write_eye_tracking_viewer_html()
     neural_viewer_path = write_neural_viewer_html()
     unit_yield_html_path = write_unit_yield_html()
     trajectory_html_path = write_neuropixels_trajectory_html()
@@ -4310,6 +4388,7 @@ def main() -> None:
     print(f"Wrote {literature_comparison_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {behavior_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {BEHAVIOR_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
+    print(f"Wrote {eye_tracking_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {neural_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEURAL_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")

@@ -17,6 +17,7 @@ from openscope_p3_publication.figures import (
     BLOCKS,
     DATA_ACCESS_PATH,
     DATA_ACCESS_PROVENANCE_PATH,
+    EYE_TRACKING_EXCERPTS_PATH,
     FIGURE_MONO_FONT,
     FIGURE_REFERENCE_WIDTH,
     FIGURE_SANS_FONT,
@@ -45,6 +46,7 @@ from openscope_p3_publication.figures import (
     load_data_access_table,
     load_experimental_design_sources,
     load_experimental_session_records,
+    load_eye_tracking_excerpts,
     load_hardware_sources,
     load_neural_excerpts,
     load_neuropixels_trajectory_data,
@@ -61,6 +63,7 @@ from openscope_p3_publication.figures import (
     write_behavior_viewer_html,
     write_context_controls_svg,
     write_data_explorer_html,
+    write_eye_tracking_viewer_html,
     write_figure_1_panel_c_svg,
     write_hardware_figure_svg,
     write_interactive_html,
@@ -1145,6 +1148,70 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert copied_static.read_bytes() == static_path.read_bytes()
 
     write_behavior_viewer_html(viewer_path, static_output=static_path)
+    assert viewer_path.read_text(encoding="utf-8") == html
+
+
+def test_eye_tracking_snapshot_is_source_backed() -> None:
+    payload = load_eye_tracking_excerpts()
+
+    assert payload["durationSeconds"] == 16.0
+    assert [session["id"] for session in payload["sessions"]] == [
+        "neuropixels",
+        "mesoscope",
+        "slap2",
+    ]
+    assert [session["event"]["trialNumber"] for session in payload["sessions"]] == [
+        863,
+        1535,
+        1354,
+    ]
+    assert payload["sessions"][2]["subject"] == "829704"
+    for session in payload["sessions"]:
+        assert len(session["samples"]) >= 450
+        assert session["samples"][0][0] <= 0.04
+        assert session["samples"][-1][0] >= 15.95
+        assert any(sample[-1] for sample in session["samples"])
+        assert session["camera"]["id"] == "eye"
+        assert session["camera"]["timeMap"][0][0] <= 0
+        assert session["camera"]["timeMap"][-1][0] >= payload["durationSeconds"]
+        reference = session["fieldReference"]
+        assert 0 <= reference["medianX"] < reference["frameWidth"]
+        assert 0 <= reference["medianY"] < reference["frameHeight"]
+        assert reference["areaLow"] < reference["areaHigh"]
+        assert reference["validNonblinkSamples"] > 100_000
+        assert all(
+            source.get("sha256") or source.get("etag") or source.get("asset_id")
+            for source in session["sources"]
+        )
+    assert EYE_TRACKING_EXCERPTS_PATH.stat().st_size < 1_500_000
+
+
+def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
+    viewer_path = write_eye_tracking_viewer_html(tmp_path / "eye-tracking-viewer.html")
+    html = viewer_path.read_text(encoding="utf-8")
+
+    assert 'id="eye-tracking-viewer"' in html
+    assert 'id="eye-video"' in html
+    assert 'id="stimulus-canvas"' in html
+    assert 'id="pupil-field"' in html
+    assert 'id="pupil-trace"' in html
+    assert "SLAP2" in html
+    assert "Full-session median" in html
+    assert "fieldReference" in html
+    assert "sampleBounds" not in html
+    assert "Pupil area trace with blink intervals" in html
+    assert "Likely blink" in html
+    assert "drawField" in html
+    assert "blinkIntervals" in html
+    assert "videoTimeAt" in html
+    assert "localTimeAt" in html
+    assert "aind-open-data.s3.us-west-2.amazonaws.com" in html
+    assert 'document.querySelector("body > main")' in html
+    assert "@media (max-width: 760px)" in html
+    assert "__EYE_TRACKING_" not in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+
+    write_eye_tracking_viewer_html(viewer_path)
     assert viewer_path.read_text(encoding="utf-8") == html
 
 
