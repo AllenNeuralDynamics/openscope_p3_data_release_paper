@@ -38,15 +38,17 @@ def test_checksum_sensitive_snapshots_use_lf_line_endings() -> None:
     )
 
 
-def test_pages_deployment_only_runs_for_main_pushes() -> None:
+def test_pages_deployment_only_runs_for_main_events() -> None:
     workflow = (REPO_ROOT / ".github" / "workflows" / "deploy.yml").read_text(
         encoding="utf-8"
     )
-    main_push_guard = (
-        "if: github.event_name == 'push' && github.ref == 'refs/heads/main'"
+    main_deployment_guard = (
+        "if: (github.event_name == 'push' || "
+        "github.event_name == 'workflow_dispatch') && "
+        "github.ref == 'refs/heads/main'"
     )
 
-    assert workflow.count(main_push_guard) == 3
+    assert workflow.count(main_deployment_guard) == 3
     assert "github.event_name != 'pull_request'" not in workflow
 
 
