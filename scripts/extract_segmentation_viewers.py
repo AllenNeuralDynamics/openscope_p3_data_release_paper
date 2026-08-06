@@ -32,6 +32,7 @@ RAW_NEURAL_PATH = REPO_ROOT / "figure_sources" / "data" / "raw-neural-excerpts.j
 RETRIEVED_DATE = "2026-08-06"
 TRACE_WINDOW_START_SECONDS = -2.0
 TRACE_WINDOW_END_SECONDS = 10.0
+CALCIUM_TRACE_WINDOW_SECONDS = 30.0
 NEUROPIXELS_BIN_SECONDS = 0.02
 NEUROPIXELS_PROBE = "ProbeA"
 MESOSCOPE_PLANE = "VISp_0"
@@ -447,9 +448,10 @@ def extract_mesoscope(asset_record: dict, media_dir: Path) -> dict:
 
         series = nwb[f"{plane_path}/dff_timeseries/dff_timeseries"]
         timestamps = np.asarray(series["timestamps"][:], dtype=float)
+        window_start = event_time + TRACE_WINDOW_START_SECONDS
         selected = np.flatnonzero(
-            (timestamps >= event_time + TRACE_WINDOW_START_SECONDS)
-            & (timestamps < event_time + TRACE_WINDOW_END_SECONDS)
+            (timestamps >= window_start)
+            & (timestamps < window_start + CALCIUM_TRACE_WINDOW_SECONDS)
         )
         traces = np.asarray(
             series["data"][selected[0] : selected[-1] + 1, :],
@@ -557,7 +559,7 @@ def extract_slap2(asset_record: dict, media_dir: Path) -> dict:
         window_start = max(130.0, float(timestamps[0]) + 1.0)
         selected = np.flatnonzero(
             (timestamps >= window_start)
-            & (timestamps < window_start + TRACE_WINDOW_END_SECONDS)
+            & (timestamps < window_start + CALCIUM_TRACE_WINDOW_SECONDS)
         )
         traces = np.asarray(
             series["data"][selected[0] : selected[-1] + 1, :],

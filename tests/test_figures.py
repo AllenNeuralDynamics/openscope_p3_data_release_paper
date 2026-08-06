@@ -416,8 +416,8 @@ def test_segmentation_viewer_snapshot_is_source_backed() -> None:
     }
     assert {modality: viewer["traceColumns"] for modality, viewer in viewers.items()} == {
         "neuropixels": 600,
-        "mesoscope": 114,
-        "slap2": 1999,
+        "mesoscope": 284,
+        "slap2": 5881,
     }
     assert {
         modality: viewer["asset"]["dandiset_id"]
@@ -448,6 +448,9 @@ def test_segmentation_viewer_snapshot_is_source_backed() -> None:
         and viewer["traceTimesSeconds"][0] >= 0
         for viewer in viewers.values()
     )
+    assert viewers["neuropixels"]["traceTimesSeconds"][-1] == pytest.approx(11.99)
+    assert viewers["mesoscope"]["traceTimesSeconds"][-1] == pytest.approx(29.8525)
+    assert viewers["slap2"]["traceTimesSeconds"][-1] == pytest.approx(29.999215)
     assert (viewers["slap2"]["baseImage"]["width"], viewers["slap2"]["baseImage"]["height"]) == (
         427,
         408,

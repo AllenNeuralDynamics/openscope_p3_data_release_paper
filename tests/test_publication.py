@@ -578,7 +578,8 @@ def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     assert "time-by-probe-length image" in manuscript
     assert "All 399 NWB segmentation masks" in manuscript
     assert "All 45 source masks" in manuscript
-    assert "approximately 200 Hz elapsed-time ΔF/F excerpt" in manuscript
+    assert "30 s elapsed-time ΔF/F trace" in manuscript
+    assert "30 s, approximately 200 Hz elapsed-time ΔF/F excerpt" in manuscript
     assert "NWB waveform-spread band" in manuscript
     assert "grayscale average projection" in manuscript
     assert "transposed into display coordinates" in manuscript

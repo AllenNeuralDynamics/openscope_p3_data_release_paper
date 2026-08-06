@@ -537,7 +537,7 @@ All 399 NWB segmentation masks are outlined over a grayscale average projection.
 The background-intensity control changes only the grayscale source image; fixed
 ROI colors distinguish neighboring outlines and do not encode ROI class.
 Selecting a mask reveals its soma or dendrite classification probabilities,
-footprint geometry, and a 12 s elapsed-time ΔF/F trace without stimulus
+footprint geometry, and a 30 s elapsed-time ΔF/F trace without stimulus
 annotations. In the **Static** view, **A** shows the complete segmentation and
 **B** shows the selected ROI trace. The average projection, segmentation masks,
 classifications, timestamps, and ΔF/F values are streamed from the matched NWB
@@ -560,7 +560,7 @@ masks, following the source-processing convention. The background-intensity
 control changes only the grayscale mean image; fixed source colors distinguish
 neighboring outlines and do not encode source type. The source-localization
 activity image remains available as an optional overlay and is off by default.
-Selecting a mask reveals its footprint geometry and a 10 s, approximately
+Selecting a mask reveals its footprint geometry and a 30 s, approximately
 200 Hz elapsed-time ΔF/F excerpt without stimulus annotations. In the **Static**
 view, **A** shows the grayscale mean image and complete source segmentation and
 **B** shows the selected source trace. Mean and activity images,
