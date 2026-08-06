@@ -484,9 +484,9 @@ def test_supplementary_studies_table_is_complete() -> None:
 def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
-    for number in range(1, 5):
+    for number in range(1, 7):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
-    assert manuscript.count(":enumerated: false\n:width: 100%") >= 2
+    assert manuscript.count(":enumerated: false\n:width: 100%") >= 5
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
     assert "./interactive/unit-yield.html" in manuscript
     assert ":label: fig-supp-neuropixels-unit-yield\n" in manuscript
@@ -514,6 +514,26 @@ def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     assert "standard-oddball Neuropixels, mesoscope, and SLAP2 sessions" in manuscript
     assert "5th–95th percentile nonblink range" in manuscript
     assert "**B,** a dorsal projection" in manuscript
+    for modality, label, placeholder in (
+        (
+            "neuropixels",
+            "fig-supp-neuropixels-unit-filters",
+            "supplementary-neuropixels-unit-filters.svg",
+        ),
+        (
+            "mesoscope",
+            "fig-supp-mesoscope-roi-filters",
+            "supplementary-mesoscope-roi-filters.svg",
+        ),
+        (
+            "slap2",
+            "fig-supp-slap2-source-filters",
+            "supplementary-slap2-source-filters.svg",
+        ),
+    ):
+        assert f"./interactive/segmentation-{modality}.html" in manuscript
+        assert f":label: {label}" in manuscript
+        assert f":placeholder: ./images/figures/generated/{placeholder}" in manuscript
     assert "supplementary-neuropixels-unit-yield.png" not in manuscript
     assert "supplementary-neuropixels-targeting.png" not in manuscript
     assert "figure-11-analysis-framework.png" not in manuscript
@@ -536,12 +556,45 @@ def test_nwb_file_contents_are_in_data_records() -> None:
     assert "Shared across modalities:" in records
     assert "Neuropixels NWB files" in records
     assert "Mesoscope NWB files" in records
-    assert records.count(":::{tab-item}") == 3
+    assert "SLAP2 NWB files" in records
+    assert "DANDI:001424" in records
+    assert records.count(":::{tab-item}") == 4
     assert records.count(
         "| Question | NWB contents | Representative PyNWB entry point |"
-    ) == 3
+    ) == 4
     assert "nwbfile.units.to_dataframe()" in records
     assert 'nwbfile.processing[plane]["dff_timeseries"]' in records
+    assert 'nwbfile.processing["ophys"]["ImageSegmentation"]' in records
+    assert 'nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_dFF"]' in records
+
+
+def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    assert "all 569 sorted units" in manuscript
+    assert "All 399 NWB segmentation masks" in manuscript
+    assert "All 45 source masks" in manuscript
+    assert "approximately 200 Hz ΔF/F excerpt" in manuscript
+    assert "NWB waveform-spread metric" in manuscript
+    assert "Filter colors distinguish neighboring outlines" in manuscript
+    assert "[Neuropixels](#fig-supp-neuropixels-unit-filters)" in manuscript
+    assert "[mesoscope](#fig-supp-mesoscope-roi-filters)" in manuscript
+    assert "[SLAP2](#fig-supp-slap2-source-filters)" in manuscript
+    assert (
+        "[796630_2025-08-28_14-25-34]"
+        "(https://open.quiltdata.com/b/aind-open-data/tree/"
+        "796630_2025-08-28_14-25-34/) "
+        "([DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files))"
+    ) in manuscript
+
+    importer = runpy.run_path(str(REPO_ROOT / "scripts" / "import_google_doc.py"))
+    for function_name in (
+        "add_segmentation_viewer_figures",
+        "add_unit_extraction_viewer_links",
+        "add_slap2_nwb_contents",
+    ):
+        assert importer[function_name](manuscript) == manuscript
+    assert "DANDI:001424" in importer["SLAP2_RAW_SOURCE"]
+    assert importer["SEGMENTATION_VIEWER_BLOCK"].count(":::{iframe}") == 3
 
 
 def test_imported_data_tables_have_body_cells() -> None:

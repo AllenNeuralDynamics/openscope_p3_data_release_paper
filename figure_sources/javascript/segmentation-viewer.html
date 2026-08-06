@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>__SEGMENTATION_TITLE__</title>
+  <style>__SEGMENTATION_CSS__</style>
+</head>
+<body>
+  <main class="viewer" id="segmentation-viewer" data-modality="__MODALITY_ID__">
+    <header class="figure-header">
+      <div>
+        <p class="eyebrow">Unit extraction · __PANEL_LABEL__</p>
+        <h1>__SEGMENTATION_TITLE__</h1>
+        <p class="session-line">Mouse __SUBJECT__ · __SESSION__</p>
+      </div>
+      <div class="filter-summary" aria-label="Filter count">
+        <strong>__FILTER_COUNT__</strong>
+        <span>extraction filters</span>
+      </div>
+    </header>
+
+    <section class="toolbar" aria-label="Viewer controls">
+      <label class="select-control" for="filter-select">
+        <span>Selected filter</span>
+        <select id="filter-select"></select>
+      </label>
+      <label class="range-control" for="overlay-opacity">
+        <span>Filter overlay</span>
+        <input id="overlay-opacity" type="range" min="0" max="100" value="74">
+      </label>
+      <label class="toggle-control" id="activity-control" for="activity-toggle" hidden>
+        <input id="activity-toggle" type="checkbox" checked>
+        <span>Activity image</span>
+      </label>
+      <label class="toggle-control" id="qc-control" for="qc-toggle" hidden>
+        <input id="qc-toggle" type="checkbox">
+        <span>QC-passing only</span>
+      </label>
+    </section>
+
+    <section class="workspace">
+      <div class="visual-panel">
+        <div class="canvas-shell">
+          <canvas
+            id="source-canvas"
+            width="900"
+            height="720"
+            tabindex="0"
+            aria-label="__SEGMENTATION_TITLE__ filter map"
+          ></canvas>
+          <div class="canvas-tooltip" id="canvas-tooltip" hidden></div>
+          <div class="loading-status" id="loading-status">Loading source image</div>
+        </div>
+        <div class="visual-key">
+          <span><i class="key-filter"></i>Extraction filters</span>
+          <span id="activity-key" hidden><i class="key-activity"></i>Activity projection</span>
+          <span id="qc-key" hidden><i class="key-qc"></i>QC-passing unit</span>
+        </div>
+      </div>
+
+      <aside class="inspector" aria-live="polite">
+        <header class="selection-header">
+          <span class="selection-swatch" id="selection-swatch"></span>
+          <div>
+            <p class="selection-kicker">Selected filter</p>
+            <h2 id="selection-title"></h2>
+          </div>
+          <div class="selection-nav">
+            <button id="previous-filter" type="button" title="Previous filter" aria-label="Previous filter">←</button>
+            <button id="next-filter" type="button" title="Next filter" aria-label="Next filter">→</button>
+          </div>
+        </header>
+        <dl class="filter-metadata" id="filter-metadata"></dl>
+
+        <section class="chart-section">
+          <div class="chart-heading">
+            <h3 id="trace-title"></h3>
+            <span id="trace-window"></span>
+          </div>
+          <svg id="activity-chart" viewBox="0 0 640 230" role="img"></svg>
+        </section>
+
+        <section class="chart-section" id="waveform-section" hidden>
+          <div class="chart-heading">
+            <h3>Mean template waveform</h3>
+            <span>Peak channel</span>
+          </div>
+          <svg id="waveform-chart" viewBox="0 0 640 190" role="img"></svg>
+        </section>
+
+        <a class="source-link" href="__DANDISET_URL__" target="_blank" rel="noreferrer">
+          Open source NWB on DANDI ↗
+        </a>
+      </aside>
+    </section>
+  </main>
+  <script id="segmentation-data" type="application/json">__SEGMENTATION_DATA__</script>
+  <script>__SEGMENTATION_JS__</script>
+  <script>__EMBED_AUTO_HEIGHT_JS__</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+{
+  "assets": {
+    "mesoscope": {
+      "api_url": "https://api.dandiarchive.org/api/assets/ab44a0f7-2864-4a30-8988-0b76aec28fa6/",
+      "asset_id": "ab44a0f7-2864-4a30-8988-0b76aec28fa6",
+      "content_size": 4671820041,
+      "dandiset_id": "001768",
+      "dandiset_url": "https://dandiarchive.org/dandiset/001768/draft/files",
+      "path": "sub-832700/sub-832700_ses-multiplane-ophys-832700-2026-01-29-11-18-09_ophys.nwb",
+      "sha256": "af52b3cbb224e85bc80ab5883eab4c0b40a6be42d134bfd3b8d3e66aa8f733dd",
+      "url": "https://dandiarchive.s3.amazonaws.com/blobs/bd5/3f7/bd53f709-6243-44c9-bb36-51fb0e84b234"
+    },
+    "neuropixels": {
+      "api_url": "https://api.dandiarchive.org/api/assets/03973a42-cf55-476f-80d7-85bc402fa57b/",
+      "asset_id": "03973a42-cf55-476f-80d7-85bc402fa57b",
+      "content_size": 13703955952,
+      "dandiset_id": "001637",
+      "dandiset_url": "https://dandiarchive.org/dandiset/001637/draft/files",
+      "path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-09-10-32-54_ecephys.nwb",
+      "sha256": "75c425992a9443a6b7bb19b00469469788d6be4dd8c721714d0692e214fe7bf9",
+      "url": "https://dandiarchive.s3.amazonaws.com/blobs/1a3/a02/1a3a0214-c40e-49ed-9ada-9379c9fca1e8"
+    },
+    "slap2": {
+      "api_url": "https://api.dandiarchive.org/api/assets/1b6509ef-70d7-46e4-9c8e-587bb6ace95f/",
+      "asset_id": "1b6509ef-70d7-46e4-9c8e-587bb6ace95f",
+      "content_size": 1467934164,
+      "dandiset_id": "001424",
+      "dandiset_url": "https://dandiarchive.org/dandiset/001424/draft/files",
+      "path": "sub-796630/sub-796630_ses-SLAP2-796630-2025-08-28-14-25-34_image+ophys.nwb",
+      "sha256": "af8798fbd52184adfce210ad1e6442c49dfc3488f1195062b48d00f25e3206b6",
+      "url": "https://dandiarchive.s3.amazonaws.com/blobs/e95/21c/e9521c86-5587-473c-990d-ed432bb65d28"
+    }
+  },
+  "notes": "Each viewer uses one representative field from the same session selected for the raw-data viewer. Filters and activity traces come from the matched DANDI NWB; the Neuropixels raw shaft projection reuses the pinned public AP excerpt recorded in raw-neural-excerpts.json.",
+  "retrieved_date": "2026-08-06",
+  "source_raw_neural_sha256": "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c",
+  "vendored_media_sha256": {
+    "mesoscope-visp-0-filters.png": "6869194986b17d996f987100f561f8b3dd951ce7eda1bd4bea7d0703ce1ff01b",
+    "mesoscope-visp-0-labels.png": "4fc58f57d5a7feb241054e6b795e8f8ce50f8d362a9349b08472bc12904413ce",
+    "mesoscope-visp-0-mean.png": "5861d6bfdaf08a751566fc3aa591a3d4383260a31fa0c6b821166e587152b0d2",
+    "slap2-dmd1-activity.png": "e6cc6c0fad2ab14eb1a07ae0d533dca54f92bc5ea87e3f98ec35014833490d33",
+    "slap2-dmd1-filters.png": "cc3ee88492016c3b3055834bcdc27f8a08222c778e3d2919dc7c84aa85b6e983",
+    "slap2-dmd1-labels.png": "bb67c3100c7eaf237550e066c64d8750bc3276ef90972e1ed9321a68212ed557",
+    "slap2-dmd1-mean.png": "d28d86e070bcc6c71c756761edc2b3b6ed9f7c2edb62931b85602878e86e0a59"
+  },
+  "vendored_sha256": "86e9958009ed3b09534618cc145cfc10178aafb4304fb3e30d11c82af5b84991"
+}

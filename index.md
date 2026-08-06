@@ -906,11 +906,13 @@ do not map one-to-one to the 164-record Interactive inventory.
 
 ## NWB file contents
 
-All data from this project are packaged as Neurodata Without Borders (NWB)
-files and deposited on the DANDI Archive. Neuropixels electrophysiology
-sessions are available at [DANDI:001637](https://dandiarchive.org/dandiset/001637),
-and mesoscope two-photon imaging sessions at
-[DANDI:001768](https://dandiarchive.org/dandiset/001768). Use the tabs below as
+All data from this project are packaged as Neurodata
+Without Borders (NWB) files and deposited on the DANDI Archive. Neuropixels
+electrophysiology sessions are available at
+[DANDI:001637](https://dandiarchive.org/dandiset/001637), mesoscope two-photon
+imaging sessions at [DANDI:001768](https://dandiarchive.org/dandiset/001768),
+and SLAP2 dendritic-imaging sessions at
+[DANDI:001424](https://dandiarchive.org/dandiset/001424). Use the tabs below as
 a map from a scientific question to the corresponding NWB object and PyNWB
 entry point. Object names can differ slightly among sessions; the paths shown
 here reflect representative files in these Dandisets.
@@ -959,6 +961,20 @@ summary images remain connected.
 | How does fluorescence change over time? | Each plane contains raw, neuropil, neuropil-corrected, and ΔF/F time series. | `nwbfile.processing[plane]["dff_timeseries"]` |
 | Where are inferred neural events? | Each plane's `event_timeseries` stores deconvolved event traces. | `nwbfile.processing[plane]["event_timeseries"]` |
 | What does the field of view look like? | Each plane's `images` interface contains average projection, maximum projection, and segmentation-mask summary images. | `nwbfile.processing[plane]["images"]` |
+
+:::
+:::{tab-item} SLAP2
+
+**SLAP2 NWB files ([DANDI:001424](https://dandiarchive.org/dandiset/001424)):**
+connect source masks, mean and activity images, and fluorescence traces within
+each DMD imaging path.
+
+| Question | NWB contents | Representative PyNWB entry point |
+| --- | --- | --- |
+| Where and how was each DMD path imaged? | `/general/optophysiology` describes the DMD1 and DMD2 imaging planes, optical channels, device, indicator, and field geometry. | `nwbfile.imaging_planes`, `nwbfile.devices` |
+| Which pixels belong to each extracted source? | `/processing/ophys/ImageSegmentation/PlaneSegmentation_DMD*` stores one weighted `pixel_mask` per source. | `nwbfile.processing["ophys"]["ImageSegmentation"]` |
+| What source and structural images are available? | `/processing/ophys/DMD*_mean_image_channel*` stores mean channel images, and `DMD*_activity_image` stores the source-localization activity projection. | `nwbfile.processing["ophys"]["DMD1_activity_image"]` |
+| How does each source change over time? | `/processing/ophys/Fluorescence_DMD*/DMD*_dFF` stores source ΔF/F with timestamps; the corresponding `DMD*_F0` series stores baseline fluorescence. | `nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_dFF"]` |
 
 :::
 ::::
@@ -1015,7 +1031,7 @@ and contrast-scaled independently for display. Source sessions are Neuropixels
 [ecephys_830846_2026-03-09_10-32-54](https://open.quiltdata.com/b/aind-open-data/tree/ecephys_830846_2026-03-09_10-32-54/) ([DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files));
 mesoscope [multiplane-ophys_832700_2026-01-29_11-18-09](https://open.quiltdata.com/b/aind-open-data/tree/multiplane-ophys_832700_2026-01-29_11-18-09/) ([DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files));
 and SLAP2
-[796630_2025-08-28_14-25-34](https://open.quiltdata.com/b/aind-open-data/tree/796630_2025-08-28_14-25-34/).
+[796630_2025-08-28_14-25-34](https://open.quiltdata.com/b/aind-open-data/tree/796630_2025-08-28_14-25-34/) ([DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files)).
 :::
 
 ## Units extraction
@@ -1032,6 +1048,14 @@ and SLAP2
 
 Draft plan for unit extraction and signal-to-noise analysis across recording modalities.
 :::
+
+Representative extraction filters and their matched activity traces can be
+inspected directly for
+[Neuropixels](#fig-supp-neuropixels-unit-filters),
+[mesoscope](#fig-supp-mesoscope-roi-filters), and
+[SLAP2](#fig-supp-slap2-source-filters). Each supplementary viewer uses the same
+representative session as the raw-data view in [Figure 5](#fig-aligned-neural-signals)
+and derives its filters and traces from the matched public NWB.
 
 ### Neuropixels recordings
 
@@ -1550,6 +1574,36 @@ The conclusion has not yet been drafted.
 :title: Supplementary Figure 4. Synchronized eye tracking across recording modalities.
 
 **Supplementary Figure 4.** Synchronized eye tracking in representative standard-oddball Neuropixels, mesoscope, and SLAP2 sessions. The **Interactive** view shows the public eye-camera video, reconstructed visual stimulus, and processed eye fits on a common 16-second clock. Fit-source tabs switch the center field, geometric values, and area trace among the pupil, corneal reflection, and eye ellipse. Marker position gives the selected fit center within the complete camera frame; the dashed crosshair marks its median center across valid nonblink fits from that source session. Marker size and color vary with selected-fit area after scaling to that fit's session-wide 5th–95th percentile nonblink range. The tracking field turns black during likely-blink samples, which are also shown as shaded intervals in the area trace. The **Static** view vertically stacks the raw pupil x position, y position, and area for each modality on the same 0–16-second axis. Teal bands mark the complete 90-degree orientation-deviant presentation and gray bands mark likely-blink intervals; traces break at invalid fits rather than interpolating through them. Neuropixels and mesoscope eye-camera frames are aligned through 100-kHz exposure edges in the session sync file, with reported dropped frames removed before mapping to MP4 time. SLAP2 uses aligned Harp timestamps and packaged pupil-frame indices to map the processed fits to its 30 Hz EyeCamera MP4. Eye fits, blink flags, and stimulus rows come from each public NWB time base. Modality tabs switch among all three source-backed examples, and source links expose the corresponding DANDI and raw S3 records.
+:::
+
+:::{iframe} ./interactive/segmentation-neuropixels.html
+:label: fig-supp-neuropixels-unit-filters
+:enumerated: false
+:width: 100%
+:title: Supplementary Figure 4. Neuropixels unit-template filters and activity.
+:placeholder: ./images/figures/generated/supplementary-neuropixels-unit-filters.svg
+
+**Supplementary Figure 4.** Neuropixels unit-template filters and activity for Probe A in representative session `ecephys_830846_2026-03-09_10-32-54`. The source view projects 100 ms of raw AP variation across 96 regularly spaced contacts and overlays all 569 sorted units. Each footprint is centered on its NWB extremum channel and scaled by the NWB waveform-spread metric; QC-passing units can be isolated with the viewer toggle. Selecting a footprint shows the unit's 20 ms binned spike rate from 2 s before to 10 s after the first sequence omission and its actual peak-channel mean template waveform. In the **Static** view, **A** shows all footprints on the probe projection and **B** shows the selected unit's activity and waveform. Unit templates, spike times, quality metrics, and electrode geometry come from the public draft of [DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files); the raw projection comes from the matched public compressed AP stream.
+:::
+
+:::{iframe} ./interactive/segmentation-mesoscope.html
+:label: fig-supp-mesoscope-roi-filters
+:enumerated: false
+:width: 100%
+:title: Supplementary Figure 5. Mesoscope ROI filters and fluorescence.
+:placeholder: ./images/figures/generated/supplementary-mesoscope-roi-filters.svg
+
+**Supplementary Figure 5.** Mesoscope ROI filters and fluorescence for the VISp 0 plane in representative session `multiplane-ophys_832700_2026-01-29_11-18-09`. All 399 NWB segmentation masks are outlined over the average projection. Selecting a mask reveals its soma or dendrite classification probabilities, footprint geometry, and ΔF/F trace from 2 s before to 10 s after the first motor mismatch. Filter colors distinguish neighboring outlines and do not encode ROI class. In the **Static** view, **A** shows the complete segmentation and **B** shows the selected ROI trace. The average projection, segmentation masks, classifications, timestamps, and ΔF/F values are streamed from the matched NWB in the public draft of [DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files).
+:::
+
+:::{iframe} ./interactive/segmentation-slap2.html
+:label: fig-supp-slap2-source-filters
+:enumerated: false
+:width: 100%
+:title: Supplementary Figure 6. SLAP2 source filters and fluorescence.
+:placeholder: ./images/figures/generated/supplementary-slap2-source-filters.svg
+
+**Supplementary Figure 6.** SLAP2 source filters and fluorescence for DMD1 in representative session `SLAP2_796630_2025-08-28-14-25-34`. All 45 source masks are outlined over the channel-0 mean image, with the source-localization activity image available as a separate overlay. Selecting a mask reveals its footprint geometry and a 10 s, approximately 200 Hz ΔF/F excerpt beginning at NWB time 130 s. Filter colors distinguish neighboring outlines and do not encode source type. In the **Static** view, **A** shows the mean image, activity projection, and complete source segmentation and **B** shows the selected source trace. Mean and activity images, `PlaneSegmentation` pixel masks, timestamps, and fluorescence traces are streamed from the matched NWB in the public draft of [DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files).
 :::
 
 # Supplementary Text 1: Published oddball paradigms and sampling ranges

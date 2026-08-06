@@ -32,6 +32,9 @@ from openscope_p3_publication.figures import (
     NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH,
     REPO_ROOT,
     RUNNING_STATISTICS_PATH,
+    SEGMENTATION_VIEWER_DATA_PATH,
+    SEGMENTATION_VIEWER_PROVENANCE_PATH,
+    SEGMENTATION_VIEWER_STATIC_OUTPUTS,
     SESSION_RECORDS_PATH,
     SESSION_RECORDS_PROVENANCE_PATH,
     SESSION_TYPE_COLORS,
@@ -52,6 +55,7 @@ from openscope_p3_publication.figures import (
     load_neuropixels_trajectory_data,
     load_publication_table_data,
     load_running_statistics,
+    load_segmentation_viewers,
     load_shared_stimulus_table_excerpts,
     load_stimulus_table_excerpts,
     load_unit_yield_data,
@@ -74,6 +78,9 @@ from openscope_p3_publication.figures import (
     write_neural_viewer_html,
     write_neuropixels_trajectory_html,
     write_neuropixels_trajectory_svg,
+    write_segmentation_viewer_html,
+    write_segmentation_viewer_svg,
+    write_segmentation_viewers,
     write_session_inventory_svg,
     write_standard_oddball_plan_svg,
     write_static_svg,
@@ -389,6 +396,141 @@ def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> Non
     write_neuropixels_trajectory_svg(svg_path)
     assert html_path.read_text(encoding="utf-8") == html
     assert svg_path.read_text(encoding="utf-8") == svg
+
+
+def test_segmentation_viewer_snapshot_is_source_backed() -> None:
+    payload = load_segmentation_viewers()
+    provenance = json.loads(
+        SEGMENTATION_VIEWER_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+
+    assert hashlib.sha256(SEGMENTATION_VIEWER_DATA_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
+    )
+    viewers = {viewer["id"]: viewer for viewer in payload["viewers"]}
+    assert {modality: viewer["filterCount"] for modality, viewer in viewers.items()} == {
+        "neuropixels": 569,
+        "mesoscope": 399,
+        "slap2": 45,
+    }
+    assert {modality: viewer["traceColumns"] for modality, viewer in viewers.items()} == {
+        "neuropixels": 600,
+        "mesoscope": 114,
+        "slap2": 1999,
+    }
+    assert {
+        modality: viewer["asset"]["dandiset_id"]
+        for modality, viewer in viewers.items()
+    } == {
+        "neuropixels": "001637",
+        "mesoscope": "001768",
+        "slap2": "001424",
+    }
+    assert viewers["slap2"]["asset"]["asset_id"] == (
+        "1b6509ef-70d7-46e4-9c8e-587bb6ace95f"
+    )
+    assert viewers["neuropixels"]["filters"][92]["label"] == "Unit 92"
+    assert viewers["mesoscope"]["filters"][76]["label"] == "ROI 77"
+    assert viewers["slap2"]["filters"][4]["label"] == "Source 5"
+    assert viewers["neuropixels"]["waveformColumns"] == 210
+    assert len(viewers["neuropixels"]["rawChannels"]) == 96
+    assert set(provenance["vendored_media_sha256"]) == {
+        "mesoscope-visp-0-filters.png",
+        "mesoscope-visp-0-labels.png",
+        "mesoscope-visp-0-mean.png",
+        "slap2-dmd1-activity.png",
+        "slap2-dmd1-filters.png",
+        "slap2-dmd1-labels.png",
+        "slap2-dmd1-mean.png",
+    }
+
+
+def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
+    first_renders = {}
+    for modality, filter_count in (
+        ("neuropixels", 569),
+        ("mesoscope", 399),
+        ("slap2", 45),
+    ):
+        html_path = write_segmentation_viewer_html(
+            modality,
+            tmp_path / f"segmentation-{modality}.html",
+        )
+        svg_path = write_segmentation_viewer_svg(
+            modality,
+            tmp_path / SEGMENTATION_VIEWER_STATIC_OUTPUTS[modality].name,
+        )
+        html = html_path.read_text(encoding="utf-8")
+        svg = svg_path.read_text(encoding="utf-8")
+        first_renders[modality] = (html, svg)
+
+        assert 'id="source-canvas"' in html
+        assert 'id="filter-select"' in html
+        assert 'id="activity-chart"' in html
+        assert 'id="overlay-opacity"' in html
+        assert f'"filterCount":{filter_count}' in html
+        assert 'document.querySelector("body > main")' in html
+        assert "[hidden] { display: none !important; }" in html
+        assert "filterAt(event)" in html
+        assert "__SEGMENTATION_" not in html
+        assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+        assert 'role="img"' in svg
+        assert ">A</text>" in svg and ">B</text>" in svg
+        assert "Selected filter" in svg
+        assert f"{filter_count} filters" in svg
+        if modality == "neuropixels":
+            assert "Mean template waveform · peak channel" in svg
+            assert svg.count("Sequence omission") == 1
+            assert 'id="qc-toggle"' in html
+        else:
+            assert svg.count("data:image/png;base64,") >= 2
+        if modality == "slap2":
+            assert 'id="activity-toggle"' in html
+            assert "DANDI:001424" not in html
+            assert "dandiset/001424/draft/files" in html
+
+    copied_media = tmp_path / "media" / "segmentation-viewers"
+    assert {path.name for path in copied_media.glob("*.png")} == set(
+        json.loads(
+            SEGMENTATION_VIEWER_PROVENANCE_PATH.read_text(encoding="utf-8")
+        )["vendored_media_sha256"]
+    )
+    for modality, (html, svg) in first_renders.items():
+        html_path = write_segmentation_viewer_html(
+            modality,
+            tmp_path / f"segmentation-{modality}.html",
+        )
+        svg_path = write_segmentation_viewer_svg(
+            modality,
+            tmp_path / SEGMENTATION_VIEWER_STATIC_OUTPUTS[modality].name,
+        )
+        assert html_path.read_text(encoding="utf-8") == html
+        assert svg_path.read_text(encoding="utf-8") == svg
+
+
+def test_segmentation_viewer_orchestrator_writes_all_modalities(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output_paths = {
+        modality: tmp_path / f"segmentation-{modality}.html"
+        for modality in ("neuropixels", "mesoscope", "slap2")
+    }
+    static_paths = {
+        modality: tmp_path / f"segmentation-{modality}.svg"
+        for modality in output_paths
+    }
+    monkeypatch.setattr(
+        "openscope_p3_publication.figures.SEGMENTATION_VIEWER_OUTPUTS",
+        output_paths,
+    )
+    monkeypatch.setattr(
+        "openscope_p3_publication.figures.SEGMENTATION_VIEWER_STATIC_OUTPUTS",
+        static_paths,
+    )
+
+    assert write_segmentation_viewers() == list(output_paths.values())
+    assert all(path.is_file() for path in (*output_paths.values(), *static_paths.values()))
 
 
 def test_stimulus_sources_are_pinned() -> None:

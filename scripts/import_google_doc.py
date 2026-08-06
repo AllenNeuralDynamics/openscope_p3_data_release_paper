@@ -409,6 +409,12 @@ MESOSCOPE_RAW_SOURCE = (
     "multiplane-ophys_832700_2026-01-29_11-18-09/) "
     "([DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files))"
 )
+SLAP2_RAW_SOURCE = (
+    "[796630_2025-08-28_14-25-34]"
+    "(https://open.quiltdata.com/b/aind-open-data/tree/"
+    "796630_2025-08-28_14-25-34/) "
+    "([DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files))"
+)
 
 NEURAL_VIEWER_BLOCK = f"""## Raw data across recording modalities
 
@@ -454,7 +460,7 @@ plane; and indicator plus remote-focus depth below pia (91 µm for DMD1 and
 and contrast-scaled independently for display. Source sessions are Neuropixels
 {NEUROPIXELS_RAW_SOURCE}; mesoscope {MESOSCOPE_RAW_SOURCE};
 and SLAP2
-[796630_2025-08-28_14-25-34](https://open.quiltdata.com/b/aind-open-data/tree/796630_2025-08-28_14-25-34/).
+{SLAP2_RAW_SOURCE}.
 :::"""
 
 OTHER_STUDIES_BLOCK = """:::{iframe} ./interactive/literature-comparison.html
@@ -493,6 +499,126 @@ trajectories from 57 sessions and 16 mice had finite CCF coordinates. Three of
 the 60 source sessions are excluded because their NWB electrode tables lack
 `x`, `y`, and `z` coordinates.
 :::"""
+
+SEGMENTATION_VIEWER_BLOCK = """:::{iframe} ./interactive/segmentation-neuropixels.html
+:label: fig-supp-neuropixels-unit-filters
+:enumerated: false
+:width: 100%
+:title: Supplementary Figure 4. Neuropixels unit-template filters and activity.
+:placeholder: ./images/figures/generated/supplementary-neuropixels-unit-filters.svg
+
+**Supplementary Figure 4.** Neuropixels unit-template filters and activity for
+Probe A in representative session `ecephys_830846_2026-03-09_10-32-54`.
+The source view projects 100 ms of raw AP variation across 96 regularly spaced
+contacts and overlays all 569 sorted units. Each footprint is centered on its
+NWB extremum channel and scaled by the NWB waveform-spread metric; QC-passing
+units can be isolated with the viewer toggle. Selecting a footprint shows the
+unit's 20 ms binned spike rate from 2 s before to 10 s after the first sequence
+omission and its actual peak-channel mean template waveform. In the **Static**
+view, **A** shows all footprints on the probe projection and **B** shows the
+selected unit's activity and waveform. Unit templates, spike times, quality
+metrics, and electrode geometry come from the public draft of
+[DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files); the raw
+projection comes from the matched public compressed AP stream.
+:::
+
+:::{iframe} ./interactive/segmentation-mesoscope.html
+:label: fig-supp-mesoscope-roi-filters
+:enumerated: false
+:width: 100%
+:title: Supplementary Figure 5. Mesoscope ROI filters and fluorescence.
+:placeholder: ./images/figures/generated/supplementary-mesoscope-roi-filters.svg
+
+**Supplementary Figure 5.** Mesoscope ROI filters and fluorescence for the VISp
+0 plane in representative session `multiplane-ophys_832700_2026-01-29_11-18-09`.
+All 399 NWB segmentation masks are outlined over the average projection.
+Selecting a mask reveals its soma or dendrite classification probabilities,
+footprint geometry, and ΔF/F trace from 2 s before to 10 s after the first motor
+mismatch. Filter colors distinguish neighboring outlines and do not encode ROI
+class. In the **Static** view, **A** shows the complete segmentation and **B**
+shows the selected ROI trace. The average projection, segmentation masks,
+classifications, timestamps, and ΔF/F values are streamed from the matched NWB
+in the public draft of
+[DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files).
+:::
+
+:::{iframe} ./interactive/segmentation-slap2.html
+:label: fig-supp-slap2-source-filters
+:enumerated: false
+:width: 100%
+:title: Supplementary Figure 6. SLAP2 source filters and fluorescence.
+:placeholder: ./images/figures/generated/supplementary-slap2-source-filters.svg
+
+**Supplementary Figure 6.** SLAP2 source filters and fluorescence for DMD1 in
+representative session `SLAP2_796630_2025-08-28-14-25-34`. All 45 source masks
+are outlined over the channel-0 mean image, with the source-localization activity
+image available as a separate overlay. Selecting a mask reveals its footprint
+geometry and a 10 s, approximately 200 Hz ΔF/F excerpt beginning at NWB time
+130 s. Filter colors distinguish neighboring outlines and do not encode source
+type. In the **Static** view, **A** shows the mean image, activity projection,
+and complete source segmentation and **B** shows the selected source trace.
+Mean and activity images, `PlaneSegmentation` pixel masks, timestamps, and
+fluorescence traces are streamed from the matched NWB in the public draft of
+[DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files).
+:::"""
+
+UNIT_EXTRACTION_VIEWER_DESCRIPTION = """Representative extraction filters and
+their matched activity traces can be inspected directly for
+[Neuropixels](#fig-supp-neuropixels-unit-filters),
+[mesoscope](#fig-supp-mesoscope-roi-filters), and
+[SLAP2](#fig-supp-slap2-source-filters). Each supplementary viewer uses the same
+representative session as the raw-data view in [Figure 5](#fig-aligned-neural-signals)
+and derives its filters and traces from the matched public NWB."""
+
+NWB_ACCESS_INTRO = """All data from this project are packaged as Neurodata
+Without Borders (NWB) files and deposited on the DANDI Archive. Neuropixels
+electrophysiology sessions are available at
+[DANDI:001637](https://dandiarchive.org/dandiset/001637), mesoscope two-photon
+imaging sessions at [DANDI:001768](https://dandiarchive.org/dandiset/001768),
+and SLAP2 dendritic-imaging sessions at
+[DANDI:001424](https://dandiarchive.org/dandiset/001424). Use the tabs below"""
+
+SLAP2_NWB_TAB = "\n".join(
+    [
+        ":::{tab-item} SLAP2",
+        "",
+        (
+            "**SLAP2 NWB files "
+            "([DANDI:001424](https://dandiarchive.org/dandiset/001424)):**"
+        ),
+        "connect source masks, mean and activity images, and fluorescence traces within",
+        "each DMD imaging path.",
+        "",
+        "| Question | NWB contents | Representative PyNWB entry point |",
+        "| --- | --- | --- |",
+        (
+            "| Where and how was each DMD path imaged? | `/general/optophysiology` "
+            "describes the DMD1 and DMD2 imaging planes, optical channels, device, "
+            "indicator, and field geometry. | `nwbfile.imaging_planes`, "
+            "`nwbfile.devices` |"
+        ),
+        (
+            "| Which pixels belong to each extracted source? | `/processing/ophys/"
+            "ImageSegmentation/PlaneSegmentation_DMD*` stores one weighted `pixel_mask` "
+            "per source. | `nwbfile.processing[\"ophys\"][\"ImageSegmentation\"]` |"
+        ),
+        (
+            "| What source and structural images are available? | `/processing/ophys/"
+            "DMD*_mean_image_channel*` stores mean channel images, and "
+            "`DMD*_activity_image` stores the source-localization activity projection. | "
+            "`nwbfile.processing[\"ophys\"][\"DMD1_activity_image\"]` |"
+        ),
+        (
+            "| How does each source change over time? | `/processing/ophys/"
+            "Fluorescence_DMD*/DMD*_dFF` stores source ΔF/F with timestamps; the "
+            "corresponding `DMD*_F0` series stores baseline fluorescence. | "
+            "`nwbfile.processing[\"ophys\"][\"Fluorescence_DMD1\"]"
+            "[\"DMD1_dFF\"]` |"
+        ),
+        "",
+        ":::",
+    ]
+)
 
 BEHAVIOR_VIEWER_BLOCK = """:::{iframe} ./interactive/behavior-viewer.html
 :label: fig-behavior-tracking
@@ -1149,6 +1275,56 @@ def add_neuropixels_trajectory_figure(markdown: str) -> str:
     )
 
 
+def add_segmentation_viewer_figures(markdown: str) -> str:
+    heading = "# Supplementary Text 1: Published oddball paradigms and sampling ranges"
+    if markdown.count(heading) != 1:
+        raise RuntimeError("Expected one Supplementary Text 1 heading.")
+    if "fig-supp-neuropixels-unit-filters" in markdown:
+        return markdown
+    return markdown.replace(
+        heading,
+        f"{SEGMENTATION_VIEWER_BLOCK}\n\n{heading}",
+        1,
+    )
+
+
+def add_unit_extraction_viewer_links(markdown: str) -> str:
+    anchor = "### Neuropixels recordings"
+    if markdown.count(anchor) != 1:
+        raise RuntimeError("Expected one Neuropixels unit-extraction subsection.")
+    if "fig-supp-mesoscope-roi-filters" in markdown[: markdown.index(anchor)]:
+        return markdown
+    return markdown.replace(
+        anchor,
+        f"{UNIT_EXTRACTION_VIEWER_DESCRIPTION}\n\n{anchor}",
+        1,
+    )
+
+
+def add_slap2_nwb_contents(markdown: str) -> str:
+    heading = "## NWB file contents"
+    end_heading = "# Data validation"
+    if markdown.count(heading) != 1 or markdown.count(end_heading) != 1:
+        raise RuntimeError("Expected one NWB contents and Data validation heading.")
+    start = markdown.index(heading)
+    stop = markdown.index(end_heading, start)
+    section = markdown[start:stop]
+    intro_pattern = re.compile(
+        r"All data from this project are packaged as Neurodata\s+Without Borders.*?"
+        r"Use the tabs below",
+        re.DOTALL,
+    )
+    section, count = intro_pattern.subn(NWB_ACCESS_INTRO, section, count=1)
+    if count != 1:
+        raise RuntimeError("Expected one NWB access introduction.")
+    if ":::{tab-item} SLAP2" not in section:
+        closing = section.rfind("\n::::")
+        if closing < 0:
+            raise RuntimeError("Expected the NWB tab-set closing fence.")
+        section = f"{section[:closing]}\n{SLAP2_NWB_TAB}\n{section[closing:]}"
+    return f"{markdown[:start]}{section}{markdown[stop:]}"
+
+
 def move_glossary_to_end(markdown: str) -> str:
     pattern = re.compile(
         r"\n## Glossary\n(?P<body>.*?)\n# Data validation\n",
@@ -1260,7 +1436,10 @@ def build_index(markdown: str) -> str:
     markdown = replace_behavior_analysis_text(markdown)
     markdown = relocate_supplementary_implant_figure(markdown)
     markdown = add_neuropixels_trajectory_figure(markdown)
+    markdown = add_segmentation_viewer_figures(markdown)
     markdown = move_glossary_to_end(markdown)
+    markdown = add_slap2_nwb_contents(markdown)
+    markdown = add_unit_extraction_viewer_links(markdown)
     data_validation_heading = "# Data validation"
     if markdown.count(data_validation_heading) != 1:
         raise RuntimeError("Expected one Data validation heading.")
