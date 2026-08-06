@@ -31,17 +31,17 @@
       "url": "https://dandiarchive.s3.amazonaws.com/blobs/e95/21c/e9521c86-5587-473c-990d-ed432bb65d28"
     }
   },
-  "notes": "Each viewer uses one representative field from the same session selected for the raw-data viewer. Filters and activity traces come from the matched DANDI NWB; the Neuropixels raw shaft projection reuses the pinned public AP excerpt recorded in raw-neural-excerpts.json.",
+  "notes": "Each viewer uses one representative field from the same session selected for the raw-data viewer. Filters and activity traces come from the matched DANDI NWB; the Neuropixels time-by-depth view reuses the pinned public AP excerpt recorded in raw-neural-excerpts.json and overlays sorted-unit spike times from the matched NWB.",
   "retrieved_date": "2026-08-06",
   "source_raw_neural_sha256": "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c",
   "vendored_media_sha256": {
-    "mesoscope-visp-0-filters.png": "6869194986b17d996f987100f561f8b3dd951ce7eda1bd4bea7d0703ce1ff01b",
+    "mesoscope-visp-0-filters.png": "5f01bec11b8b9f5d9ebe0c615593ae63bb82c6ce8e31c6ffd058a5f4f55f4db1",
     "mesoscope-visp-0-labels.png": "4fc58f57d5a7feb241054e6b795e8f8ce50f8d362a9349b08472bc12904413ce",
-    "mesoscope-visp-0-mean.png": "5861d6bfdaf08a751566fc3aa591a3d4383260a31fa0c6b821166e587152b0d2",
-    "slap2-dmd1-activity.png": "e6cc6c0fad2ab14eb1a07ae0d533dca54f92bc5ea87e3f98ec35014833490d33",
-    "slap2-dmd1-filters.png": "cc3ee88492016c3b3055834bcdc27f8a08222c778e3d2919dc7c84aa85b6e983",
-    "slap2-dmd1-labels.png": "bb67c3100c7eaf237550e066c64d8750bc3276ef90972e1ed9321a68212ed557",
-    "slap2-dmd1-mean.png": "d28d86e070bcc6c71c756761edc2b3b6ed9f7c2edb62931b85602878e86e0a59"
+    "mesoscope-visp-0-mean.png": "7300e03ce4160a665025c311ff4f429a9e4b6cff9be9212e847ca736d3a1be60",
+    "slap2-dmd1-activity.png": "970987e3ba32408a1ad118fb2351005fd522454eb2ef611c2fbeca19adcb7f39",
+    "slap2-dmd1-filters.png": "f9058b009478befa0a86a819ac0aa5c7a9ce7abb3b58abc052c737fd139e0214",
+    "slap2-dmd1-labels.png": "aad6e0d3b4cdaae4f6f1507d6c598e6e061fc62b0192e2286b31b1eb1b66b1d4",
+    "slap2-dmd1-mean.png": "6dc6fa0c0078295e6eb92bf7c37d23690b39fa01fa2f2dd2095b667ac4926e22"
   },
-  "vendored_sha256": "86e9958009ed3b09534618cc145cfc10178aafb4304fb3e30d11c82af5b84991"
+  "vendored_sha256": "1c38317644f23c551631b97f60e06e08fb49664d37092911c01cfea2512bc7cf"
 }

@@ -407,6 +407,7 @@ def test_segmentation_viewer_snapshot_is_source_backed() -> None:
     assert hashlib.sha256(SEGMENTATION_VIEWER_DATA_PATH.read_bytes()).hexdigest() == (
         provenance["vendored_sha256"]
     )
+    assert payload["version"] == 2
     viewers = {viewer["id"]: viewer for viewer in payload["viewers"]}
     assert {modality: viewer["filterCount"] for modality, viewer in viewers.items()} == {
         "neuropixels": 569,
@@ -433,7 +434,24 @@ def test_segmentation_viewer_snapshot_is_source_backed() -> None:
     assert viewers["mesoscope"]["filters"][76]["label"] == "ROI 77"
     assert viewers["slap2"]["filters"][4]["label"] == "Source 5"
     assert viewers["neuropixels"]["waveformColumns"] == 210
-    assert len(viewers["neuropixels"]["rawChannels"]) == 96
+    assert viewers["neuropixels"]["viewType"] == "spike-map"
+    assert (viewers["neuropixels"]["rawRows"], viewers["neuropixels"]["rawColumns"]) == (
+        96,
+        3000,
+    )
+    assert len(base64.b64decode(viewers["neuropixels"]["rawDataBase64"])) == 288_000
+    assert len(viewers["neuropixels"]["spikeEvents"]) == 310
+    assert len({event["filterIndex"] for event in viewers["neuropixels"]["spikeEvents"]}) == 167
+    assert all(
+        "eventLabel" not in viewer
+        and "context" not in viewer
+        and viewer["traceTimesSeconds"][0] >= 0
+        for viewer in viewers.values()
+    )
+    assert (viewers["slap2"]["baseImage"]["width"], viewers["slap2"]["baseImage"]["height"]) == (
+        427,
+        408,
+    )
     assert set(provenance["vendored_media_sha256"]) == {
         "mesoscope-visp-0-filters.png",
         "mesoscope-visp-0-labels.png",
@@ -467,11 +485,15 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
         assert 'id="source-canvas"' in html
         assert 'id="filter-select"' in html
         assert 'id="activity-chart"' in html
-        assert 'id="overlay-opacity"' in html
+        assert 'id="background-intensity"' in html
+        assert 'id="overlay-opacity"' not in html
         assert f'"filterCount":{filter_count}' in html
         assert 'document.querySelector("body > main")' in html
         assert "[hidden] { display: none !important; }" in html
         assert "filterAt(event)" in html
+        assert "chart-event" not in html
+        assert "Sequence omission" not in html
+        assert "Motor orientation 90" not in html
         assert "__SEGMENTATION_" not in html
         assert "__EMBED_AUTO_HEIGHT_JS__" not in html
         assert 'role="img"' in svg
@@ -480,12 +502,18 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
         assert f"{filter_count} filters" in svg
         if modality == "neuropixels":
             assert "Mean template waveform · peak channel" in svg
-            assert svg.count("Sequence omission") == 1
+            assert "310 detected spikes" in svg
+            assert "Raw AP voltage + detected sorted spikes" in html
+            assert "Detected sorted spikes" in html
+            assert "Raw AP contrast" in html
+            assert "Sequence omission" not in svg
             assert 'id="qc-toggle"' in html
         else:
             assert svg.count("data:image/png;base64,") >= 2
+            assert "Background intensity" in html
+            assert "state.overlayOpacity" not in html
         if modality == "slap2":
-            assert 'id="activity-toggle"' in html
+            assert '<input id="activity-toggle" type="checkbox">' in html
             assert "DANDI:001424" not in html
             assert "dandiset/001424/draft/files" in html
 

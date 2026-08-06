@@ -149,7 +149,7 @@ h1 {
   font-size: 0.78rem;
 }
 
-#overlay-opacity { width: 100%; accent-color: var(--accent); }
+#background-intensity { width: 100%; accent-color: var(--accent); }
 
 .toggle-control {
   display: inline-flex;
@@ -231,6 +231,7 @@ h1 {
 }
 
 .visual-key span { display: inline-flex; align-items: center; gap: 6px; }
+.visual-key b { font-weight: 650; }
 .visual-key i { width: 17px; height: 3px; display: inline-block; background: #25aae1; }
 .visual-key .key-activity { height: 9px; background: rgba(233, 156, 52, 0.72); }
 .visual-key .key-qc { height: 9px; border: 2px solid #8cc63f; background: transparent; }
@@ -329,9 +330,7 @@ h1 {
 .chart-axis { stroke: #8e9895; stroke-width: 1; }
 .chart-trace { fill: none; stroke: var(--accent); stroke-width: 2.2; vector-effect: non-scaling-stroke; }
 .chart-area { fill: color-mix(in srgb, var(--accent) 16%, transparent); stroke: none; }
-.chart-event { stroke: #d15f47; stroke-dasharray: 5 4; stroke-width: 1.4; }
 .chart-label { fill: #65706d; font-family: "IBM Plex Mono", monospace; font-size: 17px; }
-.chart-event-label { fill: #b34e3a; font-family: "Myriad Pro", sans-serif; font-size: 17px; font-weight: 650; }
 
 .source-link {
   width: max-content;

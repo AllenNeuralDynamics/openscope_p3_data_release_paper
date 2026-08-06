@@ -8,12 +8,14 @@
     activityControl: document.getElementById("activity-control"),
     activityKey: document.getElementById("activity-key"),
     activityToggle: document.getElementById("activity-toggle"),
+    background: document.getElementById("background-intensity"),
+    backgroundLabel: document.getElementById("background-label"),
     canvas: document.getElementById("source-canvas"),
     filterMetadata: document.getElementById("filter-metadata"),
     filterSelect: document.getElementById("filter-select"),
+    filterKeyLabel: document.getElementById("filter-key-label"),
     loading: document.getElementById("loading-status"),
     nextFilter: document.getElementById("next-filter"),
-    opacity: document.getElementById("overlay-opacity"),
     previousFilter: document.getElementById("previous-filter"),
     qcControl: document.getElementById("qc-control"),
     qcKey: document.getElementById("qc-key"),
@@ -31,15 +33,19 @@
   const waveformValues = viewer.waveformDataBase64
     ? decodeFloat32(viewer.waveformDataBase64)
     : null;
+  const rawValues = viewer.rawDataBase64 ? decodeUint8(viewer.rawDataBase64) : null;
   const imageRecords = {};
+  const rawHeatmapCanvas = document.createElement("canvas");
+  const rawHeatmapContext = rawHeatmapCanvas.getContext("2d");
+  let rawHeatmapIntensity = null;
   const state = {
-    activityVisible: true,
+    activityVisible: false,
+    backgroundIntensity: 1,
     imageRect: null,
     labelPixels: null,
-    overlayOpacity: 0.74,
-    probeHits: [],
     qcOnly: false,
     selectedIndex: viewer.defaultFilterIndex,
+    spikeHits: [],
   };
 
   function decodeFloat32(encoded) {
@@ -49,6 +55,15 @@
       bytes[index] = binary.charCodeAt(index);
     }
     return new Float32Array(bytes.buffer);
+  }
+
+  function decodeUint8(encoded) {
+    const binary = atob(encoded);
+    const values = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      values[index] = binary.charCodeAt(index);
+    }
+    return values;
   }
 
   function currentFilter() {
@@ -176,13 +191,16 @@
     context.fillStyle = "#081012";
     context.fillRect(0, 0, elements.canvas.width, elements.canvas.height);
     context.imageSmoothingEnabled = true;
+    context.filter = `brightness(${state.backgroundIntensity})`;
     context.drawImage(imageRecords.base, rect.x, rect.y, rect.width, rect.height);
+    context.filter = "none";
     if (state.activityVisible && imageRecords.activity) {
       context.globalAlpha = 0.72;
       context.drawImage(imageRecords.activity, rect.x, rect.y, rect.width, rect.height);
       context.globalAlpha = 1;
     }
-    context.globalAlpha = state.overlayOpacity;
+    context.imageSmoothingEnabled = false;
+    context.globalAlpha = 1;
     context.drawImage(imageRecords.overlay, rect.x, rect.y, rect.width, rect.height);
     context.globalAlpha = 1;
     drawSelectionMask(rect);
@@ -192,104 +210,140 @@
     drawScaleBar(rect);
   }
 
-  function probeTransform() {
-    const xMin = -8;
-    const xMax = 72;
-    const yMax = Math.max(
-      ...viewer.rawChannels.map((channel) => channel.probeYUm),
-      ...viewer.filters.map((filter) => filter.probeYUm),
-    ) + 80;
-    const bounds = { left: 145, right: 755, top: 38, bottom: 668 };
+  function rawHeatmap() {
+    if (rawHeatmapIntensity === state.backgroundIntensity) return rawHeatmapCanvas;
+    rawHeatmapCanvas.width = viewer.rawColumns;
+    rawHeatmapCanvas.height = viewer.rawRows;
+    const image = rawHeatmapContext.createImageData(viewer.rawColumns, viewer.rawRows);
+    for (let index = 0; index < rawValues.length; index += 1) {
+      const gray = Math.max(
+        0,
+        Math.min(255, Math.round(127.5 + (rawValues[index] - 127.5) * state.backgroundIntensity)),
+      );
+      const offset = index * 4;
+      image.data[offset] = gray;
+      image.data[offset + 1] = gray;
+      image.data[offset + 2] = gray;
+      image.data[offset + 3] = 255;
+    }
+    rawHeatmapContext.putImageData(image, 0, 0);
+    rawHeatmapIntensity = state.backgroundIntensity;
+    return rawHeatmapCanvas;
+  }
+
+  function spikeMapLayout() {
+    const plot = { left: 88, right: 872, top: 42, bottom: 650 };
     return {
-      bounds,
-      x: (value) => bounds.left + (value - xMin) / (xMax - xMin) * (bounds.right - bounds.left),
-      y: (value) => bounds.bottom - value / yMax * (bounds.bottom - bounds.top),
-      yScale: (bounds.bottom - bounds.top) / yMax,
+      plot,
+      x: (timeMs) => plot.left + (timeMs - viewer.rawTimeStartMs)
+        / (viewer.rawTimeEndMs - viewer.rawTimeStartMs) * (plot.right - plot.left),
+      y: (row) => plot.top + (row + 0.5) / viewer.rawRows * (plot.bottom - plot.top),
     };
   }
 
-  function drawProbeViewer() {
+  function drawSpikeMap() {
     context.fillStyle = "#081012";
     context.fillRect(0, 0, elements.canvas.width, elements.canvas.height);
-    const transform = probeTransform();
-    const { bounds } = transform;
-    const shaftLeft = transform.x(-4);
-    const shaftRight = transform.x(68);
-    context.fillStyle = "#111d1f";
-    context.fillRect(shaftLeft, bounds.top, shaftRight - shaftLeft, bounds.bottom - bounds.top);
-    context.strokeStyle = "#465355";
-    context.lineWidth = 1;
-    context.strokeRect(shaftLeft, bounds.top, shaftRight - shaftLeft, bounds.bottom - bounds.top);
+    const layout = spikeMapLayout();
+    const { plot } = layout;
+    context.imageSmoothingEnabled = false;
+    context.drawImage(
+      rawHeatmap(),
+      plot.left,
+      plot.top,
+      plot.right - plot.left,
+      plot.bottom - plot.top,
+    );
 
-    viewer.rawChannels.forEach((channel) => {
-      const x = transform.x(channel.probeXUm);
-      const y = transform.y(channel.probeYUm);
-      const radius = 4 + channel.rawVariation * 9;
-      const gradient = context.createRadialGradient(x, y, 0, x, y, radius * 2.2);
-      gradient.addColorStop(0, `rgba(235, 246, 242, ${0.35 + channel.rawVariation * 0.6})`);
-      gradient.addColorStop(0.32, `rgba(36, 188, 173, ${0.18 + channel.rawVariation * 0.48})`);
-      gradient.addColorStop(1, "rgba(36, 188, 173, 0)");
-      context.fillStyle = gradient;
-      context.beginPath();
-      context.arc(x, y, radius * 2.2, 0, Math.PI * 2);
-      context.fill();
-    });
+    const selected = currentFilter();
+    const selectedY = layout.y(selected.rawRow);
+    const bandHeight = Math.max(
+      5,
+      selected.spreadUm / (viewer.rawDepthMaxUm - viewer.rawDepthMinUm)
+        * (plot.bottom - plot.top),
+    );
+    context.fillStyle = filterColor(state.selectedIndex);
+    context.globalAlpha = 0.2;
+    context.fillRect(plot.left, selectedY - bandHeight / 2, plot.right - plot.left, bandHeight);
+    context.globalAlpha = 1;
+    context.strokeStyle = filterColor(state.selectedIndex);
+    context.lineWidth = 1.5;
+    context.beginPath();
+    context.moveTo(plot.left, selectedY);
+    context.lineTo(plot.right, selectedY);
+    context.stroke();
 
-    state.probeHits = [];
-    viewer.filters.forEach((filter, index) => {
+    state.spikeHits = [];
+    viewer.spikeEvents.forEach((event) => {
+      const filter = viewer.filters[event.filterIndex];
       if (state.qcOnly && !filter.isQcPassing) return;
-      const x = transform.x(filter.probeXUm);
-      const y = transform.y(filter.probeYUm);
-      const radiusX = 9 + Math.min(filter.spreadUm, 160) * 0.055;
-      const radiusY = Math.max(3, filter.spreadUm * transform.yScale * 0.55);
-      const selected = index === state.selectedIndex;
-      const color = filter.isQcPassing ? filterColor(index) : "#8d9996";
-      context.strokeStyle = color;
-      context.globalAlpha = selected ? 1 : state.overlayOpacity * (filter.isQcPassing ? 0.72 : 0.25);
-      context.lineWidth = selected ? 3 : 1;
+      const x = layout.x(event.timeMs);
+      const y = layout.y(event.row);
+      const isSelected = event.filterIndex === state.selectedIndex;
+      const radius = isSelected ? 5 : 2.5;
+      context.fillStyle = filter.isQcPassing ? filterColor(event.filterIndex) : "#8d9996";
+      context.globalAlpha = isSelected ? 1 : (filter.isQcPassing ? 0.82 : 0.28);
       context.beginPath();
-      context.ellipse(x, y, selected ? radiusX * 1.35 : radiusX, selected ? radiusY * 1.35 : radiusY, 0, 0, Math.PI * 2);
-      context.stroke();
-      if (selected) {
-        context.fillStyle = color;
-        context.globalAlpha = 0.24;
-        context.fill();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.fill();
+      if (isSelected) {
+        context.strokeStyle = "#ffffff";
+        context.lineWidth = 1.5;
+        context.stroke();
       }
-      state.probeHits.push({ index, radiusX: Math.max(radiusX, 10), radiusY: Math.max(radiusY, 5), x, y });
+      state.spikeHits.push({ filterIndex: event.filterIndex, radius: Math.max(radius, 7), x, y });
     });
     context.globalAlpha = 1;
 
-    for (let depth = 0; depth <= 4000; depth += 1000) {
-      const y = transform.y(depth);
-      context.strokeStyle = "#344143";
-      context.beginPath();
-      context.moveTo(shaftLeft, y);
-      context.lineTo(shaftRight, y);
-      context.stroke();
-      drawCanvasText(`${depth} µm`, shaftLeft - 16, y + 4, {
-        align: "right",
+    context.strokeStyle = "#9ba7a4";
+    context.lineWidth = 1;
+    context.strokeRect(plot.left, plot.top, plot.right - plot.left, plot.bottom - plot.top);
+    for (let index = 0; index <= 4; index += 1) {
+      const fraction = index / 4;
+      const x = plot.left + fraction * (plot.right - plot.left);
+      const time = viewer.rawTimeStartMs
+        + fraction * (viewer.rawTimeEndMs - viewer.rawTimeStartMs);
+      drawCanvasText(`${formatNumber(time, 0)}`, x, plot.bottom + 22, {
+        align: "center",
         color: "#aebbb8",
-        size: 12,
+        size: 11,
       });
     }
-    drawCanvasText("100 ms raw AP variation", (shaftLeft + shaftRight) / 2, 20, {
+    for (let index = 0; index <= 4; index += 1) {
+      const fraction = index / 4;
+      const y = plot.top + fraction * (plot.bottom - plot.top);
+      const depth = viewer.rawDepthMaxUm
+        - fraction * (viewer.rawDepthMaxUm - viewer.rawDepthMinUm);
+      drawCanvasText(`${formatNumber(depth, 0)}`, plot.left - 10, y + 4, {
+        align: "right",
+        color: "#aebbb8",
+        size: 11,
+      });
+    }
+    drawCanvasText("Raw AP voltage + detected sorted spikes", (plot.left + plot.right) / 2, 23, {
       align: "center",
       color: "#dbe5e3",
       size: 14,
       weight: 700,
     });
-    drawCanvasText("Probe tip", shaftRight + 18, bounds.bottom, {
+    drawCanvasText("Excerpt time (ms)", (plot.left + plot.right) / 2, 697, {
+      align: "center",
       color: "#aebbb8",
       size: 12,
     });
-    drawCanvasText("Dorsal", shaftRight + 18, bounds.top + 8, {
+    context.save();
+    context.translate(20, (plot.top + plot.bottom) / 2);
+    context.rotate(-Math.PI / 2);
+    drawCanvasText("Probe length from tip (µm)", 0, 0, {
+      align: "center",
       color: "#aebbb8",
       size: 12,
     });
+    context.restore();
   }
 
   function drawViewer() {
-    if (viewer.viewType === "probe") drawProbeViewer();
+    if (viewer.viewType === "spike-map") drawSpikeMap();
     else drawImageViewer();
   }
 
@@ -323,13 +377,13 @@
     return nearest;
   }
 
-  function probeFilterAt(point) {
+  function spikeFilterAt(point) {
     let nearest = -1;
-    let nearestDistance = 1.6;
-    state.probeHits.forEach((hit) => {
-      const distance = Math.hypot((point.x - hit.x) / hit.radiusX, (point.y - hit.y) / hit.radiusY);
+    let nearestDistance = 12;
+    state.spikeHits.forEach((hit) => {
+      const distance = Math.hypot(point.x - hit.x, point.y - hit.y);
       if (distance < nearestDistance) {
-        nearest = hit.index;
+        nearest = hit.filterIndex;
         nearestDistance = distance;
       }
     });
@@ -338,7 +392,7 @@
 
   function filterAt(event) {
     const point = canvasCoordinates(event);
-    return viewer.viewType === "probe" ? probeFilterAt(point) : imageFilterAt(point);
+    return viewer.viewType === "spike-map" ? spikeFilterAt(point) : imageFilterAt(point);
   }
 
   function showTooltip(event, index) {
@@ -347,7 +401,7 @@
       return;
     }
     const filter = viewer.filters[index];
-    const detail = viewer.viewType === "probe"
+    const detail = viewer.viewType === "spike-map"
       ? `${filter.location} · ${formatNumber(filter.depthUm, 0)} µm`
       : `${formatNumber(filter.pixelCount, 0)} pixels`;
     elements.tooltip.innerHTML = `<strong>${filter.label}</strong><br>${detail}`;
@@ -441,11 +495,8 @@
       const tickX = x(value);
       return `<text class="chart-label" x="${tickX}" y="${height - 12}" text-anchor="middle">${formatNumber(value, options.xDigits ?? 1)} ${options.xUnit || "s"}</text>`;
     }).join("");
-    const event = options.eventTime !== undefined && options.eventTime >= xMin && options.eventTime <= xMax
-      ? `<line class="chart-event" x1="${x(options.eventTime)}" y1="${margin.top}" x2="${x(options.eventTime)}" y2="${height - margin.bottom}"/><text class="chart-event-label" x="${x(options.eventTime) + 7}" y="${margin.top + 17}">${options.eventLabel}</text>`
-      : "";
     svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-    svg.innerHTML = `${grid}<line class="chart-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"/>${event}<path class="chart-trace" style="stroke:${options.color || filterColor(state.selectedIndex)}" d="${path}"/>${xTicks}`;
+    svg.innerHTML = `${grid}<line class="chart-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"/><path class="chart-trace" style="stroke:${options.color || filterColor(state.selectedIndex)}" d="${path}"/>${xTicks}`;
     svg.setAttribute("aria-label", options.ariaLabel || "Selected filter trace");
   }
 
@@ -464,8 +515,6 @@
     lineChart(elements.activityChart, traceTimes, selectedTrace(), {
       ariaLabel: `${filter.label} ${viewer.traceLabel}`,
       color,
-      eventLabel: viewer.eventLabel,
-      eventTime: viewer.eventLabel ? 0 : undefined,
       yDigits: viewer.id === "neuropixels" ? 0 : 2,
     });
 
@@ -526,10 +575,12 @@
     if (viewer.id === "neuropixels") {
       elements.qcControl.hidden = false;
       elements.qcKey.hidden = false;
+      elements.backgroundLabel.textContent = "Raw AP contrast";
+      elements.filterKeyLabel.textContent = "Detected sorted spikes";
     }
     elements.filterSelect.addEventListener("change", () => selectFilter(Number(elements.filterSelect.value)));
-    elements.opacity.addEventListener("input", () => {
-      state.overlayOpacity = Number(elements.opacity.value) / 100;
+    elements.background.addEventListener("input", () => {
+      state.backgroundIntensity = Number(elements.background.value) / 100;
       drawViewer();
     });
     elements.activityToggle.addEventListener("change", () => {

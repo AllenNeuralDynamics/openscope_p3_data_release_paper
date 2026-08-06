@@ -85,6 +85,7 @@ jobs:
           node --check figure_sources/javascript/data-explorer.js
           node --check figure_sources/javascript/literature-comparison.js
           node --check figure_sources/javascript/behavior-viewer.js
+          node --check figure_sources/javascript/segmentation-viewer.js
 
       - name: Install MyST
         run: npm install --global mystmd@1.10.1
@@ -98,6 +99,9 @@ jobs:
           test -f _build/html/interactive/data-explorer.html
           test -f _build/html/interactive/literature-comparison.html
           test -f _build/html/interactive/behavior-viewer.html
+          test -f _build/html/interactive/segmentation-neuropixels.html
+          test -f _build/html/interactive/segmentation-mesoscope.html
+          test -f _build/html/interactive/segmentation-slap2.html
           test -f _build/html/interactive/zebra-stimulus-excerpt.m4v
           test -f _build/html/interactive/zebra-stimulus-poster.png
 

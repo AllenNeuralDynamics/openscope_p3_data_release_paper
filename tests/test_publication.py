@@ -570,12 +570,24 @@ def test_nwb_file_contents_are_in_data_records() -> None:
 
 def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
-    assert "all 569 sorted units" in manuscript
+    segmentation_start = manuscript.index("**Supplementary Figure 4.**")
+    segmentation_stop = manuscript.index("# Supplementary Text 1", segmentation_start)
+    segmentation_captions = manuscript[segmentation_start:segmentation_stop]
+    assert "overlays 310 sorted-spike detections" in manuscript
+    assert "167 of the 569 Probe A units" in manuscript
+    assert "time-by-probe-length image" in manuscript
     assert "All 399 NWB segmentation masks" in manuscript
     assert "All 45 source masks" in manuscript
-    assert "approximately 200 Hz ΔF/F excerpt" in manuscript
-    assert "NWB waveform-spread metric" in manuscript
-    assert "Filter colors distinguish neighboring outlines" in manuscript
+    assert "approximately 200 Hz elapsed-time ΔF/F excerpt" in manuscript
+    assert "NWB waveform-spread band" in manuscript
+    assert "grayscale average projection" in manuscript
+    assert "transposed into display coordinates" in manuscript
+    assert "background-intensity control changes only" in manuscript
+    assert "activity image remains available as an optional overlay" in manuscript
+    assert "No stimulus annotations are shown" in manuscript
+    assert "without stimulus annotations" in manuscript
+    assert "first sequence omission" not in segmentation_captions
+    assert "first motor mismatch" not in segmentation_captions
     assert "[Neuropixels](#fig-supp-neuropixels-unit-filters)" in manuscript
     assert "[mesoscope](#fig-supp-mesoscope-roi-filters)" in manuscript
     assert "[SLAP2](#fig-supp-slap2-source-filters)" in manuscript

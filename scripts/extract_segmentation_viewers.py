@@ -167,12 +167,10 @@ def normalize(values: np.ndarray, low_percentile: float, high_percentile: float)
     return np.clip((finite - low) / (high - low), 0, 1)
 
 
-def colorize(values: np.ndarray, color: tuple[int, int, int]) -> np.ndarray:
+def grayscale(values: np.ndarray) -> np.ndarray:
     scaled = normalize(values, 1, 99.5)
-    base = np.array((5, 10, 12), dtype=float)
-    target = np.asarray(color, dtype=float)
-    rgb = base + scaled[..., np.newaxis] * (target - base)
-    return np.rint(rgb).astype(np.uint8)
+    gray = np.rint(8 + scaled * 239).astype(np.uint8)
+    return np.repeat(gray[..., np.newaxis], 3, axis=-1)
 
 
 def activity_rgba(values: np.ndarray) -> np.ndarray:
@@ -207,7 +205,7 @@ def boundary_overlay(labels: np.ndarray) -> np.ndarray:
     for index, color in enumerate(FILTER_COLORS):
         selected = boundary & (((labels - 1) % len(FILTER_COLORS)) == index)
         rgba[selected, :3] = color
-    rgba[boundary, 3] = 230
+    rgba[boundary, 3] = 255
     return rgba
 
 
@@ -274,25 +272,36 @@ def first_mismatch_event(nwb: h5py.File, table_name: str) -> tuple[float, str]:
     return float(table["start_time"][index]), str(trial_types[index])
 
 
-def raw_probe_projection() -> tuple[list[dict], str]:
+def raw_probe_excerpt() -> tuple[dict, str]:
     source_bytes = RAW_NEURAL_PATH.read_bytes()
     payload = json.loads(source_bytes)
     session = next(item for item in payload["sessions"] if item["id"] == "neuropixels")
     option = next(item for item in session["options"] if item["id"] == "probe-a")
-    matrix = np.frombuffer(base64.b64decode(option["dataBase64"]), dtype=np.uint8)
-    matrix = matrix.reshape(option["rows"], option["columns"])
-    variation = np.std(matrix.astype(float), axis=1)
-    variation /= variation.max()
-    channels = [
-        {"channel": int(channel), "rawVariation": round(float(value), 6)}
-        for channel, value in zip(option["sourceChannels"], variation, strict=True)
-    ]
-    return channels, hashlib.sha256(source_bytes).hexdigest()
+    return (
+        {
+            "rawColumns": int(option["columns"]),
+            "rawDataBase64": option["dataBase64"],
+            "rawDepthMaxUm": round(float(option["depthMaxUm"]), 3),
+            "rawDepthMinUm": round(float(option["depthMinUm"]), 3),
+            "rawRows": int(option["rows"]),
+            "rawSourceChannels": [int(channel) for channel in option["sourceChannels"]],
+            "rawTimeEndMs": round(
+                (float(option["timeEndSeconds"]) - float(option["timeStartSeconds"]))
+                * 1000,
+                6,
+            ),
+            "rawTimeStartMs": 0.0,
+            "rawValueLimitUv": round(float(option["valueLimit"]), 6),
+            "sourceTimeEndSeconds": float(option["timeEndSeconds"]),
+            "sourceTimeStartSeconds": float(option["timeStartSeconds"]),
+        },
+        hashlib.sha256(source_bytes).hexdigest(),
+    )
 
 
 def extract_neuropixels(asset_record: dict) -> dict:
     asset = ASSETS["neuropixels"]
-    raw_channels, raw_excerpt_sha256 = raw_probe_projection()
+    raw_excerpt, raw_excerpt_sha256 = raw_probe_excerpt()
     with closing(remfile.File(asset.url)) as remote, h5py.File(remote, "r") as nwb:
         units = nwb["units"]
         device_names = np.asarray(units["device_name"][:]).astype("U")
@@ -304,16 +313,17 @@ def extract_neuropixels(asset_record: dict) -> dict:
         ):
             raise RuntimeError("Representative Probe A unit inventory changed.")
 
-        event_time, event_label = first_mismatch_event(
+        event_time, _ = first_mismatch_event(
             nwb,
             "Sequence mismatch block_presentations",
         )
+        trace_window_start = event_time + TRACE_WINDOW_START_SECONDS
         bin_edges = np.arange(
-            event_time + TRACE_WINDOW_START_SECONDS,
+            trace_window_start,
             event_time + TRACE_WINDOW_END_SECONDS + NEUROPIXELS_BIN_SECONDS / 2,
             NEUROPIXELS_BIN_SECONDS,
         )
-        bin_times = (bin_edges[:-1] + bin_edges[1:]) / 2 - event_time
+        bin_times = (bin_edges[:-1] + bin_edges[1:]) / 2 - trace_window_start
         spike_rates = np.empty((len(rows), len(bin_times)), dtype=np.float32)
         waveforms = np.empty(
             (len(rows), units["waveform_mean"].shape[1]),
@@ -324,6 +334,10 @@ def extract_neuropixels(asset_record: dict) -> dict:
         electrode_ends = np.asarray(units["electrodes_index"][:], dtype=int)
         electrode_refs = np.asarray(units["electrodes"][:], dtype=int)
         spike_ends = np.asarray(units["spike_times_index"][:], dtype=int)
+        raw_source_channels = np.asarray(raw_excerpt["rawSourceChannels"], dtype=int)
+        raw_window_start = event_time + raw_excerpt["sourceTimeStartSeconds"]
+        raw_window_stop = event_time + raw_excerpt["sourceTimeEndSeconds"]
+        spike_events = []
         filters = []
         for filter_index, row in enumerate(rows):
             electrode_start = 0 if row == 0 else int(electrode_ends[row - 1])
@@ -339,6 +353,18 @@ def extract_neuropixels(asset_record: dict) -> dict:
             )
             spike_rates[filter_index] = (
                 np.histogram(spikes, bins=bin_edges)[0] / NEUROPIXELS_BIN_SECONDS
+            )
+            peak_row = int(np.argmin(np.abs(raw_source_channels - peak_channel)))
+            raw_spikes = spikes[
+                (spikes >= raw_window_start) & (spikes <= raw_window_stop)
+            ]
+            spike_events.extend(
+                {
+                    "filterIndex": filter_index,
+                    "row": peak_row,
+                    "timeMs": round(float((spike - raw_window_start) * 1000), 6),
+                }
+                for spike in raw_spikes
             )
             waveforms[filter_index] = np.asarray(
                 units["waveform_mean"][row, :, peak_channel],
@@ -356,29 +382,12 @@ def extract_neuropixels(asset_record: dict) -> dict:
                     "peakChannel": peak_channel,
                     "probeXUm": round(float(electrode_table["rel_x"][electrode]), 3),
                     "probeYUm": round(float(electrode_table["rel_y"][electrode]), 3),
+                    "rawRow": peak_row,
                     "snr": round(float(units["snr"][row]), 6),
                     "spreadUm": int(units["spread"][row]),
                 }
             )
 
-        electrode_groups = np.asarray(electrode_table["group_name"][:]).astype("U")
-        electrode_names = np.asarray(electrode_table["channel_name"][:]).astype("U")
-        electrode_lookup = {
-            int(name.removeprefix("AP")): index
-            for index, (name, group) in enumerate(
-                zip(electrode_names, electrode_groups, strict=True)
-            )
-            if group == NEUROPIXELS_PROBE and name.startswith("AP")
-        }
-        for channel in raw_channels:
-            electrode = electrode_lookup[channel["channel"]]
-            channel.update(
-                {
-                    "location": decode_text(electrode_table["location"][electrode]),
-                    "probeXUm": round(float(electrode_table["rel_x"][electrode]), 3),
-                    "probeYUm": round(float(electrode_table["rel_y"][electrode]), 3),
-                }
-            )
         waveform_unit = decode_text(units["waveform_mean"].attrs["unit"])
 
     qc_candidates = [
@@ -389,22 +398,25 @@ def extract_neuropixels(asset_record: dict) -> dict:
     default_index = max(qc_candidates, key=lambda item: item[1])[0]
     return {
         **trace_payload(spike_rates, bin_times),
+        **{
+            key: value
+            for key, value in raw_excerpt.items()
+            if not key.startswith("sourceTime")
+        },
         "asset": asset_record,
-        "context": "Sequence mismatch",
         "defaultFilterIndex": default_index,
-        "eventLabel": event_label.replace("_", " ").capitalize(),
         "filterCount": len(filters),
         "filters": filters,
         "id": "neuropixels",
         "label": "Neuropixels",
         "panelLabel": "Probe A",
-        "rawChannels": raw_channels,
         "rawExcerptSha256": raw_excerpt_sha256,
         "session": "ecephys_830846_2026-03-09_10-32-54",
         "subject": "830846",
         "traceLabel": "Binned spike rate",
         "traceUnit": "spikes/s",
-        "viewType": "probe",
+        "spikeEvents": sorted(spike_events, key=lambda event: event["timeMs"]),
+        "viewType": "spike-map",
         "waveformColumns": int(waveforms.shape[1]),
         "waveformDataBase64": encode_float32(waveforms),
         "waveformRows": int(waveforms.shape[0]),
@@ -417,7 +429,7 @@ def extract_mesoscope(asset_record: dict, media_dir: Path) -> dict:
     asset = ASSETS["mesoscope"]
     plane_path = f"processing/{MESOSCOPE_PLANE}"
     with closing(remfile.File(asset.url)) as remote, h5py.File(remote, "r") as nwb:
-        event_time, event_label = first_mismatch_event(
+        event_time, _ = first_mismatch_event(
             nwb,
             "Sensory-motor mismatch block_presentations",
         )
@@ -443,7 +455,7 @@ def extract_mesoscope(asset_record: dict, media_dir: Path) -> dict:
             series["data"][selected[0] : selected[-1] + 1, :],
             dtype=np.float32,
         ).T
-        trace_times = timestamps[selected] - event_time
+        trace_times = timestamps[selected] - timestamps[selected[0]]
 
         geometry = filter_geometry(labels, len(ids))
         dendrite_probability = np.asarray(
@@ -466,7 +478,7 @@ def extract_mesoscope(asset_record: dict, media_dir: Path) -> dict:
             )
 
     base_asset = save_png(
-        colorize(base_image, (118, 238, 174)),
+        grayscale(base_image),
         media_dir / "mesoscope-visp-0-mean.png",
     )
     label_asset = save_png(
@@ -482,9 +494,7 @@ def extract_mesoscope(asset_record: dict, media_dir: Path) -> dict:
         **trace_payload(traces, trace_times),
         "asset": asset_record,
         "baseImage": base_asset,
-        "context": "Sensorimotor mismatch",
         "defaultFilterIndex": default_index,
-        "eventLabel": event_label.replace("_", " ").capitalize(),
         "filterCount": len(filters),
         "filterOverlay": overlay_asset,
         "filters": filters,
@@ -528,11 +538,11 @@ def extract_slap2(asset_record: dict, media_dir: Path) -> dict:
         base_image = np.asarray(
             nwb[f"{module_path}/{SLAP2_PLANE}_mean_image_channel0/data"][0],
             dtype=float,
-        )
+        ).T
         activity_image = np.asarray(
             nwb[f"{module_path}/{SLAP2_PLANE}_activity_image/data"][0],
             dtype=float,
-        )
+        ).T
         segmentation = nwb[
             f"{module_path}/ImageSegmentation/PlaneSegmentation_{SLAP2_PLANE}"
         ]
@@ -566,7 +576,7 @@ def extract_slap2(asset_record: dict, media_dir: Path) -> dict:
         ]
 
     base_asset = save_png(
-        colorize(base_image, (114, 235, 163)),
+        grayscale(base_image),
         media_dir / "slap2-dmd1-mean.png",
     )
     activity_asset = save_png(
@@ -587,9 +597,7 @@ def extract_slap2(asset_record: dict, media_dir: Path) -> dict:
         "activityImage": activity_asset,
         "asset": asset_record,
         "baseImage": base_asset,
-        "context": "Representative source-extraction window",
         "defaultFilterIndex": default_index,
-        "eventLabel": None,
         "filterCount": len(filters),
         "filterOverlay": overlay_asset,
         "filters": filters,
@@ -612,7 +620,7 @@ def main() -> None:
     args.media_dir.mkdir(parents=True, exist_ok=True)
     payload = {
         "retrievedDate": RETRIEVED_DATE,
-        "version": 1,
+        "version": 2,
         "viewers": [
             extract_neuropixels(asset_records["neuropixels"]),
             extract_mesoscope(asset_records["mesoscope"], args.media_dir),
@@ -630,8 +638,9 @@ def main() -> None:
         "notes": (
             "Each viewer uses one representative field from the same session selected "
             "for the raw-data viewer. Filters and activity traces come from the matched "
-            "DANDI NWB; the Neuropixels raw shaft projection reuses the pinned public "
-            "AP excerpt recorded in raw-neural-excerpts.json."
+            "DANDI NWB; the Neuropixels time-by-depth view reuses the pinned public "
+            "AP excerpt recorded in raw-neural-excerpts.json and overlays sorted-unit "
+            "spike times from the matched NWB."
         ),
         "retrieved_date": RETRIEVED_DATE,
         "source_raw_neural_sha256": sha256(RAW_NEURAL_PATH),

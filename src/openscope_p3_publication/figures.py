@@ -2587,7 +2587,7 @@ def load_segmentation_viewers(
     payload = json.loads(source_bytes)
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
     if (
-        payload.get("version") != 1
+        payload.get("version") != 2
         or hashlib.sha256(source_bytes).hexdigest() != provenance.get("vendored_sha256")
         or hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest()
         != provenance.get("source_raw_neural_sha256")
@@ -2617,6 +2617,9 @@ def load_segmentation_viewers(
             or columns < 100
             or len(trace_data) != rows * columns * 4
             or len(viewer.get("traceTimesSeconds", [])) != columns
+            or viewer["traceTimesSeconds"][0] < 0
+            or "eventLabel" in viewer
+            or "context" in viewer
         ):
             raise RuntimeError(f"Segmentation viewer dimensions changed: {modality}")
         if viewer.get("asset") != provenance.get("assets", {}).get(modality):
@@ -2644,13 +2647,30 @@ def load_segmentation_viewers(
         neuropixels.get("waveformDataBase64", ""),
         validate=True,
     )
+    raw_data = base64.b64decode(
+        neuropixels.get("rawDataBase64", ""),
+        validate=True,
+    )
+    spike_events = neuropixels.get("spikeEvents", [])
     if (
         waveform_rows != expected_counts["neuropixels"]
         or waveform_columns != 210
         or len(waveform_data) != waveform_rows * waveform_columns * 4
-        or len(neuropixels.get("rawChannels", [])) != 96
+        or neuropixels.get("viewType") != "spike-map"
+        or neuropixels.get("rawRows") != 96
+        or neuropixels.get("rawColumns") != 3000
+        or len(raw_data) != neuropixels["rawRows"] * neuropixels["rawColumns"]
+        or len(spike_events) != 310
+        or any(
+            event.get("filterIndex") not in range(expected_counts["neuropixels"])
+            or event.get("row") not in range(neuropixels["rawRows"])
+            or not neuropixels["rawTimeStartMs"]
+            <= event.get("timeMs", -1)
+            <= neuropixels["rawTimeEndMs"]
+            for event in spike_events
+        )
     ):
-        raise RuntimeError("Neuropixels segmentation waveform dimensions changed.")
+        raise RuntimeError("Neuropixels segmentation spike-map dimensions changed.")
     return payload
 
 
@@ -3203,7 +3223,6 @@ def segmentation_trace_row(viewer: dict, field: str, columns_field: str) -> list
 
 def append_segmentation_trace_chart(
     svg: list[str],
-    viewer: dict,
     values: list[float],
     times: list[float],
     *,
@@ -3213,7 +3232,6 @@ def append_segmentation_trace_chart(
     height: float,
     title: str,
     x_unit: str = "s",
-    show_event: bool = True,
 ) -> None:
     finite = [value for value in values if math.isfinite(value)]
     minimum = min(finite)
@@ -3277,20 +3295,6 @@ def append_segmentation_trace_chart(
                 f'font-size="10" fill="#66716E">{value:.2f}</text>',
             ]
         )
-    if show_event and viewer.get("eventLabel") and minimum_time <= 0 <= maximum_time:
-        event_x = plot_left + (0 - minimum_time) / (maximum_time - minimum_time) * (
-            plot_right - plot_left
-        )
-        svg.extend(
-            [
-                f'<line x1="{event_x:.2f}" y1="{plot_top:.2f}" '
-                f'x2="{event_x:.2f}" y2="{plot_bottom:.2f}" '
-                'stroke="#D15F47" stroke-width="1.5" stroke-dasharray="5 4"/>',
-                f'<text x="{event_x + 7:.2f}" y="{plot_top + 17:.2f}" '
-                f'font-family="{FIGURE_SANS_FONT}" font-size="11" '
-                f'font-weight="700" fill="#B34E3A">{escape(viewer["eventLabel"])}</text>',
-            ]
-        )
     svg.append(
         f'<path d="{" ".join(commands)}" fill="none" stroke="#159E9C" '
         'stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>'
@@ -3340,69 +3344,103 @@ def write_segmentation_viewer_svg(
     visual_width = 620.0
     visual_height = 560.0
     if modality == "neuropixels":
-        raw_channels = viewer["rawChannels"]
-        maximum_depth = max(
-            [channel["probeYUm"] for channel in raw_channels]
-            + [record["probeYUm"] for record in viewer["filters"]]
-        ) + 80
-        shaft_left = visual_left + 175
-        shaft_right = visual_left + visual_width - 175
+        raw = base64.b64decode(viewer["rawDataBase64"], validate=True)
+        rgb = bytearray(len(raw) * 3)
+        for index, value in enumerate(raw):
+            gray = max(0, min(255, round(127.5 + (value - 127.5) * 1.2)))
+            rgb[index * 3 : index * 3 + 3] = bytes((gray, gray, gray))
+        raw_image = base64.b64encode(
+            encode_rgb_png(viewer["rawColumns"], viewer["rawRows"], bytes(rgb))
+        ).decode()
+        image_x = visual_left + 46
+        image_y = visual_top + 20
+        image_width = visual_width - 56
+        image_height = visual_height - 58
 
-        def probe_x(value: float) -> float:
-            return shaft_left + (value + 8) / 80 * (shaft_right - shaft_left)
+        def spike_x(time_ms: float) -> float:
+            return image_x + (time_ms - viewer["rawTimeStartMs"]) / (
+                viewer["rawTimeEndMs"] - viewer["rawTimeStartMs"]
+            ) * image_width
 
-        def probe_y(value: float) -> float:
-            return visual_top + visual_height - value / maximum_depth * visual_height
+        def spike_y(row: float) -> float:
+            return image_y + (row + 0.5) / viewer["rawRows"] * image_height
 
+        selected_y = spike_y(selected["rawRow"])
+        band_height = max(
+            4,
+            selected["spreadUm"]
+            / (viewer["rawDepthMaxUm"] - viewer["rawDepthMinUm"])
+            * image_height,
+        )
         svg.extend(
             [
-                f'<rect x="{shaft_left:.2f}" y="{visual_top:.2f}" '
-                f'width="{shaft_right - shaft_left:.2f}" height="{visual_height:.2f}" '
-                'fill="#10191B" stroke="#66716E"/>',
-                f'<text x="{(shaft_left + shaft_right) / 2:.2f}" y="{visual_top - 13:.2f}" '
+                f'<text x="{image_x + image_width / 2:.2f}" y="{visual_top + 4:.2f}" '
                 f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" '
-                'font-size="12" font-weight="700" fill="#4F5956">'
-                '100 ms raw AP variation</text>',
+                'font-size="12" font-weight="700" fill="#4F5956">100 ms raw AP '
+                f'voltage + {len(viewer["spikeEvents"])} detected spikes</text>',
+                f'<image href="data:image/png;base64,{raw_image}" x="{image_x:.2f}" '
+                f'y="{image_y:.2f}" width="{image_width:.2f}" '
+                f'height="{image_height:.2f}" preserveAspectRatio="none"/>',
+                f'<rect x="{image_x:.2f}" y="{selected_y - band_height / 2:.2f}" '
+                f'width="{image_width:.2f}" height="{band_height:.2f}" '
+                'fill="#159E9C" fill-opacity="0.2"/>',
+                f'<line x1="{image_x:.2f}" y1="{selected_y:.2f}" '
+                f'x2="{image_x + image_width:.2f}" y2="{selected_y:.2f}" '
+                'stroke="#159E9C" stroke-width="1.5"/>',
             ]
         )
-        for channel in raw_channels:
-            radius = 2.5 + channel["rawVariation"] * 5
-            svg.append(
-                f'<circle cx="{probe_x(channel["probeXUm"]):.2f}" '
-                f'cy="{probe_y(channel["probeYUm"]):.2f}" r="{radius:.2f}" '
-                'fill="#24BCAD" fill-opacity="0.38"/>'
-            )
-        for index, record in enumerate(viewer["filters"]):
-            selected_filter = index == viewer["defaultFilterIndex"]
+        for event in viewer["spikeEvents"]:
+            record = viewer["filters"][event["filterIndex"]]
+            is_selected = event["filterIndex"] == viewer["defaultFilterIndex"]
             color = SEGMENTATION_FILTER_COLORS[
-                index % len(SEGMENTATION_FILTER_COLORS)
+                event["filterIndex"] % len(SEGMENTATION_FILTER_COLORS)
             ]
-            stroke = f"#{color[0]:02X}{color[1]:02X}{color[2]:02X}"
-            stroke_opacity = (
-                1 if selected_filter else (0.55 if record["isQcPassing"] else 0.2)
-            )
-            radius_x = 5.5 + min(record["spreadUm"], 160) * 0.03
-            radius_y = max(2.2, record["spreadUm"] / maximum_depth * visual_height * 0.55)
+            fill = f"#{color[0]:02X}{color[1]:02X}{color[2]:02X}"
             svg.append(
-                f'<ellipse cx="{probe_x(record["probeXUm"]):.2f}" '
-                f'cy="{probe_y(record["probeYUm"]):.2f}" rx="{radius_x:.2f}" '
-                f'ry="{radius_y:.2f}" fill="{stroke}" '
-                f'fill-opacity="{0.2 if selected_filter else 0}" stroke="{stroke}" '
-                f'stroke-width="{3 if selected_filter else 1}" '
-                f'stroke-opacity="{stroke_opacity}"/>'
+                f'<circle cx="{spike_x(event["timeMs"]):.2f}" '
+                f'cy="{spike_y(event["row"]):.2f}" '
+                f'r="{3.7 if is_selected else 2.1}" fill="{fill}" '
+                f'fill-opacity="{1 if is_selected else (0.82 if record["isQcPassing"] else 0.28)}" '
+                f'stroke="{"#FFFFFF" if is_selected else "none"}" '
+                f'stroke-width="{1.2 if is_selected else 0}"/>'
             )
-        for depth in range(0, 4001, 1000):
-            vertical = probe_y(depth)
+        svg.append(
+            f'<rect x="{image_x:.2f}" y="{image_y:.2f}" width="{image_width:.2f}" '
+            f'height="{image_height:.2f}" fill="none" stroke="#68716F"/>'
+        )
+        for index in range(5):
+            fraction = index / 4
+            vertical = image_y + fraction * image_height
+            depth = viewer["rawDepthMaxUm"] - fraction * (
+                viewer["rawDepthMaxUm"] - viewer["rawDepthMinUm"]
+            )
+            horizontal = image_x + fraction * image_width
+            time_ms = viewer["rawTimeStartMs"] + fraction * (
+                viewer["rawTimeEndMs"] - viewer["rawTimeStartMs"]
+            )
             svg.extend(
                 [
-                    f'<line x1="{shaft_left:.2f}" y1="{vertical:.2f}" '
-                    f'x2="{shaft_right:.2f}" y2="{vertical:.2f}" '
-                    'stroke="#344143"/>',
-                    f'<text x="{shaft_left - 13:.2f}" y="{vertical + 4:.2f}" '
+                    f'<text x="{image_x - 8:.2f}" y="{vertical + 4:.2f}" '
                     f'text-anchor="end" font-family="{FIGURE_MONO_FONT}" '
-                    f'font-size="9" fill="#68716F">{depth} µm</text>',
+                    f'font-size="9" fill="#68716F">{depth:.0f}</text>',
+                    f'<text x="{horizontal:.2f}" y="{image_y + image_height + 18:.2f}" '
+                    f'text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
+                    f'font-size="9" fill="#68716F">{time_ms:.0f}</text>',
                 ]
             )
+        svg.extend(
+            [
+                f'<text x="{image_x + image_width / 2:.2f}" '
+                f'y="{image_y + image_height + 34:.2f}" text-anchor="middle" '
+                f'font-family="{FIGURE_SANS_FONT}" font-size="10" '
+                'font-weight="600" fill="#68716F">Excerpt time (ms)</text>',
+                f'<text x="{visual_left + 4:.2f}" y="{image_y + image_height / 2:.2f}" '
+                f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" '
+                'font-size="10" font-weight="600" fill="#68716F" '
+                f'transform="rotate(-90 {visual_left + 4:.2f} '
+                f'{image_y + image_height / 2:.2f})">Probe length from tip (µm)</text>',
+            ]
+        )
     else:
         base_path = REPO_ROOT / "figure_sources" / viewer["baseImage"]["assetPath"]
         overlay_path = (
@@ -3424,20 +3462,11 @@ def write_segmentation_viewer_svg(
             f'x="{image_x:.2f}" y="{image_y:.2f}" width="{rendered_width:.2f}" '
             f'height="{rendered_height:.2f}"/>'
         )
-        if viewer.get("activityImage"):
-            activity_path = (
-                REPO_ROOT / "figure_sources" / viewer["activityImage"]["assetPath"]
-            )
-            svg.append(
-                f'<image href="data:image/png;base64,{image_uri(activity_path)}" '
-                f'x="{image_x:.2f}" y="{image_y:.2f}" width="{rendered_width:.2f}" '
-                f'height="{rendered_height:.2f}" opacity="0.72"/>'
-            )
         svg.extend(
             [
                 f'<image href="data:image/png;base64,{image_uri(overlay_path)}" '
                 f'x="{image_x:.2f}" y="{image_y:.2f}" width="{rendered_width:.2f}" '
-                f'height="{rendered_height:.2f}" opacity="0.82"/>'
+                f'height="{rendered_height:.2f}"/>'
                 f'<circle cx="{image_x + selected["centroidX"] * scale:.2f}" '
                 f'cy="{image_y + selected["centroidY"] * scale:.2f}" r="10" '
                 'fill="none" stroke="#FFFFFF" stroke-width="3"/>',
@@ -3480,7 +3509,6 @@ def write_segmentation_viewer_svg(
     trace_height = 430 if modality != "neuropixels" else 250
     append_segmentation_trace_chart(
         svg,
-        viewer,
         trace_values,
         viewer["traceTimesSeconds"],
         left=774,
@@ -3502,7 +3530,6 @@ def write_segmentation_viewer_svg(
         ]
         append_segmentation_trace_chart(
             svg,
-            viewer,
             waveform,
             waveform_times,
             left=774,
@@ -3511,7 +3538,6 @@ def write_segmentation_viewer_svg(
             height=180,
             title="Mean template waveform · peak channel",
             x_unit="ms",
-            show_event=False,
         )
     svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)
