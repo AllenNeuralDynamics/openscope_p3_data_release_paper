@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Synchronized eye tracking across recording modalities</title>
+  <style>
+__EYE_TRACKING_CSS__
+  </style>
+</head>
+<body>
+  <main class="viewer" id="eye-tracking-viewer">
+    <div class="view-switch" role="group" aria-label="Interactive or static view">
+      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
+    </div>
+
+    <div id="interactive-view">
+      <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
+      <nav class="fit-tabs" id="fit-selector" aria-label="Eye-tracking fit source"></nav>
+
+    <header class="session-header">
+      <div>
+        <p class="context-label" id="context-label"></p>
+        <h1 id="session-title"></h1>
+      </div>
+      <div class="source-links" id="source-links" aria-label="Data sources"></div>
+    </header>
+
+    <section class="stream-grid" aria-label="Synchronized eye-tracking streams">
+      <article class="stream-panel video-panel" aria-labelledby="video-heading">
+        <div class="panel-heading">
+          <h2 id="video-heading">Eye video</h2>
+          <span class="stream-status" id="stream-status" role="status">Loading S3 stream</span>
+        </div>
+        <div class="video-stage" id="video-stage">
+          <video id="eye-video" muted playsinline preload="metadata" aria-label="Synchronized eye camera video"></video>
+          <div class="video-unavailable" id="video-unavailable" hidden>
+            <strong>Video stream unavailable</strong>
+            <span>Stimulus and processed eye tracking remain active.</span>
+          </div>
+          <span class="blink-badge" id="video-blink-badge" hidden>Blink</span>
+          <button class="stage-play" id="stage-play" type="button" aria-label="Play synchronized excerpt" title="Play">
+            <span aria-hidden="true">&#9654;</span>
+          </button>
+        </div>
+      </article>
+
+      <article class="stream-panel" aria-labelledby="stimulus-heading">
+        <div class="panel-heading">
+          <h2 id="stimulus-heading">Stimulus</h2>
+          <span id="trial-type"></span>
+        </div>
+        <canvas id="stimulus-canvas" width="360" height="225" role="img" aria-label="Reconstructed visual stimulus at the current recording time"></canvas>
+        <dl class="detail-grid">
+          <div><dt>Trial</dt><dd id="trial-number">-</dd></div>
+          <div><dt>Orientation</dt><dd id="orientation-value">-</dd></div>
+          <div><dt>Spatial freq.</dt><dd id="spatial-frequency">-</dd></div>
+          <div><dt>Temporal freq.</dt><dd id="temporal-frequency">-</dd></div>
+        </dl>
+      </article>
+
+      <article class="stream-panel" aria-labelledby="field-heading">
+        <div class="panel-heading">
+          <h2 id="field-heading">Pupil center field</h2>
+          <span id="tracking-status">Tracked</span>
+        </div>
+        <canvas id="pupil-field" width="360" height="225" role="img" aria-label="Pupil center and area at the current recording time"></canvas>
+        <div class="field-key">
+          <span><i class="median-cross" aria-hidden="true"></i>Full-session median</span>
+          <span id="field-bounds"></span>
+        </div>
+        <dl class="detail-grid">
+          <div><dt>X position</dt><dd id="x-value">-</dd></div>
+          <div><dt>Y position</dt><dd id="y-value">-</dd></div>
+          <div><dt id="area-label">Pupil area</dt><dd id="area-value">-</dd></div>
+          <div><dt>Ellipse</dt><dd id="ellipse-value">-</dd></div>
+        </dl>
+      </article>
+    </section>
+
+    <section class="transport" aria-label="Playback controls">
+      <button id="play-toggle" type="button" aria-label="Play synchronized excerpt" title="Play">
+        <span id="play-icon" aria-hidden="true">&#9654;</span>
+      </button>
+      <input id="timeline" type="range" min="0" max="16" step="0.01" value="0" aria-label="Excerpt time">
+      <time id="playback-time">00:00.0 / 00:16.0</time>
+    </section>
+
+    <section class="trace-panel" aria-labelledby="trace-heading">
+      <div class="panel-heading trace-heading">
+        <div>
+          <h2 id="trace-heading">Pupil area</h2>
+          <span>camera px²</span>
+        </div>
+        <output id="trace-value" aria-live="off"></output>
+      </div>
+      <canvas id="pupil-trace" width="1200" height="210" role="img" aria-label="Pupil area trace with blink intervals and synchronized playback cursor"></canvas>
+      <div class="trace-key">
+        <span><i class="key-swatch blink-key" aria-hidden="true"></i>Likely blink</span>
+        <span><i class="key-line event-key" aria-hidden="true"></i><span id="event-label"></span></span>
+        <span><i class="key-line cursor-key" aria-hidden="true"></i>Playback</span>
+      </div>
+    </section>
+    </div>
+
+    <section class="static-view" id="static-view" aria-label="Static synchronized eye-tracking overview" hidden>
+      <div class="static-shell">
+        <img src="__EYE_TRACKING_STATIC_IMAGE__" alt="Three modality rows with vertically aligned pupil x position, y position, and area traces on a shared time axis; orientation oddball and likely blink periods are highlighted.">
+      </div>
+    </section>
+  </main>
+
+  <script id="eye-tracking-data" type="application/json">__EYE_TRACKING_DATA__</script>
+  <script>
+__EYE_TRACKING_JS__
+  </script>
+  <script>
+__EMBED_AUTO_HEIGHT_JS__
+  </script>
+</body>
+</html>

@@ -23,6 +23,11 @@
   max-width: 1200px;
 }
 
+#fig-supp-neuropixels-recorded-trajectories,
+#fig-supp-eye-tracking {
+  container-type: inline-size;
+}
+
 #fig-interactive-experimental-design > div,
 #fig-supp-neuropixels-unit-yield > div,
 #fig-supp-neuropixels-recorded-trajectories > div {
@@ -263,17 +268,27 @@ article table.table-laser-power td:first-child {
 }
 
 #fig-supp-neuropixels-unit-yield .relative.inline-block {
-  height: 415px;
+  height: 450px;
+  padding-bottom: 0 !important;
+}
+
+#fig-supp-neuropixels-recorded-trajectories .relative.inline-block {
+  height: 910px;
   padding-bottom: 0 !important;
 }
 
 #fig-behavior-tracking .relative.inline-block {
-  height: 980px;
+  height: 1140px;
   padding-bottom: 0 !important;
 }
 
 #fig-behavior-tracking {
   container-type: inline-size;
+}
+
+#fig-supp-eye-tracking .relative.inline-block {
+  height: 950px;
+  padding-bottom: 0 !important;
 }
 
 @media (min-width: 1280px) {
@@ -333,14 +348,24 @@ article table.table-laser-power td:first-child {
   }
 
   #fig-supp-neuropixels-unit-yield .relative.inline-block {
-    height: 500px;
+    height: 540px;
   }
 
 }
 
+@container (max-width: 840px) {
+  #fig-supp-neuropixels-recorded-trajectories .relative.inline-block {
+    height: 1580px;
+  }
+
+  #fig-supp-eye-tracking .relative.inline-block {
+    height: 2050px;
+  }
+}
+
 @container (max-width: 560px) {
   #fig-behavior-tracking .relative.inline-block {
-    height: 1240px;
+    height: 1280px;
   }
 }
 
@@ -358,6 +383,6 @@ article table.table-laser-power td:first-child {
 
 @container (max-width: 400px) {
   #fig-behavior-tracking .relative.inline-block {
-    height: 1160px;
+    height: 1200px;
   }
 }
