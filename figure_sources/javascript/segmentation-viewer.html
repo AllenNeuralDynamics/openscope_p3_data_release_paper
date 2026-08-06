@@ -3,19 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>__SEGMENTATION_TITLE__</title>
+  <title>Unit extraction across recording modalities</title>
   <style>__SEGMENTATION_CSS__</style>
 </head>
 <body>
-  <main class="viewer" id="segmentation-viewer" data-modality="__MODALITY_ID__">
+  <main class="viewer" id="segmentation-viewer" data-modality="neuropixels">
+    <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality" role="tablist"></nav>
     <header class="figure-header">
       <div>
-        <p class="eyebrow">Unit extraction · __PANEL_LABEL__</p>
-        <h1>__SEGMENTATION_TITLE__</h1>
-        <p class="session-line">Mouse __SUBJECT__ · __SESSION__</p>
+        <p class="eyebrow" id="panel-label"></p>
+        <h1 id="viewer-title"></h1>
+        <p class="session-line" id="session-line"></p>
       </div>
       <div class="filter-summary" aria-label="Filter count">
-        <strong>__FILTER_COUNT__</strong>
+        <strong id="filter-count"></strong>
         <span>extraction filters</span>
       </div>
     </header>
@@ -47,7 +48,7 @@
             width="900"
             height="720"
             tabindex="0"
-            aria-label="__SEGMENTATION_TITLE__ filter map"
+            aria-label="Unit-extraction filter map"
           ></canvas>
           <div class="canvas-tooltip" id="canvas-tooltip" hidden></div>
           <div class="loading-status" id="loading-status">Loading source image</div>
@@ -89,7 +90,7 @@
           <svg id="waveform-chart" viewBox="0 0 640 190" role="img"></svg>
         </section>
 
-        <a class="source-link" href="__DANDISET_URL__" target="_blank" rel="noreferrer">
+        <a class="source-link" id="source-link" href="#" target="_blank" rel="noreferrer">
           Open source NWB on DANDI ↗
         </a>
       </aside>

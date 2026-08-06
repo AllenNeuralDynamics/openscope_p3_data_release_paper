@@ -33,7 +33,9 @@ from openscope_p3_publication.figures import (
     REPO_ROOT,
     RUNNING_STATISTICS_PATH,
     SEGMENTATION_VIEWER_DATA_PATH,
+    SEGMENTATION_VIEWER_OUTPUT,
     SEGMENTATION_VIEWER_PROVENANCE_PATH,
+    SEGMENTATION_VIEWER_STATIC_OUTPUT,
     SEGMENTATION_VIEWER_STATIC_OUTPUTS,
     SESSION_RECORDS_PATH,
     SESSION_RECORDS_PROVENANCE_PATH,
@@ -79,6 +81,7 @@ from openscope_p3_publication.figures import (
     write_neuropixels_trajectory_html,
     write_neuropixels_trajectory_svg,
     write_segmentation_viewer_html,
+    write_segmentation_viewer_static_svg,
     write_segmentation_viewer_svg,
     write_segmentation_viewers,
     write_session_inventory_svg,
@@ -467,38 +470,51 @@ def test_segmentation_viewer_snapshot_is_source_backed() -> None:
 
 
 def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
-    first_renders = {}
+    html_path = write_segmentation_viewer_html(tmp_path / "segmentation-viewer.html")
+    html = html_path.read_text(encoding="utf-8")
+    assert 'id="modality-selector"' in html
+    assert 'role="tablist"' in html
+    assert 'id="source-canvas"' in html
+    assert 'id="filter-select"' in html
+    assert 'id="activity-chart"' in html
+    assert 'id="background-intensity"' in html
+    assert 'id="overlay-opacity"' not in html
+    assert '"filterCount":569' in html
+    assert '"filterCount":399' in html
+    assert '"filterCount":45' in html
+    assert "protocol.viewers.map" in html
+    assert "activateViewer" in html
+    assert 'document.querySelector("body > main")' in html
+    assert "[hidden] { display: none !important; }" in html
+    assert "filterAt(event)" in html
+    assert "chart-event" not in html
+    assert "Sequence omission" not in html
+    assert "Motor orientation 90" not in html
+    assert "Raw AP voltage + detected sorted spikes" in html
+    assert "Detected sorted spikes" in html
+    assert "Raw AP contrast" in html
+    assert "Background intensity" in html
+    assert "state.overlayOpacity" not in html
+    assert '<input id="activity-toggle" type="checkbox">' in html
+    assert "dandiset/001637/draft/files" in html
+    assert "dandiset/001768/draft/files" in html
+    assert "dandiset/001424/draft/files" in html
+    assert "__SEGMENTATION_" not in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+
+    static_paths = {
+        modality: tmp_path / SEGMENTATION_VIEWER_STATIC_OUTPUTS[modality].name
+        for modality in SEGMENTATION_VIEWER_STATIC_OUTPUTS
+    }
+    first_static_renders = {}
     for modality, filter_count in (
         ("neuropixels", 569),
         ("mesoscope", 399),
         ("slap2", 45),
     ):
-        html_path = write_segmentation_viewer_html(
-            modality,
-            tmp_path / f"segmentation-{modality}.html",
-        )
-        svg_path = write_segmentation_viewer_svg(
-            modality,
-            tmp_path / SEGMENTATION_VIEWER_STATIC_OUTPUTS[modality].name,
-        )
-        html = html_path.read_text(encoding="utf-8")
+        svg_path = write_segmentation_viewer_svg(modality, static_paths[modality])
         svg = svg_path.read_text(encoding="utf-8")
-        first_renders[modality] = (html, svg)
-
-        assert 'id="source-canvas"' in html
-        assert 'id="filter-select"' in html
-        assert 'id="activity-chart"' in html
-        assert 'id="background-intensity"' in html
-        assert 'id="overlay-opacity"' not in html
-        assert f'"filterCount":{filter_count}' in html
-        assert 'document.querySelector("body > main")' in html
-        assert "[hidden] { display: none !important; }" in html
-        assert "filterAt(event)" in html
-        assert "chart-event" not in html
-        assert "Sequence omission" not in html
-        assert "Motor orientation 90" not in html
-        assert "__SEGMENTATION_" not in html
-        assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+        first_static_renders[modality] = svg
         assert 'role="img"' in svg
         assert ">A</text>" in svg and ">B</text>" in svg
         assert "Selected filter" in svg
@@ -506,19 +522,18 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
         if modality == "neuropixels":
             assert "Mean template waveform · peak channel" in svg
             assert "310 detected spikes" in svg
-            assert "Raw AP voltage + detected sorted spikes" in html
-            assert "Detected sorted spikes" in html
-            assert "Raw AP contrast" in html
             assert "Sequence omission" not in svg
-            assert 'id="qc-toggle"' in html
         else:
             assert svg.count("data:image/png;base64,") >= 2
-            assert "Background intensity" in html
-            assert "state.overlayOpacity" not in html
-        if modality == "slap2":
-            assert '<input id="activity-toggle" type="checkbox">' in html
-            assert "DANDI:001424" not in html
-            assert "dandiset/001424/draft/files" in html
+
+    combined_path = write_segmentation_viewer_static_svg(
+        tmp_path / "supplementary-segmentation-viewers.svg",
+        static_paths,
+    )
+    combined_svg = combined_path.read_text(encoding="utf-8")
+    assert 'width="1400" height="2280"' in combined_svg
+    assert 'role="img"' in combined_svg
+    assert combined_svg.count("data:image/svg+xml;base64,") == 3
 
     copied_media = tmp_path / "media" / "segmentation-viewers"
     assert {path.name for path in copied_media.glob("*.png")} == set(
@@ -526,42 +541,45 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
             SEGMENTATION_VIEWER_PROVENANCE_PATH.read_text(encoding="utf-8")
         )["vendored_media_sha256"]
     )
-    for modality, (html, svg) in first_renders.items():
-        html_path = write_segmentation_viewer_html(
+    assert write_segmentation_viewer_html(html_path).read_text(encoding="utf-8") == html
+    assert write_segmentation_viewer_static_svg(
+        combined_path,
+        static_paths,
+    ).read_text(encoding="utf-8") == combined_svg
+    for modality, svg in first_static_renders.items():
+        assert write_segmentation_viewer_svg(
             modality,
-            tmp_path / f"segmentation-{modality}.html",
-        )
-        svg_path = write_segmentation_viewer_svg(
-            modality,
-            tmp_path / SEGMENTATION_VIEWER_STATIC_OUTPUTS[modality].name,
-        )
-        assert html_path.read_text(encoding="utf-8") == html
-        assert svg_path.read_text(encoding="utf-8") == svg
+            static_paths[modality],
+        ).read_text(encoding="utf-8") == svg
 
 
 def test_segmentation_viewer_orchestrator_writes_all_modalities(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    output_paths = {
-        modality: tmp_path / f"segmentation-{modality}.html"
-        for modality in ("neuropixels", "mesoscope", "slap2")
-    }
+    output_path = tmp_path / SEGMENTATION_VIEWER_OUTPUT.name
+    combined_static_path = tmp_path / SEGMENTATION_VIEWER_STATIC_OUTPUT.name
     static_paths = {
         modality: tmp_path / f"segmentation-{modality}.svg"
-        for modality in output_paths
+        for modality in ("neuropixels", "mesoscope", "slap2")
     }
     monkeypatch.setattr(
-        "openscope_p3_publication.figures.SEGMENTATION_VIEWER_OUTPUTS",
-        output_paths,
+        "openscope_p3_publication.figures.SEGMENTATION_VIEWER_OUTPUT",
+        output_path,
+    )
+    monkeypatch.setattr(
+        "openscope_p3_publication.figures.SEGMENTATION_VIEWER_STATIC_OUTPUT",
+        combined_static_path,
     )
     monkeypatch.setattr(
         "openscope_p3_publication.figures.SEGMENTATION_VIEWER_STATIC_OUTPUTS",
         static_paths,
     )
 
-    assert write_segmentation_viewers() == list(output_paths.values())
-    assert all(path.is_file() for path in (*output_paths.values(), *static_paths.values()))
+    assert write_segmentation_viewers() == output_path
+    assert output_path.is_file()
+    assert combined_static_path.is_file()
+    assert all(path.is_file() for path in static_paths.values())
 
 
 def test_stimulus_sources_are_pinned() -> None:

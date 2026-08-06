@@ -1,8 +1,18 @@
 (() => {
   "use strict";
 
-  const viewer = JSON.parse(document.getElementById("segmentation-data").textContent);
+  const protocol = JSON.parse(document.getElementById("segmentation-data").textContent);
   const colors = ["#25aae1", "#8cc63f", "#ccaf2d", "#d65c48", "#24bcad", "#b160a9"];
+  const modalityAccents = {
+    neuropixels: "#3157b7",
+    mesoscope: "#168f78",
+    slap2: "#b16027",
+  };
+  const viewerTitles = {
+    neuropixels: "Neuropixels unit-template viewer",
+    mesoscope: "Mesoscope ROI segmentation viewer",
+    slap2: "SLAP2 source-segmentation viewer",
+  };
   const elements = {
     activityChart: document.getElementById("activity-chart"),
     activityControl: document.getElementById("activity-control"),
@@ -11,42 +21,56 @@
     background: document.getElementById("background-intensity"),
     backgroundLabel: document.getElementById("background-label"),
     canvas: document.getElementById("source-canvas"),
+    filterCount: document.getElementById("filter-count"),
     filterMetadata: document.getElementById("filter-metadata"),
     filterSelect: document.getElementById("filter-select"),
     filterKeyLabel: document.getElementById("filter-key-label"),
     loading: document.getElementById("loading-status"),
+    modalitySelector: document.getElementById("modality-selector"),
     nextFilter: document.getElementById("next-filter"),
     previousFilter: document.getElementById("previous-filter"),
     qcControl: document.getElementById("qc-control"),
     qcKey: document.getElementById("qc-key"),
     qcToggle: document.getElementById("qc-toggle"),
+    panelLabel: document.getElementById("panel-label"),
     selectionSwatch: document.getElementById("selection-swatch"),
     selectionTitle: document.getElementById("selection-title"),
+    sessionLine: document.getElementById("session-line"),
+    sourceLink: document.getElementById("source-link"),
     tooltip: document.getElementById("canvas-tooltip"),
     traceTitle: document.getElementById("trace-title"),
     traceWindow: document.getElementById("trace-window"),
     waveformChart: document.getElementById("waveform-chart"),
     waveformSection: document.getElementById("waveform-section"),
+    viewer: document.getElementById("segmentation-viewer"),
+    viewerTitle: document.getElementById("viewer-title"),
   };
   const context = elements.canvas.getContext("2d");
-  const traceValues = decodeFloat32(viewer.traceDataBase64);
-  const waveformValues = viewer.waveformDataBase64
-    ? decodeFloat32(viewer.waveformDataBase64)
-    : null;
-  const rawValues = viewer.rawDataBase64 ? decodeUint8(viewer.rawDataBase64) : null;
-  const imageRecords = {};
-  const rawHeatmapCanvas = document.createElement("canvas");
-  const rawHeatmapContext = rawHeatmapCanvas.getContext("2d");
-  let rawHeatmapIntensity = null;
-  const state = {
+  const decodedViewers = protocol.viewers.map((record) => ({
+    raw: record.rawDataBase64 ? decodeUint8(record.rawDataBase64) : null,
+    traces: decodeFloat32(record.traceDataBase64),
+    waveforms: record.waveformDataBase64 ? decodeFloat32(record.waveformDataBase64) : null,
+  }));
+  const viewerStates = protocol.viewers.map((record) => ({
     activityVisible: false,
     backgroundIntensity: 1,
     imageRect: null,
     labelPixels: null,
     qcOnly: false,
-    selectedIndex: viewer.defaultFilterIndex,
+    selectedIndex: record.defaultFilterIndex,
     spikeHits: [],
-  };
+  }));
+  let activeViewerIndex = 0;
+  let viewer = protocol.viewers[0];
+  let traceValues = decodedViewers[0].traces;
+  let waveformValues = decodedViewers[0].waveforms;
+  let rawValues = decodedViewers[0].raw;
+  let imageRecords = {};
+  let viewerLoadToken = 0;
+  const rawHeatmapCanvas = document.createElement("canvas");
+  const rawHeatmapContext = rawHeatmapCanvas.getContext("2d");
+  let rawHeatmapIntensity = null;
+  let state = viewerStates[0];
 
   function decodeFloat32(encoded) {
     const binary = atob(encoded);
@@ -81,14 +105,11 @@
     });
   }
 
-  function loadImage(record, key) {
-    if (!record) return Promise.resolve();
+  function loadImage(record) {
+    if (!record) return Promise.resolve(null);
     return new Promise((resolve, reject) => {
       const image = new Image();
-      image.addEventListener("load", () => {
-        imageRecords[key] = image;
-        resolve();
-      });
+      image.addEventListener("load", () => resolve(image));
       image.addEventListener("error", reject);
       image.src = record.assetPath;
     });
@@ -566,18 +587,87 @@
     }).join("");
   }
 
-  function configureControls() {
+  function renderModalityTabs() {
+    elements.modalitySelector.innerHTML = protocol.viewers.map((record, index) => (
+      `<button class="modality-tab${index === activeViewerIndex ? " active" : ""}" `
+      + `type="button" role="tab" data-viewer-index="${index}" `
+      + `aria-selected="${index === activeViewerIndex}" `
+      + `style="--tab-accent:${modalityAccents[record.id]}">`
+      + `<span>${record.label}</span><span class="tab-count">${record.filterCount}</span>`
+      + "</button>"
+    )).join("");
+    elements.modalitySelector.querySelectorAll(".modality-tab").forEach((button) => {
+      button.addEventListener("click", () => activateViewer(Number(button.dataset.viewerIndex)));
+    });
+  }
+
+  function updateViewerChrome() {
+    elements.viewer.dataset.modality = viewer.id;
+    elements.panelLabel.textContent = `Unit extraction · ${viewer.panelLabel}`;
+    elements.viewerTitle.textContent = viewerTitles[viewer.id];
+    elements.sessionLine.textContent = `Mouse ${viewer.subject} · ${viewer.session}`;
+    elements.filterCount.textContent = String(viewer.filterCount);
+    elements.sourceLink.href = viewer.asset.dandiset_url;
+    elements.canvas.setAttribute("aria-label", `${viewerTitles[viewer.id]} filter map`);
+    document.title = `Unit extraction · ${viewer.label}`;
+
+    elements.activityControl.hidden = !viewer.activityImage;
+    elements.activityKey.hidden = !viewer.activityImage;
+    elements.qcControl.hidden = viewer.id !== "neuropixels";
+    elements.qcKey.hidden = viewer.id !== "neuropixels";
+    elements.waveformSection.hidden = !viewer.waveformDataBase64;
+    elements.backgroundLabel.textContent = viewer.id === "neuropixels"
+      ? "Raw AP contrast"
+      : "Background intensity";
+    elements.filterKeyLabel.textContent = viewer.id === "neuropixels"
+      ? "Detected sorted spikes"
+      : "Extraction filters";
+    elements.background.value = String(Math.round(state.backgroundIntensity * 100));
+    elements.activityToggle.checked = state.activityVisible;
+    elements.qcToggle.checked = state.qcOnly;
+    elements.tooltip.hidden = true;
     populateFilterSelect();
-    if (viewer.activityImage) {
-      elements.activityControl.hidden = false;
-      elements.activityKey.hidden = false;
+  }
+
+  async function activateViewer(index) {
+    if (index < 0 || index >= protocol.viewers.length) return;
+    activeViewerIndex = index;
+    viewer = protocol.viewers[index];
+    state = viewerStates[index];
+    traceValues = decodedViewers[index].traces;
+    waveformValues = decodedViewers[index].waveforms;
+    rawValues = decodedViewers[index].raw;
+    imageRecords = {};
+    rawHeatmapIntensity = null;
+    const token = ++viewerLoadToken;
+    renderModalityTabs();
+    updateViewerChrome();
+    elements.selectionTitle.textContent = "Loading…";
+    elements.filterMetadata.innerHTML = "";
+    elements.traceTitle.textContent = viewer.traceLabel;
+    elements.traceWindow.textContent = "";
+    elements.activityChart.innerHTML = "";
+    elements.waveformChart.innerHTML = "";
+
+    if (viewer.viewType === "image") {
+      elements.loading.hidden = false;
+      elements.loading.textContent = "Loading source image";
+      const [base, activity, labels, overlay] = await Promise.all([
+        loadImage(viewer.baseImage),
+        loadImage(viewer.activityImage),
+        loadImage(viewer.labelImage),
+        loadImage(viewer.filterOverlay),
+      ]);
+      if (token !== viewerLoadToken) return;
+      imageRecords = { activity, base, labels, overlay };
+      buildLabelPixels();
     }
-    if (viewer.id === "neuropixels") {
-      elements.qcControl.hidden = false;
-      elements.qcKey.hidden = false;
-      elements.backgroundLabel.textContent = "Raw AP contrast";
-      elements.filterKeyLabel.textContent = "Detected sorted spikes";
-    }
+    if (token !== viewerLoadToken) return;
+    elements.loading.hidden = true;
+    renderSelection();
+  }
+
+  function configureControls() {
     elements.filterSelect.addEventListener("change", () => selectFilter(Number(elements.filterSelect.value)));
     elements.background.addEventListener("input", () => {
       state.backgroundIntensity = Number(elements.background.value) / 100;
@@ -605,17 +695,7 @@
 
   async function initialize() {
     configureControls();
-    if (viewer.viewType === "image") {
-      await Promise.all([
-        loadImage(viewer.baseImage, "base"),
-        loadImage(viewer.activityImage, "activity"),
-        loadImage(viewer.labelImage, "labels"),
-        loadImage(viewer.filterOverlay, "overlay"),
-      ]);
-      buildLabelPixels();
-    }
-    elements.loading.hidden = true;
-    renderSelection();
+    await activateViewer(0);
   }
 
   initialize().catch((error) => {

@@ -163,10 +163,7 @@ SEGMENTATION_VIEWER_PROVENANCE_PATH = SEGMENTATION_VIEWER_DATA_PATH.with_suffix(
 SEGMENTATION_VIEWER_MEDIA_DIR = (
     REPO_ROOT / "figure_sources" / "media" / "segmentation-viewers"
 )
-SEGMENTATION_VIEWER_OUTPUTS = {
-    modality: REPO_ROOT / "interactive" / f"segmentation-{modality}.html"
-    for modality in ("neuropixels", "mesoscope", "slap2")
-}
+SEGMENTATION_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "segmentation-viewer.html"
 SEGMENTATION_VIEWER_TITLES = {
     "neuropixels": "Neuropixels unit-template viewer",
     "mesoscope": "Mesoscope ROI segmentation viewer",
@@ -203,6 +200,13 @@ SEGMENTATION_VIEWER_STATIC_OUTPUTS = {
         / "supplementary-slap2-source-filters.svg"
     ),
 }
+SEGMENTATION_VIEWER_STATIC_OUTPUT = (
+    REPO_ROOT
+    / "images"
+    / "figures"
+    / "generated"
+    / "supplementary-segmentation-viewers.svg"
+)
 SLAP2_STATIC_COMPOSITES = {
     "dmd1-composite": ("dmd1-detector-1", "dmd1-detector-2"),
     "dmd2-composite": ("dmd2-detector-1", "dmd2-detector-2"),
@@ -3165,17 +3169,12 @@ def write_neural_viewer_html(
 
 
 def write_segmentation_viewer_html(
-    modality: str,
-    output: Path | None = None,
+    output: Path = SEGMENTATION_VIEWER_OUTPUT,
     data_path: Path = SEGMENTATION_VIEWER_DATA_PATH,
     provenance_path: Path = SEGMENTATION_VIEWER_PROVENANCE_PATH,
 ) -> Path:
-    if modality not in SEGMENTATION_VIEWER_OUTPUTS:
-        raise ValueError(f"Unsupported segmentation viewer modality: {modality}")
-    output = output or SEGMENTATION_VIEWER_OUTPUTS[modality]
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_segmentation_viewers(data_path, provenance_path)
-    viewer = next(record for record in payload["viewers"] if record["id"] == modality)
     template = (JAVASCRIPT_DIR / "segmentation-viewer.html").read_text(
         encoding="utf-8"
     )
@@ -3192,19 +3191,12 @@ def write_segmentation_viewer_html(
         .replace(
             "__SEGMENTATION_DATA__",
             json.dumps(
-                viewer,
+                payload,
                 ensure_ascii=True,
                 separators=(",", ":"),
                 sort_keys=True,
             ),
         )
-        .replace("__SEGMENTATION_TITLE__", SEGMENTATION_VIEWER_TITLES[modality])
-        .replace("__MODALITY_ID__", modality)
-        .replace("__PANEL_LABEL__", viewer["panelLabel"])
-        .replace("__SUBJECT__", viewer["subject"])
-        .replace("__SESSION__", viewer["session"])
-        .replace("__FILTER_COUNT__", str(viewer["filterCount"]))
-        .replace("__DANDISET_URL__", viewer["asset"]["dandiset_url"])
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     media_output = output.parent / "media" / "segmentation-viewers"
@@ -3545,12 +3537,37 @@ def write_segmentation_viewer_svg(
     return output
 
 
-def write_segmentation_viewers() -> list[Path]:
-    outputs = []
-    for modality in SEGMENTATION_VIEWER_OUTPUTS:
-        write_segmentation_viewer_svg(modality)
-        outputs.append(write_segmentation_viewer_html(modality))
-    return outputs
+def write_segmentation_viewer_static_svg(
+    output: Path = SEGMENTATION_VIEWER_STATIC_OUTPUT,
+    static_outputs: dict[str, Path] | None = None,
+) -> Path:
+    static_outputs = static_outputs or SEGMENTATION_VIEWER_STATIC_OUTPUTS
+    panel_height = 760
+    panels = []
+    for index, (modality, panel_path) in enumerate(static_outputs.items()):
+        panel_path = write_segmentation_viewer_svg(modality, panel_path)
+        encoded = base64.b64encode(panel_path.read_bytes()).decode()
+        panels.append(
+            f'<image href="data:image/svg+xml;base64,{encoded}" x="0" '
+            f'y="{index * panel_height}" width="1400" height="{panel_height}"/>'
+        )
+    svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="2280" '
+        'viewBox="0 0 1400 2280" role="img" aria-labelledby="title description">',
+        '<title id="title">Unit extraction across recording modalities</title>',
+        '<desc id="description">Neuropixels, mesoscope, and SLAP2 panels show '
+        'representative extraction filters with selected activity traces.</desc>',
+        *panels,
+        "</svg>",
+    ]
+    output.parent.mkdir(parents=True, exist_ok=True)
+    write_svg_output(output, svg)
+    return output
+
+
+def write_segmentation_viewers() -> Path:
+    write_segmentation_viewer_static_svg(SEGMENTATION_VIEWER_STATIC_OUTPUT)
+    return write_segmentation_viewer_html(SEGMENTATION_VIEWER_OUTPUT)
 
 
 def load_publication_table_data(manuscript_path: Path = REPO_ROOT / "index.md") -> dict:
@@ -5105,7 +5122,7 @@ def main() -> None:
     behavior_viewer_path = write_behavior_viewer_html()
     eye_tracking_viewer_path = write_eye_tracking_viewer_html()
     neural_viewer_path = write_neural_viewer_html()
-    segmentation_viewer_paths = write_segmentation_viewers()
+    segmentation_viewer_path = write_segmentation_viewers()
     unit_yield_html_path = write_unit_yield_html()
     trajectory_html_path = write_neuropixels_trajectory_html()
     svg_path = write_static_svg()
@@ -5126,10 +5143,8 @@ def main() -> None:
     print(f"Wrote {eye_tracking_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {neural_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEURAL_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
-    for segmentation_viewer_path in segmentation_viewer_paths:
-        print(f"Wrote {segmentation_viewer_path.relative_to(REPO_ROOT)}")
-    for segmentation_static_path in SEGMENTATION_VIEWER_STATIC_OUTPUTS.values():
-        print(f"Wrote {segmentation_static_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {segmentation_viewer_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {SEGMENTATION_VIEWER_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {trajectory_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")

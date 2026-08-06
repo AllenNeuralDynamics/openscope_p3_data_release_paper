@@ -1050,12 +1050,11 @@ Draft plan for unit extraction and signal-to-noise analysis across recording mod
 :::
 
 Representative extraction filters and their matched activity traces can be
-inspected directly for
-[Neuropixels](#fig-supp-neuropixels-unit-filters),
-[mesoscope](#fig-supp-mesoscope-roi-filters), and
-[SLAP2](#fig-supp-slap2-source-filters). Each supplementary viewer uses the same
-representative session as the raw-data view in [Figure 5](#fig-aligned-neural-signals)
-and derives its filters and traces from the matched public NWB.
+inspected together in
+[Supplementary Figure 5](#fig-supp-segmentation-viewers). Its Neuropixels,
+Mesoscope, and SLAP2 tabs use the same representative sessions as the raw-data
+view in [Figure 5](#fig-aligned-neural-signals) and derive their filters and
+traces from the matched public NWBs.
 
 ### Neuropixels recordings
 
@@ -1576,34 +1575,14 @@ The conclusion has not yet been drafted.
 **Supplementary Figure 4.** Synchronized eye tracking in representative standard-oddball Neuropixels, mesoscope, and SLAP2 sessions. The **Interactive** view shows the public eye-camera video, reconstructed visual stimulus, and processed eye fits on a common 16-second clock. Fit-source tabs switch the center field, geometric values, and area trace among the pupil, corneal reflection, and eye ellipse. Marker position gives the selected fit center within the complete camera frame; the dashed crosshair marks its median center across valid nonblink fits from that source session. Marker size and color vary with selected-fit area after scaling to that fit's session-wide 5th–95th percentile nonblink range. The tracking field turns black during likely-blink samples, which are also shown as shaded intervals in the area trace. The **Static** view vertically stacks the raw pupil x position, y position, and area for each modality on the same 0–16-second axis. Teal bands mark the complete 90-degree orientation-deviant presentation and gray bands mark likely-blink intervals; traces break at invalid fits rather than interpolating through them. Neuropixels and mesoscope eye-camera frames are aligned through 100-kHz exposure edges in the session sync file, with reported dropped frames removed before mapping to MP4 time. SLAP2 uses aligned Harp timestamps and packaged pupil-frame indices to map the processed fits to its 30 Hz EyeCamera MP4. Eye fits, blink flags, and stimulus rows come from each public NWB time base. Modality tabs switch among all three source-backed examples, and source links expose the corresponding DANDI and raw S3 records.
 :::
 
-:::{iframe} ./interactive/segmentation-neuropixels.html
-:label: fig-supp-neuropixels-unit-filters
+:::{iframe} ./interactive/segmentation-viewer.html
+:label: fig-supp-segmentation-viewers
 :enumerated: false
 :width: 100%
-:title: Supplementary Figure 4. Neuropixels unit-template filters and activity.
-:placeholder: ./images/figures/generated/supplementary-neuropixels-unit-filters.svg
+:title: Supplementary Figure 5. Unit extraction across recording modalities.
+:placeholder: ./images/figures/generated/supplementary-segmentation-viewers.svg
 
-**Supplementary Figure 4.** Neuropixels unit templates and detected spikes for Probe A in representative session `ecephys_830846_2026-03-09_10-32-54`. The source view displays 100 ms of unaveraged AP voltage as a time-by-probe-length image from 96 regularly spaced contacts and overlays 310 sorted-spike detections from 167 of the 569 Probe A units. Each marker is placed at its spike time and nearest displayed peak channel; selecting a marker or unit highlights its depth and NWB waveform-spread band. QC-passing detections can be isolated with the viewer toggle. The selected unit is paired with a 12 s elapsed-time trace of 20 ms binned spike rate and its actual peak-channel mean template waveform. No stimulus annotations are shown. In the **Static** view, **A** shows the raw AP image and detected spikes and **B** shows the selected unit's activity and waveform. Unit templates, spike times, quality metrics, and electrode geometry come from the public draft of [DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files); the raw AP image comes from the matched public compressed stream.
-:::
-
-:::{iframe} ./interactive/segmentation-mesoscope.html
-:label: fig-supp-mesoscope-roi-filters
-:enumerated: false
-:width: 100%
-:title: Supplementary Figure 5. Mesoscope ROI filters and fluorescence.
-:placeholder: ./images/figures/generated/supplementary-mesoscope-roi-filters.svg
-
-**Supplementary Figure 5.** Mesoscope ROI filters and fluorescence for the VISp 0 plane in representative session `multiplane-ophys_832700_2026-01-29_11-18-09`. All 399 NWB segmentation masks are outlined over a grayscale average projection. The background-intensity control changes only the grayscale source image; fixed ROI colors distinguish neighboring outlines and do not encode ROI class. Selecting a mask reveals its soma or dendrite classification probabilities, footprint geometry, and a 30 s elapsed-time ΔF/F trace without stimulus annotations. In the **Static** view, **A** shows the complete segmentation and **B** shows the selected ROI trace. The average projection, segmentation masks, classifications, timestamps, and ΔF/F values are streamed from the matched NWB in the public draft of [DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files).
-:::
-
-:::{iframe} ./interactive/segmentation-slap2.html
-:label: fig-supp-slap2-source-filters
-:enumerated: false
-:width: 100%
-:title: Supplementary Figure 6. SLAP2 source filters and fluorescence.
-:placeholder: ./images/figures/generated/supplementary-slap2-source-filters.svg
-
-**Supplementary Figure 6.** SLAP2 source filters and fluorescence for DMD1 in representative session `SLAP2_796630_2025-08-28-14-25-34`. All 45 source masks are outlined over a grayscale channel-0 mean image. The NWB image axes are transposed into display coordinates before applying the `PlaneSegmentation` masks, following the source-processing convention. The background-intensity control changes only the grayscale mean image; fixed source colors distinguish neighboring outlines and do not encode source type. The source-localization activity image remains available as an optional overlay and is off by default. Selecting a mask reveals its footprint geometry and a 30 s, approximately 200 Hz elapsed-time ΔF/F excerpt without stimulus annotations. In the **Static** view, **A** shows the grayscale mean image and complete source segmentation and **B** shows the selected source trace. Mean and activity images, `PlaneSegmentation` pixel masks, timestamps, and fluorescence traces are streamed from the matched NWB in the public draft of [DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files).
+**Supplementary Figure 5.** Unit extraction filters and matched activity across recording modalities. The **Neuropixels** tab displays 100 ms of unaveraged Probe A AP voltage from representative session `ecephys_830846_2026-03-09_10-32-54`, with 310 sorted-spike detections from 167 of 569 units overlaid at their spike times and nearest displayed peak channels. Selecting a marker or unit highlights its depth and waveform-spread band and shows a 12 s binned-rate trace plus its peak-channel mean template. The **Mesoscope** tab outlines all 399 VISp 0 segmentation masks over a grayscale average projection from `multiplane-ophys_832700_2026-01-29_11-18-09`; selection reveals classification probabilities, footprint geometry, and a 30 s ΔF/F trace. The **SLAP2** tab outlines all 45 DMD1 source masks over a grayscale mean image from `SLAP2_796630_2025-08-28-14-25-34`; image axes are transposed into display coordinates before applying the masks, and selection reveals a 30 s, approximately 200 Hz ΔF/F trace. Its source-localization activity image is available as an optional overlay. Microscopy background controls alter only grayscale image intensity, while filter colors remain fixed. No tab shows stimulus annotations. The stacked static fallback preserves the complete source and selected-trace view for all three modalities. Data come from the public drafts of [DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files), [DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files), and [DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files).
 :::
 
 # Supplementary Text 1: Published oddball paradigms and sampling ranges

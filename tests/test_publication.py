@@ -484,9 +484,9 @@ def test_supplementary_studies_table_is_complete() -> None:
 def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
-    for number in range(1, 7):
+    for number in range(1, 6):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
-    assert manuscript.count(":enumerated: false\n:width: 100%") >= 5
+    assert manuscript.count(":enumerated: false\n:width: 100%") >= 3
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
     assert "./interactive/unit-yield.html" in manuscript
     assert ":label: fig-supp-neuropixels-unit-yield\n" in manuscript
@@ -514,26 +514,18 @@ def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     assert "standard-oddball Neuropixels, mesoscope, and SLAP2 sessions" in manuscript
     assert "5th–95th percentile nonblink range" in manuscript
     assert "**B,** a dorsal projection" in manuscript
-    for modality, label, placeholder in (
-        (
-            "neuropixels",
-            "fig-supp-neuropixels-unit-filters",
-            "supplementary-neuropixels-unit-filters.svg",
-        ),
-        (
-            "mesoscope",
-            "fig-supp-mesoscope-roi-filters",
-            "supplementary-mesoscope-roi-filters.svg",
-        ),
-        (
-            "slap2",
-            "fig-supp-slap2-source-filters",
-            "supplementary-slap2-source-filters.svg",
-        ),
+    assert "./interactive/segmentation-viewer.html" in manuscript
+    assert ":label: fig-supp-segmentation-viewers" in manuscript
+    assert (
+        ":placeholder: ./images/figures/generated/"
+        "supplementary-segmentation-viewers.svg"
+    ) in manuscript
+    for obsolete in (
+        "segmentation-neuropixels.html",
+        "segmentation-mesoscope.html",
+        "segmentation-slap2.html",
     ):
-        assert f"./interactive/segmentation-{modality}.html" in manuscript
-        assert f":label: {label}" in manuscript
-        assert f":placeholder: ./images/figures/generated/{placeholder}" in manuscript
+        assert obsolete not in manuscript
     assert "supplementary-neuropixels-unit-yield.png" not in manuscript
     assert "supplementary-neuropixels-targeting.png" not in manuscript
     assert "figure-11-analysis-framework.png" not in manuscript
@@ -570,28 +562,24 @@ def test_nwb_file_contents_are_in_data_records() -> None:
 
 def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
-    segmentation_start = manuscript.index("**Supplementary Figure 4.**")
+    segmentation_start = manuscript.index("**Supplementary Figure 5.**")
     segmentation_stop = manuscript.index("# Supplementary Text 1", segmentation_start)
     segmentation_captions = manuscript[segmentation_start:segmentation_stop]
-    assert "overlays 310 sorted-spike detections" in manuscript
-    assert "167 of the 569 Probe A units" in manuscript
-    assert "time-by-probe-length image" in manuscript
-    assert "All 399 NWB segmentation masks" in manuscript
-    assert "All 45 source masks" in manuscript
-    assert "30 s elapsed-time ΔF/F trace" in manuscript
-    assert "30 s, approximately 200 Hz elapsed-time ΔF/F excerpt" in manuscript
-    assert "NWB waveform-spread band" in manuscript
+    assert "with 310 sorted-spike detections from 167" in manuscript
+    assert "of 569 units" in manuscript
+    assert "outlines all 399 VISp 0 segmentation masks" in manuscript
+    assert "outlines all 45 DMD1 source masks" in manuscript
+    assert "30 s ΔF/F" in manuscript
+    assert "30 s, approximately 200 Hz ΔF/F trace" in manuscript
+    assert "waveform-spread band" in manuscript
     assert "grayscale average projection" in manuscript
     assert "transposed into display coordinates" in manuscript
-    assert "background-intensity control changes only" in manuscript
-    assert "activity image remains available as an optional overlay" in manuscript
-    assert "No stimulus annotations are shown" in manuscript
-    assert "without stimulus annotations" in manuscript
+    assert "background controls alter only" in manuscript
+    assert "activity image is available as an optional overlay" in manuscript
+    assert "No tab shows stimulus annotations" in manuscript
     assert "first sequence omission" not in segmentation_captions
     assert "first motor mismatch" not in segmentation_captions
-    assert "[Neuropixels](#fig-supp-neuropixels-unit-filters)" in manuscript
-    assert "[mesoscope](#fig-supp-mesoscope-roi-filters)" in manuscript
-    assert "[SLAP2](#fig-supp-slap2-source-filters)" in manuscript
+    assert "[Supplementary Figure 5](#fig-supp-segmentation-viewers)" in manuscript
     assert (
         "[796630_2025-08-28_14-25-34]"
         "(https://open.quiltdata.com/b/aind-open-data/tree/"
@@ -607,7 +595,7 @@ def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     ):
         assert importer[function_name](manuscript) == manuscript
     assert "DANDI:001424" in importer["SLAP2_RAW_SOURCE"]
-    assert importer["SEGMENTATION_VIEWER_BLOCK"].count(":::{iframe}") == 3
+    assert importer["SEGMENTATION_VIEWER_BLOCK"].count(":::{iframe}") == 1
 
 
 def test_imported_data_tables_have_body_cells() -> None:

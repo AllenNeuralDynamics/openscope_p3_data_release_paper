@@ -99,9 +99,7 @@ jobs:
           test -f _build/html/interactive/data-explorer.html
           test -f _build/html/interactive/literature-comparison.html
           test -f _build/html/interactive/behavior-viewer.html
-          test -f _build/html/interactive/segmentation-neuropixels.html
-          test -f _build/html/interactive/segmentation-mesoscope.html
-          test -f _build/html/interactive/segmentation-slap2.html
+          test -f _build/html/interactive/segmentation-viewer.html
           test -f _build/html/interactive/zebra-stimulus-excerpt.m4v
           test -f _build/html/interactive/zebra-stimulus-poster.png
 
