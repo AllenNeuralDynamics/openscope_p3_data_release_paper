@@ -6,7 +6,7 @@
     {
       "filename": "visual_mismatch_example.csv",
       "source_sha256": "f5e60af027b30cc1fbd9675d799d0191abe1ee8d6f09f57eb3b2eafad2d0dbdb",
-      "vendored_sha256": "0b05f19e4a7fe5f5ab17dadb5f72ca892b1ea2fc4731d7de28c9cc380814b16a",
+      "vendored_sha256": "a9536b76e5d128d3a171605726e9ffb1e3c3207e8a23dfce7e7c4c4bb443f4d0",
       "context_block_type": "standard_oddball",
       "source_row_start": 561,
       "source_row_end": 595,
@@ -20,7 +20,7 @@
     {
       "filename": "sensorimotor_mismatch_example.csv",
       "source_sha256": "94e410338d20071363f234a049acaad67d60a9dafa975f343a58725f67a01df3",
-      "vendored_sha256": "c2f48f851e201ecafcac17477e9290f61aca099e0d4298afc267225767ae78e7",
+      "vendored_sha256": "90a9405ed54d4bef3836a278047df02edd9b1792af9bf8baa71a34ac833339be",
       "context_block_type": "motor_oddball",
       "source_row_start": 830,
       "source_row_end": 1540,
@@ -34,7 +34,7 @@
     {
       "filename": "sequence_mismatch_example.csv",
       "source_sha256": "05cdc5246288ff11b1800f11e2c5aa3e9ff6a819ab08a010455ccbba97d31301",
-      "vendored_sha256": "9df66884848d52397beab0c36141134df11f55439f9f8ad240f4ac892739b34f",
+      "vendored_sha256": "e7a0c2b4e34fff6c542c4851f02f829d66d153887c1b4ffe9055418eecb3639c",
       "context_block_type": "sequential_oddball",
       "source_row_start": 551,
       "source_row_end": 646,
@@ -48,7 +48,7 @@
     {
       "filename": "duration_mismatch_example.csv",
       "source_sha256": "eb3ea87207998c2939734e9c581ed56327927e7381db66e1fdc33b2fef3b223e",
-      "vendored_sha256": "78fa772253935b7538fd048faa129ed8d35fb37c0d56f9c378586622c2fa0ce4",
+      "vendored_sha256": "fe3f028180a1b0b3e9ac3c190c7b5ef71db3481c24b1b45c51c4685054228d00",
       "context_block_type": "jitter_oddball",
       "source_row_start": 546,
       "source_row_end": 581,
@@ -64,7 +64,7 @@
     "filename": "shared_blocks_example.csv",
     "source_filename": "visual_mismatch_example.csv",
     "source_sha256": "f5e60af027b30cc1fbd9675d799d0191abe1ee8d6f09f57eb3b2eafad2d0dbdb",
-    "vendored_sha256": "765cd0b318d5a535c47196a84ab97c25ea2f73d158240ea4577817aadf26e6e5",
+    "vendored_sha256": "ea1ab7d75c82ea4d4f42e151eea436b2180b03d3b2bf5cba8267cd9cc2aa31c6",
     "blocks": [
       {
         "viewer_block_index": 0,
