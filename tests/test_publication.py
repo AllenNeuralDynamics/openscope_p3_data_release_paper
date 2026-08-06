@@ -38,6 +38,18 @@ def test_checksum_sensitive_snapshots_use_lf_line_endings() -> None:
     )
 
 
+def test_pages_deployment_only_runs_for_main_pushes() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "deploy.yml").read_text(
+        encoding="utf-8"
+    )
+    main_push_guard = (
+        "if: github.event_name == 'push' && github.ref == 'refs/heads/main'"
+    )
+
+    assert workflow.count(main_push_guard) == 3
+    assert "github.event_name != 'pull_request'" not in workflow
+
+
 def publication_snapshot_updater() -> dict:
     return runpy.run_path(
         str(REPO_ROOT / "scripts" / "update_publication_snapshots.py")
@@ -484,9 +496,9 @@ def test_supplementary_studies_table_is_complete() -> None:
 def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
-    for number in range(1, 5):
+    for number in range(1, 6):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
-    assert manuscript.count(":enumerated: false\n:width: 100%") >= 2
+    assert manuscript.count(":enumerated: false\n:width: 100%") >= 3
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
     assert "./interactive/unit-yield.html" in manuscript
     assert ":label: fig-supp-neuropixels-unit-yield\n" in manuscript
@@ -514,6 +526,18 @@ def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     assert "standard-oddball Neuropixels, mesoscope, and SLAP2 sessions" in manuscript
     assert "5th–95th percentile nonblink range" in manuscript
     assert "**B,** a dorsal projection" in manuscript
+    assert "./interactive/segmentation-viewer.html" in manuscript
+    assert ":label: fig-supp-segmentation-viewers" in manuscript
+    assert (
+        ":placeholder: ./images/figures/generated/"
+        "supplementary-segmentation-viewers.svg"
+    ) in manuscript
+    for obsolete in (
+        "segmentation-neuropixels.html",
+        "segmentation-mesoscope.html",
+        "segmentation-slap2.html",
+    ):
+        assert obsolete not in manuscript
     assert "supplementary-neuropixels-unit-yield.png" not in manuscript
     assert "supplementary-neuropixels-targeting.png" not in manuscript
     assert "figure-11-analysis-framework.png" not in manuscript
@@ -536,12 +560,60 @@ def test_nwb_file_contents_are_in_data_records() -> None:
     assert "Shared across modalities:" in records
     assert "Neuropixels NWB files" in records
     assert "Mesoscope NWB files" in records
-    assert records.count(":::{tab-item}") == 3
+    assert "SLAP2 NWB files" in records
+    assert "DANDI:001424" in records
+    assert records.count(":::{tab-item}") == 4
     assert records.count(
         "| Question | NWB contents | Representative PyNWB entry point |"
-    ) == 3
+    ) == 4
     assert "nwbfile.units.to_dataframe()" in records
     assert 'nwbfile.processing[plane]["dff_timeseries"]' in records
+    assert 'nwbfile.processing["ophys"]["ImageSegmentation"]' in records
+    assert 'nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_dFF"]' in records
+
+
+def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    segmentation_start = manuscript.index("**Supplementary Figure 5.**")
+    segmentation_stop = manuscript.index("# Supplementary Text 1", segmentation_start)
+    segmentation_captions = manuscript[segmentation_start:segmentation_stop]
+    assert "same platform logos as the other multimodal figures" in manuscript
+    assert "all six probes" in manuscript
+    assert "all eight VISp and VISl planes" in manuscript
+    assert "provides DMD1 and DMD2" in manuscript
+    assert "every probe or imaging plane" in manuscript
+    assert "complete NWB segmentation" in manuscript
+    assert "complete source segmentation" in manuscript
+    assert "30 s ΔF/F" in manuscript
+    assert "30 s, approximately 200 Hz ΔF/F trace" in manuscript
+    assert "waveform-spread band" in manuscript
+    assert "common-mode correction is enabled by default" in manuscript
+    assert "fast-scanning x axis horizontally" in manuscript
+    assert "grayscale average projection" in manuscript
+    assert "stored (x, y) arrays are transposed to display (y, x)" in manuscript
+    assert "background controls alter only" in manuscript
+    assert "activity image" not in segmentation_captions.lower()
+    assert "QC-passing" not in segmentation_captions
+    assert "No tab shows stimulus annotations" in manuscript
+    assert "first sequence omission" not in segmentation_captions
+    assert "first motor mismatch" not in segmentation_captions
+    assert "[Supplementary Figure 5](#fig-supp-segmentation-viewers)" in manuscript
+    assert (
+        "[796630_2025-08-28_14-25-34]"
+        "(https://open.quiltdata.com/b/aind-open-data/tree/"
+        "796630_2025-08-28_14-25-34/) "
+        "([DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files))"
+    ) in manuscript
+
+    importer = runpy.run_path(str(REPO_ROOT / "scripts" / "import_google_doc.py"))
+    for function_name in (
+        "add_segmentation_viewer_figures",
+        "add_unit_extraction_viewer_links",
+        "add_slap2_nwb_contents",
+    ):
+        assert importer[function_name](manuscript) == manuscript
+    assert "DANDI:001424" in importer["SLAP2_RAW_SOURCE"]
+    assert importer["SEGMENTATION_VIEWER_BLOCK"].count(":::{iframe}") == 1
 
 
 def test_imported_data_tables_have_body_cells() -> None:

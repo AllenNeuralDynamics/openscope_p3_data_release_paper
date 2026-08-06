@@ -32,6 +32,11 @@ from openscope_p3_publication.figures import (
     NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH,
     REPO_ROOT,
     RUNNING_STATISTICS_PATH,
+    SEGMENTATION_VIEWER_DATA_PATH,
+    SEGMENTATION_VIEWER_OUTPUT,
+    SEGMENTATION_VIEWER_PROVENANCE_PATH,
+    SEGMENTATION_VIEWER_STATIC_OUTPUT,
+    SEGMENTATION_VIEWER_STATIC_OUTPUTS,
     SESSION_RECORDS_PATH,
     SESSION_RECORDS_PROVENANCE_PATH,
     SESSION_TYPE_COLORS,
@@ -42,6 +47,7 @@ from openscope_p3_publication.figures import (
     UNIT_YIELD_PROVENANCE_PATH,
     ZEBRA_MOVIE_SOURCE,
     ZEBRA_POSTER_SOURCE,
+    common_median_corrected_rgb,
     load_behavior_excerpts,
     load_data_access_table,
     load_experimental_design_sources,
@@ -52,6 +58,7 @@ from openscope_p3_publication.figures import (
     load_neuropixels_trajectory_data,
     load_publication_table_data,
     load_running_statistics,
+    load_segmentation_viewers,
     load_shared_stimulus_table_excerpts,
     load_stimulus_table_excerpts,
     load_unit_yield_data,
@@ -74,6 +81,10 @@ from openscope_p3_publication.figures import (
     write_neural_viewer_html,
     write_neuropixels_trajectory_html,
     write_neuropixels_trajectory_svg,
+    write_segmentation_viewer_html,
+    write_segmentation_viewer_static_svg,
+    write_segmentation_viewer_svg,
+    write_segmentation_viewers,
     write_session_inventory_svg,
     write_standard_oddball_plan_svg,
     write_static_svg,
@@ -389,6 +400,241 @@ def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> Non
     write_neuropixels_trajectory_svg(svg_path)
     assert html_path.read_text(encoding="utf-8") == html
     assert svg_path.read_text(encoding="utf-8") == svg
+
+
+def test_segmentation_viewer_snapshot_is_source_backed() -> None:
+    payload = load_segmentation_viewers()
+    provenance = json.loads(
+        SEGMENTATION_VIEWER_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+
+    assert hashlib.sha256(SEGMENTATION_VIEWER_DATA_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
+    )
+    assert payload["version"] == 3
+    viewers = {viewer["id"]: viewer for viewer in payload["viewers"]}
+    expected_counts = {
+        "neuropixels": [569, 502, 534, 799, 542, 604],
+        "mesoscope": [399, 463, 70, 277, 374, 356, 124, 321],
+        "slap2": [45, 74],
+    }
+    assert {
+        modality: [source["filterCount"] for source in viewer["sources"]]
+        for modality, viewer in viewers.items()
+    } == expected_counts
+    assert {
+        modality: viewer["asset"]["dandiset_id"]
+        for modality, viewer in viewers.items()
+    } == {
+        "neuropixels": "001637",
+        "mesoscope": "001768",
+        "slap2": "001424",
+    }
+    assert viewers["slap2"]["asset"]["asset_id"] == (
+        "1b6509ef-70d7-46e4-9c8e-587bb6ace95f"
+    )
+    assert [source["sourceId"] for source in viewers["neuropixels"]["sources"]] == [
+        "probe-a", "probe-b", "probe-c", "probe-d", "probe-e", "probe-f"
+    ]
+    assert [source["sourceId"] for source in viewers["mesoscope"]["sources"]] == [
+        "visp_0", "visp_1", "visp_2", "visp_3",
+        "visl_4", "visl_5", "visl_6", "visl_7",
+    ]
+    assert [source["sourceId"] for source in viewers["slap2"]["sources"]] == [
+        "dmd1", "dmd2"
+    ]
+    for source in viewers["neuropixels"]["sources"]:
+        assert source["waveformColumns"] == 210
+        assert source["viewType"] == "spike-map"
+        assert (source["rawRows"], source["rawColumns"]) == (96, 3000)
+        assert len(base64.b64decode(source["rawDataBase64"])) == 288_000
+        assert source["spikeEvents"]
+        assert source["traceColumns"] == 600
+        assert source["traceTimesSeconds"][-1] == pytest.approx(11.99)
+        assert all(
+            "isQcPassing" not in row
+            and "snr" not in row
+            and "firingRateHz" not in row
+            for row in source["filters"]
+        )
+    for source in (*viewers["mesoscope"]["sources"], *viewers["slap2"]["sources"]):
+        assert source["traceTimesSeconds"][-1] > 29.8
+        assert "activityImage" not in source
+        assert source["fastScanAxis"] == "horizontal"
+    assert {
+        source["displayTransform"] for source in viewers["mesoscope"]["sources"]
+    } == {"stored-yx"}
+    assert {
+        source["displayTransform"] for source in viewers["slap2"]["sources"]
+    } == {"stored-xy-transposed-to-yx"}
+    assert (
+        viewers["slap2"]["sources"][0]["baseImage"]["width"],
+        viewers["slap2"]["sources"][0]["baseImage"]["height"],
+    ) == (427, 408)
+    assert (
+        viewers["slap2"]["sources"][1]["baseImage"]["width"],
+        viewers["slap2"]["sources"][1]["baseImage"]["height"],
+    ) == (429, 587)
+    referenced_media = {
+        Path(source[field]["assetPath"]).name
+        for viewer in viewers.values()
+        for source in viewer["sources"]
+        for field in ("baseImage", "labelImage", "filterOverlay")
+        if field in source
+    }
+    assert set(provenance["vendored_media_sha256"]) == referenced_media
+    assert len(referenced_media) == 30
+    assert not any("activity" in name for name in referenced_media)
+
+
+def test_common_median_correction_removes_time_column_offsets() -> None:
+    corrected = common_median_corrected_rgb(
+        bytes((10, 20, 30, 110, 120, 130)),
+        rows=2,
+        columns=3,
+        contrast=1,
+    )
+
+    assert corrected == bytes((78, 78, 78) * 3 + (178, 178, 178) * 3)
+
+
+def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
+    html_path = write_segmentation_viewer_html(tmp_path / "segmentation-viewer.html")
+    html = html_path.read_text(encoding="utf-8")
+    assert 'id="modality-selector"' in html
+    assert 'role="tablist"' in html
+    assert 'id="source-select"' in html
+    assert 'id="source-label"' in html
+    assert 'id="source-canvas"' in html
+    assert 'id="filter-select"' in html
+    assert 'id="activity-chart"' in html
+    assert 'id="background-intensity"' in html
+    assert 'id="common-mode-toggle"' in html
+    assert 'id="common-mode-control"' in html
+    assert 'id="overlay-opacity"' not in html
+    for source_id in (
+        "probe-a", "probe-b", "probe-c", "probe-d", "probe-e", "probe-f",
+        "visp_0", "visp_1", "visp_2", "visp_3",
+        "visl_4", "visl_5", "visl_6", "visl_7", "dmd1", "dmd2",
+    ):
+        assert f'"sourceId":"{source_id}"' in html
+    assert "protocol.viewers.map" in html
+    assert "activateModality" in html
+    assert "activateSource" in html
+    assert "populateSourceSelect" in html
+    assert 'class="modality-logo"' in html
+    assert html.count("data:image/png;base64,") == 3
+    assert "tab-count" not in html
+    assert 'id="filter-count"' not in html
+    assert 'id="qc-toggle"' not in html
+    assert 'id="qc-key"' not in html
+    assert 'id="activity-toggle"' not in html
+    assert 'id="activity-key"' not in html
+    assert "isQcPassing" not in html
+    assert "activityImage" not in html
+    assert "firingRateHz" not in html
+    assert '"snr"' not in html
+    assert "Firing rate" not in html
+    assert '["SNR"' not in html
+    assert 'document.querySelector("body > main")' in html
+    assert "[hidden] { display: none !important; }" in html
+    assert "filterAt(event)" in html
+    assert "chart-event" not in html
+    assert "Sequence omission" not in html
+    assert "Motor orientation 90" not in html
+    assert "Common-mode-corrected AP voltage" in html
+    assert "Raw AP voltage" in html
+    assert "Detected sorted spikes" in html
+    assert "Fast scan" in html
+    assert "Raw AP contrast" in html
+    assert "Background intensity" in html
+    assert "state.overlayOpacity" not in html
+    assert "dandiset/001637/draft/files" in html
+    assert "dandiset/001768/draft/files" in html
+    assert "dandiset/001424/draft/files" in html
+    assert "__SEGMENTATION_" not in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+
+    static_paths = {
+        modality: tmp_path / SEGMENTATION_VIEWER_STATIC_OUTPUTS[modality].name
+        for modality in SEGMENTATION_VIEWER_STATIC_OUTPUTS
+    }
+    first_static_renders = {}
+    for modality, filter_count in (
+        ("neuropixels", 569),
+        ("mesoscope", 399),
+        ("slap2", 45),
+    ):
+        svg_path = write_segmentation_viewer_svg(modality, static_paths[modality])
+        svg = svg_path.read_text(encoding="utf-8")
+        first_static_renders[modality] = svg
+        assert 'role="img"' in svg
+        assert ">A</text>" in svg and ">B</text>" in svg
+        assert "Selected filter" in svg
+        assert f"{filter_count} filters" in svg
+        if modality == "neuropixels":
+            assert "Mean template waveform · peak channel" in svg
+            assert "310 detected spikes" in svg
+            assert "common-mode-corrected AP voltage" in svg
+            assert "Sequence omission" not in svg
+        else:
+            assert svg.count("data:image/png;base64,") >= 2
+            assert "Fast scan" in svg
+
+    combined_path = write_segmentation_viewer_static_svg(
+        tmp_path / "supplementary-segmentation-viewers.svg",
+        static_paths,
+    )
+    combined_svg = combined_path.read_text(encoding="utf-8")
+    assert 'width="1400" height="2280"' in combined_svg
+    assert 'role="img"' in combined_svg
+    assert combined_svg.count("data:image/svg+xml;base64,") == 3
+
+    copied_media = tmp_path / "media" / "segmentation-viewers"
+    assert {path.name for path in copied_media.glob("*.png")} == set(
+        json.loads(
+            SEGMENTATION_VIEWER_PROVENANCE_PATH.read_text(encoding="utf-8")
+        )["vendored_media_sha256"]
+    )
+    assert write_segmentation_viewer_html(html_path).read_text(encoding="utf-8") == html
+    assert write_segmentation_viewer_static_svg(
+        combined_path,
+        static_paths,
+    ).read_text(encoding="utf-8") == combined_svg
+    for modality, svg in first_static_renders.items():
+        assert write_segmentation_viewer_svg(
+            modality,
+            static_paths[modality],
+        ).read_text(encoding="utf-8") == svg
+
+
+def test_segmentation_viewer_orchestrator_writes_all_modalities(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output_path = tmp_path / SEGMENTATION_VIEWER_OUTPUT.name
+    combined_static_path = tmp_path / SEGMENTATION_VIEWER_STATIC_OUTPUT.name
+    static_paths = {
+        modality: tmp_path / f"segmentation-{modality}.svg"
+        for modality in ("neuropixels", "mesoscope", "slap2")
+    }
+    monkeypatch.setattr(
+        "openscope_p3_publication.figures.SEGMENTATION_VIEWER_OUTPUT",
+        output_path,
+    )
+    monkeypatch.setattr(
+        "openscope_p3_publication.figures.SEGMENTATION_VIEWER_STATIC_OUTPUT",
+        combined_static_path,
+    )
+    monkeypatch.setattr(
+        "openscope_p3_publication.figures.SEGMENTATION_VIEWER_STATIC_OUTPUTS",
+        static_paths,
+    )
+
+    assert write_segmentation_viewers() == output_path
+    assert output_path.is_file()
+    assert combined_static_path.is_file()
+    assert all(path.is_file() for path in static_paths.values())
 
 
 def test_stimulus_sources_are_pinned() -> None:
