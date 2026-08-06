@@ -73,6 +73,7 @@ from openscope_p3_publication.figures import (
     write_session_inventory_svg,
     write_standard_oddball_plan_svg,
     write_static_svg,
+    write_svg_output,
     write_unit_extraction_plan_svg,
     write_unit_yield_html,
     write_unit_yield_svg,
@@ -91,6 +92,21 @@ def assert_modality_title_scale(svg: str, expected_count: int = 3) -> None:
     expected_size = canvas_width / FIGURE_REFERENCE_WIDTH * FIGURE_TYPE_SCALE["modality"]
     assert len(font_sizes) == expected_count
     assert font_sizes == pytest.approx([expected_size] * expected_count, abs=0.01)
+
+
+def test_svg_output_uses_lf_line_endings(tmp_path: Path) -> None:
+    output = tmp_path / "output.svg"
+    write_svg_output(
+        output,
+        [
+            '<svg xmlns="http://www.w3.org/2000/svg" width="1200">',
+            f'<text font-family="{FIGURE_SANS_FONT}" font-size="12">Test</text>',
+            "</svg>",
+        ],
+    )
+
+    assert output.read_bytes().endswith(b"</svg>\n")
+    assert b"\r\n" not in output.read_bytes()
 
 
 def test_experimental_design_data() -> None:
