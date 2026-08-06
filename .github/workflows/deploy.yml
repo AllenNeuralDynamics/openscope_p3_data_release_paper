@@ -17,6 +17,35 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - name: Enable standard Windows line-ending conversion
+        run: git config --global core.autocrlf true
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.28"
+          enable-cache: true
+
+      - name: Install Python package
+        run: uv sync --locked --extra dev
+
+      - name: Check snapshot line endings and checksums
+        run: uv run pytest -q tests/test_publication.py::test_checksum_sensitive_snapshots_use_lf_line_endings tests/test_figures.py::test_animal_record_provenance tests/test_figures.py::test_svg_output_uses_lf_line_endings
+
+      - name: Regenerate publication figures
+        run: uv run build-publication-figures
+
+      - name: Check generated figures are current
+        run: git diff --exit-code -- interactive images/figures/generated
+
   build:
     runs-on: ubuntu-latest
     steps:

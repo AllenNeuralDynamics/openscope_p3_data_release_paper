@@ -17,6 +17,7 @@ from openscope_p3_publication.figures import (
     BLOCKS,
     DATA_ACCESS_PATH,
     DATA_ACCESS_PROVENANCE_PATH,
+    EYE_TRACKING_EXCERPTS_PATH,
     FIGURE_MONO_FONT,
     FIGURE_REFERENCE_WIDTH,
     FIGURE_SANS_FONT,
@@ -45,6 +46,7 @@ from openscope_p3_publication.figures import (
     load_data_access_table,
     load_experimental_design_sources,
     load_experimental_session_records,
+    load_eye_tracking_excerpts,
     load_hardware_sources,
     load_neural_excerpts,
     load_neuropixels_trajectory_data,
@@ -55,13 +57,14 @@ from openscope_p3_publication.figures import (
     load_unit_yield_data,
     modality_session_records,
     session_panel_rows,
-    text_sha256_matches,
     total_duration_minutes,
     write_basic_stimuli_plan_svg,
     write_behavior_static_svg,
     write_behavior_viewer_html,
     write_context_controls_svg,
     write_data_explorer_html,
+    write_eye_tracking_static_svg,
+    write_eye_tracking_viewer_html,
     write_figure_1_panel_c_svg,
     write_hardware_figure_svg,
     write_interactive_html,
@@ -74,6 +77,7 @@ from openscope_p3_publication.figures import (
     write_session_inventory_svg,
     write_standard_oddball_plan_svg,
     write_static_svg,
+    write_svg_output,
     write_unit_extraction_plan_svg,
     write_unit_yield_html,
     write_unit_yield_svg,
@@ -94,16 +98,19 @@ def assert_modality_title_scale(svg: str, expected_count: int = 3) -> None:
     assert font_sizes == pytest.approx([expected_size] * expected_count, abs=0.01)
 
 
-def test_text_sha256_matches_platform_line_endings(tmp_path: Path) -> None:
-    path = tmp_path / "snapshot.csv"
-    lf_bytes = b"column_a,column_b\none,two\n"
-    expected = hashlib.sha256(lf_bytes).hexdigest()
+def test_svg_output_uses_lf_line_endings(tmp_path: Path) -> None:
+    output = tmp_path / "output.svg"
+    write_svg_output(
+        output,
+        [
+            '<svg xmlns="http://www.w3.org/2000/svg" width="1200">',
+            f'<text font-family="{FIGURE_SANS_FONT}" font-size="12">Test</text>',
+            "</svg>",
+        ],
+    )
 
-    path.write_bytes(lf_bytes.replace(b"\n", b"\r\n"))
-    assert text_sha256_matches(path, expected)
-
-    path.write_bytes(b"column_a,column_b\r\none,changed\r\n")
-    assert not text_sha256_matches(path, expected)
+    assert output.read_bytes().endswith(b"</svg>\n")
+    assert b"\r\n" not in output.read_bytes()
 
 
 def test_experimental_design_data() -> None:
@@ -204,7 +211,9 @@ def test_unit_yield_snapshot_is_source_backed() -> None:
     payload = load_unit_yield_data()
     provenance = json.loads(UNIT_YIELD_PROVENANCE_PATH.read_text(encoding="utf-8"))
 
-    assert text_sha256_matches(UNIT_YIELD_DATA_PATH, provenance["vendored_sha256"])
+    assert hashlib.sha256(UNIT_YIELD_DATA_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
+    )
     assert provenance["rows"] == 60
     assert provenance["subjects"] == 16
     assert len(provenance["skipped_assets"]) == 2
@@ -255,8 +264,8 @@ def test_neuropixels_trajectory_snapshot_is_source_backed() -> None:
         NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
 
-    assert text_sha256_matches(
-        NEUROPIXELS_TRAJECTORY_DATA_PATH, provenance["vendored_sha256"]
+    assert hashlib.sha256(NEUROPIXELS_TRAJECTORY_DATA_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
     )
     assert payload["summary"] == {
         "excludedSessions": 3,
@@ -797,7 +806,9 @@ def test_data_access_table_uses_modality_specific_columns(tmp_path: Path) -> Non
 
 def test_data_access_snapshot_is_source_backed() -> None:
     provenance = json.loads(DATA_ACCESS_PROVENANCE_PATH.read_text(encoding="utf-8"))
-    assert text_sha256_matches(DATA_ACCESS_PATH, provenance["vendored_sha256"])
+    assert hashlib.sha256(DATA_ACCESS_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
+    )
     with DATA_ACCESS_PATH.open(newline="", encoding="utf-8") as stream:
         rows = list(csv.DictReader(stream))
     assert len(rows) == provenance["rows"]
@@ -820,7 +831,9 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     provenance = json.loads(
         SESSION_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
-    assert text_sha256_matches(SESSION_RECORDS_PATH, provenance["vendored_sha256"])
+    assert hashlib.sha256(SESSION_RECORDS_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
+    )
     assert provenance["worksheet_rows"] == 198
     assert provenance["rows"] == 197
     assert provenance["source_rows"] == 197
@@ -1139,17 +1152,125 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert viewer_path.read_text(encoding="utf-8") == html
 
 
+def test_eye_tracking_snapshot_is_source_backed() -> None:
+    payload = load_eye_tracking_excerpts()
+
+    assert payload["version"] == 2
+    assert payload["durationSeconds"] == 16.0
+    assert [session["id"] for session in payload["sessions"]] == [
+        "neuropixels",
+        "mesoscope",
+        "slap2",
+    ]
+    assert [session["event"]["trialNumber"] for session in payload["sessions"]] == [
+        863,
+        1535,
+        1354,
+    ]
+    assert payload["sessions"][2]["subject"] == "829704"
+    for session in payload["sessions"]:
+        assert set(session["fits"]) == {"pupil", "corneal_reflection", "ellipse"}
+        assert [session["fits"][fit_id]["label"] for fit_id in (
+            "pupil",
+            "corneal_reflection",
+            "ellipse",
+        )] == ["Pupil", "Corneal reflection", "Eye ellipse"]
+        for fit in session["fits"].values():
+            assert len(fit["samples"]) >= 450
+            assert fit["samples"][0][0] <= 0.04
+            assert fit["samples"][-1][0] >= 15.95
+            assert any(sample[-1] for sample in fit["samples"])
+            reference = fit["fieldReference"]
+            assert 0 <= reference["medianX"] < reference["frameWidth"]
+            assert 0 <= reference["medianY"] < reference["frameHeight"]
+            assert reference["areaLow"] < reference["areaHigh"]
+            assert reference["validNonblinkSamples"] > 100_000
+        assert session["camera"]["id"] == "eye"
+        assert session["camera"]["timeMap"][0][0] <= 0
+        assert session["camera"]["timeMap"][-1][0] >= payload["durationSeconds"]
+        assert all(
+            source.get("sha256") or source.get("etag") or source.get("asset_id")
+            for source in session["sources"]
+        )
+    assert EYE_TRACKING_EXCERPTS_PATH.stat().st_size < 4_000_000
+
+
+def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
+    static_path = tmp_path / "synchronized-eye-tracking.svg"
+    viewer_path = write_eye_tracking_viewer_html(
+        tmp_path / "eye-tracking-viewer.html",
+        static_output=static_path,
+    )
+    html = viewer_path.read_text(encoding="utf-8")
+
+    assert 'id="eye-tracking-viewer"' in html
+    assert 'id="eye-video"' in html
+    assert 'id="stimulus-canvas"' in html
+    assert 'id="pupil-field"' in html
+    assert 'id="pupil-trace"' in html
+    assert 'id="fit-selector"' in html
+    assert "SLAP2" in html
+    assert "Corneal reflection" in html
+    assert "Eye ellipse" in html
+    assert "Full-session median" in html
+    assert "fieldReference" in html
+    assert "sampleBounds" not in html
+    assert "Pupil area trace with blink intervals" in html
+    assert "Likely blink" in html
+    assert "drawField" in html
+    assert "currentFit" in html
+    assert "selectFit" in html
+    assert "blinkIntervals" in html
+    assert 'data-view="static"' in html
+    assert 'id="static-view"' in html
+    assert "synchronized-eye-tracking.svg" in html
+    assert "videoTimeAt" in html
+    assert "localTimeAt" in html
+    assert "aind-open-data.s3.us-west-2.amazonaws.com" in html
+    assert 'document.querySelector("body > main")' in html
+    assert "@media (max-width: 760px)" in html
+    assert "__EYE_TRACKING_" not in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+    copied_static = tmp_path / "media" / "eye-tracking-viewer" / static_path.name
+    assert copied_static.read_bytes() == static_path.read_bytes()
+
+    write_eye_tracking_viewer_html(viewer_path, static_output=static_path)
+    assert viewer_path.read_text(encoding="utf-8") == html
+
+
+def test_eye_tracking_static_figure_is_source_backed(tmp_path: Path) -> None:
+    output = write_eye_tracking_static_svg(tmp_path / "synchronized-eye-tracking.svg")
+    svg = output.read_text(encoding="utf-8")
+
+    assert "Synchronized eye-tracking signals across recording modalities" in svg
+    assert svg.count('class="oddball-period"') == 9
+    assert svg.count('class="blink-period"') >= 3
+    assert svg.count("X position") == 3
+    assert svg.count("Y position") == 3
+    assert svg.count("Pupil area") == 3
+    for label, subject, trial in (
+        ("Neuropixels", "820454", "863"),
+        ("Mesoscope", "832700", "1535"),
+        ("SLAP2", "829704", "1354"),
+    ):
+        assert label in svg
+        assert f"mouse {subject} · trial {trial}" in svg
+
+    write_eye_tracking_static_svg(output)
+    assert output.read_text(encoding="utf-8") == svg
+
+
 def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
     provenance = json.loads(
         BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
     assert provenance["version"] == 2
-    assert text_sha256_matches(
-        BEHAVIOR_EXCERPTS_PATH, provenance["behavior_excerpts_sha256"]
-    )
-    assert text_sha256_matches(
-        RUNNING_STATISTICS_PATH, provenance["running_statistics_sha256"]
-    )
+    assert provenance["behavior_excerpts_sha256"] == hashlib.sha256(
+        BEHAVIOR_EXCERPTS_PATH.read_bytes()
+    ).hexdigest()
+    assert provenance["running_statistics_sha256"] == hashlib.sha256(
+        RUNNING_STATISTICS_PATH.read_bytes()
+    ).hexdigest()
     assert provenance["local_time_seconds"] == 8.0
     assert len(provenance["frames"]) == 10
     assert {
@@ -1260,9 +1381,9 @@ def test_running_statistics_are_source_backed_and_mouse_aggregated() -> None:
     assert payload["version"] == 2
     assert payload["sample_rate_hz"] == 20
     assert payload["threshold_cm_s"] == 1.0
-    assert text_sha256_matches(
-        SESSION_RECORDS_PATH, payload["source_session_records"]["sha256"]
-    )
+    assert payload["source_session_records"]["sha256"] == hashlib.sha256(
+        SESSION_RECORDS_PATH.read_bytes()
+    ).hexdigest()
     assert [context["id"] for context in payload["contexts"]] == [
         "sensorimotor",
         "standard",
@@ -1394,9 +1515,8 @@ def test_running_statistics_are_source_backed_and_mouse_aggregated() -> None:
 
 
 def test_neural_excerpts_are_source_backed_and_aligned() -> None:
-    assert text_sha256_matches(
-        NEURAL_EXCERPTS_PATH,
-        "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c",
+    assert hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest() == (
+        "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c"
     )
     payload = load_neural_excerpts(NEURAL_EXCERPTS_PATH)
 
@@ -1647,9 +1767,9 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
         NEURAL_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
     assert provenance["version"] == 2
-    assert text_sha256_matches(
-        NEURAL_EXCERPTS_PATH, provenance["raw_neural_excerpts_sha256"]
-    )
+    assert provenance["raw_neural_excerpts_sha256"] == hashlib.sha256(
+        NEURAL_EXCERPTS_PATH.read_bytes()
+    ).hexdigest()
     assert len(provenance["frames"]) == 10
     assert {
         (record["modality"], record["option_id"])
@@ -1753,4 +1873,6 @@ def test_animal_record_provenance() -> None:
     )
 
     assert len(provenance["source_sha256"]) == 64
-    assert text_sha256_matches(ANIMAL_RECORDS_PATH, provenance["vendored_sha256"])
+    assert provenance["vendored_sha256"] == hashlib.sha256(
+        ANIMAL_RECORDS_PATH.read_bytes()
+    ).hexdigest()

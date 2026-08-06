@@ -230,7 +230,7 @@ Image acquisition and illumination were controlled via custom Python software. I
 
 ### Intrinsic imaging visual stimulus
 
-The lambda–bregma axis of the skull was oriented at a 30° pitch relative to horizontal, corresponding to an eye position approximately 60° lateral to the midline and 20° above the horizon [@oommen2008eye]. A 24″ monitor was positioned 10 cm from the right eye to maximize visual field coverage. The monitor was rotated 30° relative to the dorsoventral axis and tilted 70° relative to the horizon to maintain perpendicularity to the optic axis.
+The lambda–bregma axis of the skull was oriented at a 30° pitch relative to horizontal, corresponding to an eye position approximately 60° lateral to the midline and 20° above the horizon [@oommen2008eye]. A 24″ monitor was positioned 10 cm from the right eye to maximize visual field coverage. The monitor was rotated 30° relative to the dorsoventral  axis and tilted 70° relative to the horizon to maintain perpendicularity to the optic axis.
 
 The visual stimulus consisted of a drifting bar containing a contrast-reversing checkerboard pattern on a gray background. The bar swept across the four cardinal directions at 0.1 Hz, with 10 repetitions per direction [@kalatsky2003intrinsic]. The bar measured 20° × 155°, with individual checker squares of 25°. Stimuli were spatially warped to approximate a spherical visual field projection on a flat display [@marshel2011specialization].
 
@@ -1152,6 +1152,19 @@ expose the underlying public data without bundling multi-gigabyte videos into
 the publication.
 :::
 
+### Eye tracking across modalities
+
+Processed eye tracking provides a second synchronized view of behavior beyond
+locomotion. [Supplementary Figure 4](#fig-supp-eye-tracking) aligns the public eye-camera
+video, reconstructed visual stimulus, pupil-center position, pupil area, and
+likely-blink flags for representative standard-oddball Neuropixels, mesoscope,
+and SLAP2 sessions. The moving marker encodes pupil center in the full camera
+frame; its size and color encode pupil area relative to the 5th–95th percentile
+range from that complete session. A crosshair marks the robust full-session
+median pupil center. During likely blinks, the tracking field turns black and
+the corresponding samples are shaded in the pupil-area trace. A shared playback
+cursor makes the timing relationship between all three streams explicit.
+
 ## Stimulus-evoked responses: oddball across modalities
 
 :::{warning} Work in progress
@@ -1528,6 +1541,15 @@ The conclusion has not yet been drafted.
 :placeholder: ./images/figures/generated/supplementary-neuropixels-trajectories.svg
 
 **Supplementary Figure 3.** Recorded Neuropixels trajectories in the Allen Mouse Brain Common Coordinate Framework (CCF) 2017. The **Interactive** view renders all CCF-localized insertions within a semi-transparent whole-brain surface and supports mouse, probe-port, camera-orientation, and brain-opacity controls. Selecting a trajectory shows its session, localized shank length, source NWB, and contiguous CCF area profile from the dorsal shank end to the tip. Line color denotes the nominal probe port (A-F). In the **Static** view, **A,** an oblique projection shows the trajectories across the depth-shaded Allen CCF whole-brain surface; **B,** a dorsal projection shows their anteroposterior and mediolateral distribution. Both panels use a semi-transparent brain surface, anatomical direction markers, and calibrated 2 mm scale bars. Electrode coordinates and area annotations come from the public draft of Dandiset 001637; the brain surface is a 100-micrometer mesh derived from the Allen CCF 2017 25-micrometer annotation volume. In total, 332 probe trajectories from 57 sessions and 16 mice had finite CCF coordinates. Three of the 60 source sessions are excluded because their NWB electrode tables lack `x`, `y`, and `z` coordinates.
+:::
+
+:::{iframe} ./interactive/eye-tracking-viewer.html
+:label: fig-supp-eye-tracking
+:enumerated: false
+:width: 100%
+:title: Supplementary Figure 4. Synchronized eye tracking across recording modalities.
+
+**Supplementary Figure 4.** Synchronized eye tracking in representative standard-oddball Neuropixels, mesoscope, and SLAP2 sessions. The **Interactive** view shows the public eye-camera video, reconstructed visual stimulus, and processed eye fits on a common 16-second clock. Fit-source tabs switch the center field, geometric values, and area trace among the pupil, corneal reflection, and eye ellipse. Marker position gives the selected fit center within the complete camera frame; the dashed crosshair marks its median center across valid nonblink fits from that source session. Marker size and color vary with selected-fit area after scaling to that fit's session-wide 5th–95th percentile nonblink range. The tracking field turns black during likely-blink samples, which are also shown as shaded intervals in the area trace. The **Static** view vertically stacks the raw pupil x position, y position, and area for each modality on the same 0–16-second axis. Teal bands mark the complete 90-degree orientation-deviant presentation and gray bands mark likely-blink intervals; traces break at invalid fits rather than interpolating through them. Neuropixels and mesoscope eye-camera frames are aligned through 100-kHz exposure edges in the session sync file, with reported dropped frames removed before mapping to MP4 time. SLAP2 uses aligned Harp timestamps and packaged pupil-frame indices to map the processed fits to its 30 Hz EyeCamera MP4. Eye fits, blink flags, and stimulus rows come from each public NWB time base. Modality tabs switch among all three source-backed examples, and source links expose the corresponding DANDI and raw S3 records.
 :::
 
 # Supplementary Text 1: Published oddball paradigms and sampling ranges
