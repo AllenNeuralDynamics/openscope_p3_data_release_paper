@@ -63,7 +63,7 @@ def write_svg_output(output: Path, svg: list[str]) -> None:
         return re.sub(r'font-size="([0-9.]+)"', normalized_font_size, tag)
 
     content = re.sub(r"<text\b[^>]*>", normalized_text_tag, content)
-    output.write_text(content + "\n", encoding="utf-8")
+    output.write_text(content + "\n", encoding="utf-8", newline="\n")
 
 
 DATA_DIR = REPO_ROOT / "figure_sources" / "data"
@@ -1283,7 +1283,7 @@ def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
         .replace("__SIMULATOR_JS__", javascript)
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
-    output.write_text(html, encoding="utf-8")
+    output.write_text(html, encoding="utf-8", newline="\n")
     return output
 
 
@@ -1310,7 +1310,7 @@ def write_data_explorer_html(
         .replace("__DATA_EXPLORER_JS__", javascript)
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
-    output.write_text(html, encoding="utf-8")
+    output.write_text(html, encoding="utf-8", newline="\n")
     return output
 
 
@@ -1351,7 +1351,7 @@ def write_literature_comparison_html(
         .replace("__LITERATURE_JS__", javascript)
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
-    output.write_text(html, encoding="utf-8")
+    output.write_text(html, encoding="utf-8", newline="\n")
     return output
 
 
@@ -1374,7 +1374,7 @@ def write_unit_yield_html(
         .replace("__UNIT_YIELD_JS__", javascript)
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
-    output.write_text(html, encoding="utf-8")
+    output.write_text(html, encoding="utf-8", newline="\n")
     return output
 
 def write_neuropixels_trajectory_html(
@@ -1413,7 +1413,7 @@ def write_neuropixels_trajectory_html(
         .replace("__NEUROPIXELS_TRAJECTORY_JS__", javascript)
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
-    output.write_text(html, encoding="utf-8")
+    output.write_text(html, encoding="utf-8", newline="\n")
     media_output = output.parent / "media" / "neuropixels-trajectories"
     if media_output.exists():
         shutil.rmtree(media_output)
@@ -2117,7 +2117,7 @@ def write_behavior_viewer_html(
         .replace("__BEHAVIOR_JS__", javascript)
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
-    output.write_text(html, encoding="utf-8")
+    output.write_text(html, encoding="utf-8", newline="\n")
     media_output = output.parent / "media" / "behavior-viewer"
     if media_output.exists():
         shutil.rmtree(media_output)
@@ -2733,7 +2733,7 @@ def write_neural_viewer_html(
         .replace("__NEURAL_JS__", javascript)
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
-    output.write_text(html, encoding="utf-8")
+    output.write_text(html, encoding="utf-8", newline="\n")
     media_output = output.parent / "media" / "neural-viewer"
     if media_output.exists():
         shutil.rmtree(media_output)

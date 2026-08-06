@@ -21,6 +21,23 @@ def png_dimensions(path: Path) -> tuple[int, int]:
     return struct.unpack(">II", data[16:24])
 
 
+def test_checksum_sensitive_snapshots_use_lf_line_endings() -> None:
+    figure_sources = REPO_ROOT / "figure_sources"
+    paths = sorted(figure_sources.rglob("*.csv")) + sorted(
+        figure_sources.rglob("*.json")
+    )
+    assert paths
+    crlf_paths = [
+        path.relative_to(REPO_ROOT).as_posix()
+        for path in paths
+        if b"\r\n" in path.read_bytes()
+    ]
+    assert crlf_paths == [], (
+        "Checksum-sensitive snapshots must use LF line endings; check .gitattributes: "
+        f"{crlf_paths}"
+    )
+
+
 def publication_snapshot_updater() -> dict:
     return runpy.run_path(
         str(REPO_ROOT / "scripts" / "update_publication_snapshots.py")
