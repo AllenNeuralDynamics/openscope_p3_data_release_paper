@@ -15,13 +15,9 @@
   };
   const elements = {
     activityChart: document.getElementById("activity-chart"),
-    activityControl: document.getElementById("activity-control"),
-    activityKey: document.getElementById("activity-key"),
-    activityToggle: document.getElementById("activity-toggle"),
     background: document.getElementById("background-intensity"),
     backgroundLabel: document.getElementById("background-label"),
     canvas: document.getElementById("source-canvas"),
-    filterCount: document.getElementById("filter-count"),
     filterMetadata: document.getElementById("filter-metadata"),
     filterSelect: document.getElementById("filter-select"),
     filterKeyLabel: document.getElementById("filter-key-label"),
@@ -29,14 +25,13 @@
     modalitySelector: document.getElementById("modality-selector"),
     nextFilter: document.getElementById("next-filter"),
     previousFilter: document.getElementById("previous-filter"),
-    qcControl: document.getElementById("qc-control"),
-    qcKey: document.getElementById("qc-key"),
-    qcToggle: document.getElementById("qc-toggle"),
     panelLabel: document.getElementById("panel-label"),
     selectionSwatch: document.getElementById("selection-swatch"),
     selectionTitle: document.getElementById("selection-title"),
     sessionLine: document.getElementById("session-line"),
+    sourceLabel: document.getElementById("source-label"),
     sourceLink: document.getElementById("source-link"),
+    sourceSelect: document.getElementById("source-select"),
     tooltip: document.getElementById("canvas-tooltip"),
     traceTitle: document.getElementById("trace-title"),
     traceWindow: document.getElementById("trace-window"),
@@ -46,31 +41,31 @@
     viewerTitle: document.getElementById("viewer-title"),
   };
   const context = elements.canvas.getContext("2d");
-  const decodedViewers = protocol.viewers.map((record) => ({
+  const decodedViewers = protocol.viewers.map((modality) => modality.sources.map((record) => ({
     raw: record.rawDataBase64 ? decodeUint8(record.rawDataBase64) : null,
     traces: decodeFloat32(record.traceDataBase64),
     waveforms: record.waveformDataBase64 ? decodeFloat32(record.waveformDataBase64) : null,
-  }));
-  const viewerStates = protocol.viewers.map((record) => ({
-    activityVisible: false,
+  })));
+  const viewerStates = protocol.viewers.map((modality) => modality.sources.map((record) => ({
     backgroundIntensity: 1,
     imageRect: null,
     labelPixels: null,
-    qcOnly: false,
     selectedIndex: record.defaultFilterIndex,
     spikeHits: [],
-  }));
+  })));
+  const activeSourceIndices = protocol.viewers.map(() => 0);
   let activeViewerIndex = 0;
-  let viewer = protocol.viewers[0];
-  let traceValues = decodedViewers[0].traces;
-  let waveformValues = decodedViewers[0].waveforms;
-  let rawValues = decodedViewers[0].raw;
+  let modality = protocol.viewers[0];
+  let viewer = modality.sources[0];
+  let traceValues = decodedViewers[0][0].traces;
+  let waveformValues = decodedViewers[0][0].waveforms;
+  let rawValues = decodedViewers[0][0].raw;
   let imageRecords = {};
   let viewerLoadToken = 0;
   const rawHeatmapCanvas = document.createElement("canvas");
   const rawHeatmapContext = rawHeatmapCanvas.getContext("2d");
   let rawHeatmapIntensity = null;
-  let state = viewerStates[0];
+  let state = viewerStates[0][0];
 
   function decodeFloat32(encoded) {
     const binary = atob(encoded);
@@ -215,11 +210,6 @@
     context.filter = `brightness(${state.backgroundIntensity})`;
     context.drawImage(imageRecords.base, rect.x, rect.y, rect.width, rect.height);
     context.filter = "none";
-    if (state.activityVisible && imageRecords.activity) {
-      context.globalAlpha = 0.72;
-      context.drawImage(imageRecords.activity, rect.x, rect.y, rect.width, rect.height);
-      context.globalAlpha = 1;
-    }
     context.imageSmoothingEnabled = false;
     context.globalAlpha = 1;
     context.drawImage(imageRecords.overlay, rect.x, rect.y, rect.width, rect.height);
@@ -296,14 +286,12 @@
 
     state.spikeHits = [];
     viewer.spikeEvents.forEach((event) => {
-      const filter = viewer.filters[event.filterIndex];
-      if (state.qcOnly && !filter.isQcPassing) return;
       const x = layout.x(event.timeMs);
       const y = layout.y(event.row);
       const isSelected = event.filterIndex === state.selectedIndex;
       const radius = isSelected ? 5 : 2.5;
-      context.fillStyle = filter.isQcPassing ? filterColor(event.filterIndex) : "#8d9996";
-      context.globalAlpha = isSelected ? 1 : (filter.isQcPassing ? 0.82 : 0.28);
+      context.fillStyle = filterColor(event.filterIndex);
+      context.globalAlpha = isSelected ? 1 : 0.82;
       context.beginPath();
       context.arc(x, y, radius, 0, Math.PI * 2);
       context.fill();
@@ -434,7 +422,6 @@
   function metadataRows(filter) {
     if (viewer.id === "neuropixels") {
       return [
-        ["QC", filter.isQcPassing ? "Passing" : "Not passing"],
         ["CCF area", filter.location],
         ["Depth", `${formatNumber(filter.depthUm, 0)} µm`],
         ["Peak channel", String(filter.peakChannel)],
@@ -564,26 +551,20 @@
 
   function selectFilter(index) {
     if (index < 0 || index >= viewer.filters.length) return;
-    if (state.qcOnly && !viewer.filters[index].isQcPassing) return;
     state.selectedIndex = index;
     renderSelection();
   }
 
   function adjacentFilter(direction) {
-    let index = state.selectedIndex;
-    for (let attempt = 0; attempt < viewer.filters.length; attempt += 1) {
-      index = (index + direction + viewer.filters.length) % viewer.filters.length;
-      if (!state.qcOnly || viewer.filters[index].isQcPassing) {
-        selectFilter(index);
-        return;
-      }
-    }
+    const index = (
+      state.selectedIndex + direction + viewer.filters.length
+    ) % viewer.filters.length;
+    selectFilter(index);
   }
 
   function populateFilterSelect() {
     elements.filterSelect.innerHTML = viewer.filters.map((filter, index) => {
-      const suffix = viewer.id === "neuropixels" && !filter.isQcPassing ? " · non-QC" : "";
-      return `<option value="${index}">${filter.label}${suffix}</option>`;
+      return `<option value="${index}">${filter.label}</option>`;
     }).join("");
   }
 
@@ -593,54 +574,56 @@
       + `type="button" role="tab" data-viewer-index="${index}" `
       + `aria-selected="${index === activeViewerIndex}" `
       + `style="--tab-accent:${modalityAccents[record.id]}">`
-      + `<span>${record.label}</span><span class="tab-count">${record.filterCount}</span>`
+      + `<img class="modality-logo" src="${record.logo}" alt="">`
+      + `<span>${record.label}</span>`
       + "</button>"
     )).join("");
     elements.modalitySelector.querySelectorAll(".modality-tab").forEach((button) => {
-      button.addEventListener("click", () => activateViewer(Number(button.dataset.viewerIndex)));
+      button.addEventListener("click", () => activateModality(Number(button.dataset.viewerIndex)));
     });
   }
 
-  function updateViewerChrome() {
-    elements.viewer.dataset.modality = viewer.id;
-    elements.panelLabel.textContent = `Unit extraction · ${viewer.panelLabel}`;
-    elements.viewerTitle.textContent = viewerTitles[viewer.id];
-    elements.sessionLine.textContent = `Mouse ${viewer.subject} · ${viewer.session}`;
-    elements.filterCount.textContent = String(viewer.filterCount);
-    elements.sourceLink.href = viewer.asset.dandiset_url;
-    elements.canvas.setAttribute("aria-label", `${viewerTitles[viewer.id]} filter map`);
-    document.title = `Unit extraction · ${viewer.label}`;
+  function populateSourceSelect() {
+    elements.sourceSelect.innerHTML = modality.sources.map((record, index) => (
+      `<option value="${index}">${record.label}</option>`
+    )).join("");
+    elements.sourceSelect.value = String(activeSourceIndices[activeViewerIndex]);
+  }
 
-    elements.activityControl.hidden = !viewer.activityImage;
-    elements.activityKey.hidden = !viewer.activityImage;
-    elements.qcControl.hidden = viewer.id !== "neuropixels";
-    elements.qcKey.hidden = viewer.id !== "neuropixels";
+  function updateViewerChrome() {
+    elements.viewer.dataset.modality = modality.id;
+    elements.panelLabel.textContent = `Unit extraction · ${viewer.panelLabel}`;
+    elements.viewerTitle.textContent = viewerTitles[modality.id];
+    elements.sessionLine.textContent = `Mouse ${modality.subject} · ${modality.session}`;
+    elements.sourceLabel.textContent = modality.sourceLabel;
+    elements.sourceLink.href = viewer.asset.dandiset_url;
+    elements.canvas.setAttribute("aria-label", `${viewerTitles[modality.id]} filter map`);
+    document.title = `Unit extraction · ${modality.label}`;
+
     elements.waveformSection.hidden = !viewer.waveformDataBase64;
-    elements.backgroundLabel.textContent = viewer.id === "neuropixels"
+    elements.backgroundLabel.textContent = modality.id === "neuropixels"
       ? "Raw AP contrast"
       : "Background intensity";
-    elements.filterKeyLabel.textContent = viewer.id === "neuropixels"
+    elements.filterKeyLabel.textContent = modality.id === "neuropixels"
       ? "Detected sorted spikes"
       : "Extraction filters";
     elements.background.value = String(Math.round(state.backgroundIntensity * 100));
-    elements.activityToggle.checked = state.activityVisible;
-    elements.qcToggle.checked = state.qcOnly;
     elements.tooltip.hidden = true;
+    populateSourceSelect();
     populateFilterSelect();
   }
 
-  async function activateViewer(index) {
-    if (index < 0 || index >= protocol.viewers.length) return;
-    activeViewerIndex = index;
-    viewer = protocol.viewers[index];
-    state = viewerStates[index];
-    traceValues = decodedViewers[index].traces;
-    waveformValues = decodedViewers[index].waveforms;
-    rawValues = decodedViewers[index].raw;
+  async function activateSource(index) {
+    if (index < 0 || index >= modality.sources.length) return;
+    activeSourceIndices[activeViewerIndex] = index;
+    viewer = modality.sources[index];
+    state = viewerStates[activeViewerIndex][index];
+    traceValues = decodedViewers[activeViewerIndex][index].traces;
+    waveformValues = decodedViewers[activeViewerIndex][index].waveforms;
+    rawValues = decodedViewers[activeViewerIndex][index].raw;
     imageRecords = {};
     rawHeatmapIntensity = null;
     const token = ++viewerLoadToken;
-    renderModalityTabs();
     updateViewerChrome();
     elements.selectionTitle.textContent = "Loading…";
     elements.filterMetadata.innerHTML = "";
@@ -652,14 +635,13 @@
     if (viewer.viewType === "image") {
       elements.loading.hidden = false;
       elements.loading.textContent = "Loading source image";
-      const [base, activity, labels, overlay] = await Promise.all([
+      const [base, labels, overlay] = await Promise.all([
         loadImage(viewer.baseImage),
-        loadImage(viewer.activityImage),
         loadImage(viewer.labelImage),
         loadImage(viewer.filterOverlay),
       ]);
       if (token !== viewerLoadToken) return;
-      imageRecords = { activity, base, labels, overlay };
+      imageRecords = { base, labels, overlay };
       buildLabelPixels();
     }
     if (token !== viewerLoadToken) return;
@@ -667,20 +649,22 @@
     renderSelection();
   }
 
+  async function activateModality(index) {
+    if (index < 0 || index >= protocol.viewers.length) return;
+    activeViewerIndex = index;
+    modality = protocol.viewers[index];
+    renderModalityTabs();
+    await activateSource(activeSourceIndices[index]);
+  }
+
   function configureControls() {
+    elements.sourceSelect.addEventListener("change", () => {
+      activateSource(Number(elements.sourceSelect.value));
+    });
     elements.filterSelect.addEventListener("change", () => selectFilter(Number(elements.filterSelect.value)));
     elements.background.addEventListener("input", () => {
       state.backgroundIntensity = Number(elements.background.value) / 100;
       drawViewer();
-    });
-    elements.activityToggle.addEventListener("change", () => {
-      state.activityVisible = elements.activityToggle.checked;
-      drawViewer();
-    });
-    elements.qcToggle.addEventListener("change", () => {
-      state.qcOnly = elements.qcToggle.checked;
-      if (state.qcOnly && !currentFilter().isQcPassing) adjacentFilter(1);
-      else drawViewer();
     });
     elements.previousFilter.addEventListener("click", () => adjacentFilter(-1));
     elements.nextFilter.addEventListener("click", () => adjacentFilter(1));
@@ -695,7 +679,7 @@
 
   async function initialize() {
     configureControls();
-    await activateViewer(0);
+    await activateModality(0);
   }
 
   initialize().catch((error) => {

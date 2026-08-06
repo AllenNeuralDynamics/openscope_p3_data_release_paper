@@ -31,17 +31,40 @@
       "url": "https://dandiarchive.s3.amazonaws.com/blobs/e95/21c/e9521c86-5587-473c-990d-ed432bb65d28"
     }
   },
-  "notes": "Each viewer uses one representative field from the same session selected for the raw-data viewer. Filters and activity traces come from the matched DANDI NWB; the Neuropixels time-by-depth view reuses the pinned public AP excerpt recorded in raw-neural-excerpts.json and overlays sorted-unit spike times from the matched NWB.",
+  "notes": "Each modality exposes every probe or imaging plane in one representative session. Filters and traces come from the matched DANDI NWB; Neuropixels time-by-depth views reuse the pinned public AP excerpts recorded in raw-neural-excerpts.json and overlay sorted-unit spike times from the matched NWB.",
   "retrieved_date": "2026-08-06",
   "source_raw_neural_sha256": "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c",
   "vendored_media_sha256": {
+    "mesoscope-visl-4-filters.png": "448e2ccb615feff6ee0b25ba2c695ac911471601586a10a52b9132772ad38d1f",
+    "mesoscope-visl-4-labels.png": "85d91745cd54c8ef53ec7d3378a2dbb9f7d5a621751a2e5daf69b4a55ef7e588",
+    "mesoscope-visl-4-mean.png": "313c2e5609f5b5a940c0cf942c73cede0387a67f8fed290e4df4292296275be3",
+    "mesoscope-visl-5-filters.png": "805d471f19a79edb8f2a51e818d606b85ded76c2328f9269c1fd64c1c1c314b4",
+    "mesoscope-visl-5-labels.png": "cbbd4456600b1315ec463a392186eb3ec84092759ac18a49f29c82f94ab9de68",
+    "mesoscope-visl-5-mean.png": "ba29e7da26f4173d7f021b136b69d20410a1708744580f7c02587c678922667c",
+    "mesoscope-visl-6-filters.png": "dd43da7cf4544c90142ffdccad60af08fe106c7a763f15ecf9f154c7c6250a53",
+    "mesoscope-visl-6-labels.png": "a6b0bf6479b14948a78c2a6d46b3fe4b694d4d27519f2a79d3852f0e0342c2bf",
+    "mesoscope-visl-6-mean.png": "299fb77a52a1d211297e2f189cc647a63f952837407ae1fa4b5d033570816f85",
+    "mesoscope-visl-7-filters.png": "a8c7050b920c55acb589cf04fd167032ed1f00292f77829f27e1a8fae578dd70",
+    "mesoscope-visl-7-labels.png": "a6084d05758b333551e36055e094e64a09b949122dc4132cfc0bde885e25d4d2",
+    "mesoscope-visl-7-mean.png": "11e44bc4e4a28aa883ef39f7053ee37c6df7bf0d340694f4c88bb30ca1c9b72d",
     "mesoscope-visp-0-filters.png": "5f01bec11b8b9f5d9ebe0c615593ae63bb82c6ce8e31c6ffd058a5f4f55f4db1",
     "mesoscope-visp-0-labels.png": "4fc58f57d5a7feb241054e6b795e8f8ce50f8d362a9349b08472bc12904413ce",
     "mesoscope-visp-0-mean.png": "7300e03ce4160a665025c311ff4f429a9e4b6cff9be9212e847ca736d3a1be60",
-    "slap2-dmd1-activity.png": "970987e3ba32408a1ad118fb2351005fd522454eb2ef611c2fbeca19adcb7f39",
+    "mesoscope-visp-1-filters.png": "1c0f9e2a7b0bb99e333ef7028be4e934a115ad6d3422b128d108bf4b1b585f3c",
+    "mesoscope-visp-1-labels.png": "75c9ac1a5daefa1d5aaf4b43fca5acf2eb6c3893c8074f94d9a8e0c3a9900c5f",
+    "mesoscope-visp-1-mean.png": "a327dc8c5b79831742d29388e3cc766a76b04b32f7ecab225f84f2cadcf166f7",
+    "mesoscope-visp-2-filters.png": "51cb4ca1f43a0de0bc1be355b443651d9222a6440c632132e7bae0a7924e2547",
+    "mesoscope-visp-2-labels.png": "674aeafd838a4d4c984705b590f793b73baa304b686ec3a89100df9d2be3176d",
+    "mesoscope-visp-2-mean.png": "140df47ee4e338f7ffe5650e578501f6a0ab08acb8dda86636697d9ea67a1241",
+    "mesoscope-visp-3-filters.png": "9a92c04609c0c9eb8838a1732806552068eedcd0dd2095faa33c4d65c5e5910c",
+    "mesoscope-visp-3-labels.png": "a8776b5f132848b2942457cbd2aeaab3db621be1ef86c792607b4e51140922dc",
+    "mesoscope-visp-3-mean.png": "a728ced2e9e79b60443d6e9f9aef375b37dd775cc12954e7d9ffb73c47622dd2",
     "slap2-dmd1-filters.png": "f9058b009478befa0a86a819ac0aa5c7a9ce7abb3b58abc052c737fd139e0214",
     "slap2-dmd1-labels.png": "aad6e0d3b4cdaae4f6f1507d6c598e6e061fc62b0192e2286b31b1eb1b66b1d4",
-    "slap2-dmd1-mean.png": "6dc6fa0c0078295e6eb92bf7c37d23690b39fa01fa2f2dd2095b667ac4926e22"
+    "slap2-dmd1-mean.png": "6dc6fa0c0078295e6eb92bf7c37d23690b39fa01fa2f2dd2095b667ac4926e22",
+    "slap2-dmd2-filters.png": "4a21898e8888ef79eae5f4bdf24f28dd1d50368a239160a710bb391289b066cf",
+    "slap2-dmd2-labels.png": "178205fd2acc5a9212744c4e55bee970a9dc30b046bff62c6ef0fe8f748640d8",
+    "slap2-dmd2-mean.png": "7bd84be01fa9e3c1d9cc6c20dc4d5ff8ba22f8695363b17ea6e9379a7b5f6bec"
   },
-  "vendored_sha256": "4cf466dd162d3778627d5ee932c229e4647c48c711ec576330d8f2ca0cc88f01"
+  "vendored_sha256": "5dcb71f5c9da365f2b92699b0402129e5caf8ac6f23b76e2bd2f81bb933866de"
 }

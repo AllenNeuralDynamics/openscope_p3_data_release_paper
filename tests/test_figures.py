@@ -410,18 +410,17 @@ def test_segmentation_viewer_snapshot_is_source_backed() -> None:
     assert hashlib.sha256(SEGMENTATION_VIEWER_DATA_PATH.read_bytes()).hexdigest() == (
         provenance["vendored_sha256"]
     )
-    assert payload["version"] == 2
+    assert payload["version"] == 3
     viewers = {viewer["id"]: viewer for viewer in payload["viewers"]}
-    assert {modality: viewer["filterCount"] for modality, viewer in viewers.items()} == {
-        "neuropixels": 569,
-        "mesoscope": 399,
-        "slap2": 45,
+    expected_counts = {
+        "neuropixels": [569, 502, 534, 799, 542, 604],
+        "mesoscope": [399, 463, 70, 277, 374, 356, 124, 321],
+        "slap2": [45, 74],
     }
-    assert {modality: viewer["traceColumns"] for modality, viewer in viewers.items()} == {
-        "neuropixels": 600,
-        "mesoscope": 284,
-        "slap2": 5881,
-    }
+    assert {
+        modality: [source["filterCount"] for source in viewer["sources"]]
+        for modality, viewer in viewers.items()
+    } == expected_counts
     assert {
         modality: viewer["asset"]["dandiset_id"]
         for modality, viewer in viewers.items()
@@ -433,40 +432,46 @@ def test_segmentation_viewer_snapshot_is_source_backed() -> None:
     assert viewers["slap2"]["asset"]["asset_id"] == (
         "1b6509ef-70d7-46e4-9c8e-587bb6ace95f"
     )
-    assert viewers["neuropixels"]["filters"][92]["label"] == "Unit 92"
-    assert viewers["mesoscope"]["filters"][76]["label"] == "ROI 77"
-    assert viewers["slap2"]["filters"][4]["label"] == "Source 5"
-    assert viewers["neuropixels"]["waveformColumns"] == 210
-    assert viewers["neuropixels"]["viewType"] == "spike-map"
-    assert (viewers["neuropixels"]["rawRows"], viewers["neuropixels"]["rawColumns"]) == (
-        96,
-        3000,
-    )
-    assert len(base64.b64decode(viewers["neuropixels"]["rawDataBase64"])) == 288_000
-    assert len(viewers["neuropixels"]["spikeEvents"]) == 310
-    assert len({event["filterIndex"] for event in viewers["neuropixels"]["spikeEvents"]}) == 167
-    assert all(
-        "eventLabel" not in viewer
-        and "context" not in viewer
-        and viewer["traceTimesSeconds"][0] >= 0
+    assert [source["sourceId"] for source in viewers["neuropixels"]["sources"]] == [
+        "probe-a", "probe-b", "probe-c", "probe-d", "probe-e", "probe-f"
+    ]
+    assert [source["sourceId"] for source in viewers["mesoscope"]["sources"]] == [
+        "visp_0", "visp_1", "visp_2", "visp_3",
+        "visl_4", "visl_5", "visl_6", "visl_7",
+    ]
+    assert [source["sourceId"] for source in viewers["slap2"]["sources"]] == [
+        "dmd1", "dmd2"
+    ]
+    for source in viewers["neuropixels"]["sources"]:
+        assert source["waveformColumns"] == 210
+        assert source["viewType"] == "spike-map"
+        assert (source["rawRows"], source["rawColumns"]) == (96, 3000)
+        assert len(base64.b64decode(source["rawDataBase64"])) == 288_000
+        assert source["spikeEvents"]
+        assert source["traceColumns"] == 600
+        assert source["traceTimesSeconds"][-1] == pytest.approx(11.99)
+        assert all("isQcPassing" not in row for row in source["filters"])
+    for source in (*viewers["mesoscope"]["sources"], *viewers["slap2"]["sources"]):
+        assert source["traceTimesSeconds"][-1] > 29.8
+        assert "activityImage" not in source
+    assert (
+        viewers["slap2"]["sources"][0]["baseImage"]["width"],
+        viewers["slap2"]["sources"][0]["baseImage"]["height"],
+    ) == (427, 408)
+    assert (
+        viewers["slap2"]["sources"][1]["baseImage"]["width"],
+        viewers["slap2"]["sources"][1]["baseImage"]["height"],
+    ) == (429, 587)
+    referenced_media = {
+        Path(source[field]["assetPath"]).name
         for viewer in viewers.values()
-    )
-    assert viewers["neuropixels"]["traceTimesSeconds"][-1] == pytest.approx(11.99)
-    assert viewers["mesoscope"]["traceTimesSeconds"][-1] == pytest.approx(29.8525)
-    assert viewers["slap2"]["traceTimesSeconds"][-1] == pytest.approx(29.999215)
-    assert (viewers["slap2"]["baseImage"]["width"], viewers["slap2"]["baseImage"]["height"]) == (
-        427,
-        408,
-    )
-    assert set(provenance["vendored_media_sha256"]) == {
-        "mesoscope-visp-0-filters.png",
-        "mesoscope-visp-0-labels.png",
-        "mesoscope-visp-0-mean.png",
-        "slap2-dmd1-activity.png",
-        "slap2-dmd1-filters.png",
-        "slap2-dmd1-labels.png",
-        "slap2-dmd1-mean.png",
+        for source in viewer["sources"]
+        for field in ("baseImage", "labelImage", "filterOverlay")
+        if field in source
     }
+    assert set(provenance["vendored_media_sha256"]) == referenced_media
+    assert len(referenced_media) == 30
+    assert not any("activity" in name for name in referenced_media)
 
 
 def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
@@ -474,16 +479,33 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     html = html_path.read_text(encoding="utf-8")
     assert 'id="modality-selector"' in html
     assert 'role="tablist"' in html
+    assert 'id="source-select"' in html
+    assert 'id="source-label"' in html
     assert 'id="source-canvas"' in html
     assert 'id="filter-select"' in html
     assert 'id="activity-chart"' in html
     assert 'id="background-intensity"' in html
     assert 'id="overlay-opacity"' not in html
-    assert '"filterCount":569' in html
-    assert '"filterCount":399' in html
-    assert '"filterCount":45' in html
+    for source_id in (
+        "probe-a", "probe-b", "probe-c", "probe-d", "probe-e", "probe-f",
+        "visp_0", "visp_1", "visp_2", "visp_3",
+        "visl_4", "visl_5", "visl_6", "visl_7", "dmd1", "dmd2",
+    ):
+        assert f'"sourceId":"{source_id}"' in html
     assert "protocol.viewers.map" in html
-    assert "activateViewer" in html
+    assert "activateModality" in html
+    assert "activateSource" in html
+    assert "populateSourceSelect" in html
+    assert 'class="modality-logo"' in html
+    assert html.count("data:image/png;base64,") == 3
+    assert "tab-count" not in html
+    assert 'id="filter-count"' not in html
+    assert 'id="qc-toggle"' not in html
+    assert 'id="qc-key"' not in html
+    assert 'id="activity-toggle"' not in html
+    assert 'id="activity-key"' not in html
+    assert "isQcPassing" not in html
+    assert "activityImage" not in html
     assert 'document.querySelector("body > main")' in html
     assert "[hidden] { display: none !important; }" in html
     assert "filterAt(event)" in html
@@ -495,7 +517,6 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert "Raw AP contrast" in html
     assert "Background intensity" in html
     assert "state.overlayOpacity" not in html
-    assert '<input id="activity-toggle" type="checkbox">' in html
     assert "dandiset/001637/draft/files" in html
     assert "dandiset/001768/draft/files" in html
     assert "dandiset/001424/draft/files" in html

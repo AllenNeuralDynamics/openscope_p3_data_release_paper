@@ -15,13 +15,13 @@
         <h1 id="viewer-title"></h1>
         <p class="session-line" id="session-line"></p>
       </div>
-      <div class="filter-summary" aria-label="Filter count">
-        <strong id="filter-count"></strong>
-        <span>extraction filters</span>
-      </div>
     </header>
 
     <section class="toolbar" aria-label="Viewer controls">
+      <label class="select-control source-control" for="source-select">
+        <span id="source-label">Source</span>
+        <select id="source-select"></select>
+      </label>
       <label class="select-control" for="filter-select">
         <span>Selected filter</span>
         <select id="filter-select"></select>
@@ -29,14 +29,6 @@
       <label class="range-control" for="background-intensity">
         <span id="background-label">Background intensity</span>
         <input id="background-intensity" type="range" min="20" max="200" value="100">
-      </label>
-      <label class="toggle-control" id="activity-control" for="activity-toggle" hidden>
-        <input id="activity-toggle" type="checkbox">
-        <span>Activity image</span>
-      </label>
-      <label class="toggle-control" id="qc-control" for="qc-toggle" hidden>
-        <input id="qc-toggle" type="checkbox">
-        <span>QC-passing only</span>
       </label>
     </section>
 
@@ -55,8 +47,6 @@
         </div>
         <div class="visual-key">
           <span><i class="key-filter"></i><b id="filter-key-label">Extraction filters</b></span>
-          <span id="activity-key" hidden><i class="key-activity"></i>Activity projection</span>
-          <span id="qc-key" hidden><i class="key-qc"></i>QC-passing unit</span>
         </div>
       </div>
 

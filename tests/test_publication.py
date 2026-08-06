@@ -38,6 +38,18 @@ def test_checksum_sensitive_snapshots_use_lf_line_endings() -> None:
     )
 
 
+def test_pages_deployment_only_runs_for_main_pushes() -> None:
+    workflow = (REPO_ROOT / ".github" / "workflows" / "deploy.yml").read_text(
+        encoding="utf-8"
+    )
+    main_push_guard = (
+        "if: github.event_name == 'push' && github.ref == 'refs/heads/main'"
+    )
+
+    assert workflow.count(main_push_guard) == 3
+    assert "github.event_name != 'pull_request'" not in workflow
+
+
 def publication_snapshot_updater() -> dict:
     return runpy.run_path(
         str(REPO_ROOT / "scripts" / "update_publication_snapshots.py")
@@ -565,17 +577,21 @@ def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     segmentation_start = manuscript.index("**Supplementary Figure 5.**")
     segmentation_stop = manuscript.index("# Supplementary Text 1", segmentation_start)
     segmentation_captions = manuscript[segmentation_start:segmentation_stop]
-    assert "with 310 sorted-spike detections from 167" in manuscript
-    assert "of 569 units" in manuscript
-    assert "outlines all 399 VISp 0 segmentation masks" in manuscript
-    assert "outlines all 45 DMD1 source masks" in manuscript
+    assert "same platform logos as the other multimodal figures" in manuscript
+    assert "all six probes" in manuscript
+    assert "all eight VISp and VISl planes" in manuscript
+    assert "provides DMD1 and DMD2" in manuscript
+    assert "every probe or imaging plane" in manuscript
+    assert "complete NWB segmentation" in manuscript
+    assert "complete source segmentation" in manuscript
     assert "30 s ΔF/F" in manuscript
     assert "30 s, approximately 200 Hz ΔF/F trace" in manuscript
     assert "waveform-spread band" in manuscript
     assert "grayscale average projection" in manuscript
     assert "transposed into display coordinates" in manuscript
     assert "background controls alter only" in manuscript
-    assert "activity image is available as an optional overlay" in manuscript
+    assert "activity image" not in segmentation_captions.lower()
+    assert "QC-passing" not in segmentation_captions
     assert "No tab shows stimulus annotations" in manuscript
     assert "first sequence omission" not in segmentation_captions
     assert "first motor mismatch" not in segmentation_captions

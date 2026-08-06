@@ -2591,7 +2591,7 @@ def load_segmentation_viewers(
     payload = json.loads(source_bytes)
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
     if (
-        payload.get("version") != 2
+        payload.get("version") != 3
         or hashlib.sha256(source_bytes).hexdigest() != provenance.get("vendored_sha256")
         or hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest()
         != provenance.get("source_raw_neural_sha256")
@@ -2599,82 +2599,121 @@ def load_segmentation_viewers(
         raise RuntimeError("Segmentation viewer snapshot provenance is invalid.")
 
     viewers = payload.get("viewers", [])
-    expected_counts = {"neuropixels": 569, "mesoscope": 399, "slap2": 45}
-    if [viewer.get("id") for viewer in viewers] != list(expected_counts):
+    expected_sources = {
+        "neuropixels": {
+            "probe-a": 569,
+            "probe-b": 502,
+            "probe-c": 534,
+            "probe-d": 799,
+            "probe-e": 542,
+            "probe-f": 604,
+        },
+        "mesoscope": {
+            "visp_0": 399,
+            "visp_1": 463,
+            "visp_2": 70,
+            "visp_3": 277,
+            "visl_4": 374,
+            "visl_5": 356,
+            "visl_6": 124,
+            "visl_7": 321,
+        },
+        "slap2": {"dmd1": 45, "dmd2": 74},
+    }
+    if [viewer.get("id") for viewer in viewers] != list(expected_sources):
         raise RuntimeError("Segmentation viewers must contain the three modalities in order.")
-    for viewer in viewers:
-        modality = viewer["id"]
-        rows = viewer.get("traceRows")
-        columns = viewer.get("traceColumns")
-        try:
-            trace_data = base64.b64decode(
-                viewer.get("traceDataBase64", ""),
-                validate=True,
-            )
-        except ValueError as exc:
-            raise RuntimeError(f"Segmentation trace encoding is invalid: {modality}") from exc
-        if (
-            viewer.get("filterCount") != expected_counts[modality]
-            or len(viewer.get("filters", [])) != expected_counts[modality]
-            or rows != expected_counts[modality]
-            or not isinstance(columns, int)
-            or columns < 100
-            or len(trace_data) != rows * columns * 4
-            or len(viewer.get("traceTimesSeconds", [])) != columns
-            or viewer["traceTimesSeconds"][0] < 0
-            or "eventLabel" in viewer
-            or "context" in viewer
-        ):
-            raise RuntimeError(f"Segmentation viewer dimensions changed: {modality}")
-        if viewer.get("asset") != provenance.get("assets", {}).get(modality):
-            raise RuntimeError(f"Segmentation viewer DANDI asset changed: {modality}")
-
-        for field in ("baseImage", "activityImage", "labelImage", "filterOverlay"):
-            record = viewer.get(field)
-            if not record:
-                continue
-            source = REPO_ROOT / "figure_sources" / record["assetPath"]
-            expected_sha256 = provenance["vendored_media_sha256"].get(source.name)
+    for modality in viewers:
+        modality_id = modality["id"]
+        expected_asset = provenance.get("assets", {}).get(modality_id)
+        if modality.get("asset") != expected_asset:
+            raise RuntimeError(f"Segmentation viewer DANDI asset changed: {modality_id}")
+        sources = modality.get("sources", [])
+        expected_counts = expected_sources[modality_id]
+        if [source.get("sourceId") for source in sources] != list(expected_counts):
+            raise RuntimeError(f"Segmentation source inventory changed: {modality_id}")
+        for source in sources:
+            source_id = source["sourceId"]
+            filter_count = expected_counts[source_id]
+            rows = source.get("traceRows")
+            columns = source.get("traceColumns")
+            try:
+                trace_data = base64.b64decode(
+                    source.get("traceDataBase64", ""),
+                    validate=True,
+                )
+            except ValueError as exc:
+                raise RuntimeError(
+                    f"Segmentation trace encoding is invalid: {modality_id}/{source_id}"
+                ) from exc
             if (
-                not source.is_file()
-                or hashlib.sha256(source.read_bytes()).hexdigest() != record["sha256"]
-                or record["sha256"] != expected_sha256
+                source.get("asset") != expected_asset
+                or source.get("filterCount") != filter_count
+                or len(source.get("filters", [])) != filter_count
+                or rows != filter_count
+                or not isinstance(columns, int)
+                or columns < 100
+                or len(trace_data) != rows * columns * 4
+                or len(source.get("traceTimesSeconds", [])) != columns
+                or source["traceTimesSeconds"][0] < 0
+                or "activityImage" in source
+                or "eventLabel" in source
+                or "context" in source
             ):
                 raise RuntimeError(
-                    f"Segmentation viewer media checksum changed: {source.name}"
+                    f"Segmentation source dimensions changed: {modality_id}/{source_id}"
                 )
 
-    neuropixels = viewers[0]
-    waveform_rows = neuropixels.get("waveformRows")
-    waveform_columns = neuropixels.get("waveformColumns")
-    waveform_data = base64.b64decode(
-        neuropixels.get("waveformDataBase64", ""),
-        validate=True,
-    )
-    raw_data = base64.b64decode(
-        neuropixels.get("rawDataBase64", ""),
-        validate=True,
-    )
-    spike_events = neuropixels.get("spikeEvents", [])
-    if (
-        waveform_rows != expected_counts["neuropixels"]
-        or waveform_columns != 210
-        or len(waveform_data) != waveform_rows * waveform_columns * 4
-        or neuropixels.get("viewType") != "spike-map"
-        or neuropixels.get("rawRows") != 96
-        or neuropixels.get("rawColumns") != 3000
-        or len(raw_data) != neuropixels["rawRows"] * neuropixels["rawColumns"]
-        or len(spike_events) != 310
-        or any(
-            event.get("filterIndex") not in range(expected_counts["neuropixels"])
-            or event.get("row") not in range(neuropixels["rawRows"])
-            or not neuropixels["rawTimeStartMs"]
-            <= event.get("timeMs", -1)
-            <= neuropixels["rawTimeEndMs"]
-            for event in spike_events
-        )
-    ):
-        raise RuntimeError("Neuropixels segmentation spike-map dimensions changed.")
+            for field in ("baseImage", "labelImage", "filterOverlay"):
+                record = source.get(field)
+                if not record:
+                    continue
+                media_path = REPO_ROOT / "figure_sources" / record["assetPath"]
+                expected_sha256 = provenance["vendored_media_sha256"].get(
+                    media_path.name
+                )
+                if (
+                    not media_path.is_file()
+                    or hashlib.sha256(media_path.read_bytes()).hexdigest()
+                    != record["sha256"]
+                    or record["sha256"] != expected_sha256
+                ):
+                    raise RuntimeError(
+                        f"Segmentation viewer media checksum changed: {media_path.name}"
+                    )
+
+            if modality_id != "neuropixels":
+                continue
+            waveform_columns = source.get("waveformColumns")
+            waveform_data = base64.b64decode(
+                source.get("waveformDataBase64", ""),
+                validate=True,
+            )
+            raw_data = base64.b64decode(
+                source.get("rawDataBase64", ""),
+                validate=True,
+            )
+            spike_events = source.get("spikeEvents", [])
+            if (
+                source.get("waveformRows") != filter_count
+                or waveform_columns != 210
+                or len(waveform_data) != filter_count * waveform_columns * 4
+                or source.get("viewType") != "spike-map"
+                or source.get("rawRows") != 96
+                or source.get("rawColumns") != 3000
+                or len(raw_data) != source["rawRows"] * source["rawColumns"]
+                or not spike_events
+                or any(
+                    event.get("filterIndex") not in range(filter_count)
+                    or event.get("row") not in range(source["rawRows"])
+                    or not source["rawTimeStartMs"]
+                    <= event.get("timeMs", -1)
+                    <= source["rawTimeEndMs"]
+                    for event in spike_events
+                )
+            ):
+                raise RuntimeError(
+                    f"Neuropixels spike-map dimensions changed: {source_id}"
+                )
     return payload
 
 
@@ -3175,6 +3214,9 @@ def write_segmentation_viewer_html(
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_segmentation_viewers(data_path, provenance_path)
+    logo_data_uris = platform_logo_data_uris()
+    for modality in payload["viewers"]:
+        modality["logo"] = logo_data_uris[modality["id"]]
     template = (JAVASCRIPT_DIR / "segmentation-viewer.html").read_text(
         encoding="utf-8"
     )
@@ -3311,7 +3353,10 @@ def write_segmentation_viewer_svg(
         raise ValueError(f"Unsupported segmentation viewer modality: {modality}")
     output = output or SEGMENTATION_VIEWER_STATIC_OUTPUTS[modality]
     payload = load_segmentation_viewers(data_path, provenance_path)
-    viewer = next(record for record in payload["viewers"] if record["id"] == modality)
+    modality_record = next(
+        record for record in payload["viewers"] if record["id"] == modality
+    )
+    viewer = modality_record["sources"][0]
     selected = viewer["filters"][viewer["defaultFilterIndex"]]
     svg = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" '
@@ -3323,8 +3368,8 @@ def write_segmentation_viewer_svg(
         f'<text x="52" y="47" font-family="{FIGURE_SANS_FONT}" font-size="23" '
         f'font-weight="700" fill="#293133">{escape(SEGMENTATION_VIEWER_TITLES[modality])}</text>',
         f'<text x="52" y="72" font-family="{FIGURE_SANS_FONT}" font-size="12" '
-        f'font-weight="600" fill="#68716F">Mouse {viewer["subject"]} · '
-        f'{escape(viewer["session"])}</text>',
+        f'font-weight="600" fill="#68716F">Mouse {modality_record["subject"]} · '
+        f'{escape(modality_record["session"])} · {escape(viewer["label"])}</text>',
         f'<text x="52" y="115" font-family="{FIGURE_SANS_FONT}" font-size="20" '
         'font-weight="700" fill="#293133">A</text>',
         f'<text x="755" y="115" font-family="{FIGURE_SANS_FONT}" font-size="20" '
@@ -3382,7 +3427,6 @@ def write_segmentation_viewer_svg(
             ]
         )
         for event in viewer["spikeEvents"]:
-            record = viewer["filters"][event["filterIndex"]]
             is_selected = event["filterIndex"] == viewer["defaultFilterIndex"]
             color = SEGMENTATION_FILTER_COLORS[
                 event["filterIndex"] % len(SEGMENTATION_FILTER_COLORS)
@@ -3392,7 +3436,7 @@ def write_segmentation_viewer_svg(
                 f'<circle cx="{spike_x(event["timeMs"]):.2f}" '
                 f'cy="{spike_y(event["row"]):.2f}" '
                 f'r="{3.7 if is_selected else 2.1}" fill="{fill}" '
-                f'fill-opacity="{1 if is_selected else (0.82 if record["isQcPassing"] else 0.28)}" '
+                f'fill-opacity="{1 if is_selected else 0.82}" '
                 f'stroke="{"#FFFFFF" if is_selected else "none"}" '
                 f'stroke-width="{1.2 if is_selected else 0}"/>'
             )
