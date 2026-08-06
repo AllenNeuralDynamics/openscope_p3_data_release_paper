@@ -11,7 +11,13 @@ __EYE_TRACKING_CSS__
 </head>
 <body>
   <main class="viewer" id="eye-tracking-viewer">
-    <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
+    <div class="view-switch" role="group" aria-label="Interactive or static view">
+      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
+    </div>
+
+    <div id="interactive-view">
+      <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
 
     <header class="session-header">
       <div>
@@ -94,6 +100,13 @@ __EYE_TRACKING_CSS__
         <span><i class="key-swatch blink-key" aria-hidden="true"></i>Likely blink</span>
         <span><i class="key-line event-key" aria-hidden="true"></i><span id="event-label"></span></span>
         <span><i class="key-line cursor-key" aria-hidden="true"></i>Playback</span>
+      </div>
+    </section>
+    </div>
+
+    <section class="static-view" id="static-view" aria-label="Static synchronized eye-tracking overview" hidden>
+      <div class="static-shell">
+        <img src="__EYE_TRACKING_STATIC_IMAGE__" alt="Three modality rows with vertically aligned pupil x position, y position, and area traces on a shared time axis; orientation oddball and likely blink periods are highlighted.">
       </div>
     </section>
   </main>

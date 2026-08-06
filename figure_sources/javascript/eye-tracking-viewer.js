@@ -9,6 +9,7 @@
     eventLabel: document.getElementById("event-label"),
     field: document.getElementById("pupil-field"),
     fieldBounds: document.getElementById("field-bounds"),
+    interactiveView: document.getElementById("interactive-view"),
     modalitySelector: document.getElementById("modality-selector"),
     orientationValue: document.getElementById("orientation-value"),
     playIcon: document.getElementById("play-icon"),
@@ -18,6 +19,7 @@
     sourceLinks: document.getElementById("source-links"),
     spatialFrequency: document.getElementById("spatial-frequency"),
     stagePlay: document.getElementById("stage-play"),
+    staticView: document.getElementById("static-view"),
     stimulusCanvas: document.getElementById("stimulus-canvas"),
     streamStatus: document.getElementById("stream-status"),
     temporalFrequency: document.getElementById("temporal-frequency"),
@@ -31,14 +33,27 @@
     videoBlinkBadge: document.getElementById("video-blink-badge"),
     videoStage: document.getElementById("video-stage"),
     videoUnavailable: document.getElementById("video-unavailable"),
+    viewButtons: document.querySelectorAll(".view-button"),
     xValue: document.getElementById("x-value"),
     yValue: document.getElementById("y-value"),
   };
-  const state = { localTime: 0, playing: false, sessionIndex: 0, videoToken: 0 };
+  const state = { localTime: 0, playing: false, sessionIndex: 0, videoToken: 0, view: "interactive" };
   const contextColors = { "Standard oddball": "#22bcad" };
 
   function currentSession() {
     return protocol.sessions[state.sessionIndex];
+  }
+
+  function selectView(view) {
+    state.view = view;
+    if (view === "static") pause();
+    elements.interactiveView.hidden = view !== "interactive";
+    elements.staticView.hidden = view !== "static";
+    elements.viewButtons.forEach((button) => {
+      const active = button.dataset.view === view;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
   }
 
   function videoTimeAt(localTime) {
@@ -444,6 +459,9 @@
   elements.timeline.addEventListener("input", (event) => seek(Number(event.target.value)));
   elements.timeline.addEventListener("change", () => {
     if (state.playing) play();
+  });
+  elements.viewButtons.forEach((button) => {
+    button.addEventListener("click", () => selectView(button.dataset.view));
   });
   elements.timeline.max = protocol.durationSeconds;
   buildModalityTabs();

@@ -63,6 +63,7 @@ from openscope_p3_publication.figures import (
     write_behavior_viewer_html,
     write_context_controls_svg,
     write_data_explorer_html,
+    write_eye_tracking_static_svg,
     write_eye_tracking_viewer_html,
     write_figure_1_panel_c_svg,
     write_hardware_figure_svg,
@@ -1187,7 +1188,11 @@ def test_eye_tracking_snapshot_is_source_backed() -> None:
 
 
 def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
-    viewer_path = write_eye_tracking_viewer_html(tmp_path / "eye-tracking-viewer.html")
+    static_path = tmp_path / "synchronized-eye-tracking.svg"
+    viewer_path = write_eye_tracking_viewer_html(
+        tmp_path / "eye-tracking-viewer.html",
+        static_output=static_path,
+    )
     html = viewer_path.read_text(encoding="utf-8")
 
     assert 'id="eye-tracking-viewer"' in html
@@ -1203,6 +1208,9 @@ def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "Likely blink" in html
     assert "drawField" in html
     assert "blinkIntervals" in html
+    assert 'data-view="static"' in html
+    assert 'id="static-view"' in html
+    assert "synchronized-eye-tracking.svg" in html
     assert "videoTimeAt" in html
     assert "localTimeAt" in html
     assert "aind-open-data.s3.us-west-2.amazonaws.com" in html
@@ -1210,9 +1218,33 @@ def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "@media (max-width: 760px)" in html
     assert "__EYE_TRACKING_" not in html
     assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+    copied_static = tmp_path / "media" / "eye-tracking-viewer" / static_path.name
+    assert copied_static.read_bytes() == static_path.read_bytes()
 
-    write_eye_tracking_viewer_html(viewer_path)
+    write_eye_tracking_viewer_html(viewer_path, static_output=static_path)
     assert viewer_path.read_text(encoding="utf-8") == html
+
+
+def test_eye_tracking_static_figure_is_source_backed(tmp_path: Path) -> None:
+    output = write_eye_tracking_static_svg(tmp_path / "synchronized-eye-tracking.svg")
+    svg = output.read_text(encoding="utf-8")
+
+    assert "Synchronized eye-tracking signals across recording modalities" in svg
+    assert svg.count('class="oddball-period"') == 9
+    assert svg.count('class="blink-period"') >= 3
+    assert svg.count("X position") == 3
+    assert svg.count("Y position") == 3
+    assert svg.count("Pupil area") == 3
+    for label, subject, trial in (
+        ("Neuropixels", "820454", "863"),
+        ("Mesoscope", "832700", "1535"),
+        ("SLAP2", "829704", "1354"),
+    ):
+        assert label in svg
+        assert f"mouse {subject} · trial {trial}" in svg
+
+    write_eye_tracking_static_svg(output)
+    assert output.read_text(encoding="utf-8") == svg
 
 
 def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:

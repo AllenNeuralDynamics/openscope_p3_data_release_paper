@@ -127,6 +127,9 @@ BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
 BEHAVIOR_EXCERPTS_PATH = DATA_DIR / "behavior-excerpts.json"
 EYE_TRACKING_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "eye-tracking-viewer.html"
 EYE_TRACKING_EXCERPTS_PATH = DATA_DIR / "eye-tracking-excerpts.json"
+EYE_TRACKING_STATIC_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "synchronized-eye-tracking.svg"
+)
 RUNNING_STATISTICS_PATH = DATA_DIR / "running-statistics.json"
 BEHAVIOR_STATIC_LOCAL_TIME_SECONDS = 8.0
 SLAP2_COUNTS_PER_REVOLUTION = 8192
@@ -1529,16 +1532,200 @@ def load_eye_tracking_excerpts(path: Path = EYE_TRACKING_EXCERPTS_PATH) -> dict:
     return payload
 
 
+def write_eye_tracking_static_svg(
+    output: Path = EYE_TRACKING_STATIC_OUTPUT,
+) -> Path:
+    payload = load_eye_tracking_excerpts()
+    width = 1400
+    height = 1050
+    plot_left = 205
+    plot_width = 1145
+    row_tops = (92, 397, 702)
+    trace_height = 70
+    trace_gap = 12
+    duration = payload["durationSeconds"]
+    accents = {
+        "neuropixels": "#4B79C6",
+        "mesoscope": "#14866C",
+        "slap2": "#168EA0",
+    }
+
+    def x_position(time: float) -> float:
+        return plot_left + plot_width * time / duration
+
+    def limits(values: list[float]) -> tuple[float, float]:
+        ordered = sorted(values)
+        low = ordered[max(0, round((len(ordered) - 1) * 0.01))]
+        high = ordered[min(len(ordered) - 1, round((len(ordered) - 1) * 0.99))]
+        padding = max((high - low) * 0.08, 1.0)
+        return low - padding, high + padding
+
+    def trace_paths(
+        samples: list[list[float | bool]],
+        field_index: int,
+        top: float,
+        low: float,
+        high: float,
+    ) -> list[str]:
+        paths: list[str] = []
+        points: list[str] = []
+        for sample in samples:
+            value = float(sample[field_index])
+            invalid = bool(sample[6]) or (field_index == 5 and value <= 0)
+            if invalid or not math.isfinite(value) or value < low or value > high:
+                if len(points) > 1:
+                    paths.append("M" + " L".join(points))
+                points = []
+                continue
+            y_position = top + trace_height * (high - value) / (high - low)
+            points.append(f"{x_position(float(sample[0])):.2f},{y_position:.2f}")
+        if len(points) > 1:
+            paths.append("M" + " L".join(points))
+        return paths
+
+    def blink_intervals(samples: list[list[float | bool]]) -> list[tuple[float, float]]:
+        intervals: list[tuple[float, float]] = []
+        start: float | None = None
+        for index, sample in enumerate(samples):
+            if sample[6] and start is None:
+                start = float(sample[0])
+            if start is not None and (
+                not sample[6] or index == len(samples) - 1
+            ):
+                intervals.append((start, float(sample[0])))
+                start = None
+        return intervals
+
+    svg = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
+        '<title id="title">Synchronized eye-tracking signals across recording modalities</title>',
+        '<desc id="description">Neuropixels, mesoscope, and SLAP2 eye-tracking excerpts '
+        'with vertically aligned pupil x position, y position, and area traces. The '
+        'orientation oddball period and likely blinks are highlighted.</desc>',
+        f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
+        '<text x="35" y="42" font-family="Myriad Pro, Arial, sans-serif" '
+        'font-size="28" font-weight="700" fill="#293133">'
+        'Eye tracking around a visual oddball</text>',
+        '<rect x="870" y="23" width="22" height="15" fill="#22BCAD" fill-opacity="0.22"/>',
+        '<text x="900" y="36" font-family="Myriad Pro, Arial, sans-serif" font-size="14" '
+        'fill="#59615F">90° orientation deviant</text>',
+        '<rect x="1110" y="23" width="22" height="15" fill="#B9C1BE" fill-opacity="0.55"/>',
+        '<text x="1140" y="36" font-family="Myriad Pro, Arial, sans-serif" font-size="14" '
+        'fill="#59615F">Likely blink</text>',
+    ]
+    signal_specs = ((1, "X position", "px"), (2, "Y position", "px"), (5, "Pupil area", "px²"))
+    for row_index, (session, row_top) in enumerate(
+        zip(payload["sessions"], row_tops, strict=True)
+    ):
+        samples = session["samples"]
+        modality = session["id"]
+        accent = accents[modality]
+        event_row = next(
+            row
+            for row in session["stimulus"]
+            if row["start"] <= session["event"]["time"] <= row["end"]
+        )
+        svg.extend(
+            [
+                f'<text x="35" y="{row_top}" font-family="Myriad Pro, Arial, sans-serif" '
+                f'font-size="22" font-weight="700" fill="{accent}">'
+                f'{escape(session["label"])}</text>',
+                f'<text x="35" y="{row_top + 24}" font-family="IBM Plex Mono, monospace" '
+                f'font-size="13" fill="#59615F">mouse {escape(session["subject"])} · trial '
+                f'{session["event"]["trialNumber"]}</text>',
+            ]
+        )
+        for signal_index, (field_index, label, unit) in enumerate(signal_specs):
+            top = row_top + 38 + signal_index * (trace_height + trace_gap)
+            valid_values = [
+                float(sample[field_index])
+                for sample in samples
+                if not sample[6]
+                and math.isfinite(float(sample[field_index]))
+                and (field_index != 5 or float(sample[field_index]) > 0)
+            ]
+            low, high = limits(valid_values)
+            event_left = x_position(event_row["start"])
+            event_width = x_position(event_row["end"]) - event_left
+            svg.extend(
+                [
+                    f'<rect x="{plot_left}" y="{top}" width="{plot_width}" height="{trace_height}" '
+                    'fill="#FAFBFB" stroke="#D7DBD9"/>',
+                    f'<rect class="oddball-period" x="{event_left:.2f}" y="{top}" '
+                    f'width="{event_width:.2f}" height="{trace_height}" fill="#22BCAD" '
+                    'fill-opacity="0.22"/>',
+                ]
+            )
+            for blink in blink_intervals(samples):
+                blink_left = x_position(max(0, blink[0]))
+                blink_width = x_position(min(duration, blink[1])) - blink_left
+                if blink_width > 0:
+                    svg.append(
+                        f'<rect class="blink-period" x="{blink_left:.2f}" y="{top}" '
+                        f'width="{blink_width:.2f}" height="{trace_height}" '
+                        'fill="#B9C1BE" fill-opacity="0.55"/>'
+                    )
+            for path in trace_paths(samples, field_index, top, low, high):
+                svg.append(
+                    f'<path d="{path}" fill="none" stroke="{accent}" stroke-width="2" '
+                    'stroke-linejoin="round" stroke-linecap="round"/>'
+                )
+            svg.extend(
+                [
+                    f'<text x="{plot_left - 14}" y="{top + 29}" text-anchor="end" '
+                    'font-family="Myriad Pro, Arial, sans-serif" font-size="15" font-weight="700" '
+                    f'fill="#303536">{label}</text>',
+                    f'<text x="{plot_left - 14}" y="{top + 48}" text-anchor="end" '
+                    'font-family="Myriad Pro, Arial, sans-serif" font-size="12" '
+                    f'fill="#707674">{unit}</text>',
+                    f'<text x="{plot_left + 6}" y="{top + 14}" '
+                    'font-family="IBM Plex Mono, monospace" '
+                    f'font-size="10" fill="#707674">{high:.0f}</text>',
+                    f'<text x="{plot_left + 6}" y="{top + trace_height - 5}" '
+                    'font-family="IBM Plex Mono, monospace" font-size="10" '
+                    f'fill="#707674">{low:.0f}</text>',
+                ]
+            )
+        axis_y = row_top + 38 + 3 * trace_height + 2 * trace_gap
+        for time in (0, 4, 8, 12, 16):
+            axis_x = x_position(time)
+            svg.extend(
+                [
+                    f'<line x1="{axis_x:.2f}" y1="{axis_y}" x2="{axis_x:.2f}" '
+                    f'y2="{axis_y + 6}" stroke="#6F7774"/>',
+                    f'<text x="{axis_x:.2f}" y="{axis_y + 22}" text-anchor="middle" '
+                    'font-family="IBM Plex Mono, monospace" font-size="12" '
+                    f'fill="#59615F">{time} s</text>',
+                ]
+            )
+        if row_index < len(row_tops) - 1:
+            svg.append(
+                f'<line x1="35" y1="{axis_y + 38}" x2="1350" y2="{axis_y + 38}" '
+                'stroke="#E3E6E5"/>'
+            )
+    svg.append("</svg>")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    write_svg_output(output, svg)
+    return output
+
+
 def write_eye_tracking_viewer_html(
     output: Path = EYE_TRACKING_VIEWER_OUTPUT,
+    static_output: Path = EYE_TRACKING_STATIC_OUTPUT,
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_eye_tracking_excerpts()
+    write_eye_tracking_static_svg(static_output)
     template = (JAVASCRIPT_DIR / "eye-tracking-viewer.html").read_text(encoding="utf-8")
     stylesheet = (JAVASCRIPT_DIR / "eye-tracking-viewer.css").read_text(encoding="utf-8")
     javascript = (JAVASCRIPT_DIR / "eye-tracking-viewer.js").read_text(encoding="utf-8")
     html = (
         template.replace("__EYE_TRACKING_CSS__", stylesheet)
+        .replace(
+            "__EYE_TRACKING_STATIC_IMAGE__",
+            f"media/eye-tracking-viewer/{static_output.name}",
+        )
         .replace(
             "__EYE_TRACKING_DATA__",
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
@@ -1546,7 +1733,12 @@ def write_eye_tracking_viewer_html(
         .replace("__EYE_TRACKING_JS__", javascript)
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
-    output.write_text(html, encoding="utf-8")
+    output.write_text(html, encoding="utf-8", newline="\n")
+    media_output = output.parent / "media" / "eye-tracking-viewer"
+    if media_output.exists():
+        shutil.rmtree(media_output)
+    media_output.mkdir(parents=True)
+    shutil.copy2(static_output, media_output / static_output.name)
     return output
 
 
