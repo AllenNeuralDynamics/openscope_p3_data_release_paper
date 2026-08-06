@@ -587,8 +587,10 @@ def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     assert "30 s ΔF/F" in manuscript
     assert "30 s, approximately 200 Hz ΔF/F trace" in manuscript
     assert "waveform-spread band" in manuscript
+    assert "common-mode correction is enabled by default" in manuscript
+    assert "fast-scanning x axis horizontally" in manuscript
     assert "grayscale average projection" in manuscript
-    assert "transposed into display coordinates" in manuscript
+    assert "stored (x, y) arrays are transposed to display (y, x)" in manuscript
     assert "background controls alter only" in manuscript
     assert "activity image" not in segmentation_captions.lower()
     assert "QC-passing" not in segmentation_captions

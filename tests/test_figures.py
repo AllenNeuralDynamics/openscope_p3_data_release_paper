@@ -47,6 +47,7 @@ from openscope_p3_publication.figures import (
     UNIT_YIELD_PROVENANCE_PATH,
     ZEBRA_MOVIE_SOURCE,
     ZEBRA_POSTER_SOURCE,
+    common_median_corrected_rgb,
     load_behavior_excerpts,
     load_data_access_table,
     load_experimental_design_sources,
@@ -450,10 +451,22 @@ def test_segmentation_viewer_snapshot_is_source_backed() -> None:
         assert source["spikeEvents"]
         assert source["traceColumns"] == 600
         assert source["traceTimesSeconds"][-1] == pytest.approx(11.99)
-        assert all("isQcPassing" not in row for row in source["filters"])
+        assert all(
+            "isQcPassing" not in row
+            and "snr" not in row
+            and "firingRateHz" not in row
+            for row in source["filters"]
+        )
     for source in (*viewers["mesoscope"]["sources"], *viewers["slap2"]["sources"]):
         assert source["traceTimesSeconds"][-1] > 29.8
         assert "activityImage" not in source
+        assert source["fastScanAxis"] == "horizontal"
+    assert {
+        source["displayTransform"] for source in viewers["mesoscope"]["sources"]
+    } == {"stored-yx"}
+    assert {
+        source["displayTransform"] for source in viewers["slap2"]["sources"]
+    } == {"stored-xy-transposed-to-yx"}
     assert (
         viewers["slap2"]["sources"][0]["baseImage"]["width"],
         viewers["slap2"]["sources"][0]["baseImage"]["height"],
@@ -474,6 +487,17 @@ def test_segmentation_viewer_snapshot_is_source_backed() -> None:
     assert not any("activity" in name for name in referenced_media)
 
 
+def test_common_median_correction_removes_time_column_offsets() -> None:
+    corrected = common_median_corrected_rgb(
+        bytes((10, 20, 30, 110, 120, 130)),
+        rows=2,
+        columns=3,
+        contrast=1,
+    )
+
+    assert corrected == bytes((78, 78, 78) * 3 + (178, 178, 178) * 3)
+
+
 def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     html_path = write_segmentation_viewer_html(tmp_path / "segmentation-viewer.html")
     html = html_path.read_text(encoding="utf-8")
@@ -485,6 +509,8 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert 'id="filter-select"' in html
     assert 'id="activity-chart"' in html
     assert 'id="background-intensity"' in html
+    assert 'id="common-mode-toggle"' in html
+    assert 'id="common-mode-control"' in html
     assert 'id="overlay-opacity"' not in html
     for source_id in (
         "probe-a", "probe-b", "probe-c", "probe-d", "probe-e", "probe-f",
@@ -506,14 +532,20 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert 'id="activity-key"' not in html
     assert "isQcPassing" not in html
     assert "activityImage" not in html
+    assert "firingRateHz" not in html
+    assert '"snr"' not in html
+    assert "Firing rate" not in html
+    assert '["SNR"' not in html
     assert 'document.querySelector("body > main")' in html
     assert "[hidden] { display: none !important; }" in html
     assert "filterAt(event)" in html
     assert "chart-event" not in html
     assert "Sequence omission" not in html
     assert "Motor orientation 90" not in html
-    assert "Raw AP voltage + detected sorted spikes" in html
+    assert "Common-mode-corrected AP voltage" in html
+    assert "Raw AP voltage" in html
     assert "Detected sorted spikes" in html
+    assert "Fast scan" in html
     assert "Raw AP contrast" in html
     assert "Background intensity" in html
     assert "state.overlayOpacity" not in html
@@ -543,9 +575,11 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
         if modality == "neuropixels":
             assert "Mean template waveform · peak channel" in svg
             assert "310 detected spikes" in svg
+            assert "common-mode-corrected AP voltage" in svg
             assert "Sequence omission" not in svg
         else:
             assert svg.count("data:image/png;base64,") >= 2
+            assert "Fast scan" in svg
 
     combined_path = write_segmentation_viewer_static_svg(
         tmp_path / "supplementary-segmentation-viewers.svg",

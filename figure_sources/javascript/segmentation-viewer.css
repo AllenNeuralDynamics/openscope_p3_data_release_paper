@@ -178,6 +178,15 @@ h1 {
 
 #background-intensity { width: 100%; accent-color: var(--accent); }
 
+.toggle-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+
+.toggle-control input { accent-color: var(--accent); }
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(430px, 1.35fr) minmax(330px, 0.85fr);

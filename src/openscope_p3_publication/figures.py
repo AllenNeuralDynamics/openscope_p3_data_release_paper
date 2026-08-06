@@ -2658,9 +2658,26 @@ def load_segmentation_viewers(
                 or "activityImage" in source
                 or "eventLabel" in source
                 or "context" in source
+                or any(
+                    "snr" in record or "firingRateHz" in record
+                    for record in source.get("filters", [])
+                )
             ):
                 raise RuntimeError(
                     f"Segmentation source dimensions changed: {modality_id}/{source_id}"
+                )
+
+            if modality_id != "neuropixels" and (
+                source.get("fastScanAxis") != "horizontal"
+                or source.get("displayTransform")
+                != (
+                    "stored-yx"
+                    if modality_id == "mesoscope"
+                    else "stored-xy-transposed-to-yx"
+                )
+            ):
+                raise RuntimeError(
+                    f"Segmentation scan orientation changed: {modality_id}/{source_id}"
                 )
 
             for field in ("baseImage", "labelImage", "filterOverlay"):
@@ -2739,6 +2756,26 @@ def encode_rgb_png(width: int, height: int, pixels: bytes) -> bytes:
             png_chunk(b"IEND", b""),
         )
     )
+
+
+def common_median_corrected_rgb(
+    raw: bytes,
+    rows: int,
+    columns: int,
+    contrast: float,
+) -> bytes:
+    if len(raw) != rows * columns:
+        raise RuntimeError("Raw AP buffer does not match its declared dimensions.")
+    common_mode = [
+        statistics.median(raw[column::columns])
+        for column in range(columns)
+    ]
+    rgb = bytearray(len(raw) * 3)
+    for index, value in enumerate(raw):
+        centered = value - common_mode[index % columns]
+        gray = max(0, min(255, round(127.5 + centered * contrast)))
+        rgb[index * 3 : index * 3 + 3] = bytes((gray, gray, gray))
+    return bytes(rgb)
 
 
 def encode_rgba_png(width: int, height: int, pixels: bytes) -> bytes:
@@ -3382,12 +3419,14 @@ def write_segmentation_viewer_svg(
     visual_height = 560.0
     if modality == "neuropixels":
         raw = base64.b64decode(viewer["rawDataBase64"], validate=True)
-        rgb = bytearray(len(raw) * 3)
-        for index, value in enumerate(raw):
-            gray = max(0, min(255, round(127.5 + (value - 127.5) * 1.2)))
-            rgb[index * 3 : index * 3 + 3] = bytes((gray, gray, gray))
+        rgb = common_median_corrected_rgb(
+            raw,
+            viewer["rawRows"],
+            viewer["rawColumns"],
+            1.2,
+        )
         raw_image = base64.b64encode(
-            encode_rgb_png(viewer["rawColumns"], viewer["rawRows"], bytes(rgb))
+            encode_rgb_png(viewer["rawColumns"], viewer["rawRows"], rgb)
         ).decode()
         image_x = visual_left + 46
         image_y = visual_top + 20
@@ -3413,8 +3452,9 @@ def write_segmentation_viewer_svg(
             [
                 f'<text x="{image_x + image_width / 2:.2f}" y="{visual_top + 4:.2f}" '
                 f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" '
-                'font-size="12" font-weight="700" fill="#4F5956">100 ms raw AP '
-                f'voltage + {len(viewer["spikeEvents"])} detected spikes</text>',
+                'font-size="12" font-weight="700" fill="#4F5956">100 ms '
+                'common-mode-corrected AP voltage + '
+                f'{len(viewer["spikeEvents"])} detected spikes</text>',
                 f'<image href="data:image/png;base64,{raw_image}" x="{image_x:.2f}" '
                 f'y="{image_y:.2f}" width="{image_width:.2f}" '
                 f'height="{image_height:.2f}" preserveAspectRatio="none"/>',
@@ -3523,6 +3563,19 @@ def write_segmentation_viewer_svg(
                 f'<text x="{scale_x + scale_width / 2:.2f}" y="{scale_y - 8:.2f}" '
                 f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" '
                 f'font-size="10" font-weight="700" fill="#FFFFFF">{scale_microns} µm</text>',
+                f'<rect x="{image_x + 8:.2f}" y="{image_y + 8:.2f}" '
+                'width="112" height="39" fill="#050A0C" fill-opacity="0.72"/>',
+                f'<line x1="{image_x + 19:.2f}" y1="{image_y + 22:.2f}" '
+                f'x2="{image_x + 109:.2f}" y2="{image_y + 22:.2f}" '
+                'stroke="#FFFFFF" stroke-width="2"/>',
+                f'<path d="M{image_x + 109:.2f},{image_y + 22:.2f} '
+                f'L{image_x + 102:.2f},{image_y + 17:.2f} '
+                f'M{image_x + 109:.2f},{image_y + 22:.2f} '
+                f'L{image_x + 102:.2f},{image_y + 27:.2f}" '
+                'fill="none" stroke="#FFFFFF" stroke-width="2"/>',
+                f'<text x="{image_x + 64:.2f}" y="{image_y + 40:.2f}" '
+                f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" '
+                'font-size="10" font-weight="700" fill="#FFFFFF">Fast scan</text>',
             ]
         )
 

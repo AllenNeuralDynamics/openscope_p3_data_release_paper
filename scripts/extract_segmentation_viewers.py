@@ -409,7 +409,6 @@ def extract_neuropixels(asset_record: dict) -> dict:
                 filters.append(
                     {
                         "depthUm": round(float(units["depth"][row]), 3),
-                        "firingRateHz": round(float(units["firing_rate"][row]), 6),
                         "id": int(units["id"][row]),
                         "ksUnitId": int(units["ks_unit_id"][row]),
                         "label": f"Unit {int(units['id'][row])}",
@@ -426,14 +425,14 @@ def extract_neuropixels(asset_record: dict) -> dict:
                             3,
                         ),
                         "rawRow": peak_row,
-                        "snr": round(float(units["snr"][row]), 6),
                         "spreadUm": int(units["spread"][row]),
                     }
                 )
-            default_index = max(
-                enumerate(filters),
-                key=lambda pair: pair[1]["snr"],
-            )[0]
+            template_amplitudes = np.nanmax(waveforms, axis=1) - np.nanmin(
+                waveforms,
+                axis=1,
+            )
+            default_index = int(np.nanargmax(template_amplitudes))
             sources.append(
                 {
                     **trace_payload(spike_rates, bin_times),
@@ -568,6 +567,8 @@ def extract_mesoscope(asset_record: dict, media_dir: Path) -> dict:
                     "asset": asset_record,
                     "baseImage": base_asset,
                     "defaultFilterIndex": default_index,
+                    "displayTransform": "stored-yx",
+                    "fastScanAxis": "horizontal",
                     "filterCount": len(filters),
                     "filterOverlay": overlay_asset,
                     "filters": filters,
@@ -682,6 +683,8 @@ def extract_slap2(asset_record: dict, media_dir: Path) -> dict:
                     "asset": asset_record,
                     "baseImage": base_asset,
                     "defaultFilterIndex": default_index,
+                    "displayTransform": "stored-xy-transposed-to-yx",
+                    "fastScanAxis": "horizontal",
                     "filterCount": len(filters),
                     "filterOverlay": overlay_asset,
                     "filters": filters,
@@ -738,7 +741,9 @@ def main() -> None:
             "session. Filters and traces come from the matched DANDI NWB; Neuropixels "
             "time-by-depth views reuse the pinned public AP excerpts recorded in "
             "raw-neural-excerpts.json and overlay sorted-unit spike times from the "
-            "matched NWB."
+            "matched NWB. Mesoscope images are stored as display (y, x); SLAP2 "
+            "column-major images are transposed from stored (x, y) to display (y, x), "
+            "placing the fast-scanning x axis horizontally for both modalities."
         ),
         "retrieved_date": RETRIEVED_DATE,
         "source_raw_neural_sha256": sha256(RAW_NEURAL_PATH),

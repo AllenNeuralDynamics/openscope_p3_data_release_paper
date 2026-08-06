@@ -18,6 +18,8 @@
     background: document.getElementById("background-intensity"),
     backgroundLabel: document.getElementById("background-label"),
     canvas: document.getElementById("source-canvas"),
+    commonModeControl: document.getElementById("common-mode-control"),
+    commonModeToggle: document.getElementById("common-mode-toggle"),
     filterMetadata: document.getElementById("filter-metadata"),
     filterSelect: document.getElementById("filter-select"),
     filterKeyLabel: document.getElementById("filter-key-label"),
@@ -48,6 +50,7 @@
   })));
   const viewerStates = protocol.viewers.map((modality) => modality.sources.map((record) => ({
     backgroundIntensity: 1,
+    commonModeCorrected: record.viewType === "spike-map",
     imageRect: null,
     labelPixels: null,
     selectedIndex: record.defaultFilterIndex,
@@ -64,7 +67,7 @@
   let viewerLoadToken = 0;
   const rawHeatmapCanvas = document.createElement("canvas");
   const rawHeatmapContext = rawHeatmapCanvas.getContext("2d");
-  let rawHeatmapIntensity = null;
+  let rawHeatmapKey = null;
   let state = viewerStates[0][0];
 
   function decodeFloat32(encoded) {
@@ -196,6 +199,30 @@
     });
   }
 
+  function drawFastScanMarker(rect) {
+    if (viewer.fastScanAxis !== "horizontal") return;
+    const startX = rect.x + 20;
+    const endX = startX + Math.min(96, rect.width * 0.25);
+    const y = rect.y + 23;
+    context.fillStyle = "rgba(5, 10, 12, 0.72)";
+    context.fillRect(startX - 9, y - 14, endX - startX + 18, 39);
+    context.strokeStyle = "#f8fbfa";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(startX, y);
+    context.lineTo(endX, y);
+    context.lineTo(endX - 7, y - 5);
+    context.moveTo(endX, y);
+    context.lineTo(endX - 7, y + 5);
+    context.stroke();
+    drawCanvasText("Fast scan", (startX + endX) / 2, y + 18, {
+      align: "center",
+      color: "#f8fbfa",
+      size: 11,
+      weight: 700,
+    });
+  }
+
   function drawImageViewer() {
     const bounds = { x: 28, y: 28, width: 844, height: 650 };
     const rect = containedRect(
@@ -219,17 +246,37 @@
     context.lineWidth = 1;
     context.strokeRect(rect.x, rect.y, rect.width, rect.height);
     drawScaleBar(rect);
+    drawFastScanMarker(rect);
   }
 
   function rawHeatmap() {
-    if (rawHeatmapIntensity === state.backgroundIntensity) return rawHeatmapCanvas;
+    const cacheKey = `${state.backgroundIntensity}:${state.commonModeCorrected}`;
+    if (rawHeatmapKey === cacheKey) return rawHeatmapCanvas;
     rawHeatmapCanvas.width = viewer.rawColumns;
     rawHeatmapCanvas.height = viewer.rawRows;
     const image = rawHeatmapContext.createImageData(viewer.rawColumns, viewer.rawRows);
+    const commonMode = new Float32Array(viewer.rawColumns);
+    if (state.commonModeCorrected) {
+      const column = new Array(viewer.rawRows);
+      for (let columnIndex = 0; columnIndex < viewer.rawColumns; columnIndex += 1) {
+        for (let row = 0; row < viewer.rawRows; row += 1) {
+          column[row] = rawValues[row * viewer.rawColumns + columnIndex];
+        }
+        column.sort((left, right) => left - right);
+        const midpoint = viewer.rawRows / 2;
+        commonMode[columnIndex] = viewer.rawRows % 2
+          ? column[Math.floor(midpoint)]
+          : (column[midpoint - 1] + column[midpoint]) / 2;
+      }
+    }
     for (let index = 0; index < rawValues.length; index += 1) {
+      const columnIndex = index % viewer.rawColumns;
+      const centered = state.commonModeCorrected
+        ? rawValues[index] - commonMode[columnIndex]
+        : rawValues[index] - 127.5;
       const gray = Math.max(
         0,
-        Math.min(255, Math.round(127.5 + (rawValues[index] - 127.5) * state.backgroundIntensity)),
+        Math.min(255, Math.round(127.5 + centered * state.backgroundIntensity)),
       );
       const offset = index * 4;
       image.data[offset] = gray;
@@ -238,7 +285,7 @@
       image.data[offset + 3] = 255;
     }
     rawHeatmapContext.putImageData(image, 0, 0);
-    rawHeatmapIntensity = state.backgroundIntensity;
+    rawHeatmapKey = cacheKey;
     return rawHeatmapCanvas;
   }
 
@@ -329,7 +376,10 @@
         size: 11,
       });
     }
-    drawCanvasText("Raw AP voltage + detected sorted spikes", (plot.left + plot.right) / 2, 23, {
+    const voltageLabel = state.commonModeCorrected
+      ? "Common-mode-corrected AP voltage"
+      : "Raw AP voltage";
+    drawCanvasText(`${voltageLabel} + detected sorted spikes`, (plot.left + plot.right) / 2, 23, {
       align: "center",
       color: "#dbe5e3",
       size: 14,
@@ -425,8 +475,6 @@
         ["CCF area", filter.location],
         ["Depth", `${formatNumber(filter.depthUm, 0)} µm`],
         ["Peak channel", String(filter.peakChannel)],
-        ["Firing rate", `${formatNumber(filter.firingRateHz, 2)} Hz`],
-        ["SNR", formatNumber(filter.snr, 2)],
         ["Template spread", `${formatNumber(filter.spreadUm, 0)} µm`],
         ["Kilosort unit", String(filter.ksUnitId)],
       ];
@@ -608,6 +656,8 @@
       ? "Detected sorted spikes"
       : "Extraction filters";
     elements.background.value = String(Math.round(state.backgroundIntensity * 100));
+    elements.commonModeControl.hidden = modality.id !== "neuropixels";
+    elements.commonModeToggle.checked = state.commonModeCorrected;
     elements.tooltip.hidden = true;
     populateSourceSelect();
     populateFilterSelect();
@@ -622,7 +672,7 @@
     waveformValues = decodedViewers[activeViewerIndex][index].waveforms;
     rawValues = decodedViewers[activeViewerIndex][index].raw;
     imageRecords = {};
-    rawHeatmapIntensity = null;
+    rawHeatmapKey = null;
     const token = ++viewerLoadToken;
     updateViewerChrome();
     elements.selectionTitle.textContent = "Loading…";
@@ -664,6 +714,11 @@
     elements.filterSelect.addEventListener("change", () => selectFilter(Number(elements.filterSelect.value)));
     elements.background.addEventListener("input", () => {
       state.backgroundIntensity = Number(elements.background.value) / 100;
+      drawViewer();
+    });
+    elements.commonModeToggle.addEventListener("change", () => {
+      state.commonModeCorrected = elements.commonModeToggle.checked;
+      rawHeatmapKey = null;
       drawViewer();
     });
     elements.previousFilter.addEventListener("click", () => adjacentFilter(-1));

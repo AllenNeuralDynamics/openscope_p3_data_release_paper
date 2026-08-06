@@ -31,7 +31,7 @@
       "url": "https://dandiarchive.s3.amazonaws.com/blobs/e95/21c/e9521c86-5587-473c-990d-ed432bb65d28"
     }
   },
-  "notes": "Each modality exposes every probe or imaging plane in one representative session. Filters and traces come from the matched DANDI NWB; Neuropixels time-by-depth views reuse the pinned public AP excerpts recorded in raw-neural-excerpts.json and overlay sorted-unit spike times from the matched NWB.",
+  "notes": "Each modality exposes every probe or imaging plane in one representative session. Filters and traces come from the matched DANDI NWB; Neuropixels time-by-depth views reuse the pinned public AP excerpts recorded in raw-neural-excerpts.json and overlay sorted-unit spike times from the matched NWB. Mesoscope images are stored as display (y, x); SLAP2 column-major images are transposed from stored (x, y) to display (y, x), placing the fast-scanning x axis horizontally for both modalities.",
   "retrieved_date": "2026-08-06",
   "source_raw_neural_sha256": "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c",
   "vendored_media_sha256": {
@@ -66,5 +66,5 @@
     "slap2-dmd2-labels.png": "178205fd2acc5a9212744c4e55bee970a9dc30b046bff62c6ef0fe8f748640d8",
     "slap2-dmd2-mean.png": "7bd84be01fa9e3c1d9cc6c20dc4d5ff8ba22f8695363b17ea6e9379a7b5f6bec"
   },
-  "vendored_sha256": "5dcb71f5c9da365f2b92699b0402129e5caf8ac6f23b76e2bd2f81bb933866de"
+  "vendored_sha256": "ab2f89647cdbff98510c740946c9780240316640b0a649b2ef5f639153a67c81"
 }

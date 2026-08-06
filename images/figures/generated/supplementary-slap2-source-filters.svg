@@ -11,6 +11,10 @@
 <circle cx="226.06" cy="423.49" r="13" fill="none" stroke="#159E9C" stroke-width="2"/>
 <line x1="526.78" y1="672.00" x2="664.04" y2="672.00" stroke="#FFFFFF" stroke-width="4"/>
 <text x="595.41" y="664.00" text-anchor="middle" font-family="Myriad Pro, Arial, sans-serif" font-size="11.67" font-weight="700" fill="#FFFFFF">25 µm</text>
+<rect x="102.96" y="138.00" width="112" height="39" fill="#050A0C" fill-opacity="0.72"/>
+<line x1="113.96" y1="152.00" x2="203.96" y2="152.00" stroke="#FFFFFF" stroke-width="2"/>
+<path d="M203.96,152.00 L196.96,147.00 M203.96,152.00 L196.96,157.00" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+<text x="158.96" y="170.00" text-anchor="middle" font-family="Myriad Pro, Arial, sans-serif" font-size="11.67" font-weight="700" fill="#FFFFFF">Fast scan</text>
 <rect x="748" y="130" width="602" height="560" fill="#FFFFFF" stroke="#D3D8D6"/>
 <rect x="774" y="150" width="5" height="43" fill="#159E9C"/>
 <text x="791" y="164" font-family="Myriad Pro, Arial, sans-serif" font-size="12.83" font-weight="600" fill="#68716F">Selected filter</text>
