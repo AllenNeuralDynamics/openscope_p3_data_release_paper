@@ -509,7 +509,8 @@ def test_late_figures_are_supplementary_and_power_figures_are_removed() -> None:
     assert manuscript.count("[Supplementary Figure 4](#fig-supp-eye-tracking)") == 1
     assert "./interactive/eye-tracking-viewer.html" in manuscript
     assert ":label: fig-supp-eye-tracking\n:enumerated: false" in manuscript
-    assert "Pupil fits, blink flags, and stimulus rows" in manuscript
+    assert "Eye fits, blink flags, and stimulus rows" in manuscript
+    assert "Fit-source tabs switch the center field" in manuscript
     assert "standard-oddball Neuropixels, mesoscope, and SLAP2 sessions" in manuscript
     assert "5th–95th percentile nonblink range" in manuscript
     assert "**B,** a dorsal projection" in manuscript

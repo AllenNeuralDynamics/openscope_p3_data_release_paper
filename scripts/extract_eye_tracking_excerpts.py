@@ -35,6 +35,11 @@ from extract_behavior_excerpts import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = REPO_ROOT / "figure_sources" / "data" / "eye-tracking-excerpts.json"
+FIT_SOURCES = (
+    ("pupil", "Pupil"),
+    ("corneal_reflection", "Corneal reflection"),
+    ("ellipse", "Eye ellipse"),
+)
 STANDARD_SESSIONS = (
     {
         "asset_id": "f7057120-fc07-447c-80ba-bbbc425072b0",
@@ -230,20 +235,24 @@ def slap2_stimulus_rows(table: h5py.Group, excerpt_start: float) -> list[dict]:
     return rows
 
 
-def pupil_samples(group: h5py.Group, excerpt_start: float) -> list[list[float | bool]]:
-    timestamps = np.asarray(group["pupil/timestamps"][:], dtype=float)
+def fit_samples(
+    group: h5py.Group,
+    fit_id: str,
+    excerpt_start: float,
+) -> list[list[float | bool]]:
+    timestamps = np.asarray(group[f"{fit_id}/timestamps"][:], dtype=float)
     first, last = np.searchsorted(
         timestamps,
         [excerpt_start, excerpt_start + EXCERPT_DURATION_SECONDS],
     )
     fields = {
-        name: np.asarray(group[f"pupil/{name}"][first:last], dtype=float)
+        name: np.asarray(group[f"{fit_id}/{name}"][first:last], dtype=float)
         for name in ("data_x", "data_y", "width", "height", "area")
     }
     blink_timestamps = np.asarray(group["likely_blink_times/timestamps"][:], dtype=float)
     blink_values = np.asarray(group["likely_blink_times/data"][:], dtype=bool)
     if not np.array_equal(timestamps, blink_timestamps):
-        raise RuntimeError("Pupil and blink timestamps do not share one sample clock.")
+        raise RuntimeError(f"{fit_id} and blink timestamps do not share one sample clock.")
     samples = []
     for index, timestamp in enumerate(timestamps[first:last]):
         values = [fields[name][index] for name in fields]
@@ -259,11 +268,11 @@ def pupil_samples(group: h5py.Group, excerpt_start: float) -> list[list[float | 
     return samples
 
 
-def pupil_field_reference(group: h5py.Group, config: dict) -> dict:
+def fit_field_reference(group: h5py.Group, fit_id: str, config: dict) -> dict:
     width, height = config["frame_size"]
-    x_values = np.asarray(group["pupil/data_x"][:], dtype=float)
-    y_values = np.asarray(group["pupil/data_y"][:], dtype=float)
-    areas = np.asarray(group["pupil/area"][:], dtype=float)
+    x_values = np.asarray(group[f"{fit_id}/data_x"][:], dtype=float)
+    y_values = np.asarray(group[f"{fit_id}/data_y"][:], dtype=float)
+    areas = np.asarray(group[f"{fit_id}/area"][:], dtype=float)
     blinks = np.asarray(group["likely_blink_times/data"][:], dtype=bool)
     valid = (
         np.isfinite(x_values)
@@ -277,7 +286,7 @@ def pupil_field_reference(group: h5py.Group, config: dict) -> dict:
         & (areas > 0)
     )
     if np.count_nonzero(valid) < 100:
-        raise RuntimeError(f"Too few valid full-session pupil fits: {config['id']}")
+        raise RuntimeError(f"Too few valid full-session {fit_id} fits: {config['id']}")
     area_low, area_high = np.quantile(areas[valid], [0.05, 0.95])
     return {
         "areaHigh": round(float(area_high), 4),
@@ -309,8 +318,27 @@ def extract_session(config: dict) -> dict:
             event_time = float(table["start_time"][selected_index])
             excerpt_start = event_time - EVENT_LEAD_SECONDS
             eye_tracking = nwb["processing/eye_tracking"]
-            samples = pupil_samples(eye_tracking, excerpt_start)
-            field_reference = pupil_field_reference(eye_tracking, config)
+            fits = {
+                fit_id: {
+                    "fieldReference": fit_field_reference(
+                        eye_tracking,
+                        fit_id,
+                        config,
+                    ),
+                    "label": label,
+                    "sampleFields": [
+                        "time",
+                        "x",
+                        "y",
+                        "width",
+                        "height",
+                        "area",
+                        "blink",
+                    ],
+                    "samples": fit_samples(eye_tracking, fit_id, excerpt_start),
+                }
+                for fit_id, label in FIT_SOURCES
+            }
             if config["id"] == "slap2":
                 stimulus = slap2_stimulus_rows(table, excerpt_start)
                 camera, camera_sources = slap2_camera(
@@ -321,12 +349,21 @@ def extract_session(config: dict) -> dict:
             else:
                 stimulus, _ = nwb_stimulus_rows(table, excerpt_start)
                 camera, camera_sources = eye_camera(config, excerpt_start)
-    blink_count = sum(sample[-1] for sample in samples)
-    if not samples or samples[0][0] > 0.04 or samples[-1][0] < 15.95 or not blink_count:
-        raise RuntimeError(f"Eye excerpt is incomplete or lacks a blink: {config['id']}")
+    for fit_id, fit in fits.items():
+        samples = fit["samples"]
+        blink_count = sum(sample[-1] for sample in samples)
+        if (
+            not samples
+            or samples[0][0] > 0.04
+            or samples[-1][0] < 15.95
+            or not blink_count
+        ):
+            raise RuntimeError(
+                f"{fit_id} excerpt is incomplete or lacks a blink: {config['id']}"
+            )
     return {
         "alignment": (
-            "Processed pupil fits, likely-blink flags, stimulus rows, and eye-camera frames "
+            "Processed eye fits, likely-blink flags, stimulus rows, and eye-camera frames "
             "share the packaged acquisition clock. Neuropixels and mesoscope use 100 kHz "
             "sync edges; SLAP2 uses aligned Harp timestamps and packaged camera-frame indices."
         ),
@@ -337,11 +374,9 @@ def extract_session(config: dict) -> dict:
             "time": EVENT_LEAD_SECONDS,
             "trialNumber": selected_trial,
         },
-        "fieldReference": field_reference,
+        "fits": fits,
         "id": config["id"],
         "label": config["label"],
-        "samples": samples,
-        "sampleFields": ["time", "x", "y", "width", "height", "area", "blink"],
         "session": config["session"],
         "sourceLinks": [
             {"label": "DANDI", "url": config["dandi_url"]},
@@ -373,12 +408,13 @@ def main() -> None:
         "durationSeconds": EXCERPT_DURATION_SECONDS,
         "retrievedDate": "2026-08-05",
         "sessions": [extract_session(config) for config in STANDARD_SESSIONS],
-        "version": 1,
+        "version": 2,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(payload, indent=2, ensure_ascii=True, sort_keys=True) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     print(f"Wrote {args.output}")
 

@@ -3,12 +3,15 @@
 
   const protocol = JSON.parse(document.getElementById("eye-tracking-data").textContent);
   const elements = {
+    areaLabel: document.getElementById("area-label"),
     areaValue: document.getElementById("area-value"),
     contextLabel: document.getElementById("context-label"),
     ellipseValue: document.getElementById("ellipse-value"),
     eventLabel: document.getElementById("event-label"),
     field: document.getElementById("pupil-field"),
     fieldBounds: document.getElementById("field-bounds"),
+    fieldHeading: document.getElementById("field-heading"),
+    fitSelector: document.getElementById("fit-selector"),
     interactiveView: document.getElementById("interactive-view"),
     modalitySelector: document.getElementById("modality-selector"),
     orientationValue: document.getElementById("orientation-value"),
@@ -25,6 +28,7 @@
     temporalFrequency: document.getElementById("temporal-frequency"),
     timeline: document.getElementById("timeline"),
     trace: document.getElementById("pupil-trace"),
+    traceHeading: document.getElementById("trace-heading"),
     traceValue: document.getElementById("trace-value"),
     trackingStatus: document.getElementById("tracking-status"),
     trialNumber: document.getElementById("trial-number"),
@@ -37,11 +41,23 @@
     xValue: document.getElementById("x-value"),
     yValue: document.getElementById("y-value"),
   };
-  const state = { localTime: 0, playing: false, sessionIndex: 0, videoToken: 0, view: "interactive" };
+  const state = {
+    fitId: "pupil",
+    localTime: 0,
+    playing: false,
+    sessionIndex: 0,
+    videoToken: 0,
+    view: "interactive",
+  };
+  const fitOrder = ["pupil", "corneal_reflection", "ellipse"];
   const contextColors = { "Standard oddball": "#22bcad" };
 
   function currentSession() {
     return protocol.sessions[state.sessionIndex];
+  }
+
+  function currentFit() {
+    return currentSession().fits[state.fitId];
   }
 
   function selectView(view) {
@@ -98,7 +114,7 @@
   }
 
   function sampleAt(time) {
-    const samples = currentSession().samples;
+    const samples = currentFit().samples;
     let low = 0;
     let high = samples.length - 1;
     while (low + 1 < high) {
@@ -121,6 +137,50 @@
       button.addEventListener("click", () => selectSession(index));
       elements.modalitySelector.append(button);
     });
+  }
+
+  function buildFitTabs() {
+    fitOrder.forEach((fitId) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "fit-tab";
+      button.dataset.fitId = fitId;
+      button.textContent = currentSession().fits[fitId].label;
+      button.addEventListener("click", () => selectFit(fitId));
+      elements.fitSelector.append(button);
+    });
+  }
+
+  function configureFit() {
+    const fit = currentFit();
+    const reference = fit.fieldReference;
+    elements.fitSelector.querySelectorAll("button").forEach((button) => {
+      const active = button.dataset.fitId === state.fitId;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    elements.fieldHeading.textContent = `${fit.label} center field`;
+    elements.areaLabel.textContent = `${fit.label} area`;
+    elements.traceHeading.textContent = `${fit.label} area`;
+    elements.field.setAttribute(
+      "aria-label",
+      `${fit.label} center and area at the current recording time`,
+    );
+    elements.trace.setAttribute(
+      "aria-label",
+      `${fit.label} area trace with blink intervals and synchronized playback cursor`,
+    );
+    elements.field.width = reference.frameWidth;
+    elements.field.height = reference.frameHeight;
+    elements.field.style.aspectRatio = `${reference.frameWidth} / ${reference.frameHeight}`;
+    elements.videoStage.style.aspectRatio = `${reference.frameWidth} / ${reference.frameHeight}`;
+    elements.fieldBounds.textContent = `${reference.frameWidth} × ${reference.frameHeight} px frame`;
+  }
+
+  function selectFit(fitId) {
+    state.fitId = fitId;
+    configureFit();
+    render();
   }
 
   function renderSourceLinks() {
@@ -152,12 +212,7 @@
     elements.contextLabel.textContent = session.context;
     elements.sessionTitle.textContent = `Mouse ${session.subject} · ${session.session}`;
     elements.eventLabel.textContent = `${session.event.label} · ${formatTime(session.event.time)}`;
-    const reference = session.fieldReference;
-    elements.field.width = reference.frameWidth;
-    elements.field.height = reference.frameHeight;
-    elements.field.style.aspectRatio = `${reference.frameWidth} / ${reference.frameHeight}`;
-    elements.videoStage.style.aspectRatio = `${reference.frameWidth} / ${reference.frameHeight}`;
-    elements.fieldBounds.textContent = `${reference.frameWidth} × ${reference.frameHeight} px frame`;
+    configureFit();
     renderSourceLinks();
     loadVideo();
     render();
@@ -288,7 +343,7 @@
 
   function drawField(sample) {
     const [, xValue, yValue, width, height, area, blink] = sample;
-    const reference = currentSession().fieldReference;
+    const reference = currentFit().fieldReference;
     const canvas = elements.field;
     const context = canvas.getContext("2d");
     const inFrame = xValue >= 0
@@ -375,13 +430,14 @@
 
   function drawTrace(sample) {
     const session = currentSession();
-    const samples = session.samples;
+    const fit = currentFit();
+    const samples = fit.samples;
     const canvas = elements.trace;
     const context = canvas.getContext("2d");
     const margins = { bottom: 25, left: 64, right: 18, top: 14 };
     const width = canvas.width - margins.left - margins.right;
     const height = canvas.height - margins.top - margins.bottom;
-    const reference = session.fieldReference;
+    const reference = fit.fieldReference;
     const minimum = reference.areaLow * 0.9;
     const maximum = reference.areaHigh * 1.1;
     const x = (time) => margins.left + time / protocol.durationSeconds * width;
@@ -465,5 +521,6 @@
   });
   elements.timeline.max = protocol.durationSeconds;
   buildModalityTabs();
+  buildFitTabs();
   selectSession(0);
 })();

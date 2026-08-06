@@ -1480,7 +1480,7 @@ def load_behavior_excerpts(path: Path = BEHAVIOR_EXCERPTS_PATH) -> dict:
 
 def load_eye_tracking_excerpts(path: Path = EYE_TRACKING_EXCERPTS_PATH) -> dict:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if payload.get("version") != 1 or payload.get("durationSeconds") != 16.0:
+    if payload.get("version") != 2 or payload.get("durationSeconds") != 16.0:
         raise RuntimeError("Eye-tracking excerpt schema or duration is not supported.")
     sessions = payload.get("sessions", [])
     if [session.get("id") for session in sessions] != [
@@ -1490,29 +1490,40 @@ def load_eye_tracking_excerpts(path: Path = EYE_TRACKING_EXCERPTS_PATH) -> dict:
     ]:
         raise RuntimeError("Eye-tracking excerpts must contain the supported modalities in order.")
     expected_fields = ["time", "x", "y", "width", "height", "area", "blink"]
+    expected_fits = {"pupil", "corneal_reflection", "ellipse"}
     for session in sessions:
-        samples = session.get("samples", [])
+        fits = session.get("fits", {})
         mapping = session.get("camera", {}).get("timeMap", [])
-        reference = session.get("fieldReference", {})
-        if session.get("sampleFields") != expected_fields:
-            raise RuntimeError(f"Eye-tracking sample fields are invalid: {session['id']}")
-        if (
-            not samples
-            or samples[0][0] > 0.04
-            or samples[-1][0] < 15.95
-            or not any(sample[-1] for sample in samples)
-            or any(len(sample) != len(expected_fields) for sample in samples)
-        ):
-            raise RuntimeError(f"Eye-tracking samples are incomplete: {session['id']}")
-        if (
-            reference.get("frameWidth", 0) <= 0
-            or reference.get("frameHeight", 0) <= 0
-            or not 0 <= reference.get("medianX", -1) < reference["frameWidth"]
-            or not 0 <= reference.get("medianY", -1) < reference["frameHeight"]
-            or reference.get("areaLow", 0) >= reference.get("areaHigh", 0)
-            or reference.get("validNonblinkSamples", 0) < 100
-        ):
-            raise RuntimeError(f"Eye-tracking field reference is invalid: {session['id']}")
+        if set(fits) != expected_fits:
+            raise RuntimeError(f"Eye-tracking fit sources are invalid: {session['id']}")
+        for fit_id, fit in fits.items():
+            samples = fit.get("samples", [])
+            reference = fit.get("fieldReference", {})
+            if fit.get("sampleFields") != expected_fields:
+                raise RuntimeError(
+                    f"Eye-tracking sample fields are invalid: {session['id']}/{fit_id}"
+                )
+            if (
+                not samples
+                or samples[0][0] > 0.04
+                or samples[-1][0] < 15.95
+                or not any(sample[-1] for sample in samples)
+                or any(len(sample) != len(expected_fields) for sample in samples)
+            ):
+                raise RuntimeError(
+                    f"Eye-tracking samples are incomplete: {session['id']}/{fit_id}"
+                )
+            if (
+                reference.get("frameWidth", 0) <= 0
+                or reference.get("frameHeight", 0) <= 0
+                or not 0 <= reference.get("medianX", -1) < reference["frameWidth"]
+                or not 0 <= reference.get("medianY", -1) < reference["frameHeight"]
+                or reference.get("areaLow", 0) >= reference.get("areaHigh", 0)
+                or reference.get("validNonblinkSamples", 0) < 100
+            ):
+                raise RuntimeError(
+                    f"Eye-tracking field reference is invalid: {session['id']}/{fit_id}"
+                )
         if (
             len(mapping) < 2
             or mapping[0][0] > 0
@@ -1618,7 +1629,7 @@ def write_eye_tracking_static_svg(
     for row_index, (session, row_top) in enumerate(
         zip(payload["sessions"], row_tops, strict=True)
     ):
-        samples = session["samples"]
+        samples = session["fits"]["pupil"]["samples"]
         modality = session["id"]
         accent = accents[modality]
         event_row = next(

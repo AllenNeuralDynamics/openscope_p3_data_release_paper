@@ -1155,6 +1155,7 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
 def test_eye_tracking_snapshot_is_source_backed() -> None:
     payload = load_eye_tracking_excerpts()
 
+    assert payload["version"] == 2
     assert payload["durationSeconds"] == 16.0
     assert [session["id"] for session in payload["sessions"]] == [
         "neuropixels",
@@ -1168,23 +1169,30 @@ def test_eye_tracking_snapshot_is_source_backed() -> None:
     ]
     assert payload["sessions"][2]["subject"] == "829704"
     for session in payload["sessions"]:
-        assert len(session["samples"]) >= 450
-        assert session["samples"][0][0] <= 0.04
-        assert session["samples"][-1][0] >= 15.95
-        assert any(sample[-1] for sample in session["samples"])
+        assert set(session["fits"]) == {"pupil", "corneal_reflection", "ellipse"}
+        assert [session["fits"][fit_id]["label"] for fit_id in (
+            "pupil",
+            "corneal_reflection",
+            "ellipse",
+        )] == ["Pupil", "Corneal reflection", "Eye ellipse"]
+        for fit in session["fits"].values():
+            assert len(fit["samples"]) >= 450
+            assert fit["samples"][0][0] <= 0.04
+            assert fit["samples"][-1][0] >= 15.95
+            assert any(sample[-1] for sample in fit["samples"])
+            reference = fit["fieldReference"]
+            assert 0 <= reference["medianX"] < reference["frameWidth"]
+            assert 0 <= reference["medianY"] < reference["frameHeight"]
+            assert reference["areaLow"] < reference["areaHigh"]
+            assert reference["validNonblinkSamples"] > 100_000
         assert session["camera"]["id"] == "eye"
         assert session["camera"]["timeMap"][0][0] <= 0
         assert session["camera"]["timeMap"][-1][0] >= payload["durationSeconds"]
-        reference = session["fieldReference"]
-        assert 0 <= reference["medianX"] < reference["frameWidth"]
-        assert 0 <= reference["medianY"] < reference["frameHeight"]
-        assert reference["areaLow"] < reference["areaHigh"]
-        assert reference["validNonblinkSamples"] > 100_000
         assert all(
             source.get("sha256") or source.get("etag") or source.get("asset_id")
             for source in session["sources"]
         )
-    assert EYE_TRACKING_EXCERPTS_PATH.stat().st_size < 1_500_000
+    assert EYE_TRACKING_EXCERPTS_PATH.stat().st_size < 4_000_000
 
 
 def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
@@ -1200,13 +1208,18 @@ def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
     assert 'id="stimulus-canvas"' in html
     assert 'id="pupil-field"' in html
     assert 'id="pupil-trace"' in html
+    assert 'id="fit-selector"' in html
     assert "SLAP2" in html
+    assert "Corneal reflection" in html
+    assert "Eye ellipse" in html
     assert "Full-session median" in html
     assert "fieldReference" in html
     assert "sampleBounds" not in html
     assert "Pupil area trace with blink intervals" in html
     assert "Likely blink" in html
     assert "drawField" in html
+    assert "currentFit" in html
+    assert "selectFit" in html
     assert "blinkIntervals" in html
     assert 'data-view="static"' in html
     assert 'id="static-view"' in html
