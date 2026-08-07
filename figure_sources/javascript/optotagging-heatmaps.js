@@ -177,43 +177,14 @@
     return scalars;
   }
 
-  function loadLocalAtlas(session) {
-    const existing = globalThis.OPTOTAGGING_ATLASES?.[session.session_id];
-    if (existing) return Promise.resolve(existing);
-    return new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = `media/optotagging/${session.atlas_file.replace(/\.json$/, ".js")}`;
-      script.onload = () => {
-        const atlas = globalThis.OPTOTAGGING_ATLASES?.[session.session_id];
-        if (atlas) resolve(atlas);
-        else reject(new Error("Local atlas script did not define the selected session."));
-      };
-      script.onerror = () => reject(new Error("Could not load the local atlas script."));
-      document.head.append(script);
-    });
-  }
-
   async function loadNumericAtlas(session, generation) {
-    let embedded = globalThis.OPTOTAGGING_ATLASES?.[session.session_id];
-    if (!embedded && window.location.protocol === "file:") {
-      embedded = await loadLocalAtlas(session);
+    const embedded = globalThis.OPTOTAGGING_ATLASES?.[session.session_id];
+    if (!embedded) {
+      throw new Error("Embedded atlas not found for the selected session.");
     }
-    let metadata;
-    let imageSource;
-    if (embedded) {
-      metadata = embedded.metadata;
-      imageSource = embedded.image;
-    } else {
-      const base = "media/optotagging/";
-      const response = await fetch(`${base}${session.atlas_file}`);
-      if (!response.ok) {
-        throw new Error(`Could not load atlas metadata (${response.status}).`);
-      }
-      metadata = await response.json();
-      imageSource = `${base}${metadata.numeric_png_file}`;
-    }
+    const metadata = embedded.metadata;
     const image = new Image();
-    image.src = imageSource;
+    image.src = embedded.image;
     await image.decode();
     if (generation !== loadGeneration) return;
     loadedAtlas = {metadata, scalars: decodeAtlasImage(image, metadata)};

@@ -649,6 +649,15 @@ def test_optotagging_snapshot_is_source_backed() -> None:
         for session in payload["sessions"]
         if "image_file" in session
     }
+    interactive_html = (
+        REPO_ROOT / "interactive" / "optotagging-heatmaps.html"
+    ).read_text(encoding="utf-8")
+    assert "globalThis.OPTOTAGGING_ATLASES" in interactive_html
+    assert interactive_html.count("data:image/png;base64,") == 3
+    assert {
+        path.name
+        for path in (REPO_ROOT / "interactive" / "media" / "optotagging").iterdir()
+    } == {"optotagging-heatmaps.svg"}
     static_svg = OPTOTAGGING_STATIC_SOURCE.read_text(encoding="utf-8")
     assert "Optotagged-cell yield and example laser-aligned response" in static_svg
     assert "Optotagged cells per session" in static_svg
@@ -747,9 +756,7 @@ def test_optotagging_outputs_are_deterministic_and_accessible(tmp_path: Path) ->
     assert 'id="static-view"' in html
     assert "optotagging.svg" in html
     assert "selectView" in html
-    assert 'window.location.protocol === "file:"' in html
-    assert "loadLocalAtlas" in html
-    assert 'document.createElement("script")' in html
+    assert "globalThis.OPTOTAGGING_ATLASES" in html
     assert "<canvas" not in html  # Panels are created without duplicating markup.
     assert "createElement(\"canvas\")" in html
     assert 'aria-live="polite"' in html

@@ -1606,6 +1606,20 @@ def write_optotagging_heatmap_html(
     javascript = (JAVASCRIPT_DIR / "optotagging-heatmaps.js").read_text(
         encoding="utf-8"
     )
+    embedded_atlases = {}
+    if payload["version"] == 2:
+        for session in payload["sessions"]:
+            atlas = json.loads(
+                (media_dir / session["atlas_file"]).read_text(encoding="utf-8")
+            )
+            numeric_png = (media_dir / session["numeric_png_file"]).read_bytes()
+            embedded_atlases[session["session_id"]] = {
+                "metadata": atlas,
+                "image": (
+                    "data:image/png;base64,"
+                    + base64.b64encode(numeric_png).decode("ascii")
+                ),
+            }
     html = (
         template.replace("__OPTOTAGGING_CSS__", stylesheet)
         .replace(
@@ -1616,6 +1630,15 @@ def write_optotagging_heatmap_html(
             "__OPTOTAGGING_DATA__",
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
         )
+        .replace(
+            "__OPTOTAGGING_ATLASES__",
+            json.dumps(
+                embedded_atlases,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+            ),
+        )
         .replace("__OPTOTAGGING_JS__", javascript)
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
@@ -1625,42 +1648,11 @@ def write_optotagging_heatmap_html(
     if media_output.exists():
         shutil.rmtree(media_output)
     media_output.mkdir(parents=True)
-    for session in payload["sessions"]:
-        filenames = (
-            [session["image_file"]]
-            if payload["version"] == 1
-            else [session["atlas_file"], session["numeric_png_file"]]
-        )
-        for filename in filenames:
-            shutil.copy2(media_dir / filename, media_output / filename)
-        if payload["version"] == 2:
-            atlas = json.loads(
-                (media_dir / session["atlas_file"]).read_text(encoding="utf-8")
-            )
-            numeric_png = (media_dir / session["numeric_png_file"]).read_bytes()
-            embedded_atlas = {
-                "metadata": atlas,
-                "image": (
-                    "data:image/png;base64,"
-                    + base64.b64encode(numeric_png).decode("ascii")
-                ),
-            }
-            atlas_script = (
-                "globalThis.OPTOTAGGING_ATLASES??={};"
-                f"globalThis.OPTOTAGGING_ATLASES[{json.dumps(session['session_id'])}]="
-                + json.dumps(
-                    embedded_atlas,
-                    ensure_ascii=True,
-                    separators=(",", ":"),
-                    sort_keys=True,
-                )
-                + ";\n"
-            )
-            atlas_script_name = Path(session["atlas_file"]).with_suffix(".js").name
-            (media_output / atlas_script_name).write_text(
-                atlas_script,
-                encoding="utf-8",
-                newline="\n",
+    if payload["version"] == 1:
+        for session in payload["sessions"]:
+            shutil.copy2(
+                media_dir / session["image_file"],
+                media_output / session["image_file"],
             )
     shutil.copy2(static_output, media_output / static_output.name)
     return output
