@@ -12,11 +12,11 @@ __SIMULATOR_CSS__
 <body>
   <main class="viewer" id="stimulus-viewer">
     <div class="view-switch" role="group" aria-label="Interactive or static view">
-      <button type="button" class="view-button" data-view="playback" aria-pressed="false">Interactive</button>
-      <button type="button" class="view-button active" data-view="static" aria-pressed="true">Static</button>
+      <button type="button" class="view-button active" data-view="playback" aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
     </div>
 
-    <div id="playback-view" hidden>
+    <div id="playback-view">
       <section class="playback-bar" aria-label="Shared session architecture">
         <div class="context-selector" id="context-selector">
           <span class="context-selector-label">Select context block</span>
@@ -45,7 +45,7 @@ __SIMULATOR_CSS__
       </section>
     </div>
 
-    <section class="static-panel" id="static-panel" aria-label="Static experimental-design summary">
+    <section class="static-panel" id="static-panel" aria-label="Static experimental-design summary" hidden>
       <img src="__PANEL_D_IMAGE__" alt="Two panels showing the shared session timeline and detailed context, control, receptive-field, and zebra-movie blocks.">
     </section>
   </main>

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unit extraction across recording modalities</title>
+  <style>__SEGMENTATION_CSS__</style>
+</head>
+<body>
+  <main class="viewer" id="segmentation-viewer" data-modality="neuropixels">
+    <div class="view-switch" role="group" aria-label="Interactive or static view">
+      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
+    </div>
+
+    <div id="interactive-view">
+      <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality" role="tablist"></nav>
+      <header class="figure-header">
+        <h1 id="viewer-title"></h1>
+      </header>
+
+      <section class="toolbar" aria-label="Viewer controls">
+      <label class="select-control source-control" for="source-select">
+        <span id="source-label">Source</span>
+        <select id="source-select"></select>
+      </label>
+      <label class="select-control" for="filter-select">
+        <span>Selected filter</span>
+        <select id="filter-select"></select>
+      </label>
+      <label class="range-control" for="background-intensity">
+        <span id="background-label">Background intensity</span>
+        <input id="background-intensity" type="range" min="20" max="200" value="100">
+      </label>
+      <label class="toggle-control" id="common-mode-control" for="common-mode-toggle" hidden>
+        <input id="common-mode-toggle" type="checkbox" checked>
+        <span>Common-mode correction</span>
+      </label>
+      </section>
+
+      <section class="workspace">
+      <div class="visual-panel">
+        <div class="canvas-shell">
+          <canvas
+            id="source-canvas"
+            width="900"
+            height="720"
+            tabindex="0"
+            aria-label="Unit-extraction filter map"
+          ></canvas>
+          <div class="canvas-tooltip" id="canvas-tooltip" hidden></div>
+          <div class="loading-status" id="loading-status">Loading source image</div>
+        </div>
+      </div>
+
+      <aside class="inspector" aria-live="polite">
+        <header class="selection-header">
+          <span class="selection-swatch" id="selection-swatch"></span>
+          <div>
+            <p class="selection-kicker">Selected filter</p>
+            <h2 id="selection-title"></h2>
+          </div>
+          <div class="selection-nav">
+            <button id="previous-filter" type="button" title="Previous filter" aria-label="Previous filter">←</button>
+            <button id="next-filter" type="button" title="Next filter" aria-label="Next filter">→</button>
+          </div>
+        </header>
+        <dl class="filter-metadata" id="filter-metadata"></dl>
+
+        <section class="chart-section">
+          <div class="chart-heading">
+            <h3 id="trace-title"></h3>
+          </div>
+          <svg id="activity-chart" viewBox="0 0 640 230" role="img"></svg>
+        </section>
+
+        <section class="chart-section" id="waveform-section" hidden>
+          <div class="chart-heading">
+            <h3>Mean template waveform</h3>
+          </div>
+          <svg id="waveform-chart" viewBox="0 0 640 190" role="img"></svg>
+        </section>
+
+        <a class="source-link" id="source-link" href="#" target="_blank" rel="noreferrer">
+          Open source NWB on DANDI ↗
+        </a>
+      </aside>
+      </section>
+    </div>
+
+    <section class="static-view" id="static-view" aria-label="Static unit-extraction overview" hidden>
+      <img src="__SEGMENTATION_STATIC_IMAGE__" alt="Neuropixels, mesoscope, and SLAP2 unit-extraction filters with twenty vertically stacked activity traces per modality.">
+    </section>
+  </main>
+  <script id="segmentation-data" type="application/json">__SEGMENTATION_DATA__</script>
+  <script>__SEGMENTATION_JS__</script>
+  <script>__EMBED_AUTO_HEIGHT_JS__</script>
+</body>
+</html>

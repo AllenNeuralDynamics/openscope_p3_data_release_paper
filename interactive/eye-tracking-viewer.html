@@ -6,6 +6,32 @@
   <meta name="color-scheme" content="light">
   <title>Synchronized eye tracking across recording modalities</title>
   <style>
+:root {
+  --figure-font-sans: "Myriad Pro", Arial, sans-serif;
+  --figure-font-mono: "IBM Plex Mono", monospace;
+  --figure-type-panel-title: 1.25rem;
+  --figure-type-section-title: 1rem;
+  --figure-type-body: 0.875rem;
+  --figure-type-control: 0.8125rem;
+  --figure-type-metadata: 0.75rem;
+  --figure-type-axis: 0.75rem;
+  --figure-line-body: 1.45;
+  --figure-line-compact: 1.3;
+}
+
+body {
+  font-family: var(--figure-font-sans);
+  font-size: var(--figure-type-body);
+  line-height: var(--figure-line-body);
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+  font-size: var(--figure-type-control);
+}
+
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap");
 
 :root {
@@ -149,7 +175,7 @@ html.is-embedded .viewer { min-height: 0; }
   background: #fff;
   color: var(--muted);
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: var(--figure-type-control);
   font-weight: 650;
 }
 
@@ -158,7 +184,7 @@ html.is-embedded .viewer { min-height: 0; }
 .fit-tab.active { background: #30383c; color: #fff; }
 
 .session-header {
-  min-height: 76px;
+  min-height: 64px;
   padding: 12px 16px;
   display: flex;
   align-items: center;
@@ -166,16 +192,35 @@ html.is-embedded .viewer { min-height: 0; }
   gap: 18px;
 }
 
+.session-metadata {
+  border-top: 1px solid var(--line);
+  background: var(--wash);
+}
+
+.session-metadata > summary {
+  min-height: 42px;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: var(--figure-type-control);
+  font-weight: 650;
+}
+
+.session-metadata > summary:hover { background: #edf0ef; }
+.session-metadata[open] > summary { border-bottom: 1px solid var(--line); }
+
 .context-label {
   margin: 0 0 2px;
   color: var(--accent);
-  font-size: 0.75rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 700;
 }
 
 .session-header h1 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--figure-type-section-title);
   font-weight: 650;
   letter-spacing: 0;
   line-height: 1.25;
@@ -198,7 +243,7 @@ html.is-embedded .viewer { min-height: 0; }
   background: var(--wash);
   color: #496375;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.66rem;
+  font-size: var(--figure-type-metadata);
   text-decoration: none;
 }
 
@@ -229,7 +274,7 @@ html.is-embedded .viewer { min-height: 0; }
 
 .panel-heading h2 {
   margin: 0;
-  font-size: 0.83rem;
+  font-size: var(--figure-type-section-title);
   font-weight: 700;
   letter-spacing: 0;
 }
@@ -238,7 +283,7 @@ html.is-embedded .viewer { min-height: 0; }
 #trial-type,
 #tracking-status {
   color: var(--muted);
-  font-size: 0.66rem;
+  font-size: var(--figure-type-metadata);
 }
 
 .video-panel .panel-heading span { color: #cbd0ce; }
@@ -275,7 +320,7 @@ html.is-embedded .viewer { min-height: 0; }
   justify-content: space-between;
   gap: 8px;
   color: var(--muted);
-  font-size: 0.61rem;
+  font-size: var(--figure-type-metadata);
 }
 
 .field-key span { display: inline-flex; align-items: center; gap: 5px; }
@@ -309,7 +354,7 @@ html.is-embedded .viewer { min-height: 0; }
 }
 
 .video-unavailable[hidden] { display: none; }
-.video-unavailable span { color: #bfc5c2; font-size: 0.72rem; }
+.video-unavailable span { color: #bfc5c2; font-size: var(--figure-type-metadata); }
 
 .blink-badge {
   position: absolute;
@@ -321,30 +366,10 @@ html.is-embedded .viewer { min-height: 0; }
   border-radius: 3px;
   background: rgba(17, 24, 23, 0.88);
   color: #fff;
-  font-size: 0.68rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 700;
   text-transform: uppercase;
 }
-
-.stage-play {
-  position: absolute;
-  z-index: 4;
-  top: 50%;
-  left: 50%;
-  width: 50px;
-  height: 50px;
-  display: grid;
-  place-items: center;
-  transform: translate(-50%, -50%);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 50%;
-  background: rgba(23, 26, 25, 0.72);
-  color: #fff;
-  cursor: pointer;
-  font-size: 1.05rem;
-}
-
-.stage-play[hidden] { display: none; }
 
 .detail-grid {
   margin: 8px 0 0;
@@ -354,13 +379,13 @@ html.is-embedded .viewer { min-height: 0; }
 }
 
 .detail-grid div { min-width: 0; }
-.detail-grid dt { color: var(--muted); font-size: 0.61rem; }
+.detail-grid dt { color: var(--muted); font-size: var(--figure-type-metadata); }
 .detail-grid dd {
   margin: 1px 0 0;
   overflow: hidden;
   color: inherit;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.66rem;
+  font-size: var(--figure-type-metadata);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -395,7 +420,7 @@ html.is-embedded .viewer { min-height: 0; }
   min-width: 112px;
   color: var(--muted);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.68rem;
+  font-size: var(--figure-type-metadata);
   text-align: right;
 }
 
@@ -406,7 +431,7 @@ html.is-embedded .viewer { min-height: 0; }
 #trace-value {
   color: var(--accent);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.72rem;
+  font-size: var(--figure-type-metadata);
 }
 
 #pupil-trace {
@@ -423,7 +448,7 @@ html.is-embedded .viewer { min-height: 0; }
   justify-content: center;
   gap: 16px;
   color: var(--muted);
-  font-size: 0.66rem;
+  font-size: var(--figure-type-metadata);
 }
 
 .trace-key > span { display: inline-flex; align-items: center; gap: 6px; }
@@ -443,9 +468,9 @@ html.is-embedded .viewer { min-height: 0; }
 
 @media (max-width: 460px) {
   .modality-tabs { padding: 0 6px; }
-  .modality-tab { min-width: 0; flex: 1; padding: 0 5px; font-size: 0.76rem; }
+  .modality-tab { min-width: 0; flex: 1; padding: 0 5px; font-size: var(--figure-type-control); }
   .fit-tabs { padding: 5px 6px; }
-  .fit-tab { min-width: 0; flex: 1; padding: 5px 4px; font-size: 0.68rem; }
+  .fit-tab { min-width: 0; flex: 1; padding: 5px 4px; font-size: var(--figure-type-metadata); }
   .session-header { padding: 10px; }
   .transport { grid-template-columns: 34px minmax(0, 1fr); }
   #playback-time { grid-column: 1 / -1; min-width: 0; text-align: center; }
@@ -464,14 +489,6 @@ html.is-embedded .viewer { min-height: 0; }
       <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
       <nav class="fit-tabs" id="fit-selector" aria-label="Eye-tracking fit source"></nav>
 
-    <header class="session-header">
-      <div>
-        <p class="context-label" id="context-label"></p>
-        <h1 id="session-title"></h1>
-      </div>
-      <div class="source-links" id="source-links" aria-label="Data sources"></div>
-    </header>
-
     <section class="stream-grid" aria-label="Synchronized eye-tracking streams">
       <article class="stream-panel video-panel" aria-labelledby="video-heading">
         <div class="panel-heading">
@@ -485,9 +502,6 @@ html.is-embedded .viewer { min-height: 0; }
             <span>Stimulus and processed eye tracking remain active.</span>
           </div>
           <span class="blink-badge" id="video-blink-badge" hidden>Blink</span>
-          <button class="stage-play" id="stage-play" type="button" aria-label="Play synchronized excerpt" title="Play">
-            <span aria-hidden="true">&#9654;</span>
-          </button>
         </div>
       </article>
 
@@ -547,6 +561,17 @@ html.is-embedded .viewer { min-height: 0; }
         <span><i class="key-line cursor-key" aria-hidden="true"></i>Playback</span>
       </div>
     </section>
+
+    <details class="session-metadata">
+      <summary>Session and sources</summary>
+      <div class="session-header">
+        <div>
+          <p class="context-label" id="context-label"></p>
+          <h1 id="session-title"></h1>
+        </div>
+        <div class="source-links" id="source-links" aria-label="Data sources"></div>
+      </div>
+    </details>
     </div>
 
     <section class="static-view" id="static-view" aria-label="Static synchronized eye-tracking overview" hidden>
@@ -581,7 +606,6 @@ html.is-embedded .viewer { min-height: 0; }
     sessionTitle: document.getElementById("session-title"),
     sourceLinks: document.getElementById("source-links"),
     spatialFrequency: document.getElementById("spatial-frequency"),
-    stagePlay: document.getElementById("stage-play"),
     staticView: document.getElementById("static-view"),
     stimulusCanvas: document.getElementById("stimulus-canvas"),
     streamStatus: document.getElementById("stream-status"),
@@ -837,7 +861,6 @@ html.is-embedded .viewer { min-height: 0; }
     const label = state.playing ? "Pause synchronized excerpt" : "Play synchronized excerpt";
     elements.playToggle.setAttribute("aria-label", label);
     elements.playToggle.title = state.playing ? "Pause" : "Play";
-    elements.stagePlay.hidden = state.playing;
   }
 
   function tick() {
@@ -1071,7 +1094,6 @@ html.is-embedded .viewer { min-height: 0; }
   elements.video.addEventListener("error", videoFailed);
   elements.video.addEventListener("ended", pause);
   elements.playToggle.addEventListener("click", togglePlay);
-  elements.stagePlay.addEventListener("click", togglePlay);
   elements.timeline.addEventListener("input", (event) => seek(Number(event.target.value)));
   elements.timeline.addEventListener("change", () => {
     if (state.playing) play();

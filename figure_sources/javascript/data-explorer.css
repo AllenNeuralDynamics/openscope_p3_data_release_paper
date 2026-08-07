@@ -133,7 +133,7 @@ html.is-embedded .explorer { min-height: 0; }
   margin-left: 0.3rem;
   color: #87948e;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.72rem;
+  font-size: var(--figure-type-metadata);
 }
 
 .dataset-tab:focus-visible {
@@ -271,7 +271,7 @@ tbody td:first-child {
 .internal-asset {
   color: #6e7472;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.72rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 650;
   letter-spacing: 0.03em;
 }
@@ -307,7 +307,7 @@ tr.modality-slap2 td:first-child {
   border-left: 3px solid #b5bab8;
   background: #f7f8f8;
   color: #4d5351;
-  font-size: 0.72rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 400;
   line-height: 1.5;
   overflow-wrap: anywhere;
@@ -316,7 +316,7 @@ tr.modality-slap2 td:first-child {
 .metadata-list dt {
   margin-top: 0.38rem;
   color: #707674;
-  font-size: 0.64rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 650;
   letter-spacing: 0.03em;
   text-transform: uppercase;

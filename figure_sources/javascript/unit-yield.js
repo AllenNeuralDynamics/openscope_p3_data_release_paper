@@ -3,12 +3,8 @@
 
   const data = JSON.parse(document.getElementById("unit-yield-data").textContent);
   const SVG_NS = "http://www.w3.org/2000/svg";
-  const colors = [
-    "#087F8C", "#C65D13", "#3157B7", "#8A4F9E",
-    "#4E7B32", "#A47C00", "#B33C2E", "#377D6A",
-    "#6D5D9B", "#A24B72", "#53758C", "#7A6A2F",
-    "#3E6F41", "#985B35", "#4F65A8", "#7F556D",
-  ];
+  const mouseNeutral = "#9AA29F";
+  const selectedMouse = "#087F8C";
   const elements = {
     chart: document.getElementById("unit-yield-chart"),
     download: document.getElementById("download-csv"),
@@ -20,9 +16,6 @@
   };
   const state = { metric: "percent", mouse: "all" };
   const mouseIds = [...new Set(data.records.map((record) => record.mouse_id))].sort();
-  const colorByMouse = Object.fromEntries(
-    mouseIds.map((mouseId, index) => [mouseId, colors[index % colors.length]]),
-  );
 
   function svgElement(tag, attributes = {}, text = "") {
     const element = document.createElementNS(SVG_NS, tag);
@@ -103,9 +96,7 @@
       ...summary.map((row) => row[meanKey]),
     ];
     const rawMaximum = Math.max(...allValues);
-    const yMax = state.metric === "percent"
-      ? Math.max(120, niceMaximum(rawMaximum * 1.05))
-      : niceMaximum(rawMaximum * 1.08);
+    const yMax = state.metric === "percent" ? 140 : niceMaximum(rawMaximum * 1.08);
     const x = (day) => margin.left
       + (maxDay === minDay ? plotWidth / 2 : (day - minDay) / (maxDay - minDay) * plotWidth);
     const y = (value) => margin.top + plotHeight - value / yMax * plotHeight;
@@ -126,8 +117,8 @@
       const tickY = y(value);
       elements.chart.append(
         svgElement("line", {
-          x1: margin.left, y1: tickY, x2: width - margin.right, y2: tickY,
-          stroke: "#E2E5E4", "stroke-width": 1,
+          x1: margin.left - 6, y1: tickY, x2: margin.left, y2: tickY,
+          stroke: "#69716F", "stroke-width": 1.5,
         }),
         svgElement("text", {
           x: margin.left - 12, y: tickY + 4, "text-anchor": "end",
@@ -151,14 +142,16 @@
     byMouse.forEach((mouseRecords, mouseId) => {
       mouseRecords.sort((first, second) => first.day - second.day);
       const points = mouseRecords.map((record) => `${x(record.day)},${y(record[valueKey])}`).join(" ");
+      const color = state.mouse === "all" ? mouseNeutral : selectedMouse;
       elements.chart.append(svgElement("polyline", {
-        points, fill: "none", stroke: colorByMouse[mouseId], "stroke-width": 2,
-        "stroke-opacity": state.mouse === "all" ? 0.55 : 0.9,
+        points, fill: "none", stroke: color,
+        "stroke-width": state.mouse === "all" ? 1.5 : 2.5,
+        "stroke-opacity": state.mouse === "all" ? 0.62 : 1,
       }));
       mouseRecords.forEach((record) => {
         const point = svgElement("circle", {
           cx: x(record.day), cy: y(record[valueKey]), r: state.mouse === "all" ? 4.5 : 6,
-          fill: colorByMouse[mouseId], "fill-opacity": 0.82, tabindex: 0,
+          fill: color, "fill-opacity": state.mouse === "all" ? 0.72 : 1, tabindex: 0,
           role: "img",
           "aria-label": `Mouse ${mouseId}, day ${record.day}, ${formatValue(record[valueKey])}`,
         });
@@ -219,8 +212,8 @@
       svgElement("text", {
         x: 765, y: 21, fill: "#303536", "font-family": "Myriad Pro, Arial, sans-serif", "font-size": 13,
       }, "Daily mean"),
-      svgElement("line", { x1: 854, y1: 16, x2: 888, y2: 16, stroke: "#53758C", "stroke-width": 2 }),
-      svgElement("circle", { cx: 871, cy: 16, r: 4, fill: "#53758C" }),
+      svgElement("line", { x1: 854, y1: 16, x2: 888, y2: 16, stroke: mouseNeutral, "stroke-width": 1.5 }),
+      svgElement("circle", { cx: 871, cy: 16, r: 4, fill: mouseNeutral }),
       svgElement("text", {
         x: 897, y: 21, fill: "#303536", "font-family": "Myriad Pro, Arial, sans-serif", "font-size": 13,
       }, "Mouse"),

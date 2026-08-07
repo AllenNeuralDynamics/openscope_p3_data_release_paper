@@ -20,14 +20,6 @@ __EYE_TRACKING_CSS__
       <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
       <nav class="fit-tabs" id="fit-selector" aria-label="Eye-tracking fit source"></nav>
 
-    <header class="session-header">
-      <div>
-        <p class="context-label" id="context-label"></p>
-        <h1 id="session-title"></h1>
-      </div>
-      <div class="source-links" id="source-links" aria-label="Data sources"></div>
-    </header>
-
     <section class="stream-grid" aria-label="Synchronized eye-tracking streams">
       <article class="stream-panel video-panel" aria-labelledby="video-heading">
         <div class="panel-heading">
@@ -41,9 +33,6 @@ __EYE_TRACKING_CSS__
             <span>Stimulus and processed eye tracking remain active.</span>
           </div>
           <span class="blink-badge" id="video-blink-badge" hidden>Blink</span>
-          <button class="stage-play" id="stage-play" type="button" aria-label="Play synchronized excerpt" title="Play">
-            <span aria-hidden="true">&#9654;</span>
-          </button>
         </div>
       </article>
 
@@ -103,6 +92,17 @@ __EYE_TRACKING_CSS__
         <span><i class="key-line cursor-key" aria-hidden="true"></i>Playback</span>
       </div>
     </section>
+
+    <details class="session-metadata">
+      <summary>Session and sources</summary>
+      <div class="session-header">
+        <div>
+          <p class="context-label" id="context-label"></p>
+          <h1 id="session-title"></h1>
+        </div>
+        <div class="source-links" id="source-links" aria-label="Data sources"></div>
+      </div>
+    </details>
     </div>
 
     <section class="static-view" id="static-view" aria-label="Static synchronized eye-tracking overview" hidden>
