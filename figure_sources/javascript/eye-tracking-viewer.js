@@ -21,7 +21,6 @@
     sessionTitle: document.getElementById("session-title"),
     sourceLinks: document.getElementById("source-links"),
     spatialFrequency: document.getElementById("spatial-frequency"),
-    stagePlay: document.getElementById("stage-play"),
     staticView: document.getElementById("static-view"),
     stimulusCanvas: document.getElementById("stimulus-canvas"),
     streamStatus: document.getElementById("stream-status"),
@@ -277,7 +276,6 @@
     const label = state.playing ? "Pause synchronized excerpt" : "Play synchronized excerpt";
     elements.playToggle.setAttribute("aria-label", label);
     elements.playToggle.title = state.playing ? "Pause" : "Play";
-    elements.stagePlay.hidden = state.playing;
   }
 
   function tick() {
@@ -511,7 +509,6 @@
   elements.video.addEventListener("error", videoFailed);
   elements.video.addEventListener("ended", pause);
   elements.playToggle.addEventListener("click", togglePlay);
-  elements.stagePlay.addEventListener("click", togglePlay);
   elements.timeline.addEventListener("input", (event) => seek(Number(event.target.value)));
   elements.timeline.addEventListener("change", () => {
     if (state.playing) play();

@@ -176,7 +176,7 @@
       drawText(formatNumber(depth, 0), layout.anatomyLeft - 10, y + (index === 0 ? 8 : index === 2 ? -2 : 4), {
         align: "right",
         color: "#59615f",
-        size: 11,
+        size: 12,
       });
     });
     context.save();
@@ -198,15 +198,15 @@
     context.fillRect(colorbarX, layout.plotTop, 12, layout.plotBottom - layout.plotTop);
     drawText(`+${formatNumber(option.valueLimit, 0)}`, colorbarX + 18, layout.plotTop + 8, {
       color: "#59615f",
-      size: 10,
+      size: 12,
     });
     drawText("0", colorbarX + 18, (layout.plotTop + layout.plotBottom) / 2 + 4, {
       color: "#59615f",
-      size: 10,
+      size: 12,
     });
     drawText(`-${formatNumber(option.valueLimit, 0)} µV`, colorbarX + 18, layout.plotBottom, {
       color: "#59615f",
-      size: 10,
+      size: 12,
     });
 
     const axisY = layout.plotBottom + 7;
@@ -224,14 +224,14 @@
       drawText(`${Math.round(milliseconds)}`, x, axisY + 14, {
         align: "center",
         color: "#59615f",
-        size: 10,
+        size: 12,
         weight: 500,
       });
     }
     drawText("Excerpt time (ms)", (layout.plotLeft + layout.plotRight) / 2, 510, {
       align: "center",
       color: "#4d5553",
-      size: 11,
+      size: 12,
     });
   }
 
@@ -240,7 +240,7 @@
     drawText("CCF", layout.anatomyLeft + width / 2, layout.plotTop - 13, {
       align: "center",
       color: "#4d5553",
-      size: 11,
+      size: 12,
       weight: 700,
     });
     option.anatomySegments.forEach((segment, index) => {
@@ -251,12 +251,12 @@
         ? "#f5f6f6"
         : index % 2 === 0 ? "#e2e7e5" : "#eef1f0";
       context.fillRect(layout.anatomyLeft, top, width, height);
-      if (height >= 11) {
+      if (height >= 15) {
         drawText(segment.label, layout.anatomyLeft + width / 2, top + height / 2, {
           align: "center",
           baseline: "middle",
           color: "#3f4745",
-          size: 9,
+          size: 12,
           weight: 600,
         });
       }

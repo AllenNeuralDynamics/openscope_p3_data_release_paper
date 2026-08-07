@@ -155,6 +155,46 @@ def test_experimental_design_data() -> None:
     }
 
 
+def test_interactive_figures_share_readable_typography() -> None:
+    source_dir = REPO_ROOT / "figure_sources" / "javascript"
+    typography = (source_dir / "figure-typography.css").read_text(encoding="utf-8")
+    assert "--figure-type-panel-title: 1.25rem" in typography
+    assert "--figure-type-section-title: 1rem" in typography
+    assert "--figure-type-body: 0.875rem" in typography
+    assert "--figure-type-control: 0.8125rem" in typography
+    assert "--figure-type-metadata: 0.75rem" in typography
+    assert "--figure-type-axis: 0.75rem" in typography
+
+    stylesheets = sorted(source_dir.glob("*.css"))
+    panel_stylesheets = [
+        path for path in stylesheets if path.name != "figure-typography.css"
+    ]
+    for path in panel_stylesheets:
+        content = path.read_text(encoding="utf-8")
+        for value, unit in re.findall(r"font-size:\s*([0-9.]+)(px|rem)", content):
+            pixels = float(value) * (16 if unit == "rem" else 1)
+            assert pixels >= 12, (path.name, pixels)
+
+    for name in ("neural-viewer.js", "segmentation-viewer.js"):
+        javascript = (source_dir / name).read_text(encoding="utf-8")
+        assert all(int(size) >= 12 for size in re.findall(r"\bsize:\s*(\d+)", javascript))
+
+    for path in sorted((REPO_ROOT / "interactive").glob("*.html")):
+        assert "--figure-type-metadata: 0.75rem" in path.read_text(encoding="utf-8")
+
+    for path in sorted((REPO_ROOT / "images" / "figures" / "generated").glob("*.svg")):
+        svg = path.read_text(encoding="utf-8")
+        width_match = re.search(r'<svg[^>]+width="([0-9.]+)"', svg)
+        sizes = [float(size) for size in re.findall(r'font-size="([0-9.]+)"', svg)]
+        if width_match is None or not sizes:
+            continue
+        reference_minimum = min(sizes) * FIGURE_REFERENCE_WIDTH / float(width_match.group(1))
+        assert reference_minimum >= FIGURE_TYPE_SCALE["small"], (
+            path.name,
+            reference_minimum,
+        )
+
+
 def test_session_type_colors_are_consistent_across_figure_surfaces() -> None:
     context_surfaces = (
         REPO_ROOT / "figure_sources/data/experimental-design-sessions.csv",
@@ -244,6 +284,9 @@ def test_unit_yield_outputs_are_deterministic_and_inspectable(tmp_path: Path) ->
     svg = svg_path.read_text(encoding="utf-8")
 
     assert 'id="unit-yield-chart" viewBox="0 0 960 410"' in html
+    assert "const mouseNeutral = \"#9AA29F\"" in html
+    assert "const selectedMouse = \"#087F8C\"" in html
+    assert 'state.metric === "percent" ? 140' in html
     assert "min-width: 620px;" in html
     assert "@media (max-width: 560px)" in html
     assert 'id="mouse-select"' in html
@@ -262,6 +305,9 @@ def test_unit_yield_outputs_are_deterministic_and_inspectable(tmp_path: Path) ->
     assert 'role="img"' in svg
     assert "QC-passing Neuropixels unit yield" in svg
     assert "Day 4" in svg
+    assert ">140</text>" in svg
+    assert 'stroke="#9AA29F"' in svg
+    assert 'stroke="#E2E5E4"' not in svg
 
     write_unit_yield_html(html_path)
     write_unit_yield_svg(svg_path)
@@ -511,6 +557,15 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert 'id="background-intensity"' in html
     assert 'id="common-mode-toggle"' in html
     assert 'id="common-mode-control"' in html
+    assert 'class="view-button active" data-view="interactive"' in html
+    assert 'data-view="static"' in html
+    assert 'id="interactive-view"' in html
+    assert 'id="static-view"' in html
+    assert 'id="panel-label"' not in html
+    assert 'id="session-line"' not in html
+    assert 'id="viewer-title"' in html
+    assert "const unselectedColor = \"#aebbb8\"" in html
+    assert 'context.filter = "grayscale(1)"' in html
     assert 'id="overlay-opacity"' not in html
     for source_id in (
         "probe-a", "probe-b", "probe-c", "probe-d", "probe-e", "probe-f",
@@ -569,6 +624,8 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
         svg = svg_path.read_text(encoding="utf-8")
         first_static_renders[modality] = svg
         assert 'role="img"' in svg
+        assert 'filter id="neutral-overlay"' in svg
+        assert "Mouse " not in svg
         assert ">A</text>" in svg and ">B</text>" in svg
         assert "Selected filter" in svg
         assert f"{filter_count} filters" in svg
@@ -577,9 +634,11 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
             assert "310 detected spikes" in svg
             assert "common-mode-corrected AP voltage" in svg
             assert "Sequence omission" not in svg
+            assert 'fill="#AEBBB8"' in svg
         else:
             assert svg.count("data:image/png;base64,") >= 2
             assert "Fast scan" in svg
+            assert 'filter="url(#neutral-overlay)" opacity="0.58"' in svg
 
     combined_path = write_segmentation_viewer_static_svg(
         tmp_path / "figure-06-segmentation-viewers.svg",
@@ -595,6 +654,9 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
         json.loads(
             SEGMENTATION_VIEWER_PROVENANCE_PATH.read_text(encoding="utf-8")
         )["vendored_media_sha256"]
+    )
+    assert (copied_media / SEGMENTATION_VIEWER_STATIC_OUTPUT.name).read_bytes() == (
+        SEGMENTATION_VIEWER_STATIC_OUTPUT.read_bytes()
     )
     assert write_segmentation_viewer_html(html_path).read_text(encoding="utf-8") == html
     assert write_segmentation_viewer_static_svg(
@@ -694,9 +756,9 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert 'data-view="static"' in html
     assert ">Interactive</button>" in html
     assert ">Static</button>" in html
-    assert 'class="view-button active" data-view="static" aria-pressed="true"' in html
-    assert '<div id="playback-view" hidden>' in html
-    assert 'selectView("static")' in html
+    assert 'class="view-button active" data-view="playback" aria-pressed="true"' in html
+    assert '<div id="playback-view">' in html
+    assert 'selectView("playback")' in html
     assert 'id="static-panel"' in html
     assert "data:image/svg+xml;base64," in html
     assert "detailed context, control, receptive-field, and zebra-movie blocks" in html
@@ -709,7 +771,9 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert html.index('id="block-track"') < html.index('id="stimulus-canvas"')
     assert 'id="context-selector"' in html
     assert "--context-start" in html
-    assert "contextButton.textContent = sessionLabels[index]" in html
+    assert 'contextButton.textContent = "Context"' in html
+    assert 'elements.sessionTitle.textContent = "Context block"' in html
+    assert "contextButton.textContent = sessionLabels[index]" not in html
     assert "grid-template-columns: minmax(0, 1fr);" in html
     assert 'id="stimulus-video"' in html
     assert 'class="source-links"' not in html
@@ -792,14 +856,17 @@ def test_opening_figures_are_source_backed(tmp_path: Path) -> None:
     figure_1 = write_merged_figure_1_svg(tmp_path / "figure-01-overview.svg").read_text(
         encoding="utf-8"
     )
-    assert 'width="2000" height="1620"' in figure_1
+    assert 'width="2000" height="3920"' in figure_1
     assert figure_1.count("data:image/png;base64,") == 2
     assert figure_1.count("data:image/svg+xml;base64,") == 1
     assert 'viewBox="0 60 580 460"' in figure_1
     assert figure_1.count('class="panel-label"') == 3
     assert figure_1.count('class="workflow-label-mask"') == 1
     assert figure_1.count('class="workflow-modality-label"') == 1
-    assert 'class="workflow-modality-label" x="526" y="203"' in figure_1
+    assert 'class="workflow-modality-label" x="1781" y="2023"' in figure_1
+    assert 'x="40" y="70" width="1920" height="1440"' in figure_1
+    assert 'x="40" y="1550" width="1920" height="1520"' in figure_1
+    assert 'x="40" y="3120" width="1920" height="768"' in figure_1
     assert '>Mesoscope</text>' in figure_1
     assert "Predictive-processing framework and experimental workflow" in figure_1
 
@@ -870,14 +937,11 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert "Rig geometry" in svg
     assert "Mouse platform" in svg
     assert "Brain targeting" in svg
-    assert '<text class="hardware-caption" x="1510" y="88"' in svg
-    assert '<text class="hardware-caption" x="1510" y="490"' in svg
-    assert re.search(
-        r'<text class="hardware-caption" x="1510" y="490"[^>]+font-size="18"',
-        svg,
-    )
+    assert 'class="hardware-caption"' not in svg
+    assert "6 probes spanning cortical" not in svg
+    assert "8 imaging planes across" not in svg
+    assert "Dual-plane dendritic imaging" not in svg
     assert "pan-neuronal calcium imaging" not in svg
-    assert '<text class="hardware-caption" x="1510" y="1272"' in svg
     assert "Behavior cohorts" not in svg
     assert "motor cohort" not in svg.lower()
     assert svg.count('class="zoom-focus-box"') == 2
@@ -911,10 +975,10 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert svg.count('data-layer="V"') == 2
     assert svg.count('class="slap2-plane-label"') == 2
     hardware_description_sizes = re.findall(
-        r'class="(?:hardware-caption|slap2-plane-label)"[^>]+font-size="([^"]+)"',
+        r'class="slap2-plane-label"[^>]+font-size="([^"]+)"',
         svg,
     )
-    assert hardware_description_sizes == ["18"] * 5
+    assert hardware_description_sizes == ["18"] * 2
     plane_label_positions = re.findall(
         r'class="slap2-plane-label" x="([^"]+)" y="([^"]+)"', svg
     )
@@ -934,6 +998,8 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
         assert label in svg
     assert '<text x="1318" y="746"' in svg
     assert '<text x="1460" y="716"' in svg
+    assert 'class="mesoscope-target-legend"' in svg
+    assert svg.count('paint-order="stroke"') == 4
     for asset_id in assets:
         assert f'data-asset="{asset_id}"' in svg
 
@@ -988,10 +1054,9 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
     assert 'data-view="interactive"' in html
     assert 'data-view="static"' in html
     assert 'id="static-view"' in html
-    assert 'class="view-button active" data-view="static" aria-pressed="true"' in html
-    assert '<div id="interactive-view" hidden>' in html
-    assert 'selectView("static")' in html
-    assert 'selectView("interactive")' not in html
+    assert 'class="view-button active" data-view="interactive" aria-pressed="true"' in html
+    assert '<div id="interactive-view">' in html
+    assert 'selectView("interactive")' in html
     assert "data:image/svg+xml;base64," in html
     assert "selectView" in html
     assert 'document.querySelector("body > main")' in html
@@ -1373,6 +1438,9 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "Control versus context-block running" not in html
     assert "videoTimeAt" in html
     assert "localTimeAt" in html
+    assert html.count('id="play-toggle"') == 1
+    assert 'id="stage-play"' not in html
+    assert "stagePlay" not in html
     assert 'document.querySelector("body > main")' in html
     assert 'classList.add("is-embedded")' in html
     assert 'document.documentElement.style.overflow = "hidden"' in html
@@ -1472,6 +1540,13 @@ def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "synchronized-eye-tracking.svg" in html
     assert "videoTimeAt" in html
     assert "localTimeAt" in html
+    assert html.count('id="play-toggle"') == 1
+    assert 'id="stage-play"' not in html
+    assert "stagePlay" not in html
+    assert '<details class="session-metadata">' in html
+    assert '<details class="session-metadata" open>' not in html
+    assert html.index('id="pupil-trace"') < html.index('class="session-metadata"')
+    assert html.index('class="session-metadata"') < html.index('id="source-links"')
     assert "aind-open-data.s3.us-west-2.amazonaws.com" in html
     assert 'document.querySelector("body > main")' in html
     assert "@media (max-width: 760px)" in html
@@ -2092,7 +2167,8 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     ) == [("122", "18")] * 3
     assert '<rect x="650.00" y="135.00" width="255"' in svg
     assert '<rect x="1240.00" y="135.00" width="500"' in svg
-    assert '<rect x="1255.00" y="346.00" width="500"' in svg
+    assert '<rect x="1250.00" y="340.00" width="500"' in svg
+    assert "#D9DEDC" not in svg
     assert "scale-card" not in svg
     assert "playback" not in svg.lower()
     assert "event onset" not in svg.lower()

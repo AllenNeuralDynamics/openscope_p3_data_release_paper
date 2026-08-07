@@ -6,6 +6,32 @@
   <meta name="color-scheme" content="light">
   <title>Published oddball paradigms comparison</title>
   <style>
+:root {
+  --figure-font-sans: "Myriad Pro", Arial, sans-serif;
+  --figure-font-mono: "IBM Plex Mono", monospace;
+  --figure-type-panel-title: 1.25rem;
+  --figure-type-section-title: 1rem;
+  --figure-type-body: 0.875rem;
+  --figure-type-control: 0.8125rem;
+  --figure-type-metadata: 0.75rem;
+  --figure-type-axis: 0.75rem;
+  --figure-line-body: 1.45;
+  --figure-line-compact: 1.3;
+}
+
+body {
+  font-family: var(--figure-font-sans);
+  font-size: var(--figure-type-body);
+  line-height: var(--figure-line-body);
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+  font-size: var(--figure-type-control);
+}
+
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap");
 
 :root {
@@ -94,7 +120,7 @@ html.is-embedded .viewer { min-height: 0; }
 
 .select-label {
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: var(--figure-type-control);
   font-weight: 600;
 }
 
@@ -106,7 +132,7 @@ html.is-embedded .viewer { min-height: 0; }
   border-radius: 4px;
   background: #fff;
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: var(--figure-type-control);
 }
 
 .viewer-tools select,
@@ -115,7 +141,7 @@ html.is-embedded .viewer { min-height: 0; }
 .viewer-tools input:focus,
 .viewer-tools a:focus-visible { border-color: var(--accent); outline: 3px solid rgba(73, 99, 117, 0.16); outline-offset: 1px; }
 
-#row-count { min-width: 54px; color: var(--muted); font-size: 0.76rem; text-align: right; white-space: nowrap; }
+#row-count { min-width: 54px; color: var(--muted); font-size: var(--figure-type-metadata); text-align: right; white-space: nowrap; }
 
 #download-csv {
   padding: 5px 9px;
@@ -137,7 +163,7 @@ html.is-embedded .viewer { min-height: 0; }
   background: #fff;
 }
 
-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.84rem; line-height: 1.4; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--figure-type-body); line-height: var(--figure-line-body); }
 th,
 td { padding: 10px 12px; border-right: 1px solid var(--soft-line); border-bottom: 1px solid var(--soft-line); text-align: left; vertical-align: top; }
 th:last-child,
@@ -150,7 +176,7 @@ tbody td:first-child { width: 26%; min-width: 170px; font-weight: 600; }
 
 @media (max-width: 640px) {
   .viewer { padding: 8px; }
-  .mode-tab { padding-right: 9px; padding-left: 9px; font-size: 0.8rem; }
+  .mode-tab { padding-right: 9px; padding-left: 9px; font-size: var(--figure-type-control); }
   .viewer-tools { grid-template-columns: auto 1fr auto; }
   .select-label { grid-column: 1; }
   #dimension-select { grid-column: 2 / -1; }

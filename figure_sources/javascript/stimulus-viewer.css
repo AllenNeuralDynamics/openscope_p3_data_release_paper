@@ -157,7 +157,7 @@ input {
   overflow: hidden;
   color: var(--muted);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
+  font-size: var(--figure-type-metadata);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -201,7 +201,7 @@ input {
   background: rgba(181, 54, 38, 0.92);
   color: #fff;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
+  font-size: var(--figure-type-metadata);
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -289,7 +289,7 @@ input {
   color: #34423c;
   cursor: pointer;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 8px;
+  font-size: var(--figure-type-metadata);
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -347,7 +347,7 @@ input {
   display: block;
   margin-bottom: 4px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--figure-type-metadata);
   font-weight: 700;
   text-align: center;
   text-transform: uppercase;
@@ -364,7 +364,7 @@ input {
 #playback-time {
   color: var(--muted);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
+  font-size: var(--figure-type-metadata);
   white-space: nowrap;
 }
 
@@ -376,7 +376,7 @@ input {
   .session-tab {
     min-height: 27px;
     padding: 2px 4px;
-    font-size: 10px;
+    font-size: var(--figure-type-control);
     line-height: 1.05;
     text-overflow: clip;
     white-space: nowrap;
@@ -420,7 +420,7 @@ input {
   }
 
   .block-tab.active {
-    font-size: 8px;
+    font-size: 0;
   }
 
   .playback-meta {

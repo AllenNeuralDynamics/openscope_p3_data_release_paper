@@ -222,5 +222,5 @@
   });
   buildTabs();
   selectTable("animals");
-  selectView("static");
+  selectView("interactive");
 })();

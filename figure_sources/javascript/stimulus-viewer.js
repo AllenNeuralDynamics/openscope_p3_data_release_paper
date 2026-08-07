@@ -32,7 +32,7 @@
     movieReady: false,
     playing: false,
     sessionIndex: 0,
-    view: "static",
+    view: "playback",
   };
 
   let angularCoordinates;
@@ -123,9 +123,9 @@
     state.elapsed = 0;
     const session = currentSession();
     document.documentElement.style.setProperty("--accent", session.color);
-    elements.sessionTitle.textContent = session.name;
+    elements.sessionTitle.textContent = "Context block";
     const contextButton = elements.blockTrack.querySelectorAll("button")[1];
-    contextButton.textContent = sessionLabels[index];
+    contextButton.textContent = "Context";
     contextButton.title = `${session.name} context: ${currentBlock().duration_minutes.toFixed(1)} min`;
     contextButton.setAttribute("aria-label", contextButton.title);
     elements.sessionSelector.querySelectorAll("button").forEach((button, buttonIndex) => {
@@ -145,7 +145,7 @@
   function updateBlockState() {
     const session = currentSession();
     elements.sessionTitle.textContent = state.blockIndex === 1
-      ? session.name
+      ? "Context block"
       : currentBlock().name;
     elements.blockTrack.querySelectorAll("button").forEach((button, index) => {
       const active = index === state.blockIndex;
@@ -377,7 +377,7 @@
   buildBlockTrack();
   attachInteractions();
   selectSession(0);
-  selectView("static");
+  selectView("playback");
   setPlaying(false);
   window.setInterval(playbackStep, 1000 / 30);
 })();
