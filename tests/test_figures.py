@@ -620,6 +620,7 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert '"traceScale":100' in html
     assert "value * scale" in html
     assert 'options.yUnit === "%"' in html
+    assert "const margin = { left: 96, right: 40" in html
     assert "Source Delta F/F" not in html
     assert 'context.fillStyle = "#ffffff"' in html
     assert "context.filter = \"grayscale(1)\"" not in html
