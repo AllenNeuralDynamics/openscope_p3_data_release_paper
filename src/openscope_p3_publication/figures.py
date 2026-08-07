@@ -2452,7 +2452,7 @@ def load_neural_excerpts(
     payload = json.loads(path.read_text(encoding="utf-8"))
     behavior_checksum = hashlib.sha256(behavior_path.read_bytes()).hexdigest()
     if (
-        payload.get("version") != 7
+        payload.get("version") != 8
         or payload.get("windowStartSeconds") != -1.0
         or payload.get("windowEndSeconds") != 3.0
         or payload.get("behaviorExcerptSha256") != behavior_checksum
@@ -2539,8 +2539,17 @@ def load_neural_excerpts(
                         option.get("compositeAssetPath", "")
                     ).name
                     slap2_asset_valid = (
-                        option.get("frameWidth") == 640
-                        and option.get("frameHeight") == 400
+                        option.get("frameWidth") == 400
+                        and option.get("frameHeight") == 640
+                        and option.get("displayWidth") == 800
+                        and option.get("displayHeight") == 1280
+                        and option.get("nativeWidth") == 1280
+                        and option.get("nativeHeight") == 800
+                        and option.get("storedWidth") == 1280
+                        and option.get("storedHeight") == 800
+                        and option.get("displayTransform")
+                        == "transpose-for-publication"
+                        and option.get("fastScanAxis") == "vertical"
                         and option.get("spatialDownsampleFactor") == 2
                         and option.get("spriteEncoding") == "lossless WebP"
                         and composite_path.is_file()
@@ -2579,7 +2588,7 @@ def load_segmentation_viewers(
     payload = json.loads(source_bytes)
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
     if (
-        payload.get("version") != 3
+        payload.get("version") != 4
         or hashlib.sha256(source_bytes).hexdigest() != provenance.get("vendored_sha256")
         or hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest()
         != provenance.get("source_raw_neural_sha256")
@@ -2660,13 +2669,10 @@ def load_segmentation_viewers(
                 )
 
             if modality_id != "neuropixels" and (
-                source.get("fastScanAxis") != "horizontal"
+                source.get("fastScanAxis")
+                != ("horizontal" if modality_id == "mesoscope" else "vertical")
                 or source.get("displayTransform")
-                != (
-                    "stored-yx"
-                    if modality_id == "mesoscope"
-                    else "stored-xy-transposed-to-yx"
-                )
+                != ("stored-yx" if modality_id == "mesoscope" else "transpose-for-publication")
             ):
                 raise RuntimeError(
                     f"Segmentation scan orientation changed: {modality_id}/{source_id}"
@@ -3118,7 +3124,9 @@ def append_microscopy_raw_card(
     padding = 7
     header_height = 27
     image_width = card_width - 2 * padding
-    image_height = image_width * option["nativeHeight"] / option["nativeWidth"]
+    display_width = option.get("displayWidth", option["nativeWidth"])
+    display_height = option.get("displayHeight", option["nativeHeight"])
+    image_height = image_width * display_height / display_width
     card_height = header_height + image_height + padding
     image_x = x + padding
     image_y = y + header_height
@@ -3145,7 +3153,7 @@ def append_microscopy_raw_card(
             x=image_x + 12,
             y=image_y + image_height - 14,
             display_width=image_width,
-            native_width=option["nativeWidth"],
+            native_width=display_width,
             microns_per_pixel=option["micronsPerPixel"],
             microns=50 if modality == "mesoscope" else 25,
         )
@@ -3264,13 +3272,13 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         depth = option["remoteFocusDepthBelowPiaUm"]
         append_microscopy_raw_card(
             svg,
-            x=1240 + index * 10,
-            y=detail_card_y + index * 205,
-            card_width=500,
+            x=1240 + index * 270,
+            y=detail_card_y,
+            card_width=265,
             option=option,
             path=frame_paths[("slap2", composite_id)],
             modality="slap2",
-            label=f"{dmd} · {depth:g} µm · green + red composite",
+            label=f"{dmd} · {depth:g} µm",
             show_scale=index == len(SLAP2_STATIC_COMPOSITES) - 1,
         )
     svg.append("</svg>")

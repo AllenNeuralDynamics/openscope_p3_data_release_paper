@@ -594,11 +594,14 @@ def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     assert "30 s, approximately 200 Hz ΔF/F (%) trace" in segmentation_text
     assert "waveform-spread band" in segmentation_text
     assert "common-mode correction is enabled by default" in segmentation_text
-    assert "fast-scanning x axis horizontally" in segmentation_text
+    assert (
+        "fast-scanning x axis is horizontal for mesoscope and vertical for SLAP2"
+        in segmentation_text
+    )
     assert "mark its direction" not in segmentation_text
     assert "twenty activity-bearing filters sampled evenly across filter order" in segmentation_text
     assert "grayscale average projection" in segmentation_text
-    assert "stored (x, y) arrays are transposed to display (y, x)" in segmentation_text
+    assert "arrays and masks receive the same publication-level axis transpose" in segmentation_text
     assert "background controls alter only" in segmentation_text
     assert "activity image" not in segmentation_text.lower()
     assert "QC-passing" not in segmentation_text
@@ -681,7 +684,9 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "two merged SLAP2 plane previews" in manuscript
     assert "black-referenced display gain" in manuscript
     assert "1st–99.5th max-channel percentiles" in manuscript
-    assert "640 × 400 lossless WebP frames" in manuscript
+    assert "400 × 640 lossless WebP frames" in manuscript
+    assert "transpose it for\npublication display" in manuscript
+    assert "fast-scanning x axis vertical" in manuscript
     assert "single aligned source frame without temporal averaging" in manuscript
     assert "hue-preserving gamma of 0.55" in manuscript
     assert "shown to introduce the native acquisition formats" in manuscript

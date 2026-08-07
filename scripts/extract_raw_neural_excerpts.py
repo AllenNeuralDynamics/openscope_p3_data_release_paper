@@ -148,7 +148,8 @@ SLAP2_HEADER_FIELDS = (
 SLAP2_MAGIC_NUMBER = 322379495
 SLAP2_MOVIE_FRAMES = 60
 SLAP2_MICRONS_PER_PIXEL = 0.25
-SLAP2_NATIVE_SIZE = (1280, 800)
+SLAP2_NATIVE_SIZE = (1280, 800)  # (width, height)
+SLAP2_DISPLAY_SIZE = tuple(reversed(SLAP2_NATIVE_SIZE))
 SLAP2_DOWNSAMPLE_FACTOR = 2
 
 AP_EXCERPT_SECONDS = 0.1
@@ -724,9 +725,15 @@ def slap2_sparse_frame(
     frame = flat.reshape((native_width, native_height), order="F").T
     frame_width, frame_height = SLAP2_FRAME_SIZE
     factor = SLAP2_DOWNSAMPLE_FACTOR
-    return np.max(
+    downsampled = np.max(
         frame.reshape((frame_height, factor, frame_width, factor)), axis=(1, 3)
     )
+    return slap2_display_frame(downsampled)
+
+
+def slap2_display_frame(frame: np.ndarray) -> np.ndarray:
+    # NumPy arrays are (height, width); this yields a 400 x 640 portrait image.
+    return np.ascontiguousarray(frame.T)
 
 
 def slap2_overlay_images(
@@ -865,9 +872,9 @@ def extract_slap2_plane(plane: str, media_dir: Path) -> tuple[list[dict], list[d
         reference = tifffile.imread(reference_file.name).max(axis=0)
     frame_width, frame_height = SLAP2_FRAME_SIZE
     factor = SLAP2_DOWNSAMPLE_FACTOR
-    background = reference.reshape(
-        frame_height, factor, frame_width, factor
-    ).mean(axis=(1, 3))
+    background = slap2_display_frame(
+        reference.reshape(frame_height, factor, frame_width, factor).mean(axis=(1, 3))
+    )
     cycle_indices = first_cycle + selected.astype(float) + 0.5
     frame_times = cycle_indices * cycle_duration - SLAP2_EVENT_OFFSET_SECONDS
     options = []
@@ -910,6 +917,8 @@ def extract_slap2_plane(plane: str, media_dir: Path) -> tuple[list[dict], list[d
                 "contrastHigh": round(contrast_high, 6),
                 "contrastLow": round(contrast_low, 6),
                 "detectorChannel": channel + 1,
+                "displayTransform": "transpose-for-publication",
+                "fastScanAxis": "vertical",
                 "frameCount": len(images),
                 "frameRateHz": round(len(images) / (WINDOW_END_SECONDS - WINDOW_START_SECONDS), 6),
                 "frameTimes": np.round(frame_times, 6).tolist(),
@@ -921,14 +930,18 @@ def extract_slap2_plane(plane: str, media_dir: Path) -> tuple[list[dict], list[d
                 ),
                 "measurement": measurements[channel],
                 "micronsPerPixel": SLAP2_MICRONS_PER_PIXEL,
-                "nativeHeight": 800,
-                "nativeWidth": 1280,
+                "displayHeight": SLAP2_DISPLAY_SIZE[1],
+                "displayWidth": SLAP2_DISPLAY_SIZE[0],
+                "nativeHeight": SLAP2_NATIVE_SIZE[1],
+                "nativeWidth": SLAP2_NATIVE_SIZE[0],
                 "recordedPixels": int(np.count_nonzero(counts)),
                 "remoteFocusDepthBelowPiaUm": abs(
                     annotation["pia_depth_on_remote_focus_um"]
                 ),
                 "spatialDownsampleFactor": SLAP2_DOWNSAMPLE_FACTOR,
                 "spriteEncoding": "lossless WebP",
+                "storedHeight": SLAP2_NATIVE_SIZE[1],
+                "storedWidth": SLAP2_NATIVE_SIZE[0],
                 "structureType": "dendrite",
                 "targetArea": annotation["targeted_structure"],
                 "targetLayer": "L2/3",
@@ -965,8 +978,9 @@ def extract_slap2(session: dict, media_dir: Path) -> dict:
             "The selected Harp event falls 16.167 s after the start pulse for raw "
             "acquisition trial 26. Each movie frame maps native detector samples onto "
             "the acquisition-plan superpixel IDs; the dim structural reference supplies "
-            "unrecorded spatial context. The acquisition-coordinate transform calibrates "
-            "each native DMD pixel at 0.25 micrometers."
+            "unrecorded spatial context. The reconstructed acquisition raster is "
+            "transposed for publication display, placing the fast-scanning x axis "
+            "vertically; each native DMD pixel spans 0.25 micrometers."
         ),
         "context": session["context"],
         "event": {**session["event"], "time": 0.0},
@@ -1006,7 +1020,7 @@ def main() -> None:
                 extract_mesoscope(sessions["mesoscope"], temporary_media),
                 extract_slap2(sessions["slap2"], temporary_media),
             ],
-            "version": 7,
+            "version": 8,
             "windowEndSeconds": WINDOW_END_SECONDS,
             "windowStartSeconds": WINDOW_START_SECONDS,
         }
