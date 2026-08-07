@@ -204,6 +204,22 @@ NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT = (
 NEUROPIXELS_TRAJECTORY_INTERACTIVE_OUTPUT = (
     REPO_ROOT / "interactive" / "neuropixels-trajectories.html"
 )
+OPTOTAGGING_HEATMAP_DATA_PATH = DATA_DIR / "optotagging-heatmaps.json"
+OPTOTAGGING_HEATMAP_PROVENANCE_PATH = OPTOTAGGING_HEATMAP_DATA_PATH.with_suffix(
+    ".provenance.json"
+)
+OPTOTAGGING_HEATMAP_SOURCE_DIR = (
+    REPO_ROOT / "figure_sources" / "media" / "optotagging"
+)
+OPTOTAGGING_STATIC_SOURCE = (
+    OPTOTAGGING_HEATMAP_SOURCE_DIR / "optotagging-static-composite.svg"
+)
+OPTOTAGGING_HEATMAP_INTERACTIVE_OUTPUT = (
+    REPO_ROOT / "interactive" / "optotagging-heatmaps.html"
+)
+OPTOTAGGING_HEATMAP_STATIC_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "optotagging-heatmaps.svg"
+)
 MEDIA_DIR = REPO_ROOT / "figure_sources" / "media"
 PLATFORM_LOGO_PROVENANCE_PATH = (
     REPO_ROOT / "figure_sources" / "illustrator" / "platform-logos.provenance.json"
@@ -1379,6 +1395,301 @@ def write_unit_yield_html(
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     return output
+
+
+def load_optotagging_heatmap_data(
+    data_path: Path = OPTOTAGGING_HEATMAP_DATA_PATH,
+    provenance_path: Path = OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    media_dir: Path = OPTOTAGGING_HEATMAP_SOURCE_DIR,
+) -> dict:
+    """Load and validate the committed representative optotagging snapshot."""
+
+    payload = json.loads(data_path.read_text(encoding="utf-8"))
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    version = payload.get("version")
+    if version not in {1, 2} or provenance.get("version") != version:
+        raise RuntimeError("Optotagging heatmap snapshot version is not supported.")
+    if not text_sha256_matches(data_path, provenance.get("manifest_sha256", "")):
+        raise RuntimeError("Optotagging heatmap manifest checksum does not match.")
+
+    sessions = payload.get("sessions", [])
+    if (
+        not sessions
+        or payload.get("session_count") != len(sessions)
+        or provenance.get("session_count") != len(sessions)
+        or payload.get("total_unit_count")
+        != sum(session.get("unit_count", 0) for session in sessions)
+        or provenance.get("total_unit_count") != payload.get("total_unit_count")
+    ):
+        raise RuntimeError("Optotagging heatmap coverage metadata is inconsistent.")
+
+    asset_manifest = provenance.get("asset_manifest", [])
+    skipped_assets = provenance.get("skipped_assets", [])
+    failed_assets = provenance.get("failed_assets", [])
+    expected_asset_count = provenance.get(
+        "source_session_count",
+        len(sessions) + len(skipped_assets) + len(failed_assets),
+    )
+    asset_manifest_sha256 = hashlib.sha256(
+        json.dumps(asset_manifest, separators=(",", ":"), sort_keys=True).encode()
+    ).hexdigest()
+    if (
+        expected_asset_count < len(sessions)
+        or len(asset_manifest) != expected_asset_count
+        or asset_manifest_sha256 != provenance.get("asset_manifest_sha256")
+        or any(
+            not asset.get("digest", {}).get("dandi:sha2-256")
+            for asset in asset_manifest
+        )
+    ):
+        raise RuntimeError("Optotagging source asset manifest is invalid.")
+
+    session_ids = [session.get("session_id") for session in sessions]
+    if (
+        session_ids != sorted(session_ids)
+        or len(session_ids) != len(set(session_ids))
+        or payload.get("default_session_id") not in session_ids
+    ):
+        raise RuntimeError("Optotagging heatmap session inventory is invalid.")
+
+    media_manifest = []
+    for session in sessions:
+        if version == 2:
+            atlas_file = session.get("atlas_file", "")
+            numeric_png_file = session.get("numeric_png_file", "")
+            if (
+                Path(atlas_file).name != atlas_file
+                or not atlas_file.endswith(".atlas.json")
+                or Path(numeric_png_file).name != numeric_png_file
+                or not numeric_png_file.endswith(".atlas.png")
+            ):
+                raise RuntimeError("Invalid optotagging numeric atlas path.")
+            atlas_bytes = (media_dir / atlas_file).read_bytes()
+            numeric_png = (media_dir / numeric_png_file).read_bytes()
+            if (
+                hashlib.sha256(atlas_bytes).hexdigest() != session.get("atlas_sha256")
+                or hashlib.sha256(numeric_png).hexdigest()
+                != session.get("numeric_png_sha256")
+                or len(numeric_png) < 24
+                or not numeric_png.startswith(b"\x89PNG\r\n\x1a\n")
+                or numeric_png[24:26] != b"\x08\x00"
+            ):
+                raise RuntimeError(
+                    f"Optotagging numeric atlas is invalid: {atlas_file}"
+                )
+            atlas = json.loads(atlas_bytes)
+            unit_count = session.get("unit_count")
+            parent_areas = atlas.get("parent_areas", [])
+            parent_codes = atlas.get("parent_codes", [])
+            orders = atlas.get("strongest_first_unit_indices", {})
+            condition_names = [
+                condition["table_name"] for condition in payload["conditions"]
+            ]
+            expected_offsets = {
+                condition_name: index * unit_count
+                for index, condition_name in enumerate(condition_names)
+            }
+            quantization = atlas.get("quantization", {})
+            time_seconds = atlas.get("time_seconds", [])
+            expected_units = list(range(unit_count))
+            png_width, png_height = struct.unpack(">II", numeric_png[16:24])
+            if (
+                atlas.get("version") != 2
+                or atlas.get("unit_count") != unit_count
+                or atlas.get("numeric_png_file") != numeric_png_file
+                or parent_areas != sorted(set(parent_areas))
+                or not all(isinstance(area, str) and area for area in parent_areas)
+                or len(parent_codes) != unit_count
+                or any(code < 0 or code >= len(parent_areas) for code in parent_codes)
+                or set(orders) != set(condition_names)
+                or any(sorted(order) != expected_units for order in orders.values())
+                or atlas.get("condition_row_offsets") != expected_offsets
+                or quantization
+                != {
+                    "dtype": "int8",
+                    "scale": 15.875,
+                    "range": [-8.0, 8.0],
+                    "nan_sentinel": -128,
+                    "png_channels": "single-channel uint8 viewed as signed int8",
+                }
+                or len(time_seconds) != 2
+                or not all(isinstance(value, int | float) for value in time_seconds)
+                or not math.isfinite(time_seconds[0])
+                or not math.isfinite(time_seconds[1])
+                or time_seconds[0] >= time_seconds[1]
+                or png_width != atlas.get("time_bin_count")
+                or png_width <= 0
+                or png_height != unit_count * len(condition_names)
+            ):
+                raise RuntimeError(
+                    f"Optotagging numeric atlas metadata is invalid: {atlas_file}"
+                )
+            media_manifest.extend(
+                [
+                    {"file": atlas_file, "sha256": session["atlas_sha256"]},
+                    {
+                        "file": numeric_png_file,
+                        "sha256": session["numeric_png_sha256"],
+                    },
+                ]
+            )
+            if "image_file" not in session:
+                continue
+        image_file = session.get("image_file", "")
+        relative_image = Path(image_file)
+        if (
+            not image_file
+            or relative_image.name != image_file
+            or relative_image.suffix.lower() != ".webp"
+        ):
+            raise RuntimeError(f"Invalid optotagging image path: {image_file}")
+        image_path = media_dir / image_file
+        image = image_path.read_bytes()
+        if (
+            len(image) < 12
+            or not image.startswith(b"RIFF")
+            or image[8:12] != b"WEBP"
+            or hashlib.sha256(image).hexdigest() != session.get("image_sha256")
+            or not isinstance(session.get("image_width"), int)
+            or not isinstance(session.get("image_height"), int)
+            or session["image_width"] <= 0
+            or session["image_height"] <= 0
+        ):
+            raise RuntimeError(f"Optotagging heatmap image is invalid: {image_file}")
+        if version == 1:
+            media_manifest.append(
+                {
+                    "image_file": image_file,
+                    "image_sha256": session["image_sha256"],
+                }
+            )
+        else:
+            media_manifest.append(
+                {"file": image_file, "sha256": session["image_sha256"]}
+            )
+
+    media_manifest_sha256 = hashlib.sha256(
+        json.dumps(media_manifest, separators=(",", ":"), sort_keys=True).encode()
+    ).hexdigest()
+    if media_manifest_sha256 != provenance.get("media_manifest_sha256"):
+        raise RuntimeError("Optotagging heatmap media manifest checksum does not match.")
+    return payload
+
+
+def write_optotagging_heatmap_html(
+    output: Path = OPTOTAGGING_HEATMAP_INTERACTIVE_OUTPUT,
+    data_path: Path = OPTOTAGGING_HEATMAP_DATA_PATH,
+    provenance_path: Path = OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    media_dir: Path = OPTOTAGGING_HEATMAP_SOURCE_DIR,
+    static_output: Path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT,
+    static_source: Path | None = None,
+) -> Path:
+    """Build the standalone representative-session optotagging heatmap explorer."""
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    payload = load_optotagging_heatmap_data(data_path, provenance_path, media_dir)
+    if static_source is None:
+        static_source = media_dir / OPTOTAGGING_STATIC_SOURCE.name
+    write_optotagging_heatmap_svg(
+        static_output,
+        data_path,
+        provenance_path,
+        media_dir,
+        static_source=static_source,
+    )
+    template = (JAVASCRIPT_DIR / "optotagging-heatmaps.html").read_text(
+        encoding="utf-8"
+    )
+    stylesheet = (JAVASCRIPT_DIR / "optotagging-heatmaps.css").read_text(
+        encoding="utf-8"
+    )
+    javascript = (JAVASCRIPT_DIR / "optotagging-heatmaps.js").read_text(
+        encoding="utf-8"
+    )
+    html = (
+        template.replace("__OPTOTAGGING_CSS__", stylesheet)
+        .replace(
+            "__OPTOTAGGING_STATIC_IMAGE__",
+            f"media/optotagging/{static_output.name}",
+        )
+        .replace(
+            "__OPTOTAGGING_DATA__",
+            json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
+        )
+        .replace("__OPTOTAGGING_JS__", javascript)
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+    )
+    output.write_text(html, encoding="utf-8", newline="\n")
+
+    media_output = output.parent / "media" / "optotagging"
+    if media_output.exists():
+        shutil.rmtree(media_output)
+    media_output.mkdir(parents=True)
+    for session in payload["sessions"]:
+        filenames = (
+            [session["image_file"]]
+            if payload["version"] == 1
+            else [session["atlas_file"], session["numeric_png_file"]]
+        )
+        for filename in filenames:
+            shutil.copy2(media_dir / filename, media_output / filename)
+        if payload["version"] == 2:
+            atlas = json.loads(
+                (media_dir / session["atlas_file"]).read_text(encoding="utf-8")
+            )
+            numeric_png = (media_dir / session["numeric_png_file"]).read_bytes()
+            embedded_atlas = {
+                "metadata": atlas,
+                "image": (
+                    "data:image/png;base64,"
+                    + base64.b64encode(numeric_png).decode("ascii")
+                ),
+            }
+            atlas_script = (
+                "globalThis.OPTOTAGGING_ATLASES??={};"
+                f"globalThis.OPTOTAGGING_ATLASES[{json.dumps(session['session_id'])}]="
+                + json.dumps(
+                    embedded_atlas,
+                    ensure_ascii=True,
+                    separators=(",", ":"),
+                    sort_keys=True,
+                )
+                + ";\n"
+            )
+            atlas_script_name = Path(session["atlas_file"]).with_suffix(".js").name
+            (media_output / atlas_script_name).write_text(
+                atlas_script,
+                encoding="utf-8",
+                newline="\n",
+            )
+    shutil.copy2(static_output, media_output / static_output.name)
+    return output
+
+
+def write_optotagging_heatmap_svg(
+    output: Path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT,
+    data_path: Path = OPTOTAGGING_HEATMAP_DATA_PATH,
+    provenance_path: Path = OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    media_dir: Path = OPTOTAGGING_HEATMAP_SOURCE_DIR,
+    static_source: Path | None = None,
+) -> Path:
+    """Copy the source static composite into the publication outputs."""
+
+    payload = load_optotagging_heatmap_data(data_path, provenance_path, media_dir)
+    if static_source is None:
+        static_source = media_dir / OPTOTAGGING_STATIC_SOURCE.name
+    svg = static_source.read_text(encoding="utf-8")
+    required_text = (
+        "Optotagged-cell yield and example laser-aligned response",
+        "5 Hz laser stimulation: five 10 ms pulses",
+        payload.get("static_example_session_id", payload["default_session_id"]),
+    )
+    if "<svg" not in svg or any(text not in svg for text in required_text):
+        raise RuntimeError("Optotagging static composite does not match its source figure.")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(svg, encoding="utf-8", newline="\n")
+    return output
+
 
 def write_neuropixels_trajectory_html(
     output: Path = NEUROPIXELS_TRAJECTORY_INTERACTIVE_OUTPUT,
@@ -4587,6 +4898,8 @@ def main() -> None:
     neural_viewer_path = write_neural_viewer_html()
     unit_yield_html_path = write_unit_yield_html()
     trajectory_html_path = write_neuropixels_trajectory_html()
+    optotagging_html_path = write_optotagging_heatmap_html()
+    optotagging_svg_path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT
     svg_path = write_static_svg()
     unit_yield_svg_path = write_unit_yield_svg()
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
@@ -4608,6 +4921,8 @@ def main() -> None:
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {trajectory_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
+    print(f"Wrote {optotagging_html_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {optotagging_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")
 

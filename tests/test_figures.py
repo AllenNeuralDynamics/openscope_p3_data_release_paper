@@ -4,9 +4,14 @@ import hashlib
 import json
 import math
 import re
+import struct
+from io import BytesIO
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 import pytest
+from PIL import Image
 
 from openscope_p3_publication.figures import (
     ANIMAL_RECORDS_PATH,
@@ -30,6 +35,10 @@ from openscope_p3_publication.figures import (
     NEURAL_STATIC_FRAME_PROVENANCE_PATH,
     NEUROPIXELS_TRAJECTORY_DATA_PATH,
     NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH,
+    OPTOTAGGING_HEATMAP_DATA_PATH,
+    OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    OPTOTAGGING_HEATMAP_SOURCE_DIR,
+    OPTOTAGGING_STATIC_SOURCE,
     REPO_ROOT,
     RUNNING_STATISTICS_PATH,
     SESSION_RECORDS_PATH,
@@ -50,6 +59,7 @@ from openscope_p3_publication.figures import (
     load_hardware_sources,
     load_neural_excerpts,
     load_neuropixels_trajectory_data,
+    load_optotagging_heatmap_data,
     load_publication_table_data,
     load_running_statistics,
     load_shared_stimulus_table_excerpts,
@@ -57,6 +67,7 @@ from openscope_p3_publication.figures import (
     load_unit_yield_data,
     modality_session_records,
     session_panel_rows,
+    text_sha256_matches,
     total_duration_minutes,
     write_basic_stimuli_plan_svg,
     write_behavior_static_svg,
@@ -74,6 +85,8 @@ from openscope_p3_publication.figures import (
     write_neural_viewer_html,
     write_neuropixels_trajectory_html,
     write_neuropixels_trajectory_svg,
+    write_optotagging_heatmap_html,
+    write_optotagging_heatmap_svg,
     write_session_inventory_svg,
     write_standard_oddball_plan_svg,
     write_static_svg,
@@ -81,6 +94,25 @@ from openscope_p3_publication.figures import (
     write_unit_extraction_plan_svg,
     write_unit_yield_html,
     write_unit_yield_svg,
+)
+from openscope_p3_publication.optotagging import (
+    CONDITIONS,
+    SessionAnalysis,
+    SessionSkipped,
+    _unit_anatomy_acronyms,
+    allen_major_parent_acronyms,
+    baseline_zscore,
+    build_session_numeric_atlas,
+    compute_psth,
+    compute_response_metrics,
+    expand_pulse_times,
+    heatmap_response_scores,
+    mean_firing_rate_during_pulses,
+    order_heatmap_rows,
+    quantize_zscores,
+    strongest_first_indices,
+    validate_nwb,
+    write_results,
 )
 
 
@@ -256,6 +288,576 @@ def test_unit_yield_outputs_are_deterministic_and_inspectable(tmp_path: Path) ->
     write_unit_yield_svg(svg_path)
     assert html_path.read_text(encoding="utf-8") == html
     assert svg_path.read_text(encoding="utf-8") == svg
+
+
+def test_expand_optotagging_pulse_times_uses_duration_and_frequency() -> None:
+    pulses = expand_pulse_times(
+        np.array([1.0, 3.0]),
+        np.array([1.0, 0.5]),
+        frequency_hz=5.0,
+    )
+
+    assert pulses == pytest.approx([1.0, 1.2, 1.4, 1.6, 1.8, 3.0, 3.2])
+
+
+def test_optotagging_psth_returns_event_averaged_rate() -> None:
+    centers, rates = compute_psth(
+        np.array([0.001, 1.001]),
+        np.array([0.0, 1.0]),
+        window=(0.0, 0.004),
+        bin_seconds=0.001,
+    )
+
+    assert centers == pytest.approx([0.0005, 0.0015, 0.0025, 0.0035])
+    assert rates == pytest.approx([0.0, 1000.0, 0.0, 0.0])
+
+
+def test_optotagging_response_metrics_match_paired_pre_post_counts() -> None:
+    condition = CONDITIONS[1]
+    metrics = compute_response_metrics(
+        np.array([-0.005, 0.004, 0.006, 0.995, 1.004, 1.006]),
+        np.array([0.0, 1.0]),
+        condition,
+    )
+
+    assert metrics["pre_mean"] == pytest.approx(100.0)
+    assert metrics["post_mean"] == pytest.approx(200.0)
+    assert metrics["modulation_index"] == pytest.approx(1 / 3)
+    assert 0.0 <= metrics["p_value"] <= 1.0
+
+
+def test_optotagging_response_metrics_can_skip_unused_wilcoxon() -> None:
+    metrics = compute_response_metrics(
+        np.array([-0.005, 0.004, 0.006]),
+        np.array([0.0]),
+        CONDITIONS[1],
+        compute_p_value=False,
+    )
+
+    assert metrics["pre_mean"] == pytest.approx(100.0)
+    assert metrics["post_mean"] == pytest.approx(200.0)
+    assert metrics["modulation_index"] == pytest.approx(1 / 3)
+    assert np.isnan(metrics["p_value"])
+
+
+def test_optotagging_heatmap_normalization_and_modulation_ordering() -> None:
+    time_seconds = np.array([-0.002, -0.001, 0.001, 0.002])
+    psths = np.array(
+        [
+            [0.0, 2.0, 5.0, 5.0],
+            [0.0, 2.0, 2.0, 2.0],
+        ]
+    )
+
+    zscored = baseline_zscore(psths, time_seconds)
+    order = order_heatmap_rows(np.array([0.8, -0.2, np.nan, 0.8]))
+
+    assert zscored[0] == pytest.approx([-1.0, 1.0, 4.0, 4.0])
+    assert order.tolist() == [2, 1, 0, 3]
+
+
+def test_optotagging_mean_firing_rate_during_exact_laser_pulses() -> None:
+    rate = mean_firing_rate_during_pulses(
+        spike_times=np.array(
+            [
+                0.001,
+                0.009,
+                0.015,
+                0.201,
+                0.209,
+                0.215,
+                0.401,
+                0.409,
+                0.415,
+            ]
+        ),
+        pulse_times=np.array([0.0, 0.2, 0.4]),
+        pulse_width_seconds=0.010,
+    )
+
+    assert rate == pytest.approx(200.0)
+
+
+def test_optotagging_heatmap_ordering_uses_exact_laser_rate() -> None:
+    analysis = type(
+        "Analysis",
+        (),
+        {
+            "metrics": pd.DataFrame(
+                {"raised_cosine_presentations__modulation_index": [0.2, 0.8]}
+            ),
+            "pulse_firing_rates": {
+                "raised_cosine_presentations": np.array([7.0, 3.0]),
+                "5 hz pulse train_presentations": np.array([40.0, 10.0]),
+                "40 hz pulse train_presentations": np.array([5.0, 25.0]),
+            },
+        },
+    )()
+
+    raised_scores, raised_label = heatmap_response_scores(analysis, CONDITIONS[0])
+    five_hz_scores, five_hz_label = heatmap_response_scores(analysis, CONDITIONS[1])
+    forty_hz_scores, forty_hz_label = heatmap_response_scores(analysis, CONDITIONS[2])
+
+    assert raised_scores.tolist() == [7.0, 3.0]
+    assert raised_label == "mean firing during 1000 ms pulses"
+    assert five_hz_scores.tolist() == [40.0, 10.0]
+    assert five_hz_label == "mean firing during 10 ms pulses"
+    assert forty_hz_scores.tolist() == [5.0, 25.0]
+    assert forty_hz_label == "mean firing during 6 ms pulses"
+
+
+def test_optotagging_strongest_first_order_is_stable_and_puts_nan_last() -> None:
+    order = strongest_first_indices(np.array([2.0, np.nan, 4.0, 4.0, -1.0]))
+
+    assert order.tolist() == [2, 3, 0, 4, 1]
+
+
+def test_optotagging_allen_major_parent_mapping_uses_hierarchy() -> None:
+    class Regions:
+        def acronym2id(self, acronym):
+            return {"VISp": np.array([1]), "CP": np.array([2]), "unknown": np.array([])}[
+                acronym
+            ]
+
+        def ancestors(self, region_id):
+            values = {
+                1: np.array(["root", "CH", "CTX", "Isocortex", "VISp"]),
+                2: np.array(["root", "CH", "CNU", "STR", "STRd", "CP"]),
+            }
+            return type("Ancestors", (), {"acronym": values[region_id]})()
+
+    parents = allen_major_parent_acronyms(
+        ["VISp", "CP", "unknown"],
+        brain_regions=Regions(),
+    )
+
+    assert parents.tolist() == ["Isocortex", "STR", "Other"]
+
+
+def test_optotagging_unit_anatomy_uses_ragged_electrode_references() -> None:
+    nwb = {
+        "units": {
+            "id": np.array([1, 2]),
+            "electrodes": np.array([4, 2, 3]),
+            "electrodes_index": np.array([2, 3]),
+            "extremum_channel_index": np.array([1, 0]),
+        },
+        "general/extracellular_ephys/electrodes": {
+            "location": np.array(["A", "B", "VISp", "CP", "TH"]),
+        },
+    }
+
+    assert _unit_anatomy_acronyms(nwb).tolist() == ["VISp", "CP"]
+
+
+def test_optotagging_unit_anatomy_uses_probe_local_extremum_indices() -> None:
+    nwb = {
+        "units": {
+            "id": np.array([1, 2]),
+            "device_name": np.array(["ProbeA", "ProbeB"]),
+            "extremum_channel_index": np.array([1, 0]),
+        },
+        "general/extracellular_ephys/electrodes": {
+            "group_name": np.array(["ProbeA", "ProbeB", "ProbeA"]),
+            "location": np.array(["VISp", "TH", "CP"]),
+        },
+    }
+
+    assert _unit_anatomy_acronyms(nwb).tolist() == ["CP", "TH"]
+
+
+def test_optotagging_unit_anatomy_is_optional_for_legacy_nwbs() -> None:
+    nwb = {"units": {"id": np.array([1, 2])}}
+
+    assert _unit_anatomy_acronyms(nwb).tolist() == ["Other", "Other"]
+
+
+def test_optotagging_numeric_atlas_retains_rows_and_laser_orders() -> None:
+    time_seconds = np.linspace(-0.5, 1.2, 10, endpoint=False)
+    psths = np.array(
+        [
+            np.linspace(0, 9, 10),
+            np.linspace(9, 0, 10),
+            np.ones(10),
+        ]
+    )
+    analysis = SessionAnalysis(
+        session_id="ecephys_test",
+        asset_id="asset",
+        asset_path="session.nwb",
+        metrics=pd.DataFrame({"unit_id": ["a", "b", "c"]}),
+        psths={condition.table_name: psths for condition in CONDITIONS},
+        pulse_firing_rates={
+            condition.table_name: np.array([2.0, 5.0, np.nan])
+            for condition in CONDITIONS
+        },
+        time_seconds=time_seconds,
+        trial_counts={condition.table_name: 1 for condition in CONDITIONS},
+        pulse_counts={condition.table_name: 1 for condition in CONDITIONS},
+        unit_count=3,
+        major_parent_acronyms=np.array(["TH", "Isocortex", "TH"]),
+    )
+
+    metadata, image = build_session_numeric_atlas(analysis)
+
+    assert image.startswith(b"\x89PNG\r\n\x1a\n")
+    with Image.open(BytesIO(image)) as atlas_image:
+        assert atlas_image.mode == "L"
+        assert atlas_image.size == (10, 9)
+    assert metadata["parent_areas"] == ["Isocortex", "TH"]
+    assert metadata["parent_codes"] == [1, 0, 1]
+    assert metadata["strongest_first_unit_indices"][
+        "raised_cosine_presentations"
+    ] == [1, 0, 2]
+    assert metadata["time_bin_count"] == 10
+    assert metadata["quantization"]["dtype"] == "int8"
+    assert metadata["quantization"]["scale"] == pytest.approx(127 / 8)
+
+
+def test_optotagging_atlas_quantization_reserves_nan_sentinel() -> None:
+    quantized = quantize_zscores(
+        np.array([-9.0, -8.0, -4.0, 0.0, 4.0, 8.0, 9.0, np.nan])
+    )
+
+    assert quantized.dtype == np.int8
+    assert quantized.tolist() == [-127, -127, -64, 0, 64, 127, 127, -128]
+
+
+def test_optotagging_validate_nwb_reports_missing_conditions() -> None:
+    with pytest.raises(SessionSkipped, match="missing optotagging tables"):
+        validate_nwb({"intervals": {}, "units": {}})
+
+
+def test_optotagging_write_results_round_trips_parquet(tmp_path: Path) -> None:
+    metric_columns = {
+        "asset_id": ["asset-1"],
+        "asset_path": ["sub-1/session.nwb"],
+        "session_id": ["ecephys_1"],
+        "unit_id": ["unit-1"],
+    }
+    for condition in CONDITIONS:
+        for metric in ("pre_mean", "post_mean", "modulation_index", "p_value"):
+            metric_columns[f"{condition.table_name}__{metric}"] = [0.25]
+    metrics = pd.DataFrame(metric_columns)
+    assets = [
+        {
+            "asset_id": "asset-1",
+            "asset_path": "sub-1/session.nwb",
+            "modified": "2026-01-01T00:00:00+00:00",
+            "size": 123,
+        }
+    ]
+
+    parquet_path, provenance_path = write_results(
+        metrics,
+        assets=assets,
+        skipped=[],
+        failed=[],
+        output_dir=tmp_path,
+    )
+
+    pd.testing.assert_frame_equal(pd.read_parquet(parquet_path), metrics)
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    assert provenance["rows"] == 1
+    assert provenance["sessions"] == 1
+    assert len(provenance["output_sha256"]) == 64
+
+
+def test_optotagging_snapshot_is_source_backed() -> None:
+    payload = load_optotagging_heatmap_data()
+    provenance = json.loads(
+        OPTOTAGGING_HEATMAP_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+
+    assert text_sha256_matches(
+        OPTOTAGGING_HEATMAP_DATA_PATH,
+        provenance["manifest_sha256"],
+    )
+    assert payload["session_count"] == 3
+    assert payload["version"] == 2
+    assert payload["total_unit_count"] == sum(
+        session["unit_count"] for session in payload["sessions"]
+    )
+    assert payload["default_session_id"] == "ecephys_830851_2026-03-19_10-49-11"
+    assert (
+        payload["static_example_session_id"]
+        == "ecephys_834687_2026-03-18_15-50-10"
+    )
+    assert len(payload["sessions"]) == 3
+    assert payload["selection"] == {
+        "strategy": "nearest_all_session_optotagged_cell_yield_percentiles",
+        "source_session_count": 60,
+        "sessions": {
+            "ecephys_830851_2026-03-19_10-49-11": {
+                "optotagged_cell_count": 39,
+                "target_yield_percentile": 0.5,
+            },
+            "ecephys_832691_2026-03-24_10-04-30": {
+                "optotagged_cell_count": 84,
+                "target_yield_percentile": 0.95,
+            },
+            "ecephys_848390_2026-05-06_09-54-56": {
+                "optotagged_cell_count": 68,
+                "target_yield_percentile": 0.8,
+            },
+        },
+    }
+    assert provenance["failed_assets"] == []
+    assert provenance["skipped_assets"] == []
+    assert provenance["source_session_count"] == 60
+    assert len(provenance["asset_manifest"]) == 60
+    assert all(
+        asset["digest"]["dandi:sha2-256"]
+        for asset in provenance["asset_manifest"]
+    )
+    assert {
+        path.name for path in OPTOTAGGING_HEATMAP_SOURCE_DIR.glob("*.atlas.json")
+    } == {session["atlas_file"] for session in payload["sessions"]}
+    assert {
+        path.name for path in OPTOTAGGING_HEATMAP_SOURCE_DIR.glob("*.atlas.png")
+    } == {session["numeric_png_file"] for session in payload["sessions"]}
+    assert {path.name for path in OPTOTAGGING_HEATMAP_SOURCE_DIR.glob("*.webp")} == {
+        session["image_file"]
+        for session in payload["sessions"]
+        if "image_file" in session
+    }
+    static_svg = OPTOTAGGING_STATIC_SOURCE.read_text(encoding="utf-8")
+    assert "Optotagged-cell yield and example laser-aligned response" in static_svg
+    assert "Optotagged cells per session" in static_svg
+    assert "per sampled session" not in static_svg
+
+
+def test_optotagging_outputs_are_deterministic_and_accessible(tmp_path: Path) -> None:
+    media_dir = tmp_path / "source-media"
+    media_dir.mkdir()
+    static_source = media_dir / "optotagging-static-composite.svg"
+    image = b"RIFF\x04\x00\x00\x00WEBP"
+    image_file = "ecephys_test.webp"
+    image_sha256 = hashlib.sha256(image).hexdigest()
+    (media_dir / image_file).write_bytes(image)
+    session = {
+        "asset_id": "asset-1",
+        "asset_path": "sub-1/session.nwb",
+        "image_file": image_file,
+        "image_height": 1,
+        "image_sha256": image_sha256,
+        "image_width": 1,
+        "session_id": "ecephys_test",
+        "unit_count": 12,
+        "condition_counts": {},
+    }
+    payload = {
+        "version": 1,
+        "default_session_id": "ecephys_test",
+        "session_count": 1,
+        "total_unit_count": 12,
+        "conditions": [],
+        "psth": {},
+        "sessions": [session],
+    }
+    data_path = tmp_path / "optotagging-heatmaps.json"
+    data_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    image_manifest = [{"image_file": image_file, "image_sha256": image_sha256}]
+    asset_manifest = [
+        {
+            "asset_id": "asset-1",
+            "asset_path": "sub-1/session.nwb",
+            "digest": {"dandi:sha2-256": "source-checksum"},
+        }
+    ]
+    provenance = {
+        "version": 1,
+        "asset_manifest": asset_manifest,
+        "asset_manifest_sha256": hashlib.sha256(
+            json.dumps(asset_manifest, separators=(",", ":"), sort_keys=True).encode()
+        ).hexdigest(),
+        "failed_assets": [],
+        "manifest_sha256": hashlib.sha256(data_path.read_bytes()).hexdigest(),
+        "media_manifest_sha256": hashlib.sha256(
+            json.dumps(image_manifest, separators=(",", ":"), sort_keys=True).encode()
+        ).hexdigest(),
+        "session_count": 1,
+        "skipped_assets": [],
+        "total_unit_count": 12,
+    }
+    provenance_path = tmp_path / "optotagging-heatmaps.provenance.json"
+    provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+    static_source.write_text(
+        '<svg role="img"><text>Optotagged-cell yield and example laser-aligned response</text>'
+        "<text>5 Hz laser stimulation: five 10 ms pulses</text>"
+        "<text>ecephys_test</text></svg>",
+        encoding="utf-8",
+    )
+
+    html_path = write_optotagging_heatmap_html(
+        tmp_path / "interactive" / "optotagging.html",
+        data_path,
+        provenance_path,
+        media_dir,
+        static_output=tmp_path / "optotagging.svg",
+    )
+    svg_path = write_optotagging_heatmap_svg(
+        tmp_path / "optotagging.svg",
+        data_path,
+        provenance_path,
+        media_dir,
+    )
+    html = html_path.read_text(encoding="utf-8")
+    svg = svg_path.read_text(encoding="utf-8")
+
+    assert 'label for="session-search"' in html
+    assert 'label for="session-select"' in html
+    assert 'label for="parent-area"' in html
+    assert 'label for="color-limit"' in html
+    assert 'type="range" min="0.5" max="8" step="0.5" value="3"' in html
+    assert 'data-view="interactive"' in html
+    assert 'data-view="static"' in html
+    assert 'id="interactive-view"' in html
+    assert 'id="static-view"' in html
+    assert "optotagging.svg" in html
+    assert "selectView" in html
+    assert 'window.location.protocol === "file:"' in html
+    assert "loadLocalAtlas" in html
+    assert 'document.createElement("script")' in html
+    assert "<canvas" not in html  # Panels are created without duplicating markup.
+    assert "createElement(\"canvas\")" in html
+    assert 'aria-live="polite"' in html
+    assert '"default_session_id":"ecephys_test"' in html
+    assert "__OPTOTAGGING_" not in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+    assert (html_path.parent / "media" / "optotagging" / image_file).read_bytes() == image
+    assert (
+        html_path.parent / "media" / "optotagging" / "optotagging.svg"
+    ).read_bytes() == svg_path.read_bytes()
+    assert not list(
+        (html_path.parent / "media" / "optotagging").glob("*.atlas.js")
+    )
+    assert 'role="img"' in svg
+    assert "ecephys_test" in svg
+    assert "Optotagged-cell yield and example laser-aligned response" in svg
+    assert "5 Hz laser stimulation: five 10 ms pulses" in svg
+
+    write_optotagging_heatmap_html(
+        html_path,
+        data_path,
+        provenance_path,
+        media_dir,
+        static_output=svg_path,
+    )
+    write_optotagging_heatmap_svg(
+        svg_path,
+        data_path,
+        provenance_path,
+        media_dir,
+    )
+    assert html_path.read_text(encoding="utf-8") == html
+    assert svg_path.read_text(encoding="utf-8") == svg
+
+    (media_dir / image_file).write_bytes(image + b"changed")
+    with pytest.raises(RuntimeError, match="image is invalid"):
+        load_optotagging_heatmap_data(data_path, provenance_path, media_dir)
+
+
+def test_optotagging_version_2_numeric_atlas_validation(tmp_path: Path) -> None:
+    media_dir = tmp_path / "media"
+    media_dir.mkdir()
+    atlas_file = "ecephys_test.atlas.json"
+    png_file = "ecephys_test.atlas.png"
+    image_file = "ecephys_test.webp"
+    atlas = {
+        "version": 2,
+        "unit_count": 2,
+        "time_bin_count": 2,
+        "time_seconds": [-0.5, 1.2],
+        "numeric_png_file": png_file,
+        "parent_areas": ["TH"],
+        "parent_codes": [0, 0],
+        "strongest_first_unit_indices": {"raised": [1, 0]},
+        "condition_row_offsets": {"raised": 0},
+        "quantization": {
+            "dtype": "int8",
+            "scale": 15.875,
+            "range": [-8.0, 8.0],
+            "nan_sentinel": -128,
+            "png_channels": "single-channel uint8 viewed as signed int8",
+        },
+    }
+    assets = {
+        atlas_file: (json.dumps(atlas) + "\n").encode(),
+        png_file: (
+            b"\x89PNG\r\n\x1a\n"
+            + b"\x00" * 8
+            + struct.pack(">II", 2, 2)
+            + b"\x08\x00"
+        ),
+        image_file: b"RIFF\x04\x00\x00\x00WEBP",
+    }
+    for filename, content in assets.items():
+        (media_dir / filename).write_bytes(content)
+    session = {
+        "asset_id": "asset-1",
+        "asset_path": "session.nwb",
+        "session_id": "ecephys_test",
+        "unit_count": 2,
+        "condition_counts": {"raised": {"presentations": 1, "pulses": 1}},
+        "atlas_file": atlas_file,
+        "atlas_sha256": hashlib.sha256(assets[atlas_file]).hexdigest(),
+        "numeric_png_file": png_file,
+        "numeric_png_sha256": hashlib.sha256(assets[png_file]).hexdigest(),
+        "image_file": image_file,
+        "image_sha256": hashlib.sha256(assets[image_file]).hexdigest(),
+        "image_width": 1,
+        "image_height": 1,
+    }
+    payload = {
+        "version": 2,
+        "default_session_id": "ecephys_test",
+        "session_count": 1,
+        "total_unit_count": 2,
+        "conditions": [{"table_name": "raised", "display_name": "Raised"}],
+        "psth": {},
+        "sessions": [session],
+    }
+    data_path = tmp_path / "snapshot.json"
+    data_path.write_text(json.dumps(payload), encoding="utf-8")
+    asset_manifest = [
+        {
+            "asset_id": "asset-1",
+            "asset_path": "session.nwb",
+            "digest": {"dandi:sha2-256": "source"},
+        }
+    ]
+    media_manifest = [
+        {"file": atlas_file, "sha256": session["atlas_sha256"]},
+        {"file": png_file, "sha256": session["numeric_png_sha256"]},
+        {"file": image_file, "sha256": session["image_sha256"]},
+    ]
+    provenance = {
+        "version": 2,
+        "manifest_sha256": hashlib.sha256(data_path.read_bytes()).hexdigest(),
+        "session_count": 1,
+        "total_unit_count": 2,
+        "asset_manifest": asset_manifest,
+        "asset_manifest_sha256": hashlib.sha256(
+            json.dumps(asset_manifest, separators=(",", ":"), sort_keys=True).encode()
+        ).hexdigest(),
+        "media_manifest_sha256": hashlib.sha256(
+            json.dumps(media_manifest, separators=(",", ":"), sort_keys=True).encode()
+        ).hexdigest(),
+        "skipped_assets": [],
+        "failed_assets": [],
+    }
+    provenance_path = tmp_path / "snapshot.provenance.json"
+    provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+
+    assert load_optotagging_heatmap_data(
+        data_path,
+        provenance_path,
+        media_dir,
+    ) == payload
 
 
 def test_neuropixels_trajectory_snapshot_is_source_backed() -> None:

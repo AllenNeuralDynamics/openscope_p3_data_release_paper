@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Optotagging heatmaps by session</title>
+  <style>:root {
+  color-scheme: light;
+  font-family: "Myriad Pro", Arial, sans-serif;
+  color: #293133;
+  background: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  width: min(100%, 1260px);
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.viewer {
+  min-width: 0;
+  min-height: 100vh;
+  overflow: hidden;
+  border: 1px solid #d0d4d2;
+  border-radius: 5px;
+  background: #ffffff;
+}
+
+html.is-embedded .viewer {
+  min-height: 0;
+}
+
+.view-switch {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  width: max-content;
+  margin: 0 auto 16px;
+  overflow: hidden;
+  border: 1px solid #cad4d1;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.view-button {
+  min-width: 112px;
+  min-height: 38px;
+  padding: 6px 16px;
+  border: 0;
+  border-right: 1px solid #cad4d1;
+  background: #ffffff;
+  color: #596663;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.view-button:last-child {
+  border-right: 0;
+}
+
+.view-button.active {
+  background: #30383c;
+  color: #ffffff;
+}
+
+.view-button:focus-visible {
+  outline: 3px solid #79c8df;
+  outline-offset: 2px;
+}
+
+.static-view[hidden],
+#interactive-view[hidden] {
+  display: none !important;
+}
+
+.static-shell {
+  width: 100%;
+  overflow: auto;
+  border-top: 1px solid #d0d4d2;
+  background: #ffffff;
+}
+
+.static-shell img {
+  display: block;
+  width: 100%;
+  min-width: 900px;
+  height: auto;
+}
+
+header {
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: #315f73;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
+}
+
+.summary {
+  max-width: 74ch;
+  margin: 8px 0 0;
+  color: #4d5957;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #cad4d1;
+  border-radius: 8px;
+  background: #f5f8f7;
+}
+
+.controls div {
+  display: grid;
+  gap: 5px;
+}
+
+label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+input,
+select {
+  min-height: 42px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #7e918c;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #293133;
+  font: inherit;
+}
+
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid #79c8df;
+  outline-offset: 2px;
+}
+
+.session-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 15px 0 8px;
+}
+
+.session-summary span {
+  color: #596663;
+}
+
+figure {
+  margin: 0;
+}
+
+#heatmap-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #d7dfdd;
+  background: #ffffff;
+}
+
+.heatmap-panels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.heatmap-panel {
+  min-width: 0;
+}
+
+.heatmap-panel h2 {
+  margin: 0 0 5px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.heatmap-panel p {
+  margin: 4px 0 0;
+  color: #596663;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: min(52vw, 430px);
+  border: 1px solid #d7dfdd;
+  background: #f2f2f2;
+}
+
+.color-key {
+  display: grid;
+  grid-template-columns: auto minmax(50px, 1fr) auto minmax(50px, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  max-width: 520px;
+  margin: 12px auto 0;
+  font-size: 0.8rem;
+}
+
+.color-gradient {
+  height: 12px;
+  background: linear-gradient(to right, #3b4cc0, #f7f7f7);
+}
+
+.color-gradient.warm {
+  background: linear-gradient(to right, #f7f7f7, #b40426);
+}
+
+input[type="range"] {
+  padding: 0;
+}
+
+figcaption {
+  margin-top: 8px;
+  color: #4d5957;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+#empty-state {
+  padding: 28px;
+  border: 1px dashed #7e918c;
+  text-align: center;
+}
+
+@media (max-width: 680px) {
+  main {
+    padding: 14px;
+  }
+
+  .view-switch {
+    margin-bottom: 14px;
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .heatmap-panels {
+    grid-template-columns: 1fr;
+  }
+
+  canvas {
+    height: min(90vw, 430px);
+  }
+}
+</style>
+</head>
+<body>
+  <main class="viewer" id="optotagging-viewer">
+    <div class="view-switch" role="group" aria-label="Interactive or static view">
+      <button type="button" class="view-button active" data-view="interactive"
+        aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static"
+        aria-pressed="false">Static</button>
+    </div>
+
+    <div id="interactive-view">
+      <header>
+        <p class="eyebrow">OpenScope P3 Neuropixels</p>
+        <h1>Optotagging responses by session</h1>
+        <p class="summary">
+          Select a session to compare raised-cosine, 5 Hz, and 40 Hz laser-aligned
+          responses across all non-noise units.
+        </p>
+      </header>
+      <section class="controls" aria-label="Heatmap controls">
+        <div>
+          <label for="session-search">Find a session</label>
+          <input id="session-search" type="search" placeholder="Mouse, date, or session ID"
+            autocomplete="off">
+        </div>
+        <div>
+          <label for="session-select">Session</label>
+          <select id="session-select"></select>
+        </div>
+        <div>
+          <label for="parent-area">Allen major parent</label>
+          <input id="parent-area" type="search" list="parent-area-options"
+            value="All areas" autocomplete="off">
+          <datalist id="parent-area-options"></datalist>
+        </div>
+        <div>
+          <label for="color-limit">Symmetric color limit: ±<output
+            id="color-limit-value" for="color-limit">3</output> z</label>
+          <input id="color-limit" type="range" min="0.5" max="8" step="0.5" value="3">
+        </div>
+      </section>
+      <section class="session-summary" aria-live="polite">
+        <strong id="session-title"></strong>
+        <span id="session-details"></span>
+      </section>
+      <figure id="numeric-figure" hidden>
+        <div id="heatmap-panels" class="heatmap-panels"></div>
+        <div class="color-key" aria-label="Shared coolwarm color scale">
+          <span id="color-min">−3</span><span class="color-gradient"></span>
+          <span>0</span><span class="color-gradient warm"></span>
+          <span id="color-max">+3</span>
+        </div>
+        <figcaption>
+          Rows are baseline z-scored per unit. Parent filtering is applied before each
+          condition is ordered by firing rate during its exact laser-on intervals;
+          strongest responses appear at the top. All panels share the displayed scale.
+        </figcaption>
+      </figure>
+      <figure id="fallback-figure" hidden>
+        <img id="heatmap-image" alt="">
+        <figcaption>Static snapshot. Regenerate the version 2 atlas to enable anatomy
+          filtering and numeric color remapping.</figcaption>
+      </figure>
+      <p id="empty-state" role="status" hidden>No sessions match this search.</p>
+    </div>
+
+    <section class="static-view" id="static-view"
+      aria-label="Static default-session optotagging overview" hidden>
+      <div class="static-shell">
+        <img src="media/optotagging/optotagging-heatmaps.svg"
+          alt="Optotagged-cell yield summaries by anatomy surrounding a five-hertz laser-aligned unit heatmap with five pulse markers above it.">
+      </div>
+    </section>
+  </main>
+  <script>const OPTOTAGGING_DATA = {"conditions":[{"count_window_seconds":0.5,"display_name":"Raised cosine","ordering":"mean_firing_rate_during_exact_pulses","post_delay_seconds":0.25,"pulse_frequency_hz":1.0,"pulse_width_seconds":1.0,"table_name":"raised_cosine_presentations"},{"count_window_seconds":0.01,"display_name":"5 Hz pulse train","ordering":"mean_firing_rate_during_exact_pulses","post_delay_seconds":0.002,"pulse_frequency_hz":5.0,"pulse_width_seconds":0.01,"table_name":"5 hz pulse train_presentations"},{"count_window_seconds":0.01,"display_name":"40 Hz pulse train","ordering":"mean_firing_rate_during_exact_pulses","post_delay_seconds":0.002,"pulse_frequency_hz":40.0,"pulse_width_seconds":0.006,"table_name":"40 hz pulse train_presentations"}],"default_session_id":"ecephys_830851_2026-03-19_10-49-11","psth":{"alignment":"presentation laser onset","baseline":"time < 0 seconds","bin_seconds":0.001,"color_limits_zscore":[-3,3],"display_bin_count":256,"interactive_color_limit_range":[0.5,8],"interactive_color_limit_step":0.5,"storage":"baseline-zscored contiguous-bin means, clipped to [-8, 8], quantized to signed int8 at 1/15.875 z-score per step, with NaN sentinel -128, in a lossless single-channel PNG","window_seconds":[-0.5,1.2]},"selection":{"sessions":{"ecephys_830851_2026-03-19_10-49-11":{"optotagged_cell_count":39,"target_yield_percentile":0.5},"ecephys_832691_2026-03-24_10-04-30":{"optotagged_cell_count":84,"target_yield_percentile":0.95},"ecephys_848390_2026-05-06_09-54-56":{"optotagged_cell_count":68,"target_yield_percentile":0.8}},"source_session_count":60,"strategy":"nearest_all_session_optotagged_cell_yield_percentiles"},"session_count":3,"sessions":[{"asset_id":"0167df0a-b5f1-45bd-9659-c32ac132d875","asset_path":"sub-830851/sub-830851_ses-ecephys-830851-2026-03-19-10-49-11_ecephys.nwb","atlas_file":"ecephys_830851_2026-03-19_10-49-11.atlas.json","atlas_sha256":"60c4d0ed0202205f84ca42a3ba45f47cacd0e8d290b7ff0c140d2eb4ac295d41","condition_counts":{"40 hz pulse train_presentations":{"presentations":150,"pulses":6000},"5 hz pulse train_presentations":{"presentations":150,"pulses":750},"raised_cosine_presentations":{"presentations":150,"pulses":150}},"numeric_png_file":"ecephys_830851_2026-03-19_10-49-11.atlas.png","numeric_png_sha256":"c1f8af796f0ee3ee7d5be5d5a6269e5e66d8da09ab394fb1b459badbba911734","session_id":"ecephys_830851_2026-03-19_10-49-11","unit_count":1736},{"asset_id":"e8dc5ef4-720b-4fb4-a493-e8dc2ef2b8d6","asset_path":"sub-832691/sub-832691_ses-ecephys-832691-2026-03-24-10-04-30_ecephys.nwb","atlas_file":"ecephys_832691_2026-03-24_10-04-30.atlas.json","atlas_sha256":"66050c8b9a69eb91a560c6e8efe59b384ee25a8dc803e01dde7fe4b12ac2cdc4","condition_counts":{"40 hz pulse train_presentations":{"presentations":150,"pulses":6000},"5 hz pulse train_presentations":{"presentations":150,"pulses":750},"raised_cosine_presentations":{"presentations":150,"pulses":150}},"numeric_png_file":"ecephys_832691_2026-03-24_10-04-30.atlas.png","numeric_png_sha256":"d725158b711ae7e3ce97ea47f5f66a6643695554f0b89ec57df85097073feebc","session_id":"ecephys_832691_2026-03-24_10-04-30","unit_count":2314},{"asset_id":"0e5b530a-e22d-4bf8-a5d7-5108229c899a","asset_path":"sub-848390/sub-848390_ses-ecephys-848390-2026-05-06-09-54-56_ecephys.nwb","atlas_file":"ecephys_848390_2026-05-06_09-54-56.atlas.json","atlas_sha256":"94c0896985181edcde482f93a6c1debc4a9e737dafbf534a20bb2b2b28dcc5f4","condition_counts":{"40 hz pulse train_presentations":{"presentations":149,"pulses":5960},"5 hz pulse train_presentations":{"presentations":150,"pulses":750},"raised_cosine_presentations":{"presentations":149,"pulses":149}},"numeric_png_file":"ecephys_848390_2026-05-06_09-54-56.atlas.png","numeric_png_sha256":"7208958438ab9bf63ce19aead2401c15f102728baef8728617cf4b912ed7460a","session_id":"ecephys_848390_2026-05-06_09-54-56","unit_count":2396}],"static_example_session_id":"ecephys_834687_2026-03-18_15-50-10","total_unit_count":6446,"version":2};</script>
+  <script>(() => {
+  const search = document.querySelector("#session-search");
+  const select = document.querySelector("#session-select");
+  const parentInput = document.querySelector("#parent-area");
+  const parentOptions = document.querySelector("#parent-area-options");
+  const slider = document.querySelector("#color-limit");
+  const sliderValue = document.querySelector("#color-limit-value");
+  const title = document.querySelector("#session-title");
+  const details = document.querySelector("#session-details");
+  const numericFigure = document.querySelector("#numeric-figure");
+  const fallbackFigure = document.querySelector("#fallback-figure");
+  const fallbackImage = document.querySelector("#heatmap-image");
+  const panels = document.querySelector("#heatmap-panels");
+  const emptyState = document.querySelector("#empty-state");
+  const interactiveView = document.querySelector("#interactive-view");
+  const staticView = document.querySelector("#static-view");
+  const viewButtons = document.querySelectorAll(".view-button");
+  const sessionsById = new Map(
+    OPTOTAGGING_DATA.sessions.map((session) => [session.session_id, session]),
+  );
+  let loadedAtlas = null;
+  let loadGeneration = 0;
+  let redrawTimer = null;
+
+  function selectView(view) {
+    interactiveView.hidden = view !== "interactive";
+    staticView.hidden = view !== "static";
+    viewButtons.forEach((button) => {
+      const active = button.dataset.view === view;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+  }
+
+  function sessionLabel(session) {
+    return session.session_id.replace(/^ecephys_/, "");
+  }
+
+  function conditionDetails(session) {
+    return OPTOTAGGING_DATA.conditions
+      .map((condition) => {
+        const counts = session.condition_counts[condition.table_name];
+        return `${condition.display_name}: ${counts.presentations} presentations, ` +
+          `${counts.pulses} pulses`;
+      })
+      .join(" · ");
+  }
+
+  function updateUrl(sessionId) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("session", sessionId);
+    window.history.replaceState({}, "", url);
+  }
+
+  function colorFor(value, limit) {
+    if (!Number.isFinite(value)) return [230, 230, 230, 255];
+    const fraction = Math.max(-1, Math.min(1, value / limit));
+    const cold = [59, 76, 192];
+    const middle = [247, 247, 247];
+    const warm = [180, 4, 38];
+    const start = fraction < 0 ? cold : middle;
+    const end = fraction < 0 ? middle : warm;
+    const amount = fraction < 0 ? fraction + 1 : fraction;
+    return [
+      Math.round(start[0] + amount * (end[0] - start[0])),
+      Math.round(start[1] + amount * (end[1] - start[1])),
+      Math.round(start[2] + amount * (end[2] - start[2])),
+      255,
+    ];
+  }
+
+  function selectedUnitIndices(metadata, condition) {
+    const requested = parentInput.value.trim();
+    const areaIndex = metadata.parent_areas.indexOf(requested);
+    const order = metadata.strongest_first_unit_indices[condition.table_name];
+    if (!requested || requested === "All areas" || areaIndex < 0) return order;
+    return order.filter((unitIndex) => metadata.parent_codes[unitIndex] === areaIndex);
+  }
+
+  function drawPanel(canvas, atlas, condition) {
+    const {metadata, scalars} = atlas;
+    const units = selectedUnitIndices(metadata, condition);
+    const bins = metadata.time_bin_count;
+    const source = document.createElement("canvas");
+    source.width = bins;
+    source.height = Math.max(1, units.length);
+    const sourceContext = source.getContext("2d");
+    const pixels = sourceContext.createImageData(bins, source.height);
+    const limit = Number(slider.value);
+    const rowOffset = metadata.condition_row_offsets[condition.table_name];
+    for (let row = 0; row < units.length; row += 1) {
+      const scalarOffset = (rowOffset + units[row]) * bins;
+      for (let column = 0; column < bins; column += 1) {
+        const quantized = scalars[scalarOffset + column];
+        const value = quantized === metadata.quantization.nan_sentinel
+          ? Number.NaN
+          : quantized / metadata.quantization.scale;
+        pixels.data.set(colorFor(value, limit), (row * bins + column) * 4);
+      }
+    }
+    sourceContext.putImageData(pixels, 0, 0);
+
+    const width = Math.max(320, Math.round(canvas.getBoundingClientRect().width * devicePixelRatio));
+    const height = Math.max(300, Math.round(canvas.getBoundingClientRect().height * devicePixelRatio));
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    const margin = {left: 48, right: 8, top: 8, bottom: 30};
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    context.imageSmoothingEnabled = false;
+    context.fillStyle = "#f2f2f2";
+    context.fillRect(0, 0, width, height);
+    if (units.length) {
+      context.drawImage(source, margin.left, margin.top, plotWidth, plotHeight);
+    }
+    const [timeStart, timeEnd] = metadata.time_seconds;
+    const laserX = margin.left + ((0 - timeStart) / (timeEnd - timeStart)) * plotWidth;
+    context.strokeStyle = "#111";
+    context.setLineDash([5, 4]);
+    context.beginPath();
+    context.moveTo(laserX, margin.top);
+    context.lineTo(laserX, margin.top + plotHeight);
+    context.stroke();
+    context.setLineDash([]);
+    context.fillStyle = "#293133";
+    context.font = `${12 * devicePixelRatio}px Arial`;
+    context.textAlign = "center";
+    for (const tick of [-0.5, 0, 0.5, 1]) {
+      const x = margin.left + ((tick - timeStart) / (timeEnd - timeStart)) * plotWidth;
+      context.fillText(String(tick), x, height - 13);
+    }
+    context.save();
+    context.translate(14, margin.top + plotHeight / 2);
+    context.rotate(-Math.PI / 2);
+    context.fillText("Units (strongest at top)", 0, 0);
+    context.restore();
+    canvas.setAttribute(
+      "aria-label",
+      `${condition.display_name} heatmap with ${units.length.toLocaleString()} units; ` +
+      "strongest exact-laser-on response at top.",
+    );
+    canvas.parentElement.querySelector("p").textContent =
+      `${units.length.toLocaleString()} units · time from laser onset (s)`;
+  }
+
+  function redraw() {
+    if (!loadedAtlas) return;
+    for (const condition of OPTOTAGGING_DATA.conditions) {
+      const canvas = panels.querySelector(`[data-condition="${condition.table_name}"]`);
+      drawPanel(canvas, loadedAtlas, condition);
+    }
+    const limit = Number(slider.value);
+    sliderValue.value = String(limit);
+    document.querySelector("#color-min").textContent = `−${limit}`;
+    document.querySelector("#color-max").textContent = `+${limit}`;
+  }
+
+  function scheduleRedraw() {
+    sliderValue.value = slider.value;
+    window.clearTimeout(redrawTimer);
+    redrawTimer = window.setTimeout(redraw, 150);
+  }
+
+  function decodeAtlasImage(image, metadata) {
+    const decoder = document.createElement("canvas");
+    decoder.width = image.naturalWidth;
+    decoder.height = image.naturalHeight;
+    const context = decoder.getContext("2d", {willReadFrequently: true});
+    context.drawImage(image, 0, 0);
+    const bytes = context.getImageData(0, 0, decoder.width, decoder.height).data;
+    const scalars = new Int8Array(decoder.width * decoder.height);
+    for (let index = 0; index < scalars.length; index += 1) {
+      const unsigned = bytes[index * 4];
+      scalars[index] = unsigned >= 0x80 ? unsigned - 0x100 : unsigned;
+    }
+    return scalars;
+  }
+
+  function loadLocalAtlas(session) {
+    const existing = globalThis.OPTOTAGGING_ATLASES?.[session.session_id];
+    if (existing) return Promise.resolve(existing);
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = `media/optotagging/${session.atlas_file.replace(/\.json$/, ".js")}`;
+      script.onload = () => {
+        const atlas = globalThis.OPTOTAGGING_ATLASES?.[session.session_id];
+        if (atlas) resolve(atlas);
+        else reject(new Error("Local atlas script did not define the selected session."));
+      };
+      script.onerror = () => reject(new Error("Could not load the local atlas script."));
+      document.head.append(script);
+    });
+  }
+
+  async function loadNumericAtlas(session, generation) {
+    let embedded = globalThis.OPTOTAGGING_ATLASES?.[session.session_id];
+    if (!embedded && window.location.protocol === "file:") {
+      embedded = await loadLocalAtlas(session);
+    }
+    let metadata;
+    let imageSource;
+    if (embedded) {
+      metadata = embedded.metadata;
+      imageSource = embedded.image;
+    } else {
+      const base = "media/optotagging/";
+      const response = await fetch(`${base}${session.atlas_file}`);
+      if (!response.ok) {
+        throw new Error(`Could not load atlas metadata (${response.status}).`);
+      }
+      metadata = await response.json();
+      imageSource = `${base}${metadata.numeric_png_file}`;
+    }
+    const image = new Image();
+    image.src = imageSource;
+    await image.decode();
+    if (generation !== loadGeneration) return;
+    loadedAtlas = {metadata, scalars: decodeAtlasImage(image, metadata)};
+    parentOptions.replaceChildren();
+    for (const area of ["All areas", ...metadata.parent_areas]) {
+      const option = document.createElement("option");
+      option.value = area;
+      parentOptions.append(option);
+    }
+    if (!["All areas", ...metadata.parent_areas].includes(parentInput.value)) {
+      parentInput.value = "All areas";
+    }
+    parentInput.disabled = false;
+    slider.disabled = false;
+    numericFigure.hidden = false;
+    fallbackFigure.hidden = true;
+    redraw();
+  }
+
+  function buildPanels() {
+    panels.replaceChildren();
+    for (const condition of OPTOTAGGING_DATA.conditions) {
+      const panel = document.createElement("section");
+      panel.className = "heatmap-panel";
+      const heading = document.createElement("h2");
+      heading.textContent = condition.display_name;
+      const canvas = document.createElement("canvas");
+      canvas.dataset.condition = condition.table_name;
+      canvas.setAttribute("role", "img");
+      const count = document.createElement("p");
+      panel.append(heading, canvas, count);
+      panels.append(panel);
+    }
+  }
+
+  async function renderSession(sessionId) {
+    const session = sessionsById.get(sessionId);
+    if (!session) return;
+    title.textContent = sessionLabel(session);
+    details.textContent =
+      `${session.unit_count.toLocaleString()} non-noise units · ${conditionDetails(session)}`;
+    updateUrl(session.session_id);
+    loadedAtlas = null;
+    const generation = ++loadGeneration;
+    if (OPTOTAGGING_DATA.version === 1) {
+      parentInput.disabled = true;
+      slider.disabled = true;
+      fallbackImage.src = `media/optotagging/${session.image_file}`;
+      fallbackImage.alt = `Three optotagging heatmaps for ${session.session_id}.`;
+      fallbackFigure.hidden = false;
+      numericFigure.hidden = true;
+      return;
+    }
+    try {
+      await loadNumericAtlas(session, generation);
+    } catch (error) {
+      if (generation !== loadGeneration) return;
+      details.textContent = `${details.textContent} · ${error.message}`;
+    }
+  }
+
+  function populateOptions(sessions, preferredId) {
+    select.replaceChildren();
+    for (const session of sessions) {
+      const option = document.createElement("option");
+      option.value = session.session_id;
+      option.textContent = sessionLabel(session);
+      select.append(option);
+    }
+    const hasMatches = sessions.length > 0;
+    document.querySelector(".session-summary").hidden = !hasMatches;
+    emptyState.hidden = hasMatches;
+    select.disabled = !hasMatches;
+    if (!hasMatches) {
+      numericFigure.hidden = true;
+      fallbackFigure.hidden = true;
+      return;
+    }
+    const selectedId = sessions.some((session) => session.session_id === preferredId)
+      ? preferredId
+      : sessions[0].session_id;
+    select.value = selectedId;
+    renderSession(selectedId);
+  }
+
+  search.addEventListener("input", () => {
+    const query = search.value.trim().toLowerCase();
+    const matches = OPTOTAGGING_DATA.sessions.filter((session) =>
+      session.session_id.toLowerCase().includes(query),
+    );
+    populateOptions(matches, select.value);
+  });
+  select.addEventListener("change", () => renderSession(select.value));
+  slider.addEventListener("input", scheduleRedraw);
+  parentInput.addEventListener("input", scheduleRedraw);
+  window.addEventListener("resize", scheduleRedraw);
+  viewButtons.forEach((button) => {
+    button.addEventListener("click", () => selectView(button.dataset.view));
+  });
+
+  buildPanels();
+  const requestedSession = new URL(window.location.href).searchParams.get("session");
+  const initialSession = sessionsById.has(requestedSession)
+    ? requestedSession
+    : OPTOTAGGING_DATA.default_session_id;
+  populateOptions(OPTOTAGGING_DATA.sessions, initialSession);
+})();
+</script>
+  <script>(() => {
+  "use strict";
+
+  const root = document.querySelector("body > main");
+  if (!root || window.self === window.top) return;
+
+  let wrapper;
+  try {
+    wrapper = window.frameElement?.parentElement;
+  } catch {
+    return;
+  }
+  if (!wrapper) return;
+
+  document.documentElement.classList.add("is-embedded");
+  document.documentElement.style.overflow = "hidden";
+  document.body.style.overflow = "hidden";
+  const syncHeight = () => {
+    const height = Math.ceil(root.getBoundingClientRect().height);
+    if (height > 0) wrapper.style.height = `${height}px`;
+  };
+  const resizeObserver = new ResizeObserver(syncHeight);
+  resizeObserver.observe(root);
+  window.addEventListener("resize", syncHeight);
+  window.addEventListener("load", syncHeight, { once: true });
+  syncHeight();
+})();</script>
+</body>
+</html>
