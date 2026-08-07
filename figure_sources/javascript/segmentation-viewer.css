@@ -221,7 +221,7 @@ h1 {
 .visual-panel {
   min-width: 0;
   border-right: 1px solid var(--line);
-  background: #081012;
+  background: #fff;
 }
 
 .canvas-shell {
@@ -267,24 +267,6 @@ h1 {
   line-height: 1.35;
   pointer-events: none;
 }
-
-.visual-key {
-  min-height: 45px;
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  border-top: 1px solid #253033;
-  background: #10191b;
-  color: #dce5e3;
-  font-size: var(--figure-type-metadata);
-  font-weight: 650;
-}
-
-.visual-key span { display: inline-flex; align-items: center; gap: 6px; }
-.visual-key b { font-weight: 650; }
-.visual-key i { width: 17px; height: 3px; display: inline-block; background: #25aae1; }
 
 .inspector {
   min-width: 0;
@@ -378,6 +360,7 @@ h1 {
 .chart-section svg { width: 100%; height: auto; display: block; }
 .chart-grid { stroke: #e4e8e6; stroke-width: 1; }
 .chart-axis { stroke: #8e9895; stroke-width: 1; }
+.chart-tick { stroke: #8e9895; stroke-width: 1; }
 .chart-trace { fill: none; stroke: var(--accent); stroke-width: 2.2; vector-effect: non-scaling-stroke; }
 .chart-area { fill: color-mix(in srgb, var(--accent) 16%, transparent); stroke: none; }
 .chart-label { fill: #65706d; font-family: "IBM Plex Mono", monospace; font-size: 17px; }
@@ -424,6 +407,5 @@ h1 {
   .toolbar { padding: 9px 10px; }
   .select-control,
   .range-control { grid-template-columns: 1fr; gap: 4px; }
-  .visual-key { flex-wrap: wrap; gap: 8px 14px; }
   .filter-metadata { grid-template-columns: 1fr 1fr; gap-inline: 10px; }
 }

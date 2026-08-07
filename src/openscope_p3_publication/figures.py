@@ -173,6 +173,14 @@ SEGMENTATION_VIEWER_TITLES = {
     "mesoscope": "Mesoscope ROI segmentation viewer",
     "slap2": "SLAP2 source-segmentation viewer",
 }
+SEGMENTATION_FILTER_COLORS = (
+    (37, 170, 225),
+    (140, 198, 63),
+    (204, 175, 45),
+    (214, 92, 72),
+    (36, 188, 173),
+    (177, 96, 173),
+)
 SEGMENTATION_VIEWER_STATIC_OUTPUTS = {
     "neuropixels": (
         REPO_ROOT
@@ -382,33 +390,33 @@ def write_merged_figure_1_svg(output: Path = MERGED_FIGURE_1_OUTPUT) -> Path:
         f"{base64.b64encode(cohort_panel_path.read_bytes()).decode()}"
     )
     svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="3920" '
-        'viewBox="0 0 2000 3920" role="img" aria-labelledby="title description">',
+        '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1620" '
+        'viewBox="0 0 2000 1620" role="img" aria-labelledby="title description">',
         '<title id="title">Predictive-processing framework and experimental workflow</title>',
         '<desc id="description">Panel A links predictions and errors across brain-wide, '
         'local-circuit, and single-cell scales. Panel B follows animals from surgery through '
         'intrinsic-signal-imaging mapping and habituation to one of three recording '
         'modalities. Panel C shows habituation and recording-context order across modalities '
         'and cohorts.</desc>',
-        '<rect width="2000" height="3920" fill="#FFFFFF"/>',
-        f'<image href="{graphical_abstract}" x="40" y="70" width="1920" height="1440" '
+        '<rect width="2000" height="1620" fill="#FFFFFF"/>',
+        f'<image href="{graphical_abstract}" x="40" y="60" width="960" height="720" '
         'preserveAspectRatio="xMidYMid meet"/>',
-        '<svg x="40" y="1550" width="1920" height="1520" viewBox="0 60 580 460" '
+        '<svg x="1040" y="60" width="924" height="720" viewBox="0 60 580 460" '
         'overflow="hidden" preserveAspectRatio="xMidYMid meet">',
         f'<image href="{experimental_design}" x="0" y="0" width="1108" height="780"/>',
-        '</svg>',
-        '<rect class="workflow-label-mask" x="1576" y="1973" width="410" height="73" '
+        '<rect class="workflow-label-mask" x="464" y="188" width="124" height="22" '
         'fill="#FFFFFF"/>',
-        '<text class="workflow-modality-label" x="1781" y="2023" text-anchor="middle" '
-        'font-family="Source Sans 3, sans-serif" font-size="18" font-weight="600" '
+        '<text class="workflow-modality-label" x="526" y="203" text-anchor="middle" '
+        'font-family="Source Sans 3, sans-serif" font-size="8" font-weight="600" '
         'fill="#303536">Mesoscope</text>',
-        '<text class="panel-label" x="20" y="58" font-family="Source Sans 3, sans-serif" '
+        '</svg>',
+        '<text class="panel-label" x="20" y="48" font-family="Source Sans 3, sans-serif" '
         'font-size="28" font-weight="700" fill="#293133">A</text>',
-        '<text class="panel-label" x="20" y="1538" font-family="Source Sans 3, sans-serif" '
+        '<text class="panel-label" x="1020" y="48" font-family="Source Sans 3, sans-serif" '
         'font-size="28" font-weight="700" fill="#293133">B</text>',
-        f'<image href="{cohort_panel}" x="40" y="3120" width="1920" height="768" '
+        f'<image href="{cohort_panel}" x="40" y="825" width="1920" height="768" '
         'preserveAspectRatio="xMidYMid meet"/>',
-        '<text class="panel-label" x="20" y="3108" font-family="Source Sans 3, sans-serif" '
+        '<text class="panel-label" x="20" y="818" font-family="Source Sans 3, sans-serif" '
         'font-size="28" font-weight="700" fill="#293133">C</text>',
         '</svg>',
     ]
@@ -2608,6 +2616,9 @@ def load_segmentation_viewers(
             raise RuntimeError(f"Segmentation source inventory changed: {modality_id}")
         for source in sources:
             source_id = source["sourceId"]
+            if modality_id != "neuropixels":
+                source["traceLabel"] = "ΔF/F"
+                source["traceUnit"] = "ΔF/F"
             filter_count = expected_counts[source_id]
             rows = source.get("traceRows")
             columns = source.get("traceColumns")
@@ -2943,9 +2954,6 @@ def append_neuropixels_raw_card(
             f'<text x="{x + 9:.2f}" y="{y + 19:.2f}" '
             'font-family="Source Sans 3, sans-serif" font-size="13" '
             f'font-weight="700" fill="#303536">{escape(option["label"])}</text>',
-            f'<text x="{x + card_width - 9:.2f}" y="{y + 19:.2f}" '
-            f'font-family="IBM Plex Mono, monospace" font-size="{FIGURE_TYPE_SMALL}" '
-            f'text-anchor="end" fill="#59615F">±{option["valueLimit"]:.0f} µV</text>',
         ]
     )
     for index, segment in enumerate(option["anatomySegments"]):
@@ -2962,11 +2970,11 @@ def append_neuropixels_raw_card(
             f'<rect x="{anatomy_x:.2f}" y="{segment_y:.2f}" '
             f'width="{anatomy_width}" height="{segment_height:.2f}" fill="{fill}"/>'
         )
-        if segment_height >= 15:
+        if segment_height >= 11:
             svg.append(
                 f'<text x="{anatomy_x + anatomy_width / 2:.2f}" '
                 f'y="{segment_y + segment_height / 2 + 3:.2f}" '
-                f'font-family="Source Sans 3, sans-serif" font-size="{FIGURE_TYPE_SMALL}" '
+            'font-family="Source Sans 3, sans-serif" font-size="8" '
                 f'font-weight="600" text-anchor="middle" fill="#3F4745">'
                 f'{escape(segment["label"])}</text>'
             )
@@ -3260,99 +3268,156 @@ def write_segmentation_viewer_html(
     return output
 
 
-def segmentation_trace_row(viewer: dict, field: str, columns_field: str) -> list[float]:
-    columns = viewer[columns_field]
-    start = viewer["defaultFilterIndex"] * columns * 4
-    encoded = base64.b64decode(viewer[field], validate=True)
-    return list(struct.unpack(f"<{columns}f", encoded[start : start + columns * 4]))
+def segmentation_trace_rows(viewer: dict) -> list[list[float]]:
+    rows = viewer["traceRows"]
+    columns = viewer["traceColumns"]
+    encoded = base64.b64decode(viewer["traceDataBase64"], validate=True)
+    values = struct.unpack(f"<{rows * columns}f", encoded)
+    return [
+        list(values[index * columns : (index + 1) * columns])
+        for index in range(rows)
+    ]
 
 
-def append_segmentation_trace_chart(
+def static_segmentation_trace_indices(
+    rows: list[list[float]],
+    count: int = 6,
+) -> list[int]:
+    active_indices = []
+    for index, values in enumerate(rows):
+        finite = [value for value in values if math.isfinite(value)]
+        if finite and max(finite) > min(finite):
+            active_indices.append(index)
+    if len(active_indices) <= count:
+        return active_indices
+    return [
+        active_indices[round(position * (len(active_indices) - 1) / (count - 1))]
+        for position in range(count)
+    ]
+
+
+def nice_trace_scale(value: float) -> float:
+    if not math.isfinite(value) or value <= 0:
+        return 1.0
+    magnitude = 10 ** math.floor(math.log10(value))
+    normalized = value / magnitude
+    factor = 5 if normalized >= 5 else 2 if normalized >= 2 else 1
+    return factor * magnitude
+
+
+def append_segmentation_trace_stack(
     svg: list[str],
-    values: list[float],
-    times: list[float],
+    viewer: dict,
+    indices: list[int],
+    rows: list[list[float]],
     *,
     left: float,
     top: float,
     width: float,
     height: float,
-    title: str,
-    x_unit: str = "s",
 ) -> None:
-    finite = [value for value in values if math.isfinite(value)]
+    selected_rows = [rows[index] for index in indices]
+    finite = [
+        value for row in selected_rows for value in row if math.isfinite(value)
+    ]
     minimum = min(finite)
     maximum = max(finite)
+    if viewer["id"] == "neuropixels":
+        minimum = 0.0
     if minimum == maximum:
-        minimum -= 1
-        maximum += 1
-    padding = (maximum - minimum) * 0.08
-    minimum -= padding
-    maximum += padding
+        maximum = minimum + 1
+    times = viewer["traceTimesSeconds"]
     minimum_time = times[0]
     maximum_time = times[-1]
-    plot_left = left + 62
+    plot_left = left + 94
     plot_right = left + width - 18
-    plot_top = top + 42
-    plot_bottom = top + height - 42
-
-    def transform(index: int, value: float) -> tuple[float, float]:
-        horizontal = plot_left + (times[index] - minimum_time) / (
-            maximum_time - minimum_time
-        ) * (plot_right - plot_left)
-        vertical = plot_top + (maximum - value) / (maximum - minimum) * (
-            plot_bottom - plot_top
-        )
-        return horizontal, vertical
-
-    stride = max(1, math.ceil(len(values) / 900))
-    commands = []
-    drawing = False
-    for index in range(0, len(values), stride):
-        value = values[index]
-        if not math.isfinite(value):
-            drawing = False
-            continue
-        horizontal, vertical = transform(index, value)
-        commands.append(
-            f'{"L" if drawing else "M"}{horizontal:.2f},{vertical:.2f}'
-        )
-        drawing = True
-
-    svg.extend(
-        [
-            f'<text x="{left:.2f}" y="{top + 19:.2f}" '
-            f'font-family="{FIGURE_SANS_FONT}" font-size="15" font-weight="700" '
-            f'fill="#293133">{escape(title)}</text>',
-            f'<rect x="{plot_left:.2f}" y="{plot_top:.2f}" '
-            f'width="{plot_right - plot_left:.2f}" '
-            f'height="{plot_bottom - plot_top:.2f}" fill="#F7F9F8"/>',
-        ]
+    traces_top = top + 42
+    scale_height = 54
+    row_height = (height - 42 - scale_height) / len(selected_rows)
+    trace_height = row_height * 0.62
+    title = "Binned spike rate" if viewer["id"] == "neuropixels" else "ΔF/F"
+    svg.append(
+        f'<text x="{left:.2f}" y="{top + 20:.2f}" '
+        f'font-family="{FIGURE_SANS_FONT}" font-size="16" font-weight="700" '
+        f'fill="#293133">Activity traces · {title}</text>'
     )
-    for fraction in (0, 0.5, 1):
-        vertical = plot_top + fraction * (plot_bottom - plot_top)
-        value = maximum - fraction * (maximum - minimum)
+
+    for row_position, (index, values) in enumerate(
+        zip(indices, selected_rows, strict=True)
+    ):
+        row_top = traces_top + row_position * row_height
+        row_bottom = row_top + trace_height
+        commands = []
+        drawing = False
+        stride = max(1, math.ceil(len(values) / 900))
+        for sample_index in range(0, len(values), stride):
+            value = values[sample_index]
+            if not math.isfinite(value):
+                drawing = False
+                continue
+            horizontal = plot_left + (times[sample_index] - minimum_time) / (
+                maximum_time - minimum_time
+            ) * (plot_right - plot_left)
+            vertical = row_top + (maximum - value) / (maximum - minimum) * trace_height
+            commands.append(
+                f'{"L" if drawing else "M"}{horizontal:.2f},{vertical:.2f}'
+            )
+            drawing = True
+        color = SEGMENTATION_FILTER_COLORS[index % len(SEGMENTATION_FILTER_COLORS)]
+        stroke = f"#{color[0]:02X}{color[1]:02X}{color[2]:02X}"
         svg.extend(
             [
-                f'<line x1="{plot_left:.2f}" y1="{vertical:.2f}" '
-                f'x2="{plot_right:.2f}" y2="{vertical:.2f}" '
-                'stroke="#DDE3E1" stroke-width="1"/>',
-                f'<text x="{plot_left - 9:.2f}" y="{vertical + 4:.2f}" '
-                f'text-anchor="end" font-family="{FIGURE_MONO_FONT}" '
-                f'font-size="{FIGURE_TYPE_SMALL}" fill="#66716E">{value:.2f}</text>',
+                f'<text x="{plot_left - 10:.2f}" y="{row_top + trace_height / 2 + 4:.2f}" '
+                f'text-anchor="end" font-family="{FIGURE_SANS_FONT}" '
+                f'font-size="{FIGURE_TYPE_SMALL}" fill="#4D5553">'
+                f'{escape(viewer["filters"][index]["label"])}</text>',
+                f'<line x1="{plot_left:.2f}" y1="{row_bottom:.2f}" '
+                f'x2="{plot_right:.2f}" y2="{row_bottom:.2f}" '
+                'stroke="#E2E6E4" stroke-width="1"/>',
+                f'<path class="static-activity-trace" data-filter-index="{index}" '
+                f'd="{" ".join(commands)}" fill="none" stroke="{stroke}" '
+                'stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>',
             ]
         )
-    svg.append(
-        f'<path d="{" ".join(commands)}" fill="none" stroke="#159E9C" '
-        'stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>'
+
+    scale_y = top + height - 18
+    x_scale = 2.0 if viewer["id"] == "neuropixels" else 5.0
+    x_scale_width = x_scale / (maximum_time - minimum_time) * (
+        plot_right - plot_left
     )
-    for fraction in (0, 0.5, 1):
-        value = minimum_time + fraction * (maximum_time - minimum_time)
-        horizontal = plot_left + fraction * (plot_right - plot_left)
-        svg.append(
-            f'<text x="{horizontal:.2f}" y="{plot_bottom + 21:.2f}" '
+    y_scale = nice_trace_scale((maximum - minimum) * 0.25)
+    y_scale_height = y_scale / (maximum - minimum) * trace_height
+    scale_x = plot_left
+    unit = "Hz" if viewer["id"] == "neuropixels" else "ΔF/F"
+    svg.extend(
+        [
+            f'<line class="trace-scale-bar" x1="{scale_x:.2f}" y1="{scale_y:.2f}" '
+            f'x2="{scale_x + x_scale_width:.2f}" y2="{scale_y:.2f}" '
+            'stroke="#4D5553" stroke-width="1.5"/>',
+            f'<line class="trace-scale-tick" x1="{scale_x:.2f}" y1="{scale_y - 4:.2f}" '
+            f'x2="{scale_x:.2f}" y2="{scale_y + 4:.2f}" stroke="#4D5553"/>',
+            f'<line class="trace-scale-tick" x1="{scale_x + x_scale_width:.2f}" '
+            f'y1="{scale_y - 4:.2f}" x2="{scale_x + x_scale_width:.2f}" '
+            f'y2="{scale_y + 4:.2f}" stroke="#4D5553"/>',
+            f'<text x="{scale_x + x_scale_width / 2:.2f}" y="{scale_y + 18:.2f}" '
             f'text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
-            f'font-size="{FIGURE_TYPE_SMALL}" fill="#66716E">{value:.1f} {x_unit}</text>'
-        )
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#4D5553">{x_scale:g} s</text>',
+            f'<line class="trace-scale-bar" x1="{scale_x - 12:.2f}" '
+            f'y1="{scale_y:.2f}" x2="{scale_x - 12:.2f}" '
+            f'y2="{scale_y - y_scale_height:.2f}" stroke="#4D5553" '
+            'stroke-width="1.5"/>',
+            f'<line class="trace-scale-tick" x1="{scale_x - 16:.2f}" '
+            f'y1="{scale_y:.2f}" x2="{scale_x - 8:.2f}" y2="{scale_y:.2f}" '
+            'stroke="#4D5553"/>',
+            f'<line class="trace-scale-tick" x1="{scale_x - 16:.2f}" '
+            f'y1="{scale_y - y_scale_height:.2f}" x2="{scale_x - 8:.2f}" '
+            f'y2="{scale_y - y_scale_height:.2f}" stroke="#4D5553"/>',
+            f'<text x="{scale_x - 22:.2f}" y="{scale_y - y_scale_height / 2 + 4:.2f}" '
+            f'text-anchor="end" font-family="{FIGURE_MONO_FONT}" '
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#4D5553">'
+            f'{y_scale:g} {unit}</text>',
+        ]
+    )
 
 
 def write_segmentation_viewer_svg(
@@ -3369,16 +3434,16 @@ def write_segmentation_viewer_svg(
         record for record in payload["viewers"] if record["id"] == modality
     )
     viewer = modality_record["sources"][0]
-    selected = viewer["filters"][viewer["defaultFilterIndex"]]
+    trace_rows = segmentation_trace_rows(viewer)
+    trace_indices = static_segmentation_trace_indices(trace_rows)
+    represented_filters = set(trace_indices)
     svg = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" '
         'viewBox="0 0 1400 760" role="img" aria-labelledby="title description">',
         f'<title id="title">{escape(SEGMENTATION_VIEWER_TITLES[modality])}</title>',
         '<desc id="description">A source projection shows all extraction filters; '
-        'the selected filter is paired with its activity trace.</desc>',
+        'six representative filters are paired with vertically stacked activity traces.</desc>',
         '<rect width="1400" height="760" fill="#FFFFFF"/>',
-        '<defs><filter id="neutral-overlay"><feColorMatrix type="saturate" '
-        'values="0"/></filter></defs>',
         f'<text x="52" y="47" font-family="{FIGURE_SANS_FONT}" font-size="23" '
         f'font-weight="700" fill="#293133">{escape(SEGMENTATION_VIEWER_TITLES[modality])}</text>',
         f'<text x="52" y="85" font-family="{FIGURE_SANS_FONT}" font-size="20" '
@@ -3415,13 +3480,6 @@ def write_segmentation_viewer_svg(
         def spike_y(row: float) -> float:
             return image_y + (row + 0.5) / viewer["rawRows"] * image_height
 
-        selected_y = spike_y(selected["rawRow"])
-        band_height = max(
-            4,
-            selected["spreadUm"]
-            / (viewer["rawDepthMaxUm"] - viewer["rawDepthMinUm"])
-            * image_height,
-        )
         svg.extend(
             [
                 f'<text x="{image_x + image_width / 2:.2f}" y="{visual_top + 4:.2f}" '
@@ -3432,24 +3490,21 @@ def write_segmentation_viewer_svg(
                 f'<image href="data:image/png;base64,{raw_image}" x="{image_x:.2f}" '
                 f'y="{image_y:.2f}" width="{image_width:.2f}" '
                 f'height="{image_height:.2f}" preserveAspectRatio="none"/>',
-                f'<rect x="{image_x:.2f}" y="{selected_y - band_height / 2:.2f}" '
-                f'width="{image_width:.2f}" height="{band_height:.2f}" '
-                'fill="#159E9C" fill-opacity="0.2"/>',
-                f'<line x1="{image_x:.2f}" y1="{selected_y:.2f}" '
-                f'x2="{image_x + image_width:.2f}" y2="{selected_y:.2f}" '
-                'stroke="#159E9C" stroke-width="1.5"/>',
             ]
         )
         for event in viewer["spikeEvents"]:
-            is_selected = event["filterIndex"] == viewer["defaultFilterIndex"]
-            fill = "#159E9C" if is_selected else "#AEBBB8"
+            is_represented = event["filterIndex"] in represented_filters
+            color = SEGMENTATION_FILTER_COLORS[
+                event["filterIndex"] % len(SEGMENTATION_FILTER_COLORS)
+            ]
+            fill = f"#{color[0]:02X}{color[1]:02X}{color[2]:02X}"
             svg.append(
                 f'<circle cx="{spike_x(event["timeMs"]):.2f}" '
                 f'cy="{spike_y(event["row"]):.2f}" '
-                f'r="{3.7 if is_selected else 2.1}" fill="{fill}" '
-                f'fill-opacity="{1 if is_selected else 0.62}" '
-                f'stroke="{"#FFFFFF" if is_selected else "none"}" '
-                f'stroke-width="{1.2 if is_selected else 0}"/>'
+                f'r="{3.7 if is_represented else 2.1}" fill="{fill}" '
+                f'fill-opacity="{1 if is_represented else 0.82}" '
+                f'stroke="{"#FFFFFF" if is_represented else "none"}" '
+                f'stroke-width="{1.2 if is_represented else 0}"/>'
             )
         svg.append(
             f'<rect x="{image_x:.2f}" y="{image_y:.2f}" width="{image_width:.2f}" '
@@ -3467,9 +3522,14 @@ def write_segmentation_viewer_svg(
             )
             svg.extend(
                 [
+                    f'<line x1="{image_x - 6:.2f}" y1="{vertical:.2f}" '
+                    f'x2="{image_x:.2f}" y2="{vertical:.2f}" stroke="#68716F"/>',
                     f'<text x="{image_x - 8:.2f}" y="{vertical + 4:.2f}" '
                     f'text-anchor="end" font-family="{FIGURE_MONO_FONT}" '
                     f'font-size="{FIGURE_TYPE_SMALL}" fill="#68716F">{depth:.0f}</text>',
+                    f'<line x1="{horizontal:.2f}" y1="{image_y + image_height:.2f}" '
+                    f'x2="{horizontal:.2f}" y2="{image_y + image_height + 6:.2f}" '
+                    'stroke="#68716F"/>',
                     f'<text x="{horizontal:.2f}" y="{image_y + image_height + 18:.2f}" '
                     f'text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
                     f'font-size="{FIGURE_TYPE_SMALL}" fill="#68716F">{time_ms:.0f}</text>',
@@ -3513,16 +3573,24 @@ def write_segmentation_viewer_svg(
             [
                 f'<image href="data:image/png;base64,{image_uri(overlay_path)}" '
                 f'x="{image_x:.2f}" y="{image_y:.2f}" width="{rendered_width:.2f}" '
-                f'height="{rendered_height:.2f}" filter="url(#neutral-overlay)" '
-                'opacity="0.58"/>'
-                f'<circle cx="{image_x + selected["centroidX"] * scale:.2f}" '
-                f'cy="{image_y + selected["centroidY"] * scale:.2f}" r="10" '
-                'fill="none" stroke="#FFFFFF" stroke-width="3"/>',
-                f'<circle cx="{image_x + selected["centroidX"] * scale:.2f}" '
-                f'cy="{image_y + selected["centroidY"] * scale:.2f}" r="13" '
-                'fill="none" stroke="#159E9C" stroke-width="2"/>',
+                f'height="{rendered_height:.2f}"/>',
             ]
         )
+        for index in trace_indices:
+            filter_record = viewer["filters"][index]
+            color = SEGMENTATION_FILTER_COLORS[index % len(SEGMENTATION_FILTER_COLORS)]
+            stroke = f"#{color[0]:02X}{color[1]:02X}{color[2]:02X}"
+            center_x = image_x + filter_record["centroidX"] * scale
+            center_y = image_y + filter_record["centroidY"] * scale
+            svg.extend(
+                [
+                    f'<circle cx="{center_x:.2f}" cy="{center_y:.2f}" r="8" '
+                    'fill="none" stroke="#FFFFFF" stroke-width="3"/>',
+                    f'<circle class="represented-filter" data-filter-index="{index}" '
+                    f'cx="{center_x:.2f}" cy="{center_y:.2f}" r="11" '
+                    f'fill="none" stroke="{stroke}" stroke-width="2"/>',
+                ]
+            )
         scale_microns = 25 if modality == "slap2" else 50
         scale_width = scale_microns / viewer["micronsPerPixel"] * scale
         scale_x = image_x + rendered_width - scale_width - 17
@@ -3536,74 +3604,23 @@ def write_segmentation_viewer_svg(
                 f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" '
                 f'font-size="{FIGURE_TYPE_SMALL}" font-weight="700" fill="#FFFFFF">'
                 f'{scale_microns} µm</text>',
-                f'<rect x="{image_x + 8:.2f}" y="{image_y + 8:.2f}" '
-                'width="112" height="39" fill="#050A0C" fill-opacity="0.72"/>',
-                f'<line x1="{image_x + 19:.2f}" y1="{image_y + 22:.2f}" '
-                f'x2="{image_x + 109:.2f}" y2="{image_y + 22:.2f}" '
-                'stroke="#FFFFFF" stroke-width="2"/>',
-                f'<path d="M{image_x + 109:.2f},{image_y + 22:.2f} '
-                f'L{image_x + 102:.2f},{image_y + 17:.2f} '
-                f'M{image_x + 109:.2f},{image_y + 22:.2f} '
-                f'L{image_x + 102:.2f},{image_y + 27:.2f}" '
-                'fill="none" stroke="#FFFFFF" stroke-width="2"/>',
-                f'<text x="{image_x + 64:.2f}" y="{image_y + 40:.2f}" '
-                f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" '
-                f'font-size="{FIGURE_TYPE_SMALL}" font-weight="700" fill="#FFFFFF">'
-                'Fast scan</text>',
             ]
         )
 
-    svg.extend(
-        [
-            '<rect x="748" y="100" width="602" height="590" fill="#FFFFFF" '
-            'stroke="#D3D8D6"/>',
-            '<rect x="774" y="120" width="5" height="43" fill="#159E9C"/>',
-            f'<text x="791" y="134" font-family="{FIGURE_SANS_FONT}" '
-            f'font-size="{FIGURE_TYPE_SMALL}" '
-            'font-weight="600" fill="#68716F">Selected filter</text>',
-            f'<text x="791" y="157" font-family="{FIGURE_SANS_FONT}" font-size="18" '
-            f'font-weight="700" fill="#293133">{escape(selected["label"])}</text>',
-            f'<text x="1297" y="134" text-anchor="end" '
-            f'font-family="{FIGURE_MONO_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
-            'fill="#68716F">'
-            f'{viewer["filterCount"]} filters</text>',
-        ]
+    svg.append(
+        '<rect x="748" y="100" width="602" height="590" fill="#FFFFFF" '
+        'stroke="#D3D8D6"/>'
     )
-    trace_values = segmentation_trace_row(viewer, "traceDataBase64", "traceColumns")
-    trace_top = 188
-    trace_height = 430 if modality != "neuropixels" else 250
-    append_segmentation_trace_chart(
+    append_segmentation_trace_stack(
         svg,
-        trace_values,
-        viewer["traceTimesSeconds"],
+        viewer,
+        trace_indices,
+        trace_rows,
         left=774,
-        top=trace_top,
+        top=116,
         width=548,
-        height=trace_height,
-        title=viewer["traceLabel"],
+        height=548,
     )
-    if modality == "neuropixels":
-        waveform = segmentation_trace_row(
-            viewer,
-            "waveformDataBase64",
-            "waveformColumns",
-        )
-        trough = min(range(len(waveform)), key=waveform.__getitem__)
-        waveform_times = [
-            (index - trough) / viewer["waveformSampleRateHz"] * 1000
-            for index in range(len(waveform))
-        ]
-        append_segmentation_trace_chart(
-            svg,
-            waveform,
-            waveform_times,
-            left=774,
-            top=455,
-            width=548,
-            height=180,
-            title="Mean template waveform · peak channel",
-            x_unit="ms",
-        )
     svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)
     write_svg_output(output, svg)
@@ -3629,7 +3646,7 @@ def write_segmentation_viewer_static_svg(
         'viewBox="0 0 1400 2280" role="img" aria-labelledby="title description">',
         '<title id="title">Unit extraction across recording modalities</title>',
         '<desc id="description">Neuropixels, mesoscope, and SLAP2 panels show '
-        'representative extraction filters with selected activity traces.</desc>',
+        'representative extraction filters with six stacked activity traces.</desc>',
         *panels,
         "</svg>",
     ]

@@ -435,7 +435,7 @@ html.is-embedded .viewer { min-height: 0; }
     anatomyRight: 160,
     plotBottom: 458,
     plotLeft: 168,
-    plotRight: 830,
+    plotRight: 870,
     plotTop: 42,
   };
 
@@ -575,26 +575,6 @@ html.is-embedded .viewer { min-height: 0; }
       size: 12,
     });
     context.restore();
-
-    const colorbarX = layout.plotRight + 9;
-    const gradient = context.createLinearGradient(0, layout.plotBottom, 0, layout.plotTop);
-    gradient.addColorStop(0, "rgb(28,77,151)");
-    gradient.addColorStop(0.5, "rgb(246,246,246)");
-    gradient.addColorStop(1, "rgb(189,54,41)");
-    context.fillStyle = gradient;
-    context.fillRect(colorbarX, layout.plotTop, 12, layout.plotBottom - layout.plotTop);
-    drawText(`+${formatNumber(option.valueLimit, 0)}`, colorbarX + 18, layout.plotTop + 8, {
-      color: "#59615f",
-      size: 12,
-    });
-    drawText("0", colorbarX + 18, (layout.plotTop + layout.plotBottom) / 2 + 4, {
-      color: "#59615f",
-      size: 12,
-    });
-    drawText(`-${formatNumber(option.valueLimit, 0)} µV`, colorbarX + 18, layout.plotBottom, {
-      color: "#59615f",
-      size: 12,
-    });
 
     const axisY = layout.plotBottom + 7;
     for (let index = 0; index <= 4; index += 1) {
