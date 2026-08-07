@@ -8,10 +8,7 @@ import struct
 from io import BytesIO
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
 import pytest
-from PIL import Image
 
 from openscope_p3_publication.figures import (
     ANIMAL_RECORDS_PATH,
@@ -95,24 +92,39 @@ from openscope_p3_publication.figures import (
     write_unit_yield_html,
     write_unit_yield_svg,
 )
-from openscope_p3_publication.optotagging import (
-    CONDITIONS,
-    SessionAnalysis,
-    SessionSkipped,
-    _unit_anatomy_acronyms,
-    allen_major_parent_acronyms,
-    baseline_zscore,
-    build_session_numeric_atlas,
-    compute_psth,
-    compute_response_metrics,
-    expand_pulse_times,
-    heatmap_response_scores,
-    mean_firing_rate_during_pulses,
-    order_heatmap_rows,
-    quantize_zscores,
-    strongest_first_indices,
-    validate_nwb,
-    write_results,
+
+try:
+    import numpy as np
+    import pandas as pd
+    from PIL import Image
+
+    from openscope_p3_publication.optotagging import (
+        CONDITIONS,
+        SessionAnalysis,
+        SessionSkipped,
+        _unit_anatomy_acronyms,
+        allen_major_parent_acronyms,
+        baseline_zscore,
+        build_session_numeric_atlas,
+        compute_psth,
+        compute_response_metrics,
+        expand_pulse_times,
+        heatmap_response_scores,
+        mean_firing_rate_during_pulses,
+        order_heatmap_rows,
+        quantize_zscores,
+        strongest_first_indices,
+        validate_nwb,
+        write_results,
+    )
+except ModuleNotFoundError:
+    HAS_OPTOTAGGING_ANALYSIS_DEPS = False
+else:
+    HAS_OPTOTAGGING_ANALYSIS_DEPS = True
+
+requires_optotagging_analysis_deps = pytest.mark.skipif(
+    not HAS_OPTOTAGGING_ANALYSIS_DEPS,
+    reason="Optotagging analysis dependencies are installed ad hoc by the extractor.",
 )
 
 
@@ -290,6 +302,7 @@ def test_unit_yield_outputs_are_deterministic_and_inspectable(tmp_path: Path) ->
     assert svg_path.read_text(encoding="utf-8") == svg
 
 
+@requires_optotagging_analysis_deps
 def test_expand_optotagging_pulse_times_uses_duration_and_frequency() -> None:
     pulses = expand_pulse_times(
         np.array([1.0, 3.0]),
@@ -300,6 +313,7 @@ def test_expand_optotagging_pulse_times_uses_duration_and_frequency() -> None:
     assert pulses == pytest.approx([1.0, 1.2, 1.4, 1.6, 1.8, 3.0, 3.2])
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_psth_returns_event_averaged_rate() -> None:
     centers, rates = compute_psth(
         np.array([0.001, 1.001]),
@@ -312,6 +326,7 @@ def test_optotagging_psth_returns_event_averaged_rate() -> None:
     assert rates == pytest.approx([0.0, 1000.0, 0.0, 0.0])
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_response_metrics_match_paired_pre_post_counts() -> None:
     condition = CONDITIONS[1]
     metrics = compute_response_metrics(
@@ -326,6 +341,7 @@ def test_optotagging_response_metrics_match_paired_pre_post_counts() -> None:
     assert 0.0 <= metrics["p_value"] <= 1.0
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_response_metrics_can_skip_unused_wilcoxon() -> None:
     metrics = compute_response_metrics(
         np.array([-0.005, 0.004, 0.006]),
@@ -340,6 +356,7 @@ def test_optotagging_response_metrics_can_skip_unused_wilcoxon() -> None:
     assert np.isnan(metrics["p_value"])
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_heatmap_normalization_and_modulation_ordering() -> None:
     time_seconds = np.array([-0.002, -0.001, 0.001, 0.002])
     psths = np.array(
@@ -356,6 +373,7 @@ def test_optotagging_heatmap_normalization_and_modulation_ordering() -> None:
     assert order.tolist() == [2, 1, 0, 3]
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_mean_firing_rate_during_exact_laser_pulses() -> None:
     rate = mean_firing_rate_during_pulses(
         spike_times=np.array(
@@ -378,6 +396,7 @@ def test_optotagging_mean_firing_rate_during_exact_laser_pulses() -> None:
     assert rate == pytest.approx(200.0)
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_heatmap_ordering_uses_exact_laser_rate() -> None:
     analysis = type(
         "Analysis",
@@ -406,12 +425,14 @@ def test_optotagging_heatmap_ordering_uses_exact_laser_rate() -> None:
     assert forty_hz_label == "mean firing during 6 ms pulses"
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_strongest_first_order_is_stable_and_puts_nan_last() -> None:
     order = strongest_first_indices(np.array([2.0, np.nan, 4.0, 4.0, -1.0]))
 
     assert order.tolist() == [2, 3, 0, 4, 1]
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_allen_major_parent_mapping_uses_hierarchy() -> None:
     class Regions:
         def acronym2id(self, acronym):
@@ -434,6 +455,7 @@ def test_optotagging_allen_major_parent_mapping_uses_hierarchy() -> None:
     assert parents.tolist() == ["Isocortex", "STR", "Other"]
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_unit_anatomy_uses_ragged_electrode_references() -> None:
     nwb = {
         "units": {
@@ -450,6 +472,7 @@ def test_optotagging_unit_anatomy_uses_ragged_electrode_references() -> None:
     assert _unit_anatomy_acronyms(nwb).tolist() == ["VISp", "CP"]
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_unit_anatomy_uses_probe_local_extremum_indices() -> None:
     nwb = {
         "units": {
@@ -466,12 +489,14 @@ def test_optotagging_unit_anatomy_uses_probe_local_extremum_indices() -> None:
     assert _unit_anatomy_acronyms(nwb).tolist() == ["CP", "TH"]
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_unit_anatomy_is_optional_for_legacy_nwbs() -> None:
     nwb = {"units": {"id": np.array([1, 2])}}
 
     assert _unit_anatomy_acronyms(nwb).tolist() == ["Other", "Other"]
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_numeric_atlas_retains_rows_and_laser_orders() -> None:
     time_seconds = np.linspace(-0.5, 1.2, 10, endpoint=False)
     psths = np.array(
@@ -514,6 +539,7 @@ def test_optotagging_numeric_atlas_retains_rows_and_laser_orders() -> None:
     assert metadata["quantization"]["scale"] == pytest.approx(127 / 8)
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_atlas_quantization_reserves_nan_sentinel() -> None:
     quantized = quantize_zscores(
         np.array([-9.0, -8.0, -4.0, 0.0, 4.0, 8.0, 9.0, np.nan])
@@ -523,11 +549,13 @@ def test_optotagging_atlas_quantization_reserves_nan_sentinel() -> None:
     assert quantized.tolist() == [-127, -127, -64, 0, 64, 127, 127, -128]
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_validate_nwb_reports_missing_conditions() -> None:
     with pytest.raises(SessionSkipped, match="missing optotagging tables"):
         validate_nwb({"intervals": {}, "units": {}})
 
 
+@requires_optotagging_analysis_deps
 def test_optotagging_write_results_round_trips_parquet(tmp_path: Path) -> None:
     metric_columns = {
         "asset_id": ["asset-1"],
