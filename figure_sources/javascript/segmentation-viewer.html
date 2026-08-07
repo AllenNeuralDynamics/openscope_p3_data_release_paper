@@ -8,16 +8,18 @@
 </head>
 <body>
   <main class="viewer" id="segmentation-viewer" data-modality="neuropixels">
-    <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality" role="tablist"></nav>
-    <header class="figure-header">
-      <div>
-        <p class="eyebrow" id="panel-label"></p>
-        <h1 id="viewer-title"></h1>
-        <p class="session-line" id="session-line"></p>
-      </div>
-    </header>
+    <div class="view-switch" role="group" aria-label="Interactive or static view">
+      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
+    </div>
 
-    <section class="toolbar" aria-label="Viewer controls">
+    <div id="interactive-view">
+      <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality" role="tablist"></nav>
+      <header class="figure-header">
+        <h1 id="viewer-title"></h1>
+      </header>
+
+      <section class="toolbar" aria-label="Viewer controls">
       <label class="select-control source-control" for="source-select">
         <span id="source-label">Source</span>
         <select id="source-select"></select>
@@ -34,9 +36,9 @@
         <input id="common-mode-toggle" type="checkbox" checked>
         <span>Common-mode correction</span>
       </label>
-    </section>
+      </section>
 
-    <section class="workspace">
+      <section class="workspace">
       <div class="visual-panel">
         <div class="canvas-shell">
           <canvas
@@ -88,6 +90,11 @@
           Open source NWB on DANDI ↗
         </a>
       </aside>
+      </section>
+    </div>
+
+    <section class="static-view" id="static-view" aria-label="Static unit-extraction overview" hidden>
+      <img src="__SEGMENTATION_STATIC_IMAGE__" alt="Neuropixels, mesoscope, and SLAP2 unit-extraction filters with selected activity traces.">
     </section>
   </main>
   <script id="segmentation-data" type="application/json">__SEGMENTATION_DATA__</script>

@@ -6,6 +6,32 @@
   <meta name="color-scheme" content="light">
   <title>Raw data across recording modalities</title>
   <style>
+:root {
+  --figure-font-sans: "Myriad Pro", Arial, sans-serif;
+  --figure-font-mono: "IBM Plex Mono", monospace;
+  --figure-type-panel-title: 1.25rem;
+  --figure-type-section-title: 1rem;
+  --figure-type-body: 0.875rem;
+  --figure-type-control: 0.8125rem;
+  --figure-type-metadata: 0.75rem;
+  --figure-type-axis: 0.75rem;
+  --figure-line-body: 1.45;
+  --figure-line-compact: 1.3;
+}
+
+body {
+  font-family: var(--figure-font-sans);
+  font-size: var(--figure-type-body);
+  line-height: var(--figure-line-body);
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+  font-size: var(--figure-type-control);
+}
+
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap");
 
 :root {
@@ -153,7 +179,7 @@ html.is-embedded .viewer { min-height: 0; }
 
 .toolbar > label {
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: var(--figure-type-control);
   font-weight: 650;
 }
 
@@ -165,7 +191,7 @@ html.is-embedded .viewer { min-height: 0; }
   border-radius: 4px;
   background: #fff;
   color: var(--ink);
-  font-size: 0.79rem;
+  font-size: var(--figure-type-control);
 }
 
 .contrast-control {
@@ -177,7 +203,7 @@ html.is-embedded .viewer { min-height: 0; }
 
 .contrast-control label {
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: var(--figure-type-control);
   font-weight: 650;
 }
 
@@ -207,7 +233,7 @@ html.is-embedded .viewer { min-height: 0; }
   border-radius: 4px;
   background: rgba(8, 11, 12, 0.9);
   color: #eaf1ef;
-  font-size: 0.78rem;
+  font-size: var(--figure-type-metadata);
   transform: translate(-50%, -50%);
 }
 
@@ -222,7 +248,7 @@ html.is-embedded .viewer { min-height: 0; }
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 4px 14px rgba(34, 40, 41, 0.14);
   color: var(--ink);
-  font-size: 0.75rem;
+  font-size: var(--figure-type-metadata);
   line-height: 1.4;
   pointer-events: none;
 }
@@ -271,7 +297,7 @@ html.is-embedded .viewer { min-height: 0; }
   grid-template-columns: repeat(5, 1fr);
   color: #3f4745;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.72rem;
+  font-size: var(--figure-type-axis);
   font-weight: 600;
   line-height: 1.1;
   text-align: center;
@@ -282,7 +308,7 @@ html.is-embedded .viewer { min-height: 0; }
 
 .timeline-label {
   color: #4f5654;
-  font-size: 0.76rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 600;
   line-height: 1.2;
   text-align: center;
@@ -292,13 +318,13 @@ html.is-embedded .viewer { min-height: 0; }
   padding-top: 2px;
   color: var(--ink);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.76rem;
+  font-size: var(--figure-type-metadata);
   text-align: right;
 }
 
 @media (max-width: 700px) {
   .modality-tabs { padding-inline: 5px; }
-  .modality-tab { min-width: 0; flex: 1; gap: 4px; padding-inline: 6px; font-size: 0.75rem; }
+  .modality-tab { min-width: 0; flex: 1; gap: 4px; padding-inline: 6px; font-size: var(--figure-type-control); }
   .modality-logo { width: 32px; height: 32px; flex-basis: 32px; }
   .toolbar { grid-template-columns: auto minmax(120px, 1fr); }
   .contrast-control { grid-column: 1 / -1; }
@@ -537,7 +563,7 @@ html.is-embedded .viewer { min-height: 0; }
       drawText(formatNumber(depth, 0), layout.anatomyLeft - 10, y + (index === 0 ? 8 : index === 2 ? -2 : 4), {
         align: "right",
         color: "#59615f",
-        size: 11,
+        size: 12,
       });
     });
     context.save();
@@ -559,15 +585,15 @@ html.is-embedded .viewer { min-height: 0; }
     context.fillRect(colorbarX, layout.plotTop, 12, layout.plotBottom - layout.plotTop);
     drawText(`+${formatNumber(option.valueLimit, 0)}`, colorbarX + 18, layout.plotTop + 8, {
       color: "#59615f",
-      size: 10,
+      size: 12,
     });
     drawText("0", colorbarX + 18, (layout.plotTop + layout.plotBottom) / 2 + 4, {
       color: "#59615f",
-      size: 10,
+      size: 12,
     });
     drawText(`-${formatNumber(option.valueLimit, 0)} µV`, colorbarX + 18, layout.plotBottom, {
       color: "#59615f",
-      size: 10,
+      size: 12,
     });
 
     const axisY = layout.plotBottom + 7;
@@ -585,14 +611,14 @@ html.is-embedded .viewer { min-height: 0; }
       drawText(`${Math.round(milliseconds)}`, x, axisY + 14, {
         align: "center",
         color: "#59615f",
-        size: 10,
+        size: 12,
         weight: 500,
       });
     }
     drawText("Excerpt time (ms)", (layout.plotLeft + layout.plotRight) / 2, 510, {
       align: "center",
       color: "#4d5553",
-      size: 11,
+      size: 12,
     });
   }
 
@@ -601,7 +627,7 @@ html.is-embedded .viewer { min-height: 0; }
     drawText("CCF", layout.anatomyLeft + width / 2, layout.plotTop - 13, {
       align: "center",
       color: "#4d5553",
-      size: 11,
+      size: 12,
       weight: 700,
     });
     option.anatomySegments.forEach((segment, index) => {
@@ -612,12 +638,12 @@ html.is-embedded .viewer { min-height: 0; }
         ? "#f5f6f6"
         : index % 2 === 0 ? "#e2e7e5" : "#eef1f0";
       context.fillRect(layout.anatomyLeft, top, width, height);
-      if (height >= 11) {
+      if (height >= 15) {
         drawText(segment.label, layout.anatomyLeft + width / 2, top + height / 2, {
           align: "center",
           baseline: "middle",
           color: "#3f4745",
-          size: 9,
+          size: 12,
           weight: 600,
         });
       }

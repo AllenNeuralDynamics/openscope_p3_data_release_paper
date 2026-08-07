@@ -6,66 +6,66 @@
 <text x="40" y="123" font-family="Myriad Pro, Arial, sans-serif" font-size="17" font-weight="600" fill="#172126">Session 1</text>
 <text x="40" y="144" font-family="Myriad Pro, Arial, sans-serif" font-size="14" fill="#49565C">Standard oddball</text>
 <rect x="220.00" y="105" width="82.58" height="44" fill="#D9DFE3" stroke="#FFFFFF" stroke-width="1"/>
-<text x="261.29" y="132" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control</text>
+<text x="261.29" y="132" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Standard control</text>
 <rect x="302.58" y="105" width="335.48" height="44" fill="#22BCAD" stroke="#FFFFFF" stroke-width="1"/>
-<text x="470.32" y="132" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Context mismatch</text>
+<text x="470.32" y="132" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Context mismatch</text>
 <rect x="638.06" y="105" width="82.58" height="44" fill="#C7D0D6" stroke="#FFFFFF" stroke-width="1"/>
-<text x="679.35" y="132" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control repeat</text>
+<text x="679.35" y="132" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Standard control repeat</text>
 <rect x="720.65" y="105" width="60.65" height="44" fill="#B5C1C8" stroke="#FFFFFF" stroke-width="1"/>
 <rect x="781.29" y="105" width="82.58" height="44" fill="#A4B2BA" stroke="#FFFFFF" stroke-width="1"/>
-<text x="822.58" y="132" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Jitter control</text>
+<text x="822.58" y="132" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Jitter control</text>
 <rect x="863.87" y="105" width="82.58" height="44" fill="#92A3AC" stroke="#FFFFFF" stroke-width="1"/>
-<text x="905.16" y="132" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Open-loop playback</text>
+<text x="905.16" y="132" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Open-loop playback</text>
 <rect x="946.45" y="105" width="129.03" height="44" fill="#80949E" stroke="#FFFFFF" stroke-width="1"/>
-<text x="1010.97" y="132" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Natural movie</text>
+<text x="1010.97" y="132" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Natural movie</text>
 <rect x="1075.48" y="105" width="64.52" height="44" fill="#6F858F" stroke="#FFFFFF" stroke-width="1"/>
 <text x="40" y="195" font-family="Myriad Pro, Arial, sans-serif" font-size="17" font-weight="600" fill="#172126">Session 2</text>
 <text x="40" y="216" font-family="Myriad Pro, Arial, sans-serif" font-size="14" fill="#49565C">Sensorimotor mismatch</text>
 <rect x="220.00" y="177" width="82.58" height="44" fill="#D9DFE3" stroke="#FFFFFF" stroke-width="1"/>
-<text x="261.29" y="204" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control</text>
+<text x="261.29" y="204" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Standard control</text>
 <rect x="302.58" y="177" width="335.48" height="44" fill="#283185" stroke="#FFFFFF" stroke-width="1"/>
-<text x="470.32" y="204" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Context mismatch</text>
+<text x="470.32" y="204" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Context mismatch</text>
 <rect x="638.06" y="177" width="82.58" height="44" fill="#C7D0D6" stroke="#FFFFFF" stroke-width="1"/>
-<text x="679.35" y="204" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control repeat</text>
+<text x="679.35" y="204" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Standard control repeat</text>
 <rect x="720.65" y="177" width="60.65" height="44" fill="#B5C1C8" stroke="#FFFFFF" stroke-width="1"/>
 <rect x="781.29" y="177" width="82.58" height="44" fill="#A4B2BA" stroke="#FFFFFF" stroke-width="1"/>
-<text x="822.58" y="204" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Jitter control</text>
+<text x="822.58" y="204" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Jitter control</text>
 <rect x="863.87" y="177" width="82.58" height="44" fill="#92A3AC" stroke="#FFFFFF" stroke-width="1"/>
-<text x="905.16" y="204" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Open-loop playback</text>
+<text x="905.16" y="204" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Open-loop playback</text>
 <rect x="946.45" y="177" width="129.03" height="44" fill="#80949E" stroke="#FFFFFF" stroke-width="1"/>
-<text x="1010.97" y="204" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Natural movie</text>
+<text x="1010.97" y="204" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Natural movie</text>
 <rect x="1075.48" y="177" width="64.52" height="44" fill="#6F858F" stroke="#FFFFFF" stroke-width="1"/>
 <text x="40" y="267" font-family="Myriad Pro, Arial, sans-serif" font-size="17" font-weight="600" fill="#172126">Session 3</text>
 <text x="40" y="288" font-family="Myriad Pro, Arial, sans-serif" font-size="14" fill="#49565C">Sequence mismatch</text>
 <rect x="220.00" y="249" width="82.58" height="44" fill="#D9DFE3" stroke="#FFFFFF" stroke-width="1"/>
-<text x="261.29" y="276" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control</text>
+<text x="261.29" y="276" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Standard control</text>
 <rect x="302.58" y="249" width="335.48" height="44" fill="#B16027" stroke="#FFFFFF" stroke-width="1"/>
-<text x="470.32" y="276" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Context mismatch</text>
+<text x="470.32" y="276" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Context mismatch</text>
 <rect x="638.06" y="249" width="82.58" height="44" fill="#C7D0D6" stroke="#FFFFFF" stroke-width="1"/>
-<text x="679.35" y="276" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control repeat</text>
+<text x="679.35" y="276" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Standard control repeat</text>
 <rect x="720.65" y="249" width="60.65" height="44" fill="#B5C1C8" stroke="#FFFFFF" stroke-width="1"/>
 <rect x="781.29" y="249" width="82.58" height="44" fill="#A4B2BA" stroke="#FFFFFF" stroke-width="1"/>
-<text x="822.58" y="276" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Jitter control</text>
+<text x="822.58" y="276" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Jitter control</text>
 <rect x="863.87" y="249" width="82.58" height="44" fill="#92A3AC" stroke="#FFFFFF" stroke-width="1"/>
-<text x="905.16" y="276" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Open-loop playback</text>
+<text x="905.16" y="276" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Open-loop playback</text>
 <rect x="946.45" y="249" width="129.03" height="44" fill="#80949E" stroke="#FFFFFF" stroke-width="1"/>
-<text x="1010.97" y="276" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Natural movie</text>
+<text x="1010.97" y="276" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Natural movie</text>
 <rect x="1075.48" y="249" width="64.52" height="44" fill="#6F858F" stroke="#FFFFFF" stroke-width="1"/>
 <text x="40" y="339" font-family="Myriad Pro, Arial, sans-serif" font-size="17" font-weight="600" fill="#172126">Session 4</text>
 <text x="40" y="360" font-family="Myriad Pro, Arial, sans-serif" font-size="14" fill="#49565C">Duration mismatch</text>
 <rect x="220.00" y="321" width="82.58" height="44" fill="#D9DFE3" stroke="#FFFFFF" stroke-width="1"/>
-<text x="261.29" y="348" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control</text>
+<text x="261.29" y="348" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Standard control</text>
 <rect x="302.58" y="321" width="335.48" height="44" fill="#CCAF2D" stroke="#FFFFFF" stroke-width="1"/>
-<text x="470.32" y="348" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Context mismatch</text>
+<text x="470.32" y="348" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Context mismatch</text>
 <rect x="638.06" y="321" width="82.58" height="44" fill="#C7D0D6" stroke="#FFFFFF" stroke-width="1"/>
-<text x="679.35" y="348" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Standard control repeat</text>
+<text x="679.35" y="348" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Standard control repeat</text>
 <rect x="720.65" y="321" width="60.65" height="44" fill="#B5C1C8" stroke="#FFFFFF" stroke-width="1"/>
 <rect x="781.29" y="321" width="82.58" height="44" fill="#A4B2BA" stroke="#FFFFFF" stroke-width="1"/>
-<text x="822.58" y="348" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Jitter control</text>
+<text x="822.58" y="348" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Jitter control</text>
 <rect x="863.87" y="321" width="82.58" height="44" fill="#92A3AC" stroke="#FFFFFF" stroke-width="1"/>
-<text x="905.16" y="348" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Open-loop playback</text>
+<text x="905.16" y="348" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Open-loop playback</text>
 <rect x="946.45" y="321" width="129.03" height="44" fill="#80949E" stroke="#FFFFFF" stroke-width="1"/>
-<text x="1010.97" y="348" font-family="Myriad Pro, Arial, sans-serif" font-size="11" text-anchor="middle" fill="#172126">Natural movie</text>
+<text x="1010.97" y="348" font-family="Myriad Pro, Arial, sans-serif" font-size="12" text-anchor="middle" fill="#172126">Natural movie</text>
 <rect x="1075.48" y="321" width="64.52" height="44" fill="#6F858F" stroke="#FFFFFF" stroke-width="1"/>
 <line x1="220" y1="405" x2="1140" y2="405" stroke="#49565C" stroke-width="1"/>
 <line x1="220.00" y1="405" x2="220.00" y2="411" stroke="#49565C" stroke-width="1"/>

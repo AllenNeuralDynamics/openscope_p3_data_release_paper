@@ -2,7 +2,8 @@
   "use strict";
 
   const protocol = JSON.parse(document.getElementById("segmentation-data").textContent);
-  const colors = ["#25aae1", "#8cc63f", "#ccaf2d", "#d65c48", "#24bcad", "#b160a9"];
+  const selectedColor = "#25aae1";
+  const unselectedColor = "#aebbb8";
   const modalityAccents = {
     neuropixels: "#3157b7",
     mesoscope: "#168f78",
@@ -24,13 +25,13 @@
     filterSelect: document.getElementById("filter-select"),
     filterKeyLabel: document.getElementById("filter-key-label"),
     loading: document.getElementById("loading-status"),
+    interactiveView: document.getElementById("interactive-view"),
     modalitySelector: document.getElementById("modality-selector"),
     nextFilter: document.getElementById("next-filter"),
     previousFilter: document.getElementById("previous-filter"),
-    panelLabel: document.getElementById("panel-label"),
     selectionSwatch: document.getElementById("selection-swatch"),
     selectionTitle: document.getElementById("selection-title"),
-    sessionLine: document.getElementById("session-line"),
+    staticView: document.getElementById("static-view"),
     sourceLabel: document.getElementById("source-label"),
     sourceLink: document.getElementById("source-link"),
     sourceSelect: document.getElementById("source-select"),
@@ -41,6 +42,7 @@
     waveformSection: document.getElementById("waveform-section"),
     viewer: document.getElementById("segmentation-viewer"),
     viewerTitle: document.getElementById("viewer-title"),
+    viewButtons: document.querySelectorAll(".view-button"),
   };
   const context = elements.canvas.getContext("2d");
   const decodedViewers = protocol.viewers.map((modality) => modality.sources.map((record) => ({
@@ -70,6 +72,16 @@
   let rawHeatmapKey = null;
   let state = viewerStates[0][0];
 
+  function selectView(view) {
+    elements.interactiveView.hidden = view !== "interactive";
+    elements.staticView.hidden = view !== "static";
+    elements.viewButtons.forEach((button) => {
+      const active = button.dataset.view === view;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+  }
+
   function decodeFloat32(encoded) {
     const binary = atob(encoded);
     const bytes = new Uint8Array(binary.length);
@@ -92,8 +104,8 @@
     return viewer.filters[state.selectedIndex];
   }
 
-  function filterColor(index) {
-    return colors[index % colors.length];
+  function filterColor() {
+    return selectedColor;
   }
 
   function formatNumber(value, digits = 1) {
@@ -218,7 +230,7 @@
     drawCanvasText("Fast scan", (startX + endX) / 2, y + 18, {
       align: "center",
       color: "#f8fbfa",
-      size: 11,
+      size: 12,
       weight: 700,
     });
   }
@@ -238,8 +250,10 @@
     context.drawImage(imageRecords.base, rect.x, rect.y, rect.width, rect.height);
     context.filter = "none";
     context.imageSmoothingEnabled = false;
-    context.globalAlpha = 1;
+    context.filter = "grayscale(1)";
+    context.globalAlpha = 0.58;
     context.drawImage(imageRecords.overlay, rect.x, rect.y, rect.width, rect.height);
+    context.filter = "none";
     context.globalAlpha = 1;
     drawSelectionMask(rect);
     context.strokeStyle = "#aab6b3";
@@ -337,8 +351,8 @@
       const y = layout.y(event.row);
       const isSelected = event.filterIndex === state.selectedIndex;
       const radius = isSelected ? 5 : 2.5;
-      context.fillStyle = filterColor(event.filterIndex);
-      context.globalAlpha = isSelected ? 1 : 0.82;
+      context.fillStyle = isSelected ? filterColor() : unselectedColor;
+      context.globalAlpha = isSelected ? 1 : 0.62;
       context.beginPath();
       context.arc(x, y, radius, 0, Math.PI * 2);
       context.fill();
@@ -362,7 +376,7 @@
       drawCanvasText(`${formatNumber(time, 0)}`, x, plot.bottom + 22, {
         align: "center",
         color: "#aebbb8",
-        size: 11,
+        size: 12,
       });
     }
     for (let index = 0; index <= 4; index += 1) {
@@ -373,7 +387,7 @@
       drawCanvasText(`${formatNumber(depth, 0)}`, plot.left - 10, y + 4, {
         align: "right",
         color: "#aebbb8",
-        size: 11,
+        size: 12,
       });
     }
     const voltageLabel = state.commonModeCorrected
@@ -640,9 +654,7 @@
 
   function updateViewerChrome() {
     elements.viewer.dataset.modality = modality.id;
-    elements.panelLabel.textContent = `Unit extraction · ${viewer.panelLabel}`;
     elements.viewerTitle.textContent = viewerTitles[modality.id];
-    elements.sessionLine.textContent = `Mouse ${modality.subject} · ${modality.session}`;
     elements.sourceLabel.textContent = modality.sourceLabel;
     elements.sourceLink.href = viewer.asset.dandiset_url;
     elements.canvas.setAttribute("aria-label", `${viewerTitles[modality.id]} filter map`);
@@ -708,6 +720,9 @@
   }
 
   function configureControls() {
+    elements.viewButtons.forEach((button) => {
+      button.addEventListener("click", () => selectView(button.dataset.view));
+    });
     elements.sourceSelect.addEventListener("change", () => {
       activateSource(Number(elements.sourceSelect.value));
     });
@@ -734,6 +749,7 @@
 
   async function initialize() {
     configureControls();
+    selectView("interactive");
     await activateModality(0);
   }
 

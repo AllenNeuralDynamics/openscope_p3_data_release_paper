@@ -48,6 +48,40 @@ canvas:focus-visible {
 
 html.is-embedded .viewer { min-height: 0; }
 
+.view-switch {
+  min-height: 44px;
+  display: flex;
+  align-items: end;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--wash);
+}
+
+.view-button {
+  position: relative;
+  min-height: 43px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: var(--figure-type-control);
+  font-weight: 650;
+}
+
+.view-button::after {
+  position: absolute;
+  right: 12px;
+  bottom: -1px;
+  left: 12px;
+  height: 3px;
+  background: transparent;
+  content: "";
+}
+
+.view-button.active { color: var(--ink); }
+.view-button.active::after { background: var(--accent); }
+
 .modality-tabs {
   min-height: 62px;
   display: flex;
@@ -94,32 +128,23 @@ html.is-embedded .viewer { min-height: 0; }
 }
 
 .figure-header {
-  min-height: 104px;
-  padding: 18px 22px 16px;
+  min-height: 64px;
+  padding: 12px 22px;
   display: flex;
   align-items: center;
-  gap: 24px;
   border-bottom: 1px solid var(--line);
 }
 
-.eyebrow,
-.session-line,
 .selection-kicker {
   margin: 0;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 650;
 }
 
-.eyebrow {
-  color: var(--accent);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
 h1 {
-  margin: 4px 0 3px;
-  font-size: clamp(1.2rem, 2.2vw, 1.75rem);
+  margin: 0;
+  font-size: var(--figure-type-panel-title);
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.08;
@@ -159,7 +184,7 @@ h1 {
 .range-control span,
 .toggle-control span {
   color: #4e5755;
-  font-size: 0.74rem;
+  font-size: var(--figure-type-control);
   font-weight: 650;
   white-space: nowrap;
 }
@@ -173,7 +198,7 @@ h1 {
   border-radius: 4px;
   background: #fff;
   color: var(--ink);
-  font-size: 0.78rem;
+  font-size: var(--figure-type-control);
 }
 
 #background-intensity { width: 100%; accent-color: var(--accent); }
@@ -224,7 +249,7 @@ h1 {
   border-radius: 4px;
   background: rgba(5, 10, 12, 0.9);
   color: #eef5f3;
-  font-size: 0.78rem;
+  font-size: var(--figure-type-metadata);
   transform: translate(-50%, -50%);
 }
 
@@ -238,7 +263,7 @@ h1 {
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 5px 16px rgba(18, 29, 30, 0.18);
   color: var(--ink);
-  font-size: 0.74rem;
+  font-size: var(--figure-type-metadata);
   line-height: 1.35;
   pointer-events: none;
 }
@@ -253,7 +278,7 @@ h1 {
   border-top: 1px solid #253033;
   background: #10191b;
   color: #dce5e3;
-  font-size: 0.72rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 650;
 }
 
@@ -317,13 +342,13 @@ h1 {
 }
 
 .filter-metadata div { min-width: 0; }
-.filter-metadata dt { color: var(--muted); font-size: 0.68rem; font-weight: 650; }
+.filter-metadata dt { color: var(--muted); font-size: var(--figure-type-metadata); font-weight: 650; }
 .filter-metadata dd {
   margin: 2px 0 0;
   overflow: hidden;
   color: var(--ink);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.72rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -343,11 +368,11 @@ h1 {
   gap: 12px;
 }
 
-.chart-heading h3 { margin: 0; font-size: 0.82rem; font-weight: 700; }
+.chart-heading h3 { margin: 0; font-size: var(--figure-type-section-title); font-weight: 700; }
 .chart-heading span {
   color: var(--muted);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.65rem;
+  font-size: var(--figure-type-axis);
 }
 
 .chart-section svg { width: 100%; height: auto; display: block; }
@@ -363,12 +388,22 @@ h1 {
   margin-top: 14px;
   display: inline-block;
   color: #176d77;
-  font-size: 0.75rem;
+  font-size: var(--figure-type-control);
   font-weight: 650;
   text-decoration: none;
 }
 
 .source-link:hover { text-decoration: underline; }
+
+.static-view {
+  background: #fff;
+}
+
+.static-view img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
 
 @media (max-width: 860px) {
   .workspace { grid-template-columns: 1fr; }
@@ -382,10 +417,10 @@ h1 {
 
 @media (max-width: 520px) {
   .modality-tabs { padding-inline: 4px; }
-  .modality-tab { flex: 1; padding-inline: 6px; gap: 5px; font-size: 0.72rem; }
+  .modality-tab { flex: 1; padding-inline: 6px; gap: 5px; font-size: var(--figure-type-control); }
   .modality-tab::after { right: 5px; left: 5px; }
   .modality-logo { width: 31px; height: 31px; flex-basis: 31px; }
-  .figure-header { min-height: 92px; padding: 14px; gap: 12px; }
+  .figure-header { min-height: 58px; padding: 10px 14px; }
   .toolbar { padding: 9px 10px; }
   .select-control,
   .range-control { grid-template-columns: 1fr; gap: 4px; }
