@@ -507,7 +507,7 @@
   function lineChart(svg, times, sourceValues, options = {}) {
     const width = 640;
     const height = options.height || 230;
-    const margin = { left: 66, right: 18, top: 24, bottom: 43 };
+    const margin = { left: 96, right: 40, top: 24, bottom: 43 };
     const finite = Array.from(sourceValues).filter(Number.isFinite);
     let yMin = Math.min(...finite);
     let yMax = Math.max(...finite);
