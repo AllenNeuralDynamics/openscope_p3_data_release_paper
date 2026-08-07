@@ -173,6 +173,11 @@ SEGMENTATION_VIEWER_TITLES = {
     "mesoscope": "Mesoscope ROI segmentation viewer",
     "slap2": "SLAP2 source-segmentation viewer",
 }
+SEGMENTATION_PANEL_LABELS = {
+    "neuropixels": ("A", "B"),
+    "mesoscope": ("C", "D"),
+    "slap2": ("E", "F"),
+}
 SEGMENTATION_FILTER_COLORS = (
     (37, 170, 225),
     (140, 198, 63),
@@ -2617,8 +2622,9 @@ def load_segmentation_viewers(
         for source in sources:
             source_id = source["sourceId"]
             if modality_id != "neuropixels":
-                source["traceLabel"] = "ΔF/F"
-                source["traceUnit"] = "ΔF/F"
+                source["traceLabel"] = "ΔF/F (%)"
+                source["traceScale"] = 100
+                source["traceUnit"] = "%"
             filter_count = expected_counts[source_id]
             rows = source.get("traceRows")
             columns = source.get("traceColumns")
@@ -2742,6 +2748,93 @@ def encode_rgb_png(width: int, height: int, pixels: bytes) -> bytes:
             png_chunk(b"IEND", b""),
         )
     )
+
+
+def paeth_predictor(left: int, above: int, upper_left: int) -> int:
+    estimate = left + above - upper_left
+    left_distance = abs(estimate - left)
+    above_distance = abs(estimate - above)
+    upper_left_distance = abs(estimate - upper_left)
+    if left_distance <= above_distance and left_distance <= upper_left_distance:
+        return left
+    if above_distance <= upper_left_distance:
+        return above
+    return upper_left
+
+
+def decode_rgb_png(path: Path) -> tuple[int, int, bytes]:
+    encoded = path.read_bytes()
+    if not encoded.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise RuntimeError(f"PNG signature is invalid: {path.name}")
+    position = 8
+    width = height = None
+    compressed = []
+    while position < len(encoded):
+        length = struct.unpack(">I", encoded[position : position + 4])[0]
+        chunk_type = encoded[position + 4 : position + 8]
+        chunk = encoded[position + 8 : position + 8 + length]
+        position += length + 12
+        if chunk_type == b"IHDR":
+            width, height, depth, color, compression, filtering, interlace = (
+                struct.unpack(">IIBBBBB", chunk)
+            )
+            if (depth, color, compression, filtering, interlace) != (8, 2, 0, 0, 0):
+                raise RuntimeError(f"PNG format is unsupported: {path.name}")
+        elif chunk_type == b"IDAT":
+            compressed.append(chunk)
+        elif chunk_type == b"IEND":
+            break
+    if width is None or height is None or not compressed:
+        raise RuntimeError(f"PNG data is incomplete: {path.name}")
+
+    raw = zlib.decompress(b"".join(compressed))
+    stride = width * 3
+    expected = height * (stride + 1)
+    if len(raw) != expected:
+        raise RuntimeError(f"PNG scanline length changed: {path.name}")
+    pixels = bytearray()
+    previous = bytearray(stride)
+    for row_index in range(height):
+        offset = row_index * (stride + 1)
+        filter_type = raw[offset]
+        scanline = bytearray(raw[offset + 1 : offset + stride + 1])
+        for index, value in enumerate(scanline):
+            left = scanline[index - 3] if index >= 3 else 0
+            above = previous[index]
+            upper_left = previous[index - 3] if index >= 3 else 0
+            if filter_type == 1:
+                value += left
+            elif filter_type == 2:
+                value += above
+            elif filter_type == 3:
+                value += (left + above) // 2
+            elif filter_type == 4:
+                value += paeth_predictor(left, above, upper_left)
+            elif filter_type != 0:
+                raise RuntimeError(f"PNG filter is unsupported: {filter_type}")
+            scanline[index] = value & 0xFF
+        pixels.extend(scanline)
+        previous = scanline
+    return width, height, bytes(pixels)
+
+
+def represented_filter_fill_png(viewer: dict, indices: list[int]) -> bytes:
+    label_path = REPO_ROOT / "figure_sources" / viewer["labelImage"]["assetPath"]
+    width, height, labels = decode_rgb_png(label_path)
+    color_by_label = {
+        index + 1: SEGMENTATION_FILTER_COLORS[index % len(SEGMENTATION_FILTER_COLORS)]
+        for index in indices
+    }
+    pixels = bytearray(width * height * 4)
+    for pixel_index in range(width * height):
+        source = pixel_index * 3
+        label = labels[source] + (labels[source + 1] << 8) + (labels[source + 2] << 16)
+        color = color_by_label.get(label)
+        if color is None:
+            continue
+        target = pixel_index * 4
+        pixels[target : target + 4] = bytes((*color, 120))
+    return encode_rgba_png(width, height, bytes(pixels))
 
 
 def common_median_corrected_rgb(
@@ -3273,15 +3366,16 @@ def segmentation_trace_rows(viewer: dict) -> list[list[float]]:
     columns = viewer["traceColumns"]
     encoded = base64.b64decode(viewer["traceDataBase64"], validate=True)
     values = struct.unpack(f"<{rows * columns}f", encoded)
+    scale = viewer.get("traceScale", 1)
     return [
-        list(values[index * columns : (index + 1) * columns])
+        [value * scale for value in values[index * columns : (index + 1) * columns]]
         for index in range(rows)
     ]
 
 
 def static_segmentation_trace_indices(
     rows: list[list[float]],
-    count: int = 6,
+    count: int = 20,
 ) -> list[int]:
     active_indices = []
     for index, values in enumerate(rows):
@@ -3331,22 +3425,15 @@ def append_segmentation_trace_stack(
     maximum_time = times[-1]
     plot_left = left + 94
     plot_right = left + width - 18
-    traces_top = top + 42
-    scale_height = 54
-    row_height = (height - 42 - scale_height) / len(selected_rows)
+    traces_top = top + 8
+    scale_height = 38
+    row_height = (height - 8 - scale_height) / len(selected_rows)
     trace_height = row_height * 0.62
-    title = "Binned spike rate" if viewer["id"] == "neuropixels" else "ΔF/F"
-    svg.append(
-        f'<text x="{left:.2f}" y="{top + 20:.2f}" '
-        f'font-family="{FIGURE_SANS_FONT}" font-size="16" font-weight="700" '
-        f'fill="#293133">Activity traces · {title}</text>'
-    )
 
     for row_position, (index, values) in enumerate(
         zip(indices, selected_rows, strict=True)
     ):
         row_top = traces_top + row_position * row_height
-        row_bottom = row_top + trace_height
         commands = []
         drawing = False
         stride = max(1, math.ceil(len(values) / 900))
@@ -3371,9 +3458,6 @@ def append_segmentation_trace_stack(
                 f'text-anchor="end" font-family="{FIGURE_SANS_FONT}" '
                 f'font-size="{FIGURE_TYPE_SMALL}" fill="#4D5553">'
                 f'{escape(viewer["filters"][index]["label"])}</text>',
-                f'<line x1="{plot_left:.2f}" y1="{row_bottom:.2f}" '
-                f'x2="{plot_right:.2f}" y2="{row_bottom:.2f}" '
-                'stroke="#E2E6E4" stroke-width="1"/>',
                 f'<path class="static-activity-trace" data-filter-index="{index}" '
                 f'd="{" ".join(commands)}" fill="none" stroke="{stroke}" '
                 'stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>',
@@ -3388,34 +3472,23 @@ def append_segmentation_trace_stack(
     y_scale = nice_trace_scale((maximum - minimum) * 0.25)
     y_scale_height = y_scale / (maximum - minimum) * trace_height
     scale_x = plot_left
-    unit = "Hz" if viewer["id"] == "neuropixels" else "ΔF/F"
+    unit = "Hz" if viewer["id"] == "neuropixels" else "%"
+    y_scale_label = f"{y_scale:g}%" if unit == "%" else f"{y_scale:g} {unit}"
     svg.extend(
         [
             f'<line class="trace-scale-bar" x1="{scale_x:.2f}" y1="{scale_y:.2f}" '
             f'x2="{scale_x + x_scale_width:.2f}" y2="{scale_y:.2f}" '
-            'stroke="#4D5553" stroke-width="1.5"/>',
-            f'<line class="trace-scale-tick" x1="{scale_x:.2f}" y1="{scale_y - 4:.2f}" '
-            f'x2="{scale_x:.2f}" y2="{scale_y + 4:.2f}" stroke="#4D5553"/>',
-            f'<line class="trace-scale-tick" x1="{scale_x + x_scale_width:.2f}" '
-            f'y1="{scale_y - 4:.2f}" x2="{scale_x + x_scale_width:.2f}" '
-            f'y2="{scale_y + 4:.2f}" stroke="#4D5553"/>',
+            'stroke="#000000" stroke-width="5" stroke-linecap="square"/>',
             f'<text x="{scale_x + x_scale_width / 2:.2f}" y="{scale_y + 18:.2f}" '
             f'text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
-            f'font-size="{FIGURE_TYPE_SMALL}" fill="#4D5553">{x_scale:g} s</text>',
-            f'<line class="trace-scale-bar" x1="{scale_x - 12:.2f}" '
-            f'y1="{scale_y:.2f}" x2="{scale_x - 12:.2f}" '
-            f'y2="{scale_y - y_scale_height:.2f}" stroke="#4D5553" '
-            'stroke-width="1.5"/>',
-            f'<line class="trace-scale-tick" x1="{scale_x - 16:.2f}" '
-            f'y1="{scale_y:.2f}" x2="{scale_x - 8:.2f}" y2="{scale_y:.2f}" '
-            'stroke="#4D5553"/>',
-            f'<line class="trace-scale-tick" x1="{scale_x - 16:.2f}" '
-            f'y1="{scale_y - y_scale_height:.2f}" x2="{scale_x - 8:.2f}" '
-            f'y2="{scale_y - y_scale_height:.2f}" stroke="#4D5553"/>',
-            f'<text x="{scale_x - 22:.2f}" y="{scale_y - y_scale_height / 2 + 4:.2f}" '
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#000000">{x_scale:g} s</text>',
+            f'<line class="trace-scale-bar" x1="{scale_x:.2f}" '
+            f'y1="{scale_y:.2f}" x2="{scale_x:.2f}" '
+            f'y2="{scale_y - y_scale_height:.2f}" stroke="#000000" '
+            'stroke-width="5" stroke-linecap="square"/>',
+            f'<text x="{scale_x - 10:.2f}" y="{scale_y - y_scale_height - 7:.2f}" '
             f'text-anchor="end" font-family="{FIGURE_MONO_FONT}" '
-            f'font-size="{FIGURE_TYPE_SMALL}" fill="#4D5553">'
-            f'{y_scale:g} {unit}</text>',
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#000000">{y_scale_label}</text>',
         ]
     )
 
@@ -3437,19 +3510,20 @@ def write_segmentation_viewer_svg(
     trace_rows = segmentation_trace_rows(viewer)
     trace_indices = static_segmentation_trace_indices(trace_rows)
     represented_filters = set(trace_indices)
+    left_panel_label, right_panel_label = SEGMENTATION_PANEL_LABELS[modality]
     svg = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" '
         'viewBox="0 0 1400 760" role="img" aria-labelledby="title description">',
         f'<title id="title">{escape(SEGMENTATION_VIEWER_TITLES[modality])}</title>',
         '<desc id="description">A source projection shows all extraction filters; '
-        'six representative filters are paired with vertically stacked activity traces.</desc>',
+        'twenty representative filters are paired with vertically stacked activity traces.</desc>',
         '<rect width="1400" height="760" fill="#FFFFFF"/>',
         f'<text x="52" y="47" font-family="{FIGURE_SANS_FONT}" font-size="23" '
         f'font-weight="700" fill="#293133">{escape(SEGMENTATION_VIEWER_TITLES[modality])}</text>',
         f'<text x="52" y="85" font-family="{FIGURE_SANS_FONT}" font-size="20" '
-        'font-weight="700" fill="#293133">A</text>',
+        f'font-weight="700" fill="#293133">{left_panel_label}</text>',
         f'<text x="755" y="85" font-family="{FIGURE_SANS_FONT}" font-size="20" '
-        'font-weight="700" fill="#293133">B</text>',
+        f'font-weight="700" fill="#293133">{right_panel_label}</text>',
     ]
 
     visual_left = 78.0
@@ -3482,11 +3556,6 @@ def write_segmentation_viewer_svg(
 
         svg.extend(
             [
-                f'<text x="{image_x + image_width / 2:.2f}" y="{visual_top + 4:.2f}" '
-                f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" '
-                'font-size="12" font-weight="700" fill="#4F5956">100 ms '
-                'common-mode-corrected AP voltage + '
-                f'{len(viewer["spikeEvents"])} detected spikes</text>',
                 f'<image href="data:image/png;base64,{raw_image}" x="{image_x:.2f}" '
                 f'y="{image_y:.2f}" width="{image_width:.2f}" '
                 f'height="{image_height:.2f}" preserveAspectRatio="none"/>',
@@ -3569,28 +3638,21 @@ def write_segmentation_viewer_svg(
             f'x="{image_x:.2f}" y="{image_y:.2f}" width="{rendered_width:.2f}" '
             f'height="{rendered_height:.2f}"/>'
         )
+        represented_fill = base64.b64encode(
+            represented_filter_fill_png(viewer, trace_indices)
+        ).decode()
         svg.extend(
             [
+                f'<image class="represented-filter-fills" '
+                f'data-filter-indices="{",".join(map(str, trace_indices))}" '
+                f'href="data:image/png;base64,{represented_fill}" x="{image_x:.2f}" '
+                f'y="{image_y:.2f}" width="{rendered_width:.2f}" '
+                f'height="{rendered_height:.2f}"/>',
                 f'<image href="data:image/png;base64,{image_uri(overlay_path)}" '
                 f'x="{image_x:.2f}" y="{image_y:.2f}" width="{rendered_width:.2f}" '
                 f'height="{rendered_height:.2f}"/>',
             ]
         )
-        for index in trace_indices:
-            filter_record = viewer["filters"][index]
-            color = SEGMENTATION_FILTER_COLORS[index % len(SEGMENTATION_FILTER_COLORS)]
-            stroke = f"#{color[0]:02X}{color[1]:02X}{color[2]:02X}"
-            center_x = image_x + filter_record["centroidX"] * scale
-            center_y = image_y + filter_record["centroidY"] * scale
-            svg.extend(
-                [
-                    f'<circle cx="{center_x:.2f}" cy="{center_y:.2f}" r="8" '
-                    'fill="none" stroke="#FFFFFF" stroke-width="3"/>',
-                    f'<circle class="represented-filter" data-filter-index="{index}" '
-                    f'cx="{center_x:.2f}" cy="{center_y:.2f}" r="11" '
-                    f'fill="none" stroke="{stroke}" stroke-width="2"/>',
-                ]
-            )
         scale_microns = 25 if modality == "slap2" else 50
         scale_width = scale_microns / viewer["micronsPerPixel"] * scale
         scale_x = image_x + rendered_width - scale_width - 17
@@ -3646,7 +3708,7 @@ def write_segmentation_viewer_static_svg(
         'viewBox="0 0 1400 2280" role="img" aria-labelledby="title description">',
         '<title id="title">Unit extraction across recording modalities</title>',
         '<desc id="description">Neuropixels, mesoscope, and SLAP2 panels show '
-        'representative extraction filters with six stacked activity traces.</desc>',
+        'representative extraction filters with twenty stacked activity traces.</desc>',
         *panels,
         "</svg>",
     ]

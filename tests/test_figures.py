@@ -511,6 +511,9 @@ def test_segmentation_viewer_snapshot_is_source_backed() -> None:
         assert source["traceTimesSeconds"][-1] > 29.8
         assert "activityImage" not in source
         assert source["fastScanAxis"] == "horizontal"
+        assert source["traceLabel"] == "ΔF/F (%)"
+        assert source["traceScale"] == 100
+        assert source["traceUnit"] == "%"
     assert {
         source["displayTransform"] for source in viewers["mesoscope"]["sources"]
     } == {"stored-yx"}
@@ -565,7 +568,7 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert 'data-view="static"' in html
     assert 'id="interactive-view"' in html
     assert 'id="static-view"' in html
-    assert "six vertically stacked activity traces per modality" in html
+    assert "twenty vertically stacked activity traces per modality" in html
     assert 'id="panel-label"' not in html
     assert 'id="session-line"' not in html
     assert 'id="viewer-title"' in html
@@ -613,7 +616,10 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert "Peak channel</span>" not in html
     assert '["Peak channel", String(filter.peakChannel)]' in html
     assert '["Source", String(filter.id + 1)]' in html
-    assert "ΔF/F" in html
+    assert r"\u0394F/F (%)" in html
+    assert '"traceScale":100' in html
+    assert "value * scale" in html
+    assert 'options.yUnit === "%"' in html
     assert "Source Delta F/F" not in html
     assert 'context.fillStyle = "#ffffff"' in html
     assert "context.filter = \"grayscale(1)\"" not in html
@@ -633,31 +639,42 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
         for modality in SEGMENTATION_VIEWER_STATIC_OUTPUTS
     }
     first_static_renders = {}
-    for modality in ("neuropixels", "mesoscope", "slap2"):
+    for modality, panel_labels in (
+        ("neuropixels", ("A", "B")),
+        ("mesoscope", ("C", "D")),
+        ("slap2", ("E", "F")),
+    ):
         svg_path = write_segmentation_viewer_svg(modality, static_paths[modality])
         svg = svg_path.read_text(encoding="utf-8")
         first_static_renders[modality] = svg
         assert 'role="img"' in svg
         assert 'filter id="neutral-overlay"' not in svg
         assert "Mouse " not in svg
-        assert ">A</text>" in svg and ">B</text>" in svg
+        for panel_label in panel_labels:
+            assert f">{panel_label}</text>" in svg
         assert "Selected filter" not in svg
         assert " filters</text>" not in svg
-        assert svg.count('class="static-activity-trace"') == 6
+        assert "Activity traces ·" not in svg
+        assert svg.count('class="static-activity-trace"') == 20
         assert svg.count('class="trace-scale-bar"') == 2
-        assert svg.count('class="trace-scale-tick"') == 4
+        assert 'class="trace-scale-tick"' not in svg
+        assert svg.count('stroke="#000000" stroke-width="5"') == 2
+        assert 'stroke="#E2E6E4"' not in svg
         assert "Fast scan" not in svg
         if modality == "neuropixels":
-            assert "310 detected spikes" in svg
-            assert "common-mode-corrected AP voltage" in svg
+            assert "310 detected spikes" not in svg
+            assert "common-mode-corrected AP voltage" not in svg
             assert "Sequence omission" not in svg
             assert 'fill="#25AAE1"' in svg
-            assert "Binned spike rate" in svg
+            assert "Binned spike rate" not in svg
         else:
-            assert svg.count("data:image/png;base64,") >= 2
+            assert svg.count("data:image/png;base64,") >= 3
             assert 'filter="url(#neutral-overlay)"' not in svg
-            assert svg.count('class="represented-filter"') == 6
-            assert "ΔF/F" in svg
+            assert svg.count('class="represented-filter-fills"') == 1
+            assert 'class="represented-filter"' not in svg
+            assert "<circle" not in svg
+            assert "ΔF/F (%)" not in svg
+            assert "%</text>" in svg
 
     combined_path = write_segmentation_viewer_static_svg(
         tmp_path / "figure-06-segmentation-viewers.svg",
