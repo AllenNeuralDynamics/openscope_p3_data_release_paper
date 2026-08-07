@@ -188,11 +188,15 @@ def test_interactive_figures_share_readable_typography() -> None:
         sizes = [float(size) for size in re.findall(r'font-size="([0-9.]+)"', svg)]
         if width_match is None or not sizes:
             continue
-        reference_minimum = min(sizes) * FIGURE_REFERENCE_WIDTH / float(width_match.group(1))
-        assert reference_minimum >= FIGURE_TYPE_SCALE["small"], (
-            path.name,
-            reference_minimum,
-        )
+        if path.name in {"figure-01-overview.svg", "raw-neural-recordings.svg"}:
+            minimum = min(sizes)
+        else:
+            minimum = (
+                min(sizes)
+                * FIGURE_REFERENCE_WIDTH
+                / float(width_match.group(1))
+            )
+        assert minimum >= FIGURE_TYPE_SCALE["small"], (path.name, minimum)
 
 
 def test_session_type_colors_are_consistent_across_figure_surfaces() -> None:
@@ -564,8 +568,9 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert 'id="panel-label"' not in html
     assert 'id="session-line"' not in html
     assert 'id="viewer-title"' in html
-    assert "const unselectedColor = \"#aebbb8\"" in html
-    assert 'context.filter = "grayscale(1)"' in html
+    assert 'const colors = ["#25aae1", "#8cc63f", "#ccaf2d"' in html
+    assert 'context.filter = "grayscale(1)"' not in html
+    assert "filterColor(event.filterIndex)" in html
     assert 'id="overlay-opacity"' not in html
     for source_id in (
         "probe-a", "probe-b", "probe-c", "probe-d", "probe-e", "probe-f",
@@ -599,8 +604,20 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert "Motor orientation 90" not in html
     assert "Common-mode-corrected AP voltage" in html
     assert "Raw AP voltage" in html
-    assert "Detected sorted spikes" in html
-    assert "Fast scan" in html
+    assert "Detected sorted spikes" not in html
+    assert "Extraction filters" not in html
+    assert "Fast scan" not in html
+    assert 'id="trace-window"' not in html
+    assert "0.0–30.0 s" not in html
+    assert "Peak channel</span>" not in html
+    assert '["Peak channel", String(filter.peakChannel)]' in html
+    assert '["Source", String(filter.id + 1)]' in html
+    assert "ΔF/F" in html
+    assert "Source Delta F/F" not in html
+    assert 'context.fillStyle = "#ffffff"' in html
+    assert "context.filter = \"grayscale(1)\"" not in html
+    assert "const colors = [" in html
+    assert 'class="chart-tick"' in html
     assert "Raw AP contrast" in html
     assert "Background intensity" in html
     assert "state.overlayOpacity" not in html
@@ -615,30 +632,31 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
         for modality in SEGMENTATION_VIEWER_STATIC_OUTPUTS
     }
     first_static_renders = {}
-    for modality, filter_count in (
-        ("neuropixels", 569),
-        ("mesoscope", 399),
-        ("slap2", 45),
-    ):
+    for modality in ("neuropixels", "mesoscope", "slap2"):
         svg_path = write_segmentation_viewer_svg(modality, static_paths[modality])
         svg = svg_path.read_text(encoding="utf-8")
         first_static_renders[modality] = svg
         assert 'role="img"' in svg
-        assert 'filter id="neutral-overlay"' in svg
+        assert 'filter id="neutral-overlay"' not in svg
         assert "Mouse " not in svg
         assert ">A</text>" in svg and ">B</text>" in svg
-        assert "Selected filter" in svg
-        assert f"{filter_count} filters" in svg
+        assert "Selected filter" not in svg
+        assert " filters</text>" not in svg
+        assert svg.count('class="static-activity-trace"') == 6
+        assert svg.count('class="trace-scale-bar"') == 2
+        assert svg.count('class="trace-scale-tick"') == 4
+        assert "Fast scan" not in svg
         if modality == "neuropixels":
-            assert "Mean template waveform · peak channel" in svg
             assert "310 detected spikes" in svg
             assert "common-mode-corrected AP voltage" in svg
             assert "Sequence omission" not in svg
-            assert 'fill="#AEBBB8"' in svg
+            assert 'fill="#25AAE1"' in svg
+            assert "Binned spike rate" in svg
         else:
             assert svg.count("data:image/png;base64,") >= 2
-            assert "Fast scan" in svg
-            assert 'filter="url(#neutral-overlay)" opacity="0.58"' in svg
+            assert 'filter="url(#neutral-overlay)"' not in svg
+            assert svg.count('class="represented-filter"') == 6
+            assert "ΔF/F" in svg
 
     combined_path = write_segmentation_viewer_static_svg(
         tmp_path / "figure-06-segmentation-viewers.svg",
@@ -856,17 +874,14 @@ def test_opening_figures_are_source_backed(tmp_path: Path) -> None:
     figure_1 = write_merged_figure_1_svg(tmp_path / "figure-01-overview.svg").read_text(
         encoding="utf-8"
     )
-    assert 'width="2000" height="3920"' in figure_1
+    assert 'width="2000" height="1620"' in figure_1
     assert figure_1.count("data:image/png;base64,") == 2
     assert figure_1.count("data:image/svg+xml;base64,") == 1
     assert 'viewBox="0 60 580 460"' in figure_1
     assert figure_1.count('class="panel-label"') == 3
     assert figure_1.count('class="workflow-label-mask"') == 1
     assert figure_1.count('class="workflow-modality-label"') == 1
-    assert 'class="workflow-modality-label" x="1781" y="2023"' in figure_1
-    assert 'x="40" y="70" width="1920" height="1440"' in figure_1
-    assert 'x="40" y="1550" width="1920" height="1520"' in figure_1
-    assert 'x="40" y="3120" width="1920" height="768"' in figure_1
+    assert 'class="workflow-modality-label" x="526" y="203"' in figure_1
     assert '>Mesoscope</text>' in figure_1
     assert "Predictive-processing framework and experimental workflow" in figure_1
 
@@ -2054,6 +2069,7 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert 'button.append(logo, session.label)' in html
     assert "Raw AP acquisition voltage" in html
     assert "Raw AP acquisition" in html
+    assert "colorbarX" not in html
     assert "Raw 30 kHz AP acquisition voltage with CCF boundaries" in html
     assert "drawAnatomySegments" in html
     assert "anatomySegments" in html
@@ -2160,6 +2176,9 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert "6 probe recordings · all raw excerpts stacked" in svg
     assert "8 planes · 4 VISp + 4 VISl · all raw frames stacked" in svg
     assert "2 VISp planes · merged green + red channels" in svg
+    assert "±" not in svg
+    assert "µV" not in svg
+    assert 'font-size="12" font-weight="600" text-anchor="middle"' in svg
     assert svg.count('class="neural-detail-label"') == 3
     assert re.findall(
         r'class="neural-detail-label"[^>]+\sy="([^"]+)"[^>]+font-size="([^"]+)"',

@@ -529,13 +529,15 @@ and a 30 s ΔF/F trace. The **SLAP2** tab provides DMD1 and DMD2 from
 `SLAP2_796630_2025-08-28-14-25-34`, outlining each plane's complete source
 segmentation over a grayscale mean image; its column-major stored (x, y) arrays
 are transposed to display (y, x) before applying masks. Mesoscope projections
-are already stored as display (y, x). Both microscopy tabs place the
-fast-scanning x axis horizontally and mark its direction. SLAP2 selection
+are already stored as display (y, x). Both microscopy tabs display the
+fast-scanning x axis horizontally. SLAP2 selection
 reveals a 30 s, approximately 200 Hz ΔF/F trace. Microscopy background controls alter only
 grayscale image intensity, while filter colors remain fixed. No tab shows
 stimulus annotations. The stacked static fallback preserves one representative
-source and selected-trace view for each modality. Data come from the public
-drafts of [DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files),
+source per modality and shows six activity-bearing filters sampled evenly across
+filter order as vertically stacked traces with shared within-modality scales.
+Data come from the public drafts of
+[DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files),
 [DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files), and
 [DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files).
 :::"""

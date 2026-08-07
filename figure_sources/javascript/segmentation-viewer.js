@@ -2,8 +2,7 @@
   "use strict";
 
   const protocol = JSON.parse(document.getElementById("segmentation-data").textContent);
-  const selectedColor = "#25aae1";
-  const unselectedColor = "#aebbb8";
+  const colors = ["#25aae1", "#8cc63f", "#ccaf2d", "#d65c48", "#24bcad", "#b160a9"];
   const modalityAccents = {
     neuropixels: "#3157b7",
     mesoscope: "#168f78",
@@ -23,7 +22,6 @@
     commonModeToggle: document.getElementById("common-mode-toggle"),
     filterMetadata: document.getElementById("filter-metadata"),
     filterSelect: document.getElementById("filter-select"),
-    filterKeyLabel: document.getElementById("filter-key-label"),
     loading: document.getElementById("loading-status"),
     interactiveView: document.getElementById("interactive-view"),
     modalitySelector: document.getElementById("modality-selector"),
@@ -37,7 +35,6 @@
     sourceSelect: document.getElementById("source-select"),
     tooltip: document.getElementById("canvas-tooltip"),
     traceTitle: document.getElementById("trace-title"),
-    traceWindow: document.getElementById("trace-window"),
     waveformChart: document.getElementById("waveform-chart"),
     waveformSection: document.getElementById("waveform-section"),
     viewer: document.getElementById("segmentation-viewer"),
@@ -104,8 +101,8 @@
     return viewer.filters[state.selectedIndex];
   }
 
-  function filterColor() {
-    return selectedColor;
+  function filterColor(index) {
+    return colors[index % colors.length];
   }
 
   function formatNumber(value, digits = 1) {
@@ -211,30 +208,6 @@
     });
   }
 
-  function drawFastScanMarker(rect) {
-    if (viewer.fastScanAxis !== "horizontal") return;
-    const startX = rect.x + 20;
-    const endX = startX + Math.min(96, rect.width * 0.25);
-    const y = rect.y + 23;
-    context.fillStyle = "rgba(5, 10, 12, 0.72)";
-    context.fillRect(startX - 9, y - 14, endX - startX + 18, 39);
-    context.strokeStyle = "#f8fbfa";
-    context.lineWidth = 2;
-    context.beginPath();
-    context.moveTo(startX, y);
-    context.lineTo(endX, y);
-    context.lineTo(endX - 7, y - 5);
-    context.moveTo(endX, y);
-    context.lineTo(endX - 7, y + 5);
-    context.stroke();
-    drawCanvasText("Fast scan", (startX + endX) / 2, y + 18, {
-      align: "center",
-      color: "#f8fbfa",
-      size: 12,
-      weight: 700,
-    });
-  }
-
   function drawImageViewer() {
     const bounds = { x: 28, y: 28, width: 844, height: 650 };
     const rect = containedRect(
@@ -243,24 +216,20 @@
       bounds,
     );
     state.imageRect = rect;
-    context.fillStyle = "#081012";
+    context.fillStyle = "#ffffff";
     context.fillRect(0, 0, elements.canvas.width, elements.canvas.height);
     context.imageSmoothingEnabled = true;
     context.filter = `brightness(${state.backgroundIntensity})`;
     context.drawImage(imageRecords.base, rect.x, rect.y, rect.width, rect.height);
     context.filter = "none";
     context.imageSmoothingEnabled = false;
-    context.filter = "grayscale(1)";
-    context.globalAlpha = 0.58;
-    context.drawImage(imageRecords.overlay, rect.x, rect.y, rect.width, rect.height);
-    context.filter = "none";
     context.globalAlpha = 1;
+    context.drawImage(imageRecords.overlay, rect.x, rect.y, rect.width, rect.height);
     drawSelectionMask(rect);
     context.strokeStyle = "#aab6b3";
     context.lineWidth = 1;
     context.strokeRect(rect.x, rect.y, rect.width, rect.height);
     drawScaleBar(rect);
-    drawFastScanMarker(rect);
   }
 
   function rawHeatmap() {
@@ -314,7 +283,7 @@
   }
 
   function drawSpikeMap() {
-    context.fillStyle = "#081012";
+    context.fillStyle = "#ffffff";
     context.fillRect(0, 0, elements.canvas.width, elements.canvas.height);
     const layout = spikeMapLayout();
     const { plot } = layout;
@@ -351,8 +320,8 @@
       const y = layout.y(event.row);
       const isSelected = event.filterIndex === state.selectedIndex;
       const radius = isSelected ? 5 : 2.5;
-      context.fillStyle = isSelected ? filterColor() : unselectedColor;
-      context.globalAlpha = isSelected ? 1 : 0.62;
+      context.fillStyle = filterColor(event.filterIndex);
+      context.globalAlpha = isSelected ? 1 : 0.82;
       context.beginPath();
       context.arc(x, y, radius, 0, Math.PI * 2);
       context.fill();
@@ -373,9 +342,13 @@
       const x = plot.left + fraction * (plot.right - plot.left);
       const time = viewer.rawTimeStartMs
         + fraction * (viewer.rawTimeEndMs - viewer.rawTimeStartMs);
+      context.beginPath();
+      context.moveTo(x, plot.bottom);
+      context.lineTo(x, plot.bottom + 6);
+      context.stroke();
       drawCanvasText(`${formatNumber(time, 0)}`, x, plot.bottom + 22, {
         align: "center",
-        color: "#aebbb8",
+        color: "#68716f",
         size: 12,
       });
     }
@@ -384,9 +357,13 @@
       const y = plot.top + fraction * (plot.bottom - plot.top);
       const depth = viewer.rawDepthMaxUm
         - fraction * (viewer.rawDepthMaxUm - viewer.rawDepthMinUm);
+      context.beginPath();
+      context.moveTo(plot.left - 6, y);
+      context.lineTo(plot.left, y);
+      context.stroke();
       drawCanvasText(`${formatNumber(depth, 0)}`, plot.left - 10, y + 4, {
         align: "right",
-        color: "#aebbb8",
+        color: "#68716f",
         size: 12,
       });
     }
@@ -395,13 +372,13 @@
       : "Raw AP voltage";
     drawCanvasText(`${voltageLabel} + detected sorted spikes`, (plot.left + plot.right) / 2, 23, {
       align: "center",
-      color: "#dbe5e3",
+      color: "#293133",
       size: 14,
       weight: 700,
     });
     drawCanvasText("Excerpt time (ms)", (plot.left + plot.right) / 2, 697, {
       align: "center",
-      color: "#aebbb8",
+      color: "#68716f",
       size: 12,
     });
     context.save();
@@ -409,7 +386,7 @@
     context.rotate(-Math.PI / 2);
     drawCanvasText("Probe length from tip (µm)", 0, 0, {
       align: "center",
-      color: "#aebbb8",
+      color: "#68716f",
       size: 12,
     });
     context.restore();
@@ -558,12 +535,12 @@
     const grid = [0, 0.5, 1].map((fraction) => {
       const gridY = margin.top + fraction * (height - margin.top - margin.bottom);
       const value = yMax - fraction * (yMax - yMin);
-      return `<line class="chart-grid" x1="${margin.left}" y1="${gridY}" x2="${width - margin.right}" y2="${gridY}"/><text class="chart-label" x="${margin.left - 10}" y="${gridY + 6}" text-anchor="end">${formatNumber(value, options.yDigits ?? 2)}</text>`;
+      return `<line class="chart-grid" x1="${margin.left}" y1="${gridY}" x2="${width - margin.right}" y2="${gridY}"/><line class="chart-tick" x1="${margin.left - 6}" y1="${gridY}" x2="${margin.left}" y2="${gridY}"/><text class="chart-label" x="${margin.left - 10}" y="${gridY + 6}" text-anchor="end">${formatNumber(value, options.yDigits ?? 2)}</text>`;
     }).join("");
     const xTicks = [0, 0.5, 1].map((fraction) => {
       const value = xMin + fraction * (xMax - xMin);
       const tickX = x(value);
-      return `<text class="chart-label" x="${tickX}" y="${height - 12}" text-anchor="middle">${formatNumber(value, options.xDigits ?? 1)} ${options.xUnit || "s"}</text>`;
+      return `<line class="chart-tick" x1="${tickX}" y1="${height - margin.bottom}" x2="${tickX}" y2="${height - margin.bottom + 6}"/><text class="chart-label" x="${tickX}" y="${height - 12}" text-anchor="middle">${formatNumber(value, options.xDigits ?? 1)} ${options.xUnit || "s"}</text>`;
     }).join("");
     svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
     svg.innerHTML = `${grid}<line class="chart-axis" x1="${margin.left}" y1="${height - margin.bottom}" x2="${width - margin.right}" y2="${height - margin.bottom}"/><path class="chart-trace" style="stroke:${options.color || filterColor(state.selectedIndex)}" d="${path}"/>${xTicks}`;
@@ -579,9 +556,8 @@
     elements.filterMetadata.innerHTML = metadataRows(filter)
       .map(([term, value]) => `<div><dt>${term}</dt><dd title="${value}">${value}</dd></div>`)
       .join("");
-    elements.traceTitle.textContent = viewer.traceLabel;
+    elements.traceTitle.textContent = viewer.id === "neuropixels" ? "Binned spike rate" : "ΔF/F";
     const traceTimes = viewer.traceTimesSeconds;
-    elements.traceWindow.textContent = `${formatNumber(traceTimes[0], 1)}–${formatNumber(traceTimes[traceTimes.length - 1], 1)} s`;
     lineChart(elements.activityChart, traceTimes, selectedTrace(), {
       ariaLabel: `${filter.label} ${viewer.traceLabel}`,
       color,
@@ -664,9 +640,6 @@
     elements.backgroundLabel.textContent = modality.id === "neuropixels"
       ? "Raw AP contrast"
       : "Background intensity";
-    elements.filterKeyLabel.textContent = modality.id === "neuropixels"
-      ? "Detected sorted spikes"
-      : "Extraction filters";
     elements.background.value = String(Math.round(state.backgroundIntensity * 100));
     elements.commonModeControl.hidden = modality.id !== "neuropixels";
     elements.commonModeToggle.checked = state.commonModeCorrected;
@@ -689,8 +662,7 @@
     updateViewerChrome();
     elements.selectionTitle.textContent = "Loading…";
     elements.filterMetadata.innerHTML = "";
-    elements.traceTitle.textContent = viewer.traceLabel;
-    elements.traceWindow.textContent = "";
+    elements.traceTitle.textContent = viewer.id === "neuropixels" ? "Binned spike rate" : "ΔF/F";
     elements.activityChart.innerHTML = "";
     elements.waveformChart.innerHTML = "";
 

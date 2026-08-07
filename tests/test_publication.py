@@ -595,6 +595,8 @@ def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     assert "waveform-spread band" in segmentation_text
     assert "common-mode correction is enabled by default" in segmentation_text
     assert "fast-scanning x axis horizontally" in segmentation_text
+    assert "mark its direction" not in segmentation_text
+    assert "six activity-bearing filters sampled evenly across filter order" in segmentation_text
     assert "grayscale average projection" in segmentation_text
     assert "stored (x, y) arrays are transposed to display (y, x)" in segmentation_text
     assert "background controls alter only" in segmentation_text
