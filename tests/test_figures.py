@@ -582,7 +582,7 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
             assert "Fast scan" in svg
 
     combined_path = write_segmentation_viewer_static_svg(
-        tmp_path / "supplementary-segmentation-viewers.svg",
+        tmp_path / "figure-06-segmentation-viewers.svg",
         static_paths,
     )
     combined_svg = combined_path.read_text(encoding="utf-8")
@@ -942,21 +942,21 @@ def test_placeholder_plans_mask_obsolete_figure_numbers(tmp_path: Path) -> None:
     cases = (
         (
             write_unit_extraction_plan_svg,
-            "figure-06-unit-extraction-plan.svg",
+            "figure-07-unit-extraction-plan.svg",
             "Unit extraction → signal and noise amplitude",
             "Figure 4",
             2,
         ),
         (
             write_basic_stimuli_plan_svg,
-            "figure-07-basic-stimuli-plan.svg",
+            "figure-08-basic-stimuli-plan.svg",
             "Basic stimuli → unit/system identification",
             "Figure 5",
             1,
         ),
         (
             write_standard_oddball_plan_svg,
-            "figure-09-standard-oddball-plan.svg",
+            "figure-10-standard-oddball-plan.svg",
             "Responses to standard oddball stimuli",
             "Figure 7",
             2,

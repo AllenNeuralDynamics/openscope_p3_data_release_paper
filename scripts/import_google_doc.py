@@ -261,13 +261,13 @@ FIGURE_PRESENTATION_OVERRIDES = {
         ),
     },
     "image5.png": {
-        "path": "./images/figures/generated/figure-06-unit-extraction-plan.svg",
+        "path": "./images/figures/generated/figure-07-unit-extraction-plan.svg",
     },
     "image3.png": {
-        "path": "./images/figures/generated/figure-07-basic-stimuli-plan.svg",
+        "path": "./images/figures/generated/figure-08-basic-stimuli-plan.svg",
     },
     "image4.png": {
-        "path": "./images/figures/generated/figure-09-standard-oddball-plan.svg",
+        "path": "./images/figures/generated/figure-10-standard-oddball-plan.svg",
     },
 }
 FIGURE_REFERENCE_REPLACEMENTS = {
@@ -284,15 +284,15 @@ FIGURE_REFERENCE_REPLACEMENTS = {
         "six Neuropixels probes simultaneously (see [Figure 3](#fig-multimodal-pipelines))"
     ),
     "Figure 6 and the modality subsections below remain an analysis outline.": (
-        "[Figure 6](#fig-unit-extraction-plan) and the modality subsections below remain "
+        "[Figure 7](#fig-unit-extraction-plan) and the modality subsections below remain "
         "an analysis outline."
     ),
     "This analysis and Figure 7 are planning placeholders.": (
-        "This analysis and [Figure 7](#fig-basic-stimuli-plan) are planning placeholders."
+        "This analysis and [Figure 8](#fig-basic-stimuli-plan) are planning placeholders."
     ),
     "This analysis, the questions below, and Figure 9 are planning placeholders.": (
         "This analysis, the questions below, and "
-        "[Figure 9](#fig-standard-oddball-plan) are planning placeholders."
+        "[Figure 10](#fig-standard-oddball-plan) are planning placeholders."
     ),
 }
 
@@ -500,25 +500,29 @@ the 60 source sessions are excluded because their NWB electrode tables lack
 `x`, `y`, and `z` coordinates.
 :::"""
 
-SEGMENTATION_VIEWER_BLOCK = """:::{iframe} ./interactive/segmentation-viewer.html
-:label: fig-supp-segmentation-viewers
-:enumerated: false
-:width: 100%
-:title: Supplementary Figure 5. Unit extraction across recording modalities.
-:placeholder: ./images/figures/generated/supplementary-segmentation-viewers.svg
+SEGMENTATION_VIEWER_BLOCK = """Representative unit-extraction filters and matched
+activity traces are shown in [Figure 6](#fig-segmentation-viewers).
 
-**Supplementary Figure 5.** Unit extraction filters and matched activity across
-recording modalities. Modality tabs use the same platform logos as the other
-multimodal figures, and the source selector switches among every probe or
-imaging plane in one representative session. The **Neuropixels** tab provides
-all six probes from `ecephys_830846_2026-03-09_10-32-54`. Each source displays
+:::{iframe} ./interactive/segmentation-viewer.html
+:label: fig-segmentation-viewers
+:width: 100%
+:title: Unit extraction across recording modalities
+:placeholder: ./images/figures/generated/figure-06-segmentation-viewers.svg
+
+Unit extraction filters and matched activity across recording modalities.
+Modality tabs use the same platform logos as the other multimodal figures, and
+the source selector switches among every probe or imaging plane in one
+representative session. The tabs use the same representative sessions as the
+raw-data view in [Figure 5](#fig-aligned-neural-signals) and derive their
+filters and traces from the matched public NWBs. The **Neuropixels** tab
+provides all six probes from `ecephys_830846_2026-03-09_10-32-54`. Each source displays
 100 ms of unaveraged AP voltage with sorted-spike detections overlaid at their
 spike times and nearest displayed peak channels; common-mode correction is
 enabled by default and can be toggled to reveal the uncorrected samples.
 Selecting a marker or unit highlights its depth and waveform-spread band and
 shows a 12 s binned-rate trace plus its peak-channel mean template. The
-**Mesoscope** tab provides all eight
-VISp and VISl planes from `multiplane-ophys_832700_2026-01-29_11-18-09`,
+**Mesoscope** tab provides all eight VISp and VISl planes from
+`multiplane-ophys_832700_2026-01-29_11-18-09`,
 outlining each plane's complete NWB segmentation over a grayscale average
 projection; selection reveals classification probabilities, footprint geometry,
 and a 30 s ΔF/F trace. The **SLAP2** tab provides DMD1 and DMD2 from
@@ -536,12 +540,23 @@ drafts of [DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files),
 [DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files).
 :::"""
 
-UNIT_EXTRACTION_VIEWER_DESCRIPTION = """Representative extraction filters and
-their matched activity traces can be inspected together in
-[Supplementary Figure 5](#fig-supp-segmentation-viewers). Its Neuropixels,
-Mesoscope, and SLAP2 tabs use the same representative sessions as the raw-data
-view in [Figure 5](#fig-aligned-neural-signals) and derive their filters and
-traces from the matched public NWBs."""
+MAIN_FIGURE_PROMOTION_REPLACEMENTS = {
+    "./images/figures/generated/figure-06-unit-extraction-plan.svg": (
+        "./images/figures/generated/figure-07-unit-extraction-plan.svg"
+    ),
+    "./images/figures/generated/figure-07-basic-stimuli-plan.svg": (
+        "./images/figures/generated/figure-08-basic-stimuli-plan.svg"
+    ),
+    "./images/figures/generated/figure-09-standard-oddball-plan.svg": (
+        "./images/figures/generated/figure-10-standard-oddball-plan.svg"
+    ),
+    "[Figure 6](#fig-unit-extraction-plan)": "[Figure 7](#fig-unit-extraction-plan)",
+    "[Figure 7](#fig-basic-stimuli-plan)": "[Figure 8](#fig-basic-stimuli-plan)",
+    "[Figure 8](#fig-behavior-tracking)": "[Figure 9](#fig-behavior-tracking)",
+    "[Figure 9](#fig-standard-oddball-plan)": (
+        "[Figure 10](#fig-standard-oddball-plan)"
+    ),
+}
 
 NWB_ACCESS_INTRO = """All data from this project are packaged as Neurodata
 Without Borders (NWB) files and deposited on the DANDI Archive. Neuropixels
@@ -638,7 +653,7 @@ behavioral videos together with synchronized running-wheel signals, processed
 eye-tracking outputs, and stimulus-presentation intervals. Depending on the
 recording platform, the available views include body or behavior, face, eye,
 and nose cameras. The synchronized multimodal examples in
-[Figure 8](#fig-behavior-tracking) show these streams alongside the wheel signal and
+[Figure 9](#fig-behavior-tracking) show these streams alongside the wheel signal and
 current stimulus state. Existing NWB products provide wheel rotation and
 running speed, plus pupil, corneal-reflection, and eye-ellipse fits with
 likely-blink flags. The underlying videos remain available so investigators can
@@ -1249,27 +1264,36 @@ def add_neuropixels_trajectory_figure(markdown: str) -> str:
 
 
 def add_segmentation_viewer_figures(markdown: str) -> str:
-    heading = "# Supplementary Text 1: Published oddball paradigms and sampling ranges"
+    heading = "## Units extraction"
     if markdown.count(heading) != 1:
-        raise RuntimeError("Expected one Supplementary Text 1 heading.")
-    if "fig-supp-segmentation-viewers" in markdown:
+        raise RuntimeError("Expected one Units extraction heading.")
+    if ":label: fig-segmentation-viewers\n" in markdown:
         return markdown
+    legacy_pattern = re.compile(
+        r"\n:::\{iframe\} \./interactive/segmentation-viewer\.html\n"
+        r":label: fig-supp-segmentation-viewers\n.*?\n:::\n",
+        re.DOTALL,
+    )
+    markdown, legacy_count = legacy_pattern.subn("\n", markdown)
+    if legacy_count > 1:
+        raise RuntimeError("Expected at most one legacy segmentation viewer figure.")
+    legacy_description_pattern = re.compile(
+        r"Representative extraction filters and their matched activity traces can be\s+"
+        r"inspected together in\s+"
+        r"\[Supplementary Figure 5\]\(#fig-supp-segmentation-viewers\)\. Its "
+        r"Neuropixels,\s+Mesoscope, and SLAP2 tabs use the same representative "
+        r"sessions as the raw-data\s+view in "
+        r"\[Figure 5\]\(#fig-aligned-neural-signals\) and derive their filters and\s+"
+        r"traces from the matched public NWBs\."
+    )
+    markdown, description_count = legacy_description_pattern.subn("", markdown)
+    if description_count > 1:
+        raise RuntimeError("Expected at most one legacy segmentation viewer link.")
+    for old, new in MAIN_FIGURE_PROMOTION_REPLACEMENTS.items():
+        markdown = markdown.replace(old, new)
     return markdown.replace(
         heading,
-        f"{SEGMENTATION_VIEWER_BLOCK}\n\n{heading}",
-        1,
-    )
-
-
-def add_unit_extraction_viewer_links(markdown: str) -> str:
-    anchor = "### Neuropixels recordings"
-    if markdown.count(anchor) != 1:
-        raise RuntimeError("Expected one Neuropixels unit-extraction subsection.")
-    if "fig-supp-segmentation-viewers" in markdown[: markdown.index(anchor)]:
-        return markdown
-    return markdown.replace(
-        anchor,
-        f"{UNIT_EXTRACTION_VIEWER_DESCRIPTION}\n\n{anchor}",
+        f"{heading}\n\n{SEGMENTATION_VIEWER_BLOCK}",
         1,
     )
 
@@ -1412,7 +1436,6 @@ def build_index(markdown: str) -> str:
     markdown = add_segmentation_viewer_figures(markdown)
     markdown = move_glossary_to_end(markdown)
     markdown = add_slap2_nwb_contents(markdown)
-    markdown = add_unit_extraction_viewer_links(markdown)
     data_validation_heading = "# Data validation"
     if markdown.count(data_validation_heading) != 1:
         raise RuntimeError("Expected one Data validation heading.")

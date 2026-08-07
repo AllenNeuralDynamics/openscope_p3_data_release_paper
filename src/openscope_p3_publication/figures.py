@@ -114,13 +114,13 @@ UNIT_EXTRACTION_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-04-unit-extraction-p
 BASIC_STIMULI_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-05-basic-stimuli-plan.png"
 STANDARD_ODDBALL_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-07-standard-oddball-plan.png"
 UNIT_EXTRACTION_PLAN_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-06-unit-extraction-plan.svg"
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-07-unit-extraction-plan.svg"
 )
 BASIC_STIMULI_PLAN_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-07-basic-stimuli-plan.svg"
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-08-basic-stimuli-plan.svg"
 )
 STANDARD_ODDBALL_PLAN_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-09-standard-oddball-plan.svg"
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-10-standard-oddball-plan.svg"
 )
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
@@ -183,21 +183,21 @@ SEGMENTATION_VIEWER_STATIC_OUTPUTS = {
         / "images"
         / "figures"
         / "generated"
-        / "supplementary-neuropixels-unit-filters.svg"
+        / "figure-06-neuropixels-unit-filters.svg"
     ),
     "mesoscope": (
         REPO_ROOT
         / "images"
         / "figures"
         / "generated"
-        / "supplementary-mesoscope-roi-filters.svg"
+        / "figure-06-mesoscope-roi-filters.svg"
     ),
     "slap2": (
         REPO_ROOT
         / "images"
         / "figures"
         / "generated"
-        / "supplementary-slap2-source-filters.svg"
+        / "figure-06-slap2-source-filters.svg"
     ),
 }
 SEGMENTATION_VIEWER_STATIC_OUTPUT = (
@@ -205,7 +205,7 @@ SEGMENTATION_VIEWER_STATIC_OUTPUT = (
     / "images"
     / "figures"
     / "generated"
-    / "supplementary-segmentation-viewers.svg"
+    / "figure-06-segmentation-viewers.svg"
 )
 SLAP2_STATIC_COMPOSITES = {
     "dmd1-composite": ("dmd1-detector-1", "dmd1-detector-2"),
