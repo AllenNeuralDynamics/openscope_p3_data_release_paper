@@ -565,6 +565,7 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert 'data-view="static"' in html
     assert 'id="interactive-view"' in html
     assert 'id="static-view"' in html
+    assert "six vertically stacked activity traces per modality" in html
     assert 'id="panel-label"' not in html
     assert 'id="session-line"' not in html
     assert 'id="viewer-title"' in html
