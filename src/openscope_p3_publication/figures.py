@@ -3429,11 +3429,33 @@ def append_segmentation_trace_stack(
     scale_height = 38
     row_height = (height - 8 - scale_height) / len(selected_rows)
     trace_height = row_height * 0.62
+    vertical_gain = {"neuropixels": 1.0, "mesoscope": 3.0, "slap2": 2.0}[
+        viewer["id"]
+    ]
+
+    if vertical_gain > 1:
+        clip_paths = []
+        for row_position, index in enumerate(indices):
+            clip_paths.append(
+                f'<clipPath id="{viewer["id"]}-trace-{index}-clip">'
+                f'<rect x="{plot_left:.2f}" '
+                f'y="{traces_top + row_position * row_height:.2f}" '
+                f'width="{plot_right - plot_left:.2f}" height="{row_height:.2f}"/>'
+                "</clipPath>"
+            )
+        svg.append(f'<defs>{"".join(clip_paths)}</defs>')
 
     for row_position, (index, values) in enumerate(
         zip(indices, selected_rows, strict=True)
     ):
         row_top = traces_top + row_position * row_height
+        row_finite = sorted(value for value in values if math.isfinite(value))
+        middle = len(row_finite) // 2
+        row_median = (
+            row_finite[middle]
+            if len(row_finite) % 2
+            else (row_finite[middle - 1] + row_finite[middle]) / 2
+        )
         commands = []
         drawing = False
         stride = max(1, math.ceil(len(values) / 900))
@@ -3445,13 +3467,31 @@ def append_segmentation_trace_stack(
             horizontal = plot_left + (times[sample_index] - minimum_time) / (
                 maximum_time - minimum_time
             ) * (plot_right - plot_left)
-            vertical = row_top + (maximum - value) / (maximum - minimum) * trace_height
+            if vertical_gain > 1:
+                vertical = (
+                    row_top
+                    + row_height / 2
+                    + (row_median - value)
+                    / (maximum - minimum)
+                    * trace_height
+                    * vertical_gain
+                )
+            else:
+                vertical = (
+                    row_top
+                    + (maximum - value) / (maximum - minimum) * trace_height
+                )
             commands.append(
                 f'{"L" if drawing else "M"}{horizontal:.2f},{vertical:.2f}'
             )
             drawing = True
         color = SEGMENTATION_FILTER_COLORS[index % len(SEGMENTATION_FILTER_COLORS)]
         stroke = f"#{color[0]:02X}{color[1]:02X}{color[2]:02X}"
+        clip_attribute = (
+            f'clip-path="url(#{viewer["id"]}-trace-{index}-clip)" '
+            if vertical_gain > 1
+            else ""
+        )
         svg.extend(
             [
                 f'<text x="{plot_left - 10:.2f}" y="{row_top + trace_height / 2 + 4:.2f}" '
@@ -3459,6 +3499,8 @@ def append_segmentation_trace_stack(
                 f'font-size="{FIGURE_TYPE_SMALL}" fill="#4D5553">'
                 f'{escape(viewer["filters"][index]["label"])}</text>',
                 f'<path class="static-activity-trace" data-filter-index="{index}" '
+                f'data-vertical-gain="{vertical_gain:g}" '
+                f'{clip_attribute}'
                 f'd="{" ".join(commands)}" fill="none" stroke="{stroke}" '
                 'stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>',
             ]
@@ -3470,7 +3512,9 @@ def append_segmentation_trace_stack(
         plot_right - plot_left
     )
     y_scale = nice_trace_scale((maximum - minimum) * 0.25)
-    y_scale_height = y_scale / (maximum - minimum) * trace_height
+    y_scale_height = (
+        y_scale / (maximum - minimum) * trace_height * vertical_gain
+    )
     scale_x = plot_left
     unit = "Hz" if viewer["id"] == "neuropixels" else "%"
     y_scale_label = f"{y_scale:g}%" if unit == "%" else f"{y_scale:g} {unit}"
@@ -3478,14 +3522,14 @@ def append_segmentation_trace_stack(
         [
             f'<line class="trace-scale-bar" x1="{scale_x:.2f}" y1="{scale_y:.2f}" '
             f'x2="{scale_x + x_scale_width:.2f}" y2="{scale_y:.2f}" '
-            'stroke="#000000" stroke-width="5" stroke-linecap="square"/>',
+            'stroke="#000000" stroke-width="4" stroke-linecap="square"/>',
             f'<text x="{scale_x + x_scale_width / 2:.2f}" y="{scale_y + 18:.2f}" '
             f'text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
             f'font-size="{FIGURE_TYPE_SMALL}" fill="#000000">{x_scale:g} s</text>',
             f'<line class="trace-scale-bar" x1="{scale_x:.2f}" '
             f'y1="{scale_y:.2f}" x2="{scale_x:.2f}" '
             f'y2="{scale_y - y_scale_height:.2f}" stroke="#000000" '
-            'stroke-width="5" stroke-linecap="square"/>',
+            'stroke-width="4" stroke-linecap="square"/>',
             f'<text x="{scale_x - 10:.2f}" y="{scale_y - y_scale_height - 7:.2f}" '
             f'text-anchor="end" font-family="{FIGURE_MONO_FONT}" '
             f'font-size="{FIGURE_TYPE_SMALL}" fill="#000000">{y_scale_label}</text>',
@@ -3511,6 +3555,7 @@ def write_segmentation_viewer_svg(
     trace_indices = static_segmentation_trace_indices(trace_rows)
     represented_filters = set(trace_indices)
     left_panel_label, right_panel_label = SEGMENTATION_PANEL_LABELS[modality]
+    logo_data = base64.b64encode(load_platform_logos()[modality].read_bytes()).decode()
     svg = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" '
         'viewBox="0 0 1400 760" role="img" aria-labelledby="title description">',
@@ -3518,8 +3563,9 @@ def write_segmentation_viewer_svg(
         '<desc id="description">A source projection shows all extraction filters; '
         'twenty representative filters are paired with vertically stacked activity traces.</desc>',
         '<rect width="1400" height="760" fill="#FFFFFF"/>',
-        f'<text x="52" y="47" font-family="{FIGURE_SANS_FONT}" font-size="23" '
-        f'font-weight="700" fill="#293133">{escape(SEGMENTATION_VIEWER_TITLES[modality])}</text>',
+        f'<image class="static-modality-logo" data-modality="{modality}" '
+        f'href="data:image/png;base64,{logo_data}" x="52" y="10" '
+        'width="54" height="54"/>',
         f'<text x="52" y="85" font-family="{FIGURE_SANS_FONT}" font-size="20" '
         f'font-weight="700" fill="#293133">{left_panel_label}</text>',
         f'<text x="755" y="85" font-family="{FIGURE_SANS_FONT}" font-size="20" '
@@ -3610,11 +3656,10 @@ def write_segmentation_viewer_svg(
                 f'y="{image_y + image_height + 34:.2f}" text-anchor="middle" '
                 f'font-family="{FIGURE_SANS_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
                 'font-weight="600" fill="#68716F">Excerpt time (ms)</text>',
-                f'<text x="{visual_left + 4:.2f}" y="{image_y + image_height / 2:.2f}" '
-                f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" '
-                f'font-size="{FIGURE_TYPE_SMALL}" font-weight="600" fill="#68716F" '
-                f'transform="rotate(-90 {visual_left + 4:.2f} '
-                f'{image_y + image_height / 2:.2f})">Probe length from tip (µm)</text>',
+                f'<text x="{image_x:.2f}" y="{image_y - 8:.2f}" '
+                f'text-anchor="start" font-family="{FIGURE_SANS_FONT}" '
+                f'font-size="{FIGURE_TYPE_SMALL}" font-weight="600" '
+                'fill="#68716F">Probe length from tip (µm)</text>',
             ]
         )
     else:
@@ -3669,10 +3714,6 @@ def write_segmentation_viewer_svg(
             ]
         )
 
-    svg.append(
-        '<rect x="748" y="100" width="602" height="590" fill="#FFFFFF" '
-        'stroke="#D3D8D6"/>'
-    )
     append_segmentation_trace_stack(
         svg,
         viewer,

@@ -640,10 +640,10 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
         for modality in SEGMENTATION_VIEWER_STATIC_OUTPUTS
     }
     first_static_renders = {}
-    for modality, panel_labels in (
-        ("neuropixels", ("A", "B")),
-        ("mesoscope", ("C", "D")),
-        ("slap2", ("E", "F")),
+    for modality, panel_labels, removed_heading in (
+        ("neuropixels", ("A", "B"), "Neuropixels unit-template viewer"),
+        ("mesoscope", ("C", "D"), "Mesoscope ROI segmentation viewer"),
+        ("slap2", ("E", "F"), "SLAP2 source-segmentation viewer"),
     ):
         svg_path = write_segmentation_viewer_svg(modality, static_paths[modality])
         svg = svg_path.read_text(encoding="utf-8")
@@ -656,19 +656,28 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
         assert "Selected filter" not in svg
         assert " filters</text>" not in svg
         assert "Activity traces ·" not in svg
+        assert svg.count('class="static-modality-logo"') == 1
+        assert removed_heading not in svg.split("</title>", maxsplit=1)[1]
+        assert '<rect x="748" y="100"' not in svg
         assert svg.count('class="static-activity-trace"') == 20
         assert svg.count('class="trace-scale-bar"') == 2
         assert 'class="trace-scale-tick"' not in svg
-        assert svg.count('stroke="#000000" stroke-width="5"') == 2
+        assert svg.count('stroke="#000000" stroke-width="4"') == 2
         assert 'stroke="#E2E6E4"' not in svg
         assert "Fast scan" not in svg
         if modality == "neuropixels":
+            assert "Probe length from tip (µm)" in svg
+            assert 'transform="rotate(-90' not in svg
+            assert svg.count('data-vertical-gain="1"') == 20
             assert "310 detected spikes" not in svg
             assert "common-mode-corrected AP voltage" not in svg
             assert "Sequence omission" not in svg
             assert 'fill="#25AAE1"' in svg
             assert "Binned spike rate" not in svg
         else:
+            expected_gain = "3" if modality == "mesoscope" else "2"
+            assert svg.count(f'data-vertical-gain="{expected_gain}"') == 20
+            assert svg.count("<clipPath") == 20
             assert svg.count("data:image/png;base64,") >= 3
             assert 'filter="url(#neutral-overlay)"' not in svg
             assert svg.count('class="represented-filter-fills"') == 1
