@@ -580,8 +580,9 @@ def extract_mesoscope(asset_record: dict, media_dir: Path) -> dict:
                     "session": "multiplane-ophys_832700_2026-01-29_11-18-09",
                     "sourceId": source_id,
                     "subject": "832700",
-                    "traceLabel": "ΔF/F",
-                    "traceUnit": "ΔF/F",
+                    "traceLabel": "ΔF/F (%)",
+                    "traceScale": 100,
+                    "traceUnit": "%",
                     "viewType": "image",
                 }
             )
@@ -696,8 +697,9 @@ def extract_slap2(asset_record: dict, media_dir: Path) -> dict:
                     "session": "SLAP2_796630_2025-08-28-14-25-34",
                     "sourceId": source_id,
                     "subject": "796630",
-                    "traceLabel": "ΔF/F",
-                    "traceUnit": "ΔF/F",
+                    "traceLabel": "ΔF/F (%)",
+                    "traceScale": 100,
+                    "traceUnit": "%",
                     "viewType": "image",
                 }
             )

@@ -493,7 +493,9 @@
 
   function selectedTrace() {
     const start = state.selectedIndex * viewer.traceColumns;
-    return traceValues.subarray(start, start + viewer.traceColumns);
+    const values = traceValues.subarray(start, start + viewer.traceColumns);
+    const scale = viewer.traceScale || 1;
+    return scale === 1 ? values : Float32Array.from(values, (value) => value * scale);
   }
 
   function selectedWaveform() {
@@ -535,7 +537,8 @@
     const grid = [0, 0.5, 1].map((fraction) => {
       const gridY = margin.top + fraction * (height - margin.top - margin.bottom);
       const value = yMax - fraction * (yMax - yMin);
-      return `<line class="chart-grid" x1="${margin.left}" y1="${gridY}" x2="${width - margin.right}" y2="${gridY}"/><line class="chart-tick" x1="${margin.left - 6}" y1="${gridY}" x2="${margin.left}" y2="${gridY}"/><text class="chart-label" x="${margin.left - 10}" y="${gridY + 6}" text-anchor="end">${formatNumber(value, options.yDigits ?? 2)}</text>`;
+      const suffix = options.yUnit === "%" ? "%" : "";
+      return `<line class="chart-grid" x1="${margin.left}" y1="${gridY}" x2="${width - margin.right}" y2="${gridY}"/><line class="chart-tick" x1="${margin.left - 6}" y1="${gridY}" x2="${margin.left}" y2="${gridY}"/><text class="chart-label" x="${margin.left - 10}" y="${gridY + 6}" text-anchor="end">${formatNumber(value, options.yDigits ?? 2)}${suffix}</text>`;
     }).join("");
     const xTicks = [0, 0.5, 1].map((fraction) => {
       const value = xMin + fraction * (xMax - xMin);
@@ -556,12 +559,13 @@
     elements.filterMetadata.innerHTML = metadataRows(filter)
       .map(([term, value]) => `<div><dt>${term}</dt><dd title="${value}">${value}</dd></div>`)
       .join("");
-    elements.traceTitle.textContent = viewer.id === "neuropixels" ? "Binned spike rate" : "ΔF/F";
+    elements.traceTitle.textContent = viewer.traceLabel;
     const traceTimes = viewer.traceTimesSeconds;
     lineChart(elements.activityChart, traceTimes, selectedTrace(), {
       ariaLabel: `${filter.label} ${viewer.traceLabel}`,
       color,
       yDigits: viewer.id === "neuropixels" ? 0 : 2,
+      yUnit: viewer.traceUnit,
     });
 
     const waveform = selectedWaveform();
@@ -662,7 +666,7 @@
     updateViewerChrome();
     elements.selectionTitle.textContent = "Loading…";
     elements.filterMetadata.innerHTML = "";
-    elements.traceTitle.textContent = viewer.id === "neuropixels" ? "Binned spike rate" : "ΔF/F";
+    elements.traceTitle.textContent = viewer.traceLabel;
     elements.activityChart.innerHTML = "";
     elements.waveformChart.innerHTML = "";
 

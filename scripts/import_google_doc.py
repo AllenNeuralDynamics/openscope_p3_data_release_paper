@@ -525,16 +525,16 @@ shows a 12 s binned-rate trace plus its peak-channel mean template. The
 `multiplane-ophys_832700_2026-01-29_11-18-09`,
 outlining each plane's complete NWB segmentation over a grayscale average
 projection; selection reveals classification probabilities, footprint geometry,
-and a 30 s ΔF/F trace. The **SLAP2** tab provides DMD1 and DMD2 from
+and a 30 s ΔF/F (%) trace. The **SLAP2** tab provides DMD1 and DMD2 from
 `SLAP2_796630_2025-08-28-14-25-34`, outlining each plane's complete source
 segmentation over a grayscale mean image; its column-major stored (x, y) arrays
 are transposed to display (y, x) before applying masks. Mesoscope projections
 are already stored as display (y, x). Both microscopy tabs display the
 fast-scanning x axis horizontally. SLAP2 selection
-reveals a 30 s, approximately 200 Hz ΔF/F trace. Microscopy background controls alter only
+reveals a 30 s, approximately 200 Hz ΔF/F (%) trace. Microscopy background controls alter only
 grayscale image intensity, while filter colors remain fixed. No tab shows
 stimulus annotations. The stacked static fallback preserves one representative
-source per modality and shows six activity-bearing filters sampled evenly across
+source per modality and shows twenty activity-bearing filters sampled evenly across
 filter order as vertically stacked traces with shared within-modality scales.
 Data come from the public drafts of
 [DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files),
