@@ -461,7 +461,7 @@ def test_segmentation_viewer_snapshot_is_source_backed() -> None:
     assert hashlib.sha256(SEGMENTATION_VIEWER_DATA_PATH.read_bytes()).hexdigest() == (
         provenance["vendored_sha256"]
     )
-    assert payload["version"] == 3
+    assert payload["version"] == 4
     viewers = {viewer["id"]: viewer for viewer in payload["viewers"]}
     expected_counts = {
         "neuropixels": [569, 502, 534, 799, 542, 604],
@@ -510,24 +510,29 @@ def test_segmentation_viewer_snapshot_is_source_backed() -> None:
     for source in (*viewers["mesoscope"]["sources"], *viewers["slap2"]["sources"]):
         assert source["traceTimesSeconds"][-1] > 29.8
         assert "activityImage" not in source
-        assert source["fastScanAxis"] == "horizontal"
         assert source["traceLabel"] == "ΔF/F (%)"
         assert source["traceScale"] == 100
         assert source["traceUnit"] == "%"
+    assert {
+        source["fastScanAxis"] for source in viewers["mesoscope"]["sources"]
+    } == {"horizontal"}
+    assert {
+        source["fastScanAxis"] for source in viewers["slap2"]["sources"]
+    } == {"vertical"}
     assert {
         source["displayTransform"] for source in viewers["mesoscope"]["sources"]
     } == {"stored-yx"}
     assert {
         source["displayTransform"] for source in viewers["slap2"]["sources"]
-    } == {"stored-xy-transposed-to-yx"}
+    } == {"transpose-for-publication"}
     assert (
         viewers["slap2"]["sources"][0]["baseImage"]["width"],
         viewers["slap2"]["sources"][0]["baseImage"]["height"],
-    ) == (427, 408)
+    ) == (408, 427)
     assert (
         viewers["slap2"]["sources"][1]["baseImage"]["width"],
         viewers["slap2"]["sources"][1]["baseImage"]["height"],
-    ) == (429, 587)
+    ) == (587, 429)
     referenced_media = {
         Path(source[field]["assetPath"]).name
         for viewer in viewers.values()
@@ -1880,7 +1885,7 @@ def test_running_statistics_are_source_backed_and_mouse_aggregated() -> None:
 
 def test_neural_excerpts_are_source_backed_and_aligned() -> None:
     assert hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest() == (
-        "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c"
+        "d9c5e84a3417c44ec6a929763e59bb61db20f2ff7bc3a7a55b3bbaa32b6f99d8"
     )
     payload = load_neural_excerpts(NEURAL_EXCERPTS_PATH)
 
@@ -2010,7 +2015,20 @@ def test_neural_excerpts_are_source_backed_and_aligned() -> None:
             option["spriteEncoding"],
         )
         for option in slap2_options
-    } == {(640, 400, 2, "lossless WebP")}
+    } == {(400, 640, 2, "lossless WebP")}
+    assert {
+        (
+            option["nativeWidth"],
+            option["nativeHeight"],
+            option["displayWidth"],
+            option["displayHeight"],
+            option["storedWidth"],
+            option["storedHeight"],
+            option["displayTransform"],
+        )
+        for option in slap2_options
+    } == {(1280, 800, 800, 1280, 1280, 800, "transpose-for-publication")}
+    assert {option["fastScanAxis"] for option in slap2_options} == {"vertical"}
     for green_option, red_option in zip(
         slap2_options[0::2], slap2_options[1::2], strict=True
     ):
@@ -2107,6 +2125,9 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "apDataBase64" not in html
     assert "Raw two-photon frames" in html
     assert "Sparse raw detector frames" in html
+    assert "storedWidth || option.nativeWidth" in html
+    assert "storedHeight || option.nativeHeight" in html
+    assert "option.displayWidth || option.nativeWidth" in html
     assert "dataBase64" in html
     assert "mesoscope-visp-0.webp" in html
     assert "rangeSha256" in html
@@ -2163,7 +2184,7 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
             assert contrast["high_percentile"] == 99.5
             assert 0 <= contrast["low_value"] < contrast["high_value"] <= 255
         else:
-            assert record["frame_size"] == [640, 400]
+            assert record["frame_size"] == [400, 640]
             assert record["spatial_downsample_factor"] == 2
             assert record["temporal_averaging_frames"] == 1
             assert record["display_contrast"] == {
@@ -2188,17 +2209,18 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert svg.count('class="raw-image-card" data-modality="neuropixels"') == 6
     assert svg.count('class="raw-image-card" data-modality="mesoscope"') == 8
     assert svg.count('class="raw-image-card" data-modality="slap2"') == 2
+    assert svg.count('data-modality="slap2" data-option-id=') == 2
+    assert svg.count('data-card-width="265"') == 2
     assert svg.count('class="raw-card-image"') == 16
     assert svg.count('data-modality="mesoscope" data-option-id=') == 8
     assert svg.count('data-card-width="255"') == 8
-    assert svg.count('data-modality="slap2" data-option-id=') == 2
-    assert svg.count('data-card-width="500"') == 2
     assert "Probe A" in svg
     assert "Probe F" in svg
     assert "VISp · 4 planes" in svg
     assert "VISl · 4 planes" in svg
-    assert "DMD1 · 91 µm · green + red composite" in svg
-    assert "DMD2 · 123.75 µm · green + red composite" in svg
+    assert "DMD1 · 91 µm" in svg
+    assert "DMD2 · 123.75 µm" in svg
+    assert "green + red composite" not in svg
     assert svg.count(">50 µm</text>") == 1
     assert svg.count(">25 µm</text>") == 1
     assert "6 probe recordings · all raw excerpts stacked" in svg
@@ -2213,8 +2235,8 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
         svg,
     ) == [("122", "18")] * 3
     assert '<rect x="650.00" y="135.00" width="255"' in svg
-    assert '<rect x="1240.00" y="135.00" width="500"' in svg
-    assert '<rect x="1250.00" y="340.00" width="500"' in svg
+    assert '<rect x="1240.00" y="135.00" width="265"' in svg
+    assert '<rect x="1510.00" y="135.00" width="265"' in svg
     assert "#D9DEDC" not in svg
     assert "scale-card" not in svg
     assert "playback" not in svg.lower()

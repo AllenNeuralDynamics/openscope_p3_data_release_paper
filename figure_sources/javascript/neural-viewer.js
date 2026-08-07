@@ -364,7 +364,8 @@
   function drawScaleBar(option, x, y, width, height) {
     const micronsPerPixel = Number(option.micronsPerPixel);
     if (!Number.isFinite(micronsPerPixel) || micronsPerPixel <= 0) return;
-    const barWidth = width * scaleBarMicrons / (option.nativeWidth * micronsPerPixel);
+    const displayWidth = option.displayWidth || option.nativeWidth;
+    const barWidth = width * scaleBarMicrons / (displayWidth * micronsPerPixel);
     const barX = x + width - barWidth - 18;
     const barY = y + height - 18;
 
@@ -556,7 +557,9 @@
       }
     } else if (session.viewType === "movie") {
       const index = nearestIndex(option.frameTimes, state.playhead);
-      content = `<strong>${formatTime(elapsedTime(option.frameTimes[index]))}</strong><br>Raw frame ${index + 1} of ${option.frameCount}<br>${option.nativeWidth} × ${option.nativeHeight} source pixels`;
+      const storedWidth = option.storedWidth || option.nativeWidth;
+      const storedHeight = option.storedHeight || option.nativeHeight;
+      content = `<strong>${formatTime(elapsedTime(option.frameTimes[index]))}</strong><br>Raw frame ${index + 1} of ${option.frameCount}<br>${storedWidth} × ${storedHeight} stored pixels`;
     }
     if (!content) {
       hideTooltip();

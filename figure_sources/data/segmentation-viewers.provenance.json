@@ -31,9 +31,9 @@
       "url": "https://dandiarchive.s3.amazonaws.com/blobs/e95/21c/e9521c86-5587-473c-990d-ed432bb65d28"
     }
   },
-  "notes": "Each modality exposes every probe or imaging plane in one representative session. Filters and traces come from the matched DANDI NWB; Neuropixels time-by-depth views reuse the pinned public AP excerpts recorded in raw-neural-excerpts.json and overlay sorted-unit spike times from the matched NWB. Mesoscope images are stored as display (y, x); SLAP2 column-major images are transposed from stored (x, y) to display (y, x), placing the fast-scanning x axis horizontally for both modalities.",
+  "notes": "Each modality exposes every probe or imaging plane in one representative session. Filters and traces come from the matched DANDI NWB; Neuropixels time-by-depth views reuse the pinned public AP excerpts recorded in raw-neural-excerpts.json and overlay sorted-unit spike times from the matched NWB. Mesoscope images retain display (y, x), with fast x horizontal. SLAP2 base images, labels, and overlays share a publication-level axis transpose, placing fast x vertically.",
   "retrieved_date": "2026-08-06",
-  "source_raw_neural_sha256": "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c",
+  "source_raw_neural_sha256": "d9c5e84a3417c44ec6a929763e59bb61db20f2ff7bc3a7a55b3bbaa32b6f99d8",
   "vendored_media_sha256": {
     "mesoscope-visl-4-filters.png": "448e2ccb615feff6ee0b25ba2c695ac911471601586a10a52b9132772ad38d1f",
     "mesoscope-visl-4-labels.png": "85d91745cd54c8ef53ec7d3378a2dbb9f7d5a621751a2e5daf69b4a55ef7e588",
@@ -59,12 +59,12 @@
     "mesoscope-visp-3-filters.png": "9a92c04609c0c9eb8838a1732806552068eedcd0dd2095faa33c4d65c5e5910c",
     "mesoscope-visp-3-labels.png": "a8776b5f132848b2942457cbd2aeaab3db621be1ef86c792607b4e51140922dc",
     "mesoscope-visp-3-mean.png": "a728ced2e9e79b60443d6e9f9aef375b37dd775cc12954e7d9ffb73c47622dd2",
-    "slap2-dmd1-filters.png": "f9058b009478befa0a86a819ac0aa5c7a9ce7abb3b58abc052c737fd139e0214",
-    "slap2-dmd1-labels.png": "aad6e0d3b4cdaae4f6f1507d6c598e6e061fc62b0192e2286b31b1eb1b66b1d4",
-    "slap2-dmd1-mean.png": "6dc6fa0c0078295e6eb92bf7c37d23690b39fa01fa2f2dd2095b667ac4926e22",
-    "slap2-dmd2-filters.png": "4a21898e8888ef79eae5f4bdf24f28dd1d50368a239160a710bb391289b066cf",
-    "slap2-dmd2-labels.png": "178205fd2acc5a9212744c4e55bee970a9dc30b046bff62c6ef0fe8f748640d8",
-    "slap2-dmd2-mean.png": "7bd84be01fa9e3c1d9cc6c20dc4d5ff8ba22f8695363b17ea6e9379a7b5f6bec"
+    "slap2-dmd1-filters.png": "8fe8b914f0688f6fa1c492918593670d9394bfc0eeec2bfab5fd2f93b7ecd6ad",
+    "slap2-dmd1-labels.png": "62b9def00aa4a0ec45e437fbdd07aebcdfbfe5869657835053dad50f2b527409",
+    "slap2-dmd1-mean.png": "2fd0f13fae2808b80fe4a077a67f87bb64eae03e6471ea5a40c299977f3059ef",
+    "slap2-dmd2-filters.png": "7c236dbceb47c06dcea0a6809c597b858a6dc89b97576e6fc98d3dd9703be258",
+    "slap2-dmd2-labels.png": "18696710004d16ca69ce13cc04ececada37678976a27161579a4e9117bbc3f13",
+    "slap2-dmd2-mean.png": "f55ac30d1c6ca8ccecc1706214340293274297db6350c7d80715019f96694b4b"
   },
-  "vendored_sha256": "ab2f89647cdbff98510c740946c9780240316640b0a649b2ef5f639153a67c81"
+  "vendored_sha256": "9eac2894138827891490eff0d4792f52cf87b657cc95d1277ba8795902ad2a9c"
 }

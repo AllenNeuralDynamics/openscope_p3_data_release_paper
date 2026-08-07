@@ -1020,8 +1020,9 @@ structure or cortical layer. The displayed AP samples are not median-corrected,
 so common-mode fluctuations across contacts remain visible as vertical stripes.
 Mesoscope views are unprocessed 512 × 512 ScanImage channel frames. SLAP2 views
 map native sparse detector samples onto acquisition-plan superpixels, reduce the
-1280 × 800 acquisition-coordinate raster by 2×, and encode the resulting
-640 × 400 lossless WebP frames. A dim structural reference is used only outside
+stored 1280 × 800 acquisition-coordinate raster by 2×, transpose it for
+publication display, and encode the resulting 400 × 640 lossless WebP frames,
+with the fast-scanning x axis vertical. A dim structural reference is used only outside
 sampled dendritic pixels. Microscopy
 playback uses elapsed time within each four-second excerpt. Selectors report CCF
 structures and layers for each probe; area, layer, and depth for each mesoscope
@@ -1064,9 +1065,9 @@ projection; selection reveals classification probabilities, footprint geometry,
 and a 30 s ΔF/F (%) trace. The **SLAP2** tab provides DMD1 and DMD2 from
 `SLAP2_796630_2025-08-28-14-25-34`, outlining each plane's complete source
 segmentation over a grayscale mean image; its column-major stored (x, y) arrays
-are transposed to display (y, x) before applying masks. Mesoscope projections
-are already stored as display (y, x). Both microscopy tabs display the
-fast-scanning x axis horizontally. SLAP2 selection
+and masks receive the same publication-level axis transpose. Mesoscope
+projections retain their stored display orientation. The fast-scanning x axis
+is horizontal for mesoscope and vertical for SLAP2. SLAP2 selection
 reveals a 30 s, approximately 200 Hz ΔF/F (%) trace. Microscopy background controls alter only
 grayscale image intensity, while filter colors remain fixed. No tab shows
 stimulus annotations. The stacked static fallback preserves one representative

@@ -638,6 +638,9 @@ def extract_slap2(asset_record: dict, media_dir: Path) -> dict:
             if len(ids) != SLAP2_SOURCE_COUNTS[plane]:
                 raise RuntimeError(f"Representative {plane} source inventory changed.")
             labels = slap2_labels(segmentation, base_image.shape)
+            # Apply the publication transpose to the normalized image and mask together.
+            base_image = np.ascontiguousarray(base_image.T)
+            labels = np.ascontiguousarray(labels.T)
             geometry = filter_geometry(labels, len(ids))
 
             series = nwb[f"{module_path}/Fluorescence_{plane}/{plane}_dFF"]
@@ -684,8 +687,8 @@ def extract_slap2(asset_record: dict, media_dir: Path) -> dict:
                     "asset": asset_record,
                     "baseImage": base_asset,
                     "defaultFilterIndex": default_index,
-                    "displayTransform": "stored-xy-transposed-to-yx",
-                    "fastScanAxis": "horizontal",
+                    "displayTransform": "transpose-for-publication",
+                    "fastScanAxis": "vertical",
                     "filterCount": len(filters),
                     "filterOverlay": overlay_asset,
                     "filters": filters,
@@ -723,7 +726,7 @@ def main() -> None:
     args.media_dir.mkdir(parents=True, exist_ok=True)
     payload = {
         "retrievedDate": RETRIEVED_DATE,
-        "version": 3,
+        "version": 4,
         "viewers": [
             extract_neuropixels(asset_records["neuropixels"]),
             extract_mesoscope(asset_records["mesoscope"], args.media_dir),
@@ -743,9 +746,9 @@ def main() -> None:
             "session. Filters and traces come from the matched DANDI NWB; Neuropixels "
             "time-by-depth views reuse the pinned public AP excerpts recorded in "
             "raw-neural-excerpts.json and overlay sorted-unit spike times from the "
-            "matched NWB. Mesoscope images are stored as display (y, x); SLAP2 "
-            "column-major images are transposed from stored (x, y) to display (y, x), "
-            "placing the fast-scanning x axis horizontally for both modalities."
+            "matched NWB. Mesoscope images retain display (y, x), with fast x "
+            "horizontal. SLAP2 base images, labels, and overlays share a publication-"
+            "level axis transpose, placing fast x vertically."
         ),
         "retrieved_date": RETRIEVED_DATE,
         "source_raw_neural_sha256": sha256(RAW_NEURAL_PATH),
