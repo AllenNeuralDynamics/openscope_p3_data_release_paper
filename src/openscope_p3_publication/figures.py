@@ -264,6 +264,22 @@ NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT = (
 NEUROPIXELS_TRAJECTORY_INTERACTIVE_OUTPUT = (
     REPO_ROOT / "interactive" / "neuropixels-trajectories.html"
 )
+OPTOTAGGING_HEATMAP_DATA_PATH = DATA_DIR / "optotagging-heatmaps.json"
+OPTOTAGGING_HEATMAP_PROVENANCE_PATH = OPTOTAGGING_HEATMAP_DATA_PATH.with_suffix(
+    ".provenance.json"
+)
+OPTOTAGGING_HEATMAP_SOURCE_DIR = (
+    REPO_ROOT / "figure_sources" / "media" / "optotagging"
+)
+OPTOTAGGING_STATIC_SOURCE = (
+    OPTOTAGGING_HEATMAP_SOURCE_DIR / "optotagging-static-composite.svg"
+)
+OPTOTAGGING_HEATMAP_INTERACTIVE_OUTPUT = (
+    REPO_ROOT / "interactive" / "optotagging-heatmaps.html"
+)
+OPTOTAGGING_HEATMAP_STATIC_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "optotagging-heatmaps.svg"
+)
 MEDIA_DIR = REPO_ROOT / "figure_sources" / "media"
 PLATFORM_LOGO_PROVENANCE_PATH = (
     REPO_ROOT / "figure_sources" / "illustrator" / "platform-logos.provenance.json"
@@ -392,7 +408,7 @@ def write_merged_figure_1_svg(output: Path = MERGED_FIGURE_1_OUTPUT) -> Path:
     cohort_panel_path = write_figure_1_panel_c_svg()
     cohort_panel = (
         "data:image/svg+xml;base64,"
-        f"{base64.b64encode(cohort_panel_path.read_bytes()).decode()}"
+        f"{base64.b64encode(normalized_text_bytes(cohort_panel_path)).decode()}"
     )
     svg = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1620" '
@@ -1218,8 +1234,7 @@ def load_stimulus_table_excerpts(sources: dict) -> dict[str, dict]:
         filename = source["example_table_url"].rsplit("/", maxsplit=1)[-1]
         metadata = provenance_by_name[filename]
         path = STIMULUS_EXCERPT_DIR / filename
-        checksum = hashlib.sha256(path.read_bytes()).hexdigest()
-        if checksum != metadata["vendored_sha256"]:
+        if not text_sha256_matches(path, metadata["vendored_sha256"]):
             raise RuntimeError(f"Stimulus excerpt checksum mismatch: {filename}")
         if source["sha256"] != metadata["source_sha256"]:
             raise RuntimeError(f"Stimulus source checksum mismatch: {filename}")
@@ -1249,7 +1264,7 @@ def load_shared_stimulus_table_excerpts(sources: dict) -> dict[str, dict]:
     if source["sha256"] != metadata["source_sha256"]:
         raise RuntimeError("Shared stimulus source checksum mismatch.")
     path = STIMULUS_EXCERPT_DIR / metadata["filename"]
-    if hashlib.sha256(path.read_bytes()).hexdigest() != metadata["vendored_sha256"]:
+    if not text_sha256_matches(path, metadata["vendored_sha256"]):
         raise RuntimeError("Shared stimulus excerpt checksum mismatch.")
     with path.open(newline="", encoding="utf-8-sig") as stream:
         source_rows = list(csv.DictReader(stream))
@@ -1320,7 +1335,7 @@ def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
     stylesheet = load_figure_stylesheet("stimulus-viewer.css")
     javascript = (JAVASCRIPT_DIR / "stimulus-viewer.js").read_text(encoding="utf-8")
     static_output = write_context_controls_svg()
-    static_data = base64.b64encode(static_output.read_bytes()).decode()
+    static_data = base64.b64encode(normalized_text_bytes(static_output)).decode()
     html = (
         template.replace("__SIMULATOR_CSS__", stylesheet)
         .replace("__PANEL_D_IMAGE__", f"data:image/svg+xml;base64,{static_data}")
@@ -1344,7 +1359,7 @@ def write_data_explorer_html(
     payload = load_publication_table_data()
     if refresh_static:
         write_session_inventory_svg(static_output)
-    static_data = base64.b64encode(static_output.read_bytes()).decode()
+    static_data = base64.b64encode(normalized_text_bytes(static_output)).decode()
     template = (JAVASCRIPT_DIR / "data-explorer.html").read_text(encoding="utf-8")
     stylesheet = load_figure_stylesheet("data-explorer.css")
     javascript = (JAVASCRIPT_DIR / "data-explorer.js").read_text(encoding="utf-8")
@@ -1367,8 +1382,7 @@ def write_literature_comparison_html(
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     provenance = json.loads(OTHER_STUDIES_PROVENANCE_PATH.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(OTHER_STUDIES_PATH.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(OTHER_STUDIES_PATH, provenance["vendored_sha256"]):
         raise RuntimeError("Other-studies table checksum does not match its provenance.")
     with OTHER_STUDIES_PATH.open(newline="", encoding="utf-8") as stream:
         rows = list(csv.reader(stream))
@@ -1422,6 +1436,291 @@ def write_unit_yield_html(
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     return output
+
+
+def load_optotagging_heatmap_data(
+    data_path: Path = OPTOTAGGING_HEATMAP_DATA_PATH,
+    provenance_path: Path = OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    media_dir: Path = OPTOTAGGING_HEATMAP_SOURCE_DIR,
+) -> dict:
+    """Load and validate the committed representative optotagging snapshot."""
+
+    payload = json.loads(data_path.read_text(encoding="utf-8"))
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    version = payload.get("version")
+    if version not in {1, 2} or provenance.get("version") != version:
+        raise RuntimeError("Optotagging heatmap snapshot version is not supported.")
+    if not text_sha256_matches(data_path, provenance.get("manifest_sha256", "")):
+        raise RuntimeError("Optotagging heatmap manifest checksum does not match.")
+
+    sessions = payload.get("sessions", [])
+    if (
+        not sessions
+        or payload.get("session_count") != len(sessions)
+        or provenance.get("session_count") != len(sessions)
+        or payload.get("total_unit_count")
+        != sum(session.get("unit_count", 0) for session in sessions)
+        or provenance.get("total_unit_count") != payload.get("total_unit_count")
+    ):
+        raise RuntimeError("Optotagging heatmap coverage metadata is inconsistent.")
+
+    asset_manifest = provenance.get("asset_manifest", [])
+    skipped_assets = provenance.get("skipped_assets", [])
+    failed_assets = provenance.get("failed_assets", [])
+    expected_asset_count = provenance.get(
+        "source_session_count",
+        len(sessions) + len(skipped_assets) + len(failed_assets),
+    )
+    asset_manifest_sha256 = hashlib.sha256(
+        json.dumps(asset_manifest, separators=(",", ":"), sort_keys=True).encode()
+    ).hexdigest()
+    if (
+        expected_asset_count < len(sessions)
+        or len(asset_manifest) != expected_asset_count
+        or asset_manifest_sha256 != provenance.get("asset_manifest_sha256")
+        or any(
+            not asset.get("digest", {}).get("dandi:sha2-256")
+            for asset in asset_manifest
+        )
+    ):
+        raise RuntimeError("Optotagging source asset manifest is invalid.")
+
+    session_ids = [session.get("session_id") for session in sessions]
+    if (
+        session_ids != sorted(session_ids)
+        or len(session_ids) != len(set(session_ids))
+        or payload.get("default_session_id") not in session_ids
+    ):
+        raise RuntimeError("Optotagging heatmap session inventory is invalid.")
+
+    media_manifest = []
+    for session in sessions:
+        if version == 2:
+            atlas_file = session.get("atlas_file", "")
+            numeric_png_file = session.get("numeric_png_file", "")
+            if (
+                Path(atlas_file).name != atlas_file
+                or not atlas_file.endswith(".atlas.json")
+                or Path(numeric_png_file).name != numeric_png_file
+                or not numeric_png_file.endswith(".atlas.png")
+            ):
+                raise RuntimeError("Invalid optotagging numeric atlas path.")
+            atlas_bytes = (media_dir / atlas_file).read_bytes()
+            numeric_png = (media_dir / numeric_png_file).read_bytes()
+            if (
+                hashlib.sha256(atlas_bytes).hexdigest() != session.get("atlas_sha256")
+                or hashlib.sha256(numeric_png).hexdigest()
+                != session.get("numeric_png_sha256")
+                or len(numeric_png) < 24
+                or not numeric_png.startswith(b"\x89PNG\r\n\x1a\n")
+                or numeric_png[24:26] != b"\x08\x00"
+            ):
+                raise RuntimeError(
+                    f"Optotagging numeric atlas is invalid: {atlas_file}"
+                )
+            atlas = json.loads(atlas_bytes)
+            unit_count = session.get("unit_count")
+            parent_areas = atlas.get("parent_areas", [])
+            parent_codes = atlas.get("parent_codes", [])
+            orders = atlas.get("strongest_first_unit_indices", {})
+            condition_names = [
+                condition["table_name"] for condition in payload["conditions"]
+            ]
+            expected_offsets = {
+                condition_name: index * unit_count
+                for index, condition_name in enumerate(condition_names)
+            }
+            quantization = atlas.get("quantization", {})
+            time_seconds = atlas.get("time_seconds", [])
+            expected_units = list(range(unit_count))
+            png_width, png_height = struct.unpack(">II", numeric_png[16:24])
+            if (
+                atlas.get("version") != 2
+                or atlas.get("unit_count") != unit_count
+                or atlas.get("numeric_png_file") != numeric_png_file
+                or parent_areas != sorted(set(parent_areas))
+                or not all(isinstance(area, str) and area for area in parent_areas)
+                or len(parent_codes) != unit_count
+                or any(code < 0 or code >= len(parent_areas) for code in parent_codes)
+                or set(orders) != set(condition_names)
+                or any(sorted(order) != expected_units for order in orders.values())
+                or atlas.get("condition_row_offsets") != expected_offsets
+                or quantization
+                != {
+                    "dtype": "int8",
+                    "scale": 15.875,
+                    "range": [-8.0, 8.0],
+                    "nan_sentinel": -128,
+                    "png_channels": "single-channel uint8 viewed as signed int8",
+                }
+                or len(time_seconds) != 2
+                or not all(isinstance(value, int | float) for value in time_seconds)
+                or not math.isfinite(time_seconds[0])
+                or not math.isfinite(time_seconds[1])
+                or time_seconds[0] >= time_seconds[1]
+                or png_width != atlas.get("time_bin_count")
+                or png_width <= 0
+                or png_height != unit_count * len(condition_names)
+            ):
+                raise RuntimeError(
+                    f"Optotagging numeric atlas metadata is invalid: {atlas_file}"
+                )
+            media_manifest.extend(
+                [
+                    {"file": atlas_file, "sha256": session["atlas_sha256"]},
+                    {
+                        "file": numeric_png_file,
+                        "sha256": session["numeric_png_sha256"],
+                    },
+                ]
+            )
+            if "image_file" not in session:
+                continue
+        image_file = session.get("image_file", "")
+        relative_image = Path(image_file)
+        if (
+            not image_file
+            or relative_image.name != image_file
+            or relative_image.suffix.lower() != ".webp"
+        ):
+            raise RuntimeError(f"Invalid optotagging image path: {image_file}")
+        image_path = media_dir / image_file
+        image = image_path.read_bytes()
+        if (
+            len(image) < 12
+            or not image.startswith(b"RIFF")
+            or image[8:12] != b"WEBP"
+            or hashlib.sha256(image).hexdigest() != session.get("image_sha256")
+            or not isinstance(session.get("image_width"), int)
+            or not isinstance(session.get("image_height"), int)
+            or session["image_width"] <= 0
+            or session["image_height"] <= 0
+        ):
+            raise RuntimeError(f"Optotagging heatmap image is invalid: {image_file}")
+        if version == 1:
+            media_manifest.append(
+                {
+                    "image_file": image_file,
+                    "image_sha256": session["image_sha256"],
+                }
+            )
+        else:
+            media_manifest.append(
+                {"file": image_file, "sha256": session["image_sha256"]}
+            )
+
+    media_manifest_sha256 = hashlib.sha256(
+        json.dumps(media_manifest, separators=(",", ":"), sort_keys=True).encode()
+    ).hexdigest()
+    if media_manifest_sha256 != provenance.get("media_manifest_sha256"):
+        raise RuntimeError("Optotagging heatmap media manifest checksum does not match.")
+    return payload
+
+
+def write_optotagging_heatmap_html(
+    output: Path = OPTOTAGGING_HEATMAP_INTERACTIVE_OUTPUT,
+    data_path: Path = OPTOTAGGING_HEATMAP_DATA_PATH,
+    provenance_path: Path = OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    media_dir: Path = OPTOTAGGING_HEATMAP_SOURCE_DIR,
+    static_output: Path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT,
+    static_source: Path | None = None,
+) -> Path:
+    """Build the standalone representative-session optotagging heatmap explorer."""
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    payload = load_optotagging_heatmap_data(data_path, provenance_path, media_dir)
+    if static_source is None:
+        static_source = media_dir / OPTOTAGGING_STATIC_SOURCE.name
+    write_optotagging_heatmap_svg(
+        static_output,
+        data_path,
+        provenance_path,
+        media_dir,
+        static_source=static_source,
+    )
+    template = (JAVASCRIPT_DIR / "optotagging-heatmaps.html").read_text(
+        encoding="utf-8"
+    )
+    stylesheet = load_figure_stylesheet("optotagging-heatmaps.css")
+    javascript = (JAVASCRIPT_DIR / "optotagging-heatmaps.js").read_text(
+        encoding="utf-8"
+    )
+    embedded_atlases = {}
+    if payload["version"] == 2:
+        for session in payload["sessions"]:
+            atlas = json.loads(
+                (media_dir / session["atlas_file"]).read_text(encoding="utf-8")
+            )
+            numeric_png = (media_dir / session["numeric_png_file"]).read_bytes()
+            embedded_atlases[session["session_id"]] = {
+                "metadata": atlas,
+                "image": (
+                    "data:image/png;base64,"
+                    + base64.b64encode(numeric_png).decode("ascii")
+                ),
+            }
+    html = (
+        template.replace("__OPTOTAGGING_CSS__", stylesheet)
+        .replace(
+            "__OPTOTAGGING_STATIC_IMAGE__",
+            f"media/optotagging/{static_output.name}",
+        )
+        .replace(
+            "__OPTOTAGGING_DATA__",
+            json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
+        )
+        .replace(
+            "__OPTOTAGGING_ATLASES__",
+            json.dumps(
+                embedded_atlases,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+            ),
+        )
+        .replace("__OPTOTAGGING_JS__", javascript)
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+    )
+    output.write_text(html, encoding="utf-8", newline="\n")
+
+    media_output = output.parent / "media" / "optotagging"
+    if media_output.exists():
+        shutil.rmtree(media_output)
+    media_output.mkdir(parents=True)
+    if payload["version"] == 1:
+        for session in payload["sessions"]:
+            shutil.copy2(
+                media_dir / session["image_file"],
+                media_output / session["image_file"],
+            )
+    shutil.copy2(static_output, media_output / static_output.name)
+    return output
+
+
+def write_optotagging_heatmap_svg(
+    output: Path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT,
+    data_path: Path = OPTOTAGGING_HEATMAP_DATA_PATH,
+    provenance_path: Path = OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    media_dir: Path = OPTOTAGGING_HEATMAP_SOURCE_DIR,
+    static_source: Path | None = None,
+) -> Path:
+    """Copy the source static composite into the publication outputs."""
+
+    payload = load_optotagging_heatmap_data(data_path, provenance_path, media_dir)
+    if static_source is None:
+        static_source = media_dir / OPTOTAGGING_STATIC_SOURCE.name
+    svg = static_source.read_text(encoding="utf-8")
+    required_text = (
+        "Optotagged-cell yield and example laser-aligned response",
+        "5 Hz laser stimulation: five 10 ms pulses",
+        payload.get("static_example_session_id", payload["default_session_id"]),
+    )
+    if "<svg" not in svg or any(text not in svg for text in required_text):
+        raise RuntimeError("Optotagging static composite does not match its source figure.")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(svg, encoding="utf-8", newline="\n")
+    return output
+
 
 def write_neuropixels_trajectory_html(
     output: Path = NEUROPIXELS_TRAJECTORY_INTERACTIVE_OUTPUT,
@@ -1813,8 +2112,7 @@ def load_running_statistics(path: Path = RUNNING_STATISTICS_PATH) -> dict:
         or payload.get("threshold_cm_s") != 1.0
         or [context.get("id") for context in payload.get("contexts", [])]
         != expected_contexts
-        or source.get("sha256")
-        != hashlib.sha256(SESSION_RECORDS_PATH.read_bytes()).hexdigest()
+        or not text_sha256_matches(SESSION_RECORDS_PATH, source.get("sha256", ""))
         or calibration.get("counts_per_revolution") != SLAP2_COUNTS_PER_REVOLUTION
         or calibration.get("wheel_radius_cm") != SLAP2_WHEEL_RADIUS_CM
         or not math.isclose(
@@ -1944,12 +2242,14 @@ def load_behavior_static_frames(
     provenance = json.loads(
         BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
-    source_checksum = hashlib.sha256(BEHAVIOR_EXCERPTS_PATH.read_bytes()).hexdigest()
-    running_checksum = hashlib.sha256(RUNNING_STATISTICS_PATH.read_bytes()).hexdigest()
     if (
         provenance.get("version") != 2
-        or provenance.get("behavior_excerpts_sha256") != source_checksum
-        or provenance.get("running_statistics_sha256") != running_checksum
+        or not text_sha256_matches(
+            BEHAVIOR_EXCERPTS_PATH, provenance.get("behavior_excerpts_sha256", "")
+        )
+        or not text_sha256_matches(
+            RUNNING_STATISTICS_PATH, provenance.get("running_statistics_sha256", "")
+        )
         or provenance.get("local_time_seconds") != BEHAVIOR_STATIC_LOCAL_TIME_SECONDS
     ):
         raise RuntimeError("Static behavior frame provenance is not supported.")
@@ -2450,12 +2750,13 @@ def load_neural_excerpts(
     behavior_path: Path = BEHAVIOR_EXCERPTS_PATH,
 ) -> dict:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    behavior_checksum = hashlib.sha256(behavior_path.read_bytes()).hexdigest()
     if (
         payload.get("version") != 8
         or payload.get("windowStartSeconds") != -1.0
         or payload.get("windowEndSeconds") != 3.0
-        or payload.get("behaviorExcerptSha256") != behavior_checksum
+        or not text_sha256_matches(
+            behavior_path, payload.get("behaviorExcerptSha256", "")
+        )
     ):
         raise RuntimeError("Neural excerpt schema or behavior source is not supported.")
     sessions = payload.get("sessions", [])
@@ -2909,10 +3210,12 @@ def load_neural_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
     provenance = json.loads(
         NEURAL_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
-    source_checksum = hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest()
     if (
         provenance.get("version") != 2
-        or provenance.get("raw_neural_excerpts_sha256") != source_checksum
+        or not text_sha256_matches(
+            NEURAL_EXCERPTS_PATH,
+            provenance.get("raw_neural_excerpts_sha256", ""),
+        )
     ):
         raise RuntimeError("Static neural frame provenance is not supported.")
 
@@ -3822,8 +4125,7 @@ def load_data_access_table(
 ) -> dict:
     """Load the vendored Data Access Summary snapshot."""
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(data_path.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(data_path, provenance["vendored_sha256"]):
         raise RuntimeError("Data Access checksum does not match its provenance record.")
     with data_path.open(newline="", encoding="utf-8-sig") as stream:
         source_rows = list(csv.DictReader(stream))
@@ -3937,6 +4239,20 @@ def split_grouped_identifiers(table: dict, count_index: int) -> set[str]:
     return set(identifiers)
 
 
+def normalized_text_bytes(path: Path) -> bytes:
+    """Read text bytes with platform-specific line endings normalized to LF."""
+    data = path.read_bytes()
+    return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
+def text_sha256_matches(path: Path, expected: str) -> bool:
+    """Match text content regardless of Git's platform-specific line endings."""
+    data = path.read_bytes()
+    lf_data = normalized_text_bytes(path)
+    candidates = (data, lf_data, lf_data.replace(b"\n", b"\r\n"))
+    return any(hashlib.sha256(candidate).hexdigest() == expected for candidate in candidates)
+
+
 def load_individual_animal_table(summary_mouse_ids: set[str]) -> dict:
     modality_lookup = {
         "MESO": ("mesoscope", "Two-photon mesoscope"),
@@ -3944,8 +4260,7 @@ def load_individual_animal_table(summary_mouse_ids: set[str]) -> dict:
         "SLAP2": ("slap2", "SLAP2"),
     }
     provenance = json.loads(ANIMAL_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(ANIMAL_RECORDS_PATH.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(ANIMAL_RECORDS_PATH, provenance["vendored_sha256"]):
         raise RuntimeError("Animal worksheet checksum does not match its provenance record.")
     with ANIMAL_RECORDS_PATH.open(newline="", encoding="utf-8") as stream:
         source_rows = list(csv.DictReader(stream))
@@ -4012,8 +4327,7 @@ def load_unit_yield_data(
     provenance_path: Path = UNIT_YIELD_PROVENANCE_PATH,
 ) -> dict:
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(data_path.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(data_path, provenance["vendored_sha256"]):
         raise RuntimeError("Unit-yield data checksum does not match its provenance record.")
     with data_path.open(newline="", encoding="utf-8") as stream:
         source_rows = list(csv.DictReader(stream))
@@ -4097,9 +4411,8 @@ def load_neuropixels_trajectory_data(
 ) -> dict:
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
     data_bytes = data_path.read_bytes()
-    checksum = hashlib.sha256(data_bytes).hexdigest()
-    if provenance.get("version") != 1 or checksum != provenance.get(
-        "vendored_sha256"
+    if provenance.get("version") != 1 or not text_sha256_matches(
+        data_path, provenance.get("vendored_sha256", "")
     ):
         raise RuntimeError(
             "Neuropixels trajectory checksum does not match its provenance record."
@@ -4230,8 +4543,7 @@ def load_experimental_session_records(
     provenance_path: Path = SESSION_RECORDS_PROVENANCE_PATH,
 ) -> dict:
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(data_path.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(data_path, provenance["vendored_sha256"]):
         raise RuntimeError("Session worksheet checksum does not match its provenance.")
     with data_path.open(newline="", encoding="utf-8") as stream:
         records = list(csv.DictReader(stream))
@@ -5299,6 +5611,8 @@ def main() -> None:
     segmentation_viewer_path = write_segmentation_viewers()
     unit_yield_html_path = write_unit_yield_html()
     trajectory_html_path = write_neuropixels_trajectory_html()
+    optotagging_html_path = write_optotagging_heatmap_html()
+    optotagging_svg_path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT
     svg_path = write_static_svg()
     unit_yield_svg_path = write_unit_yield_svg()
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
@@ -5322,6 +5636,8 @@ def main() -> None:
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {trajectory_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
+    print(f"Wrote {optotagging_html_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {optotagging_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")
 
