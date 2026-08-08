@@ -44,7 +44,7 @@ jobs:
         run: uv run build-publication-figures
 
       - name: Check generated figures are current
-        run: git diff --exit-code -- interactive images/figures/generated
+        run: git diff --exit-code -- interactive images/figures/generated figure_sources/media/optotagging/optotagging-static-composite.svg
 
   build:
     runs-on: ubuntu-latest
@@ -73,7 +73,7 @@ jobs:
         run: uv run build-publication-figures
 
       - name: Check generated figures are current
-        run: git diff --exit-code -- interactive images/figures/generated
+        run: git diff --exit-code -- interactive images/figures/generated figure_sources/media/optotagging/optotagging-static-composite.svg
 
       - uses: actions/setup-node@v4
         with:

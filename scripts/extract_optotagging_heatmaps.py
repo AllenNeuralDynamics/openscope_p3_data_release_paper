@@ -187,7 +187,7 @@ def write_snapshot(
     manifest = {
         "version": 2,
         "default_session_id": default_session_id,
-        "static_example_session_id": "ecephys_834687_2026-03-18_15-50-10",
+        "static_example_session_id": DEFAULT_SESSION_ID,
         "session_count": len(sessions),
         "total_unit_count": sum(record["unit_count"] for record in sessions),
         "selection": {

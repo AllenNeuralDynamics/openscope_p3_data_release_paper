@@ -606,7 +606,7 @@
   "dandiset_version": "draft",
   "failed_assets": [],
   "manifest_path": "figure_sources/data/optotagging-heatmaps.json",
-  "manifest_sha256": "f4ffeb1544f49adce461cf66d09f3821b809e9611bcdfafc394ae476e61a6d20",
+  "manifest_sha256": "44831f92199f7a3d7e52715b934504e6de0016e20cc9abeb7df650907db9ac69",
   "media_manifest_sha256": "88e12a43b83760114bf9c70df13dbc3dea2468cbb834fb93dbfef4080c66c6f0",
   "media_path": "figure_sources/media/optotagging",
   "notes": "The three interactive sessions are nearest the 50th, 80th, and 95th percentiles of all-session optotagged-cell yield. Session NWBs are streamed from DANDI. Heatmaps show 1 ms presentation-aligned PSTHs baseline z-scored per unit and deterministically reduced to display resolution. Every condition is ordered by mean firing rate inside its exact laser pulses. Allen acronyms are mapped to major parent divisions through the iblatlas Allen hierarchy. The static yield summary covers all source sessions.",

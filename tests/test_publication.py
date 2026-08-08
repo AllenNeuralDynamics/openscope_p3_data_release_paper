@@ -540,6 +540,14 @@ def test_supplementary_and_power_figures_are_current() -> None:
     )
     assert "all 60 source sessions" in manuscript
     assert "exact laser-on windows" in manuscript
+    assert "**A,** the 5 Hz response" in manuscript
+    assert "five teal marks denote the exact 10 ms laser pulses" in manuscript
+    assert "**B,** Overall optotagged-cell yield" in manuscript
+    assert "**C,** Yield by Allen major parent area" in manuscript
+    assert "**D,** The 18 structures with the highest mean yield" in manuscript
+    assert "selectors constrain the view to available values" in manuscript
+    assert "gray dots denote individual sessions and teal bars or lines denote means" in manuscript
+    assert "include only sessions sampling that area" in manuscript
     for obsolete in (
         "segmentation-neuropixels.html",
         "segmentation-mesoscope.html",

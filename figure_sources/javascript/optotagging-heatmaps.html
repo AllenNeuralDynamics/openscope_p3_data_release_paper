@@ -26,19 +26,14 @@
       </header>
       <section class="controls" aria-label="Heatmap controls">
         <div>
-          <label for="session-search">Find a session</label>
-          <input id="session-search" type="search" placeholder="Mouse, date, or session ID"
-            autocomplete="off">
-        </div>
-        <div>
           <label for="session-select">Session</label>
           <select id="session-select"></select>
         </div>
         <div>
           <label for="parent-area">Allen major parent</label>
-          <input id="parent-area" type="search" list="parent-area-options"
-            value="All areas" autocomplete="off">
-          <datalist id="parent-area-options"></datalist>
+          <select id="parent-area" disabled>
+            <option value="All areas">All areas</option>
+          </select>
         </div>
         <div>
           <label for="color-limit">Symmetric color limit: ±<output
@@ -68,14 +63,13 @@
         <figcaption>Static snapshot. Regenerate the version 2 atlas to enable anatomy
           filtering and numeric color remapping.</figcaption>
       </figure>
-      <p id="empty-state" role="status" hidden>No sessions match this search.</p>
     </div>
 
     <section class="static-view" id="static-view"
       aria-label="Static default-session optotagging overview" hidden>
       <div class="static-shell">
         <img src="__OPTOTAGGING_STATIC_IMAGE__"
-          alt="Optotagged-cell yield summaries by anatomy surrounding a five-hertz laser-aligned unit heatmap with five pulse markers above it.">
+          alt="Four-panel optotagging figure showing a 5 Hz laser-aligned heatmap, overall yield, yield by major parent area, and the top 18 structures.">
       </div>
     </section>
   </main>

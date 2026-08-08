@@ -55,4 +55,11 @@ Build the committed HTML and static SVG fallback with:
 uv run build-publication-figures
 ```
 
+The optotagging Static view is rendered by
+`openscope_p3_publication.figures.write_optotagging_static_source` from the
+committed numeric atlas and `figure_sources/data/optotagging-static-summary.json`.
+That summary exposes the values recovered from the original PR's archived
+Matplotlib SVG; regenerate it with
+`python scripts/extract_optotagging_static_summary.py`.
+
 Do not edit files under `interactive/` directly; they are generated and checked for drift in CI.

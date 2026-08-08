@@ -72,8 +72,7 @@ html.is-embedded .viewer {
 }
 
 .static-view[hidden],
-#interactive-view[hidden],
-.session-summary[hidden] {
+#interactive-view[hidden] {
   display: none !important;
 }
 
@@ -117,7 +116,7 @@ h1 {
 
 .controls {
   display: grid;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
   gap: 14px;
   padding: 14px;
   border: 1px solid #cad4d1;
@@ -235,12 +234,6 @@ figcaption {
   color: #4d5957;
   font-size: 0.9rem;
   line-height: 1.45;
-}
-
-#empty-state {
-  padding: 28px;
-  border: 1px dashed #7e918c;
-  text-align: center;
 }
 
 @media (max-width: 680px) {

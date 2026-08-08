@@ -35,7 +35,9 @@ from openscope_p3_publication.figures import (
     OPTOTAGGING_HEATMAP_DATA_PATH,
     OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
     OPTOTAGGING_HEATMAP_SOURCE_DIR,
+    OPTOTAGGING_STATIC_LEGACY_SOURCE,
     OPTOTAGGING_STATIC_SOURCE,
+    OPTOTAGGING_STATIC_SUMMARY_PATH,
     REPO_ROOT,
     RUNNING_STATISTICS_PATH,
     SEGMENTATION_VIEWER_DATA_PATH,
@@ -63,6 +65,7 @@ from openscope_p3_publication.figures import (
     load_neural_excerpts,
     load_neuropixels_trajectory_data,
     load_optotagging_heatmap_data,
+    load_optotagging_static_summary,
     load_publication_table_data,
     load_running_statistics,
     load_segmentation_viewers,
@@ -91,6 +94,7 @@ from openscope_p3_publication.figures import (
     write_neuropixels_trajectory_svg,
     write_optotagging_heatmap_html,
     write_optotagging_heatmap_svg,
+    write_optotagging_static_source,
     write_segmentation_viewer_html,
     write_segmentation_viewer_static_svg,
     write_segmentation_viewer_svg,
@@ -652,7 +656,7 @@ def test_optotagging_write_results_round_trips_parquet(tmp_path: Path) -> None:
     assert len(provenance["output_sha256"]) == 64
 
 
-def test_optotagging_snapshot_is_source_backed() -> None:
+def test_optotagging_snapshot_is_source_backed(tmp_path: Path) -> None:
     payload = load_optotagging_heatmap_data()
     provenance = json.loads(
         OPTOTAGGING_HEATMAP_PROVENANCE_PATH.read_text(encoding="utf-8")
@@ -670,7 +674,7 @@ def test_optotagging_snapshot_is_source_backed() -> None:
     assert payload["default_session_id"] == "ecephys_830851_2026-03-19_10-49-11"
     assert (
         payload["static_example_session_id"]
-        == "ecephys_834687_2026-03-18_15-50-10"
+        == "ecephys_830851_2026-03-19_10-49-11"
     )
     assert len(payload["sessions"]) == 3
     assert payload["selection"] == {
@@ -719,10 +723,57 @@ def test_optotagging_snapshot_is_source_backed() -> None:
         path.name
         for path in (REPO_ROOT / "interactive" / "media" / "optotagging").iterdir()
     } == {"optotagging-heatmaps.svg"}
+    summary = load_optotagging_static_summary()
+    assert summary["source"] == OPTOTAGGING_STATIC_LEGACY_SOURCE.relative_to(
+        REPO_ROOT
+    ).as_posix()
+    assert summary["source_sha256"] == hashlib.sha256(
+        OPTOTAGGING_STATIC_LEGACY_SOURCE.read_bytes()
+    ).hexdigest()
+    assert summary["source_session_count"] == 60
+    assert summary["overall"]["sampled_session_count"] == 60
+    assert summary["overall"]["mean"] == pytest.approx(46.316667)
+    assert len(summary["major_parent"]) == 10
+    assert len(summary["structures"]) == 48
+    assert [record["sampled_session_count"] for record in summary["major_parent"]] == [
+        58,
+        58,
+        60,
+        58,
+        54,
+        28,
+        12,
+        6,
+        4,
+        23,
+    ]
+    assert OPTOTAGGING_STATIC_SUMMARY_PATH.is_file()
     static_svg = OPTOTAGGING_STATIC_SOURCE.read_text(encoding="utf-8")
-    assert "Optotagged-cell yield and example laser-aligned response" in static_svg
-    assert "Optotagged cells per session" in static_svg
-    assert "per sampled session" not in static_svg
+    assert 'width="1200" height="960"' in static_svg
+    assert 'role="img" aria-labelledby="title description"' in static_svg
+    assert "Optotagging response and yield summary" in static_svg
+    assert "Laser-aligned 5 Hz response" not in static_svg
+    assert "Overall yield" not in static_svg
+    assert "Major parent area" in static_svg
+    assert "Structure acronym" in static_svg
+    expected_structures = sorted(
+        summary["structures"],
+        key=lambda record: (-record["mean"], record["label"]),
+    )[:18]
+    assert all(f'>{record["label"]}</text>' in static_svg for record in expected_structures)
+    assert static_svg.count('height="8"') == 18
+    assert 'stroke="#DDE1DF"' not in static_svg
+    assert ">Session</text>" not in static_svg
+    assert all(f">{label}</text>" in static_svg for label in "ABCD")
+    assert FIGURE_SANS_FONT in static_svg
+    assert FIGURE_MONO_FONT in static_svg
+    assert "DejaVuSans" not in static_svg
+    assert "#315F73" in static_svg
+    assert "#3B4CC0" in static_svg
+    assert "#B40426" in static_svg
+    assert not any(color in static_svg for color in ("#82ed83", "#ed828e", "#a4d3ed"))
+    regenerated = write_optotagging_static_source(tmp_path / "optotagging-static.svg")
+    assert regenerated.read_bytes() == OPTOTAGGING_STATIC_SOURCE.read_bytes()
 
 
 def test_optotagging_outputs_are_deterministic_and_accessible(tmp_path: Path) -> None:
@@ -784,9 +835,8 @@ def test_optotagging_outputs_are_deterministic_and_accessible(tmp_path: Path) ->
     provenance_path = tmp_path / "optotagging-heatmaps.provenance.json"
     provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
     static_source.write_text(
-        '<svg role="img"><text>Optotagged-cell yield and example laser-aligned response</text>'
-        "<text>5 Hz laser stimulation: five 10 ms pulses</text>"
-        "<text>ecephys_test</text></svg>",
+        '<svg role="img"><text>Optotagging response and yield summary</text>'
+        "<text>Major parent area</text><text>Structure acronym</text></svg>",
         encoding="utf-8",
     )
 
@@ -806,19 +856,24 @@ def test_optotagging_outputs_are_deterministic_and_accessible(tmp_path: Path) ->
     html = html_path.read_text(encoding="utf-8")
     svg = svg_path.read_text(encoding="utf-8")
 
-    assert 'label for="session-search"' in html
     assert 'label for="session-select"' in html
     assert 'label for="parent-area"' in html
     assert 'label for="color-limit"' in html
+    assert '<select id="session-select"></select>' in html
+    assert '<select id="parent-area" disabled>' in html
+    assert 'id="session-search"' not in html
+    assert "<datalist" not in html
+    assert 'type="search"' not in html
     assert 'type="range" min="0.5" max="8" step="0.5" value="3"' in html
     assert 'data-view="interactive"' in html
     assert 'data-view="static"' in html
     assert 'id="interactive-view"' in html
     assert 'id="static-view"' in html
+    assert "Four-panel optotagging figure" in html
     assert "optotagging.svg" in html
     assert "selectView" in html
-    assert ".session-summary[hidden]" in html
-    assert 'parentInput.addEventListener("change", normalizeParentArea)' in html
+    assert 'parentSelect.addEventListener("change", scheduleRedraw)' in html
+    assert "normalizeParentArea" not in html
     assert "globalThis.OPTOTAGGING_ATLASES" in html
     assert "<canvas" not in html  # Panels are created without duplicating markup.
     assert "createElement(\"canvas\")" in html
@@ -834,9 +889,9 @@ def test_optotagging_outputs_are_deterministic_and_accessible(tmp_path: Path) ->
         (html_path.parent / "media" / "optotagging").glob("*.atlas.js")
     )
     assert 'role="img"' in svg
-    assert "ecephys_test" in svg
-    assert "Optotagged-cell yield and example laser-aligned response" in svg
-    assert "5 Hz laser stimulation: five 10 ms pulses" in svg
+    assert "Optotagging response and yield summary" in svg
+    assert "Major parent area" in svg
+    assert "Structure acronym" in svg
 
     write_optotagging_heatmap_html(
         html_path,

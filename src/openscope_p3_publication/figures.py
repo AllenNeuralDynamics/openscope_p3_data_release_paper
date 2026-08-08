@@ -268,8 +268,12 @@ OPTOTAGGING_HEATMAP_DATA_PATH = DATA_DIR / "optotagging-heatmaps.json"
 OPTOTAGGING_HEATMAP_PROVENANCE_PATH = OPTOTAGGING_HEATMAP_DATA_PATH.with_suffix(
     ".provenance.json"
 )
+OPTOTAGGING_STATIC_SUMMARY_PATH = DATA_DIR / "optotagging-static-summary.json"
 OPTOTAGGING_HEATMAP_SOURCE_DIR = (
     REPO_ROOT / "figure_sources" / "media" / "optotagging"
+)
+OPTOTAGGING_STATIC_LEGACY_SOURCE = (
+    OPTOTAGGING_HEATMAP_SOURCE_DIR / "optotagging-static-legacy.svg"
 )
 OPTOTAGGING_STATIC_SOURCE = (
     OPTOTAGGING_HEATMAP_SOURCE_DIR / "optotagging-static-composite.svg"
@@ -1697,6 +1701,419 @@ def write_optotagging_heatmap_html(
     return output
 
 
+def load_optotagging_static_summary(
+    summary_path: Path = OPTOTAGGING_STATIC_SUMMARY_PATH,
+) -> dict:
+    """Load and validate yield distributions extracted from the legacy static SVG."""
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    source_path = REPO_ROOT / summary.get("source", "")
+    source_session_count = summary.get("source_session_count")
+    if (
+        summary.get("version") != 1
+        or not isinstance(source_session_count, int)
+        or source_session_count <= 0
+        or not source_path.is_file()
+        or hashlib.sha256(source_path.read_bytes()).hexdigest()
+        != summary.get("source_sha256")
+    ):
+        raise RuntimeError("Optotagging static-summary provenance is invalid.")
+
+    def validate_records(records: list[dict], expected_count: int | None = None) -> None:
+        labels = [record.get("label") for record in records]
+        if len(labels) != len(set(labels)) or any(not label for label in labels):
+            raise RuntimeError("Optotagging static-summary labels are invalid.")
+        for record in records:
+            counts = record.get("counts", [])
+            sampled_session_count = record.get("sampled_session_count")
+            if (
+                not counts
+                or sampled_session_count != len(counts)
+                or len(counts) > source_session_count
+                or expected_count is not None
+                and len(counts) != expected_count
+                or any(not isinstance(count, int) or count < 0 for count in counts)
+                or not math.isclose(
+                    statistics.fmean(counts),
+                    record.get("mean", math.nan),
+                    abs_tol=1e-6,
+                )
+            ):
+                raise RuntimeError(
+                    f"Optotagging static-summary values are invalid: {record.get('label')}"
+                )
+
+    overall = summary.get("overall")
+    major_parent = summary.get("major_parent", [])
+    structures = summary.get("structures", [])
+    if not isinstance(overall, dict) or len(major_parent) != 10 or len(structures) != 48:
+        raise RuntimeError("Optotagging static-summary dimensions changed.")
+    validate_records([overall], expected_count=source_session_count)
+    validate_records(major_parent)
+    validate_records(structures)
+    return summary
+
+
+def optotagging_heatmap_color(value: float | None, limit: float = 3.0) -> tuple[int, int, int]:
+    if value is None or not math.isfinite(value):
+        return (230, 230, 230)
+    fraction = max(-1.0, min(1.0, value / limit))
+    cold = (59, 76, 192)
+    middle = (247, 247, 247)
+    warm = (180, 4, 38)
+    start, end = (cold, middle) if fraction < 0 else (middle, warm)
+    amount = fraction + 1 if fraction < 0 else fraction
+    return tuple(
+        round(left + amount * (right - left))
+        for left, right in zip(start, end, strict=True)
+    )
+
+
+def optotagging_static_heatmap_png(
+    payload: dict,
+    media_dir: Path,
+    *,
+    session_id: str,
+    condition_name: str,
+) -> tuple[bytes, dict]:
+    session = next(
+        (record for record in payload["sessions"] if record["session_id"] == session_id),
+        None,
+    )
+    if session is None:
+        raise RuntimeError(f"Static optotagging session is unavailable: {session_id}")
+    metadata = json.loads((media_dir / session["atlas_file"]).read_text(encoding="utf-8"))
+    width, height, scalars = decode_grayscale_png(media_dir / session["numeric_png_file"])
+    unit_count = metadata["unit_count"]
+    if height != unit_count * len(payload["conditions"]):
+        raise RuntimeError("Optotagging static atlas dimensions changed.")
+    row_offset = metadata["condition_row_offsets"][condition_name]
+    order = metadata["strongest_first_unit_indices"][condition_name]
+    scale = metadata["quantization"]["scale"]
+    nan_sentinel = metadata["quantization"]["nan_sentinel"]
+    pixels = bytearray(width * unit_count * 3)
+    for display_row, unit_index in enumerate(order):
+        source_offset = (row_offset + unit_index) * width
+        target_offset = display_row * width * 3
+        for column in range(width):
+            unsigned = scalars[source_offset + column]
+            quantized = unsigned if unsigned < 128 else unsigned - 256
+            value = None if quantized == nan_sentinel else quantized / scale
+            color = optotagging_heatmap_color(value)
+            target = target_offset + column * 3
+            pixels[target : target + 3] = bytes(color)
+    return encode_rgb_png(width, unit_count, bytes(pixels)), metadata
+
+
+def append_optotagging_panel_heading(
+    svg: list[str],
+    *,
+    label: str,
+    title: str | None,
+    x: float,
+    y: float,
+) -> None:
+    svg.append(
+        f'<text x="{x}" y="{y}" font-family="{FIGURE_SANS_FONT}" '
+        f'font-size="{FIGURE_TYPE_SCALE["panel"]}" font-weight="700" '
+        f'fill="#263033">{label}</text>'
+    )
+    if title:
+        svg.append(
+            f'<text x="{x + 46}" y="{y - 2}" font-family="{FIGURE_SANS_FONT}" '
+            f'font-size="{FIGURE_TYPE_SCALE["modality"]}" font-weight="700" '
+            f'fill="#263033">{escape(title)}</text>'
+        )
+
+
+def append_optotagging_yield_panel(
+    svg: list[str],
+    records: list[dict],
+    *,
+    label: str,
+    y_axis_label: str,
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    tick_step: int,
+    label_width: float,
+    bar_height: float = 12,
+    point_radius: float = 2.1,
+) -> None:
+    records = sorted(records, key=lambda record: (-record["mean"], record["label"]))
+    append_optotagging_panel_heading(svg, label=label, title=None, x=x, y=y + 32)
+    plot_left = x + label_width
+    plot_right = x + width - 48
+    plot_top = y + 70
+    plot_bottom = y + height - 54
+    maximum = max(max(record["counts"]) for record in records)
+    axis_max = max(tick_step, math.ceil(maximum / tick_step) * tick_step)
+    plot_width = plot_right - plot_left
+    row_height = (plot_bottom - plot_top) / len(records)
+    for tick in range(0, axis_max + 1, tick_step):
+        tick_x = plot_left + tick / axis_max * plot_width
+        svg.extend(
+            [
+                f'<line x1="{tick_x:.2f}" y1="{plot_bottom}" x2="{tick_x:.2f}" '
+                f'y2="{plot_bottom + 6}" stroke="#69716F" stroke-width="1.2"/>',
+                f'<text x="{tick_x:.2f}" y="{plot_bottom + 19}" text-anchor="middle" '
+                f'font-family="{FIGURE_MONO_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
+                f'fill="#68706E">{tick}</text>',
+            ]
+        )
+    for row_index, record in enumerate(records):
+        center_y = plot_top + (row_index + 0.5) * row_height
+        mean_x = plot_left + record["mean"] / axis_max * plot_width
+        half_bar = bar_height / 2
+        svg.extend(
+            [
+                f'<text x="{plot_left - 9}" y="{center_y + 4:.2f}" text-anchor="end" '
+                f'font-family="{FIGURE_SANS_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
+                f'font-weight="600" fill="#303536">{escape(record["label"])}</text>',
+                f'<rect x="{plot_left}" y="{center_y - half_bar:.2f}" '
+                f'width="{max(0, mean_x - plot_left):.2f}" height="{bar_height:g}" '
+                'fill="#315F73" fill-opacity="0.68"/>',
+                f'<line x1="{mean_x:.2f}" y1="{center_y - half_bar - 2:.2f}" '
+                f'x2="{mean_x:.2f}" y2="{center_y + half_bar + 2:.2f}" '
+                'stroke="#1F434F" stroke-width="2"/>',
+                f'<text x="{x + width - 2}" y="{center_y + 4:.2f}" text-anchor="end" '
+                f'font-family="{FIGURE_MONO_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
+                f'fill="#68706E">n={record["sampled_session_count"]}</text>',
+            ]
+        )
+        for point_index, count in enumerate(record["counts"]):
+            point_x = plot_left + count / axis_max * plot_width
+            jitter = (((point_index * 37) % 13) - 6) / 6 * min(4, row_height * 0.18)
+            svg.append(
+                f'<circle cx="{point_x:.2f}" cy="{center_y + jitter:.2f}" '
+                f'r="{point_radius:g}" '
+                'fill="#596663" fill-opacity="0.48"/>'
+            )
+    svg.extend(
+        [
+            f'<text x="{plot_left - 9}" y="{plot_top - 12}" text-anchor="end" '
+            f'font-family="{FIGURE_SANS_FONT}" font-size="15" '
+            f'fill="#303536">{escape(y_axis_label)}</text>',
+            f'<line x1="{plot_left}" y1="{plot_bottom}" x2="{plot_right}" '
+            f'y2="{plot_bottom}" stroke="#69716F" stroke-width="1.4"/>',
+            f'<text x="{(plot_left + plot_right) / 2:.2f}" y="{y + height - 8}" '
+            f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" font-size="15" '
+            'fill="#303536">Optotagged cells per session</text>',
+        ]
+    )
+
+
+def write_optotagging_static_source(
+    output: Path = OPTOTAGGING_STATIC_SOURCE,
+    data_path: Path = OPTOTAGGING_HEATMAP_DATA_PATH,
+    provenance_path: Path = OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    media_dir: Path = OPTOTAGGING_HEATMAP_SOURCE_DIR,
+    summary_path: Path = OPTOTAGGING_STATIC_SUMMARY_PATH,
+) -> Path:
+    """Render the publication-style static optotagging figure from committed data."""
+
+    payload = load_optotagging_heatmap_data(data_path, provenance_path, media_dir)
+    summary = load_optotagging_static_summary(summary_path)
+    session_id = payload["default_session_id"]
+    condition_name = "5 hz pulse train_presentations"
+    condition = next(
+        item for item in payload["conditions"] if item["table_name"] == condition_name
+    )
+    heatmap_png, metadata = optotagging_static_heatmap_png(
+        payload,
+        media_dir,
+        session_id=session_id,
+        condition_name=condition_name,
+    )
+    session = next(item for item in payload["sessions"] if item["session_id"] == session_id)
+    condition_counts = session["condition_counts"][condition_name]
+    pulse_count = round(
+        condition_counts["pulses"] / condition_counts["presentations"]
+    )
+    heatmap_uri = base64.b64encode(heatmap_png).decode("ascii")
+    width, height = 1200, 960
+    yield_color = "#315F73"
+    svg = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
+        '<title id="title">Optotagging response and yield summary</title>',
+        '<desc id="description">Four panels show a representative five-hertz '
+        f'laser-aligned response from {escape(session_id)}, overall optotagged-cell '
+        'yield, yield by major parent area, and the eighteen structures with the highest '
+        'mean yield.</desc>',
+        '<defs><linearGradient id="optotagging-z" x1="0" x2="1" y1="0" y2="0">'
+        '<stop offset="0" stop-color="#3B4CC0"/><stop offset="0.5" '
+        'stop-color="#F7F7F7"/><stop offset="1" stop-color="#B40426"/>'
+        '</linearGradient></defs>',
+        f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
+    ]
+
+    append_optotagging_panel_heading(
+        svg,
+        label="A",
+        title=None,
+        x=35,
+        y=64,
+    )
+    plot_left, plot_top, plot_width, plot_height = 92, 116, 646, 265
+    svg.append(
+        f'<image href="data:image/png;base64,{heatmap_uri}" x="{plot_left}" '
+        f'y="{plot_top}" width="{plot_width}" height="{plot_height}" '
+        'preserveAspectRatio="none"/>'
+    )
+    time_start, time_end = metadata["time_seconds"]
+
+    def time_x(value: float) -> float:
+        return plot_left + (value - time_start) / (time_end - time_start) * plot_width
+
+    pulse_width = max(
+        3,
+        condition["pulse_width_seconds"] / (time_end - time_start) * plot_width,
+    )
+    for pulse_index in range(pulse_count):
+        pulse_x = time_x(pulse_index / condition["pulse_frequency_hz"])
+        svg.append(
+            f'<rect x="{pulse_x:.2f}" y="100" width="{pulse_width:.2f}" height="9" '
+            f'fill="{yield_color}"/>'
+        )
+    laser_x = time_x(0)
+    svg.extend(
+        [
+            f'<line x1="{laser_x:.2f}" y1="{plot_top}" x2="{laser_x:.2f}" '
+            f'y2="{plot_top + plot_height}" stroke="#263033" stroke-width="1.4" '
+            'stroke-dasharray="6 5"/>',
+            f'<rect x="{plot_left}" y="{plot_top}" width="{plot_width}" '
+            f'height="{plot_height}" fill="none" stroke="#69716F" stroke-width="1.2"/>',
+            f'<text x="48" y="{plot_top + plot_height / 2:.2f}" '
+            f'transform="rotate(-90 48 {plot_top + plot_height / 2:.2f})" '
+            f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" font-size="15" '
+            'fill="#303536">Units</text>',
+            f'<text x="82" y="{plot_top + 5}" text-anchor="end" '
+            f'font-family="{FIGURE_MONO_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
+            'fill="#68706E">1</text>',
+            f'<text x="82" y="{plot_top + plot_height}" text-anchor="end" '
+            f'font-family="{FIGURE_MONO_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
+            f'fill="#68706E">{metadata["unit_count"]:,}</text>',
+        ]
+    )
+    for tick in (-0.5, 0, 0.5, 1.0):
+        if not time_start <= tick <= time_end:
+            continue
+        tick_x = time_x(tick)
+        svg.extend(
+            [
+                f'<line x1="{tick_x:.2f}" y1="{plot_top + plot_height}" '
+                f'x2="{tick_x:.2f}" y2="{plot_top + plot_height + 7}" '
+                'stroke="#69716F" stroke-width="1.2"/>',
+                f'<text x="{tick_x:.2f}" y="{plot_top + plot_height + 23}" '
+                f'text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
+                f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">{tick:g}</text>',
+            ]
+        )
+    svg.extend(
+        [
+            f'<text x="{plot_left + plot_width / 2:.2f}" y="419" text-anchor="middle" '
+            f'font-family="{FIGURE_SANS_FONT}" font-size="15" fill="#303536">'
+            'Time from laser onset (s)</text>',
+            '<rect x="92" y="438" width="245" height="12" fill="url(#optotagging-z)"/>',
+            f'<text x="92" y="466" text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">-3</text>',
+            f'<text x="214.5" y="466" text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">0</text>',
+            f'<text x="337" y="466" text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">+3</text>',
+            f'<text x="353" y="449" font-family="{FIGURE_SANS_FONT}" font-size="13" '
+            'fill="#303536">Baseline z score</text>',
+        ]
+    )
+
+    append_optotagging_panel_heading(
+        svg,
+        label="B",
+        title=None,
+        x=790,
+        y=64,
+    )
+    overall = summary["overall"]
+    overall_left, overall_right = 820, 1145
+    overall_top, overall_bottom = 126, 390
+    overall_max = max(20, math.ceil(max(overall["counts"]) / 20) * 20)
+    for tick in range(0, overall_max + 1, 20):
+        tick_x = overall_left + tick / overall_max * (overall_right - overall_left)
+        svg.extend(
+            [
+                f'<line x1="{tick_x:.2f}" y1="{overall_bottom}" x2="{tick_x:.2f}" '
+                f'y2="{overall_bottom + 6}" stroke="#69716F" stroke-width="1.2"/>',
+                f'<text x="{tick_x:.2f}" y="{overall_bottom + 19}" text-anchor="middle" '
+                f'font-family="{FIGURE_MONO_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
+                f'fill="#68706E">{tick}</text>',
+            ]
+        )
+    for point_index, count in enumerate(overall["counts"]):
+        point_x = overall_left + count / overall_max * (overall_right - overall_left)
+        point_y = overall_top + 24 + ((point_index * 37) % 17) / 16 * (
+            overall_bottom - overall_top - 48
+        )
+        svg.append(
+            f'<circle cx="{point_x:.2f}" cy="{point_y:.2f}" r="3.1" '
+            'fill="#596663" fill-opacity="0.58"/>'
+        )
+    overall_mean_x = overall_left + overall["mean"] / overall_max * (
+        overall_right - overall_left
+    )
+    svg.extend(
+        [
+            f'<line x1="{overall_mean_x:.2f}" y1="{overall_top}" '
+            f'x2="{overall_mean_x:.2f}" y2="{overall_bottom}" '
+            f'stroke="{yield_color}" stroke-width="4"/>',
+            f'<text x="{overall_mean_x + 7:.2f}" y="{overall_top + 15}" '
+            f'font-family="{FIGURE_SANS_FONT}" font-size="13" font-weight="700" '
+            f'fill="{yield_color}">Mean {overall["mean"]:.1f}</text>',
+            f'<line x1="{overall_left}" y1="{overall_bottom}" x2="{overall_right}" '
+            f'y2="{overall_bottom}" stroke="#69716F" stroke-width="1.4"/>',
+            f'<text x="{(overall_left + overall_right) / 2:.2f}" y="427" '
+            f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" font-size="15" '
+            'fill="#303536">Optotagged cells per session</text>',
+        ]
+    )
+
+    append_optotagging_yield_panel(
+        svg,
+        summary["major_parent"],
+        label="C",
+        y_axis_label="Major parent area",
+        x=35,
+        y=500,
+        width=545,
+        height=430,
+        tick_step=10,
+        label_width=112,
+    )
+    top_structures = sorted(
+        summary["structures"],
+        key=lambda record: (-record["mean"], record["label"]),
+    )[:18]
+    append_optotagging_yield_panel(
+        svg,
+        top_structures,
+        label="D",
+        y_axis_label="Structure acronym",
+        x=620,
+        y=500,
+        width=545,
+        height=430,
+        tick_step=5,
+        label_width=104,
+        bar_height=8,
+        point_radius=1.7,
+    )
+    svg.append("</svg>")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    write_svg_output(output, svg)
+    return output
+
+
 def write_optotagging_heatmap_svg(
     output: Path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT,
     data_path: Path = OPTOTAGGING_HEATMAP_DATA_PATH,
@@ -1706,14 +2123,14 @@ def write_optotagging_heatmap_svg(
 ) -> Path:
     """Copy the source static composite into the publication outputs."""
 
-    payload = load_optotagging_heatmap_data(data_path, provenance_path, media_dir)
+    load_optotagging_heatmap_data(data_path, provenance_path, media_dir)
     if static_source is None:
         static_source = media_dir / OPTOTAGGING_STATIC_SOURCE.name
     svg = static_source.read_text(encoding="utf-8")
     required_text = (
-        "Optotagged-cell yield and example laser-aligned response",
-        "5 Hz laser stimulation: five 10 ms pulses",
-        payload.get("static_example_session_id", payload["default_session_id"]),
+        "Optotagging response and yield summary",
+        "Major parent area",
+        "Structure acronym",
     )
     if "<svg" not in svg or any(text not in svg for text in required_text):
         raise RuntimeError("Optotagging static composite does not match its source figure.")
@@ -3109,6 +3526,61 @@ def decode_rgb_png(path: Path) -> tuple[int, int, bytes]:
             left = scanline[index - 3] if index >= 3 else 0
             above = previous[index]
             upper_left = previous[index - 3] if index >= 3 else 0
+            if filter_type == 1:
+                value += left
+            elif filter_type == 2:
+                value += above
+            elif filter_type == 3:
+                value += (left + above) // 2
+            elif filter_type == 4:
+                value += paeth_predictor(left, above, upper_left)
+            elif filter_type != 0:
+                raise RuntimeError(f"PNG filter is unsupported: {filter_type}")
+            scanline[index] = value & 0xFF
+        pixels.extend(scanline)
+        previous = scanline
+    return width, height, bytes(pixels)
+
+
+def decode_grayscale_png(path: Path) -> tuple[int, int, bytes]:
+    encoded = path.read_bytes()
+    if not encoded.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise RuntimeError(f"PNG signature is invalid: {path.name}")
+    position = 8
+    width = height = None
+    compressed = []
+    while position < len(encoded):
+        length = struct.unpack(">I", encoded[position : position + 4])[0]
+        chunk_type = encoded[position + 4 : position + 8]
+        chunk = encoded[position + 8 : position + 8 + length]
+        position += length + 12
+        if chunk_type == b"IHDR":
+            width, height, depth, color, compression, filtering, interlace = (
+                struct.unpack(">IIBBBBB", chunk)
+            )
+            if (depth, color, compression, filtering, interlace) != (8, 0, 0, 0, 0):
+                raise RuntimeError(f"PNG format is unsupported: {path.name}")
+        elif chunk_type == b"IDAT":
+            compressed.append(chunk)
+        elif chunk_type == b"IEND":
+            break
+    if width is None or height is None or not compressed:
+        raise RuntimeError(f"PNG data is incomplete: {path.name}")
+
+    raw = zlib.decompress(b"".join(compressed))
+    stride = width
+    if len(raw) != height * (stride + 1):
+        raise RuntimeError(f"PNG scanline length changed: {path.name}")
+    pixels = bytearray()
+    previous = bytearray(stride)
+    for row_index in range(height):
+        offset = row_index * (stride + 1)
+        filter_type = raw[offset]
+        scanline = bytearray(raw[offset + 1 : offset + stride + 1])
+        for index, value in enumerate(scanline):
+            left = scanline[index - 1] if index else 0
+            above = previous[index]
+            upper_left = previous[index - 1] if index else 0
             if filter_type == 1:
                 value += left
             elif filter_type == 2:
@@ -5611,6 +6083,7 @@ def main() -> None:
     segmentation_viewer_path = write_segmentation_viewers()
     unit_yield_html_path = write_unit_yield_html()
     trajectory_html_path = write_neuropixels_trajectory_html()
+    optotagging_source_path = write_optotagging_static_source()
     optotagging_html_path = write_optotagging_heatmap_html()
     optotagging_svg_path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT
     svg_path = write_static_svg()
@@ -5636,6 +6109,7 @@ def main() -> None:
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {trajectory_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
+    print(f"Wrote {optotagging_source_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {optotagging_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {optotagging_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")

@@ -1,8 +1,6 @@
 (() => {
-  const search = document.querySelector("#session-search");
   const select = document.querySelector("#session-select");
-  const parentInput = document.querySelector("#parent-area");
-  const parentOptions = document.querySelector("#parent-area-options");
+  const parentSelect = document.querySelector("#parent-area");
   const slider = document.querySelector("#color-limit");
   const sliderValue = document.querySelector("#color-limit-value");
   const title = document.querySelector("#session-title");
@@ -11,7 +9,6 @@
   const fallbackFigure = document.querySelector("#fallback-figure");
   const fallbackImage = document.querySelector("#heatmap-image");
   const panels = document.querySelector("#heatmap-panels");
-  const emptyState = document.querySelector("#empty-state");
   const interactiveView = document.querySelector("#interactive-view");
   const staticView = document.querySelector("#static-view");
   const viewButtons = document.querySelectorAll(".view-button");
@@ -70,20 +67,11 @@
   }
 
   function selectedUnitIndices(metadata, condition) {
-    const requested = parentInput.value.trim();
+    const requested = parentSelect.value;
     const areaIndex = metadata.parent_areas.indexOf(requested);
     const order = metadata.strongest_first_unit_indices[condition.table_name];
     if (!requested || requested === "All areas" || areaIndex < 0) return order;
     return order.filter((unitIndex) => metadata.parent_codes[unitIndex] === areaIndex);
-  }
-
-  function normalizeParentArea() {
-    if (!loadedAtlas) return;
-    const validAreas = ["All areas", ...loadedAtlas.metadata.parent_areas];
-    if (!validAreas.includes(parentInput.value.trim())) {
-      parentInput.value = "All areas";
-    }
-    scheduleRedraw();
   }
 
   function drawPanel(canvas, atlas, condition) {
@@ -197,16 +185,18 @@
     await image.decode();
     if (generation !== loadGeneration) return;
     loadedAtlas = {metadata, scalars: decodeAtlasImage(image, metadata)};
-    parentOptions.replaceChildren();
+    const previousArea = parentSelect.value;
+    parentSelect.replaceChildren();
     for (const area of ["All areas", ...metadata.parent_areas]) {
       const option = document.createElement("option");
       option.value = area;
-      parentOptions.append(option);
+      option.textContent = area;
+      parentSelect.append(option);
     }
-    if (!["All areas", ...metadata.parent_areas].includes(parentInput.value)) {
-      parentInput.value = "All areas";
-    }
-    parentInput.disabled = false;
+    parentSelect.value = metadata.parent_areas.includes(previousArea)
+      ? previousArea
+      : "All areas";
+    parentSelect.disabled = false;
     slider.disabled = false;
     numericFigure.hidden = false;
     fallbackFigure.hidden = true;
@@ -239,7 +229,7 @@
     loadedAtlas = null;
     const generation = ++loadGeneration;
     if (OPTOTAGGING_DATA.version === 1) {
-      parentInput.disabled = true;
+      parentSelect.disabled = true;
       slider.disabled = true;
       fallbackImage.src = `media/optotagging/${session.image_file}`;
       fallbackImage.alt = `Three optotagging heatmaps for ${session.session_id}.`;
@@ -255,41 +245,26 @@
     }
   }
 
-  function populateOptions(sessions, preferredId) {
+  function populateOptions(preferredId) {
     select.replaceChildren();
-    for (const session of sessions) {
+    for (const session of OPTOTAGGING_DATA.sessions) {
       const option = document.createElement("option");
       option.value = session.session_id;
       option.textContent = sessionLabel(session);
       select.append(option);
     }
-    const hasMatches = sessions.length > 0;
-    document.querySelector(".session-summary").hidden = !hasMatches;
-    emptyState.hidden = hasMatches;
-    select.disabled = !hasMatches;
-    if (!hasMatches) {
-      numericFigure.hidden = true;
-      fallbackFigure.hidden = true;
-      return;
-    }
-    const selectedId = sessions.some((session) => session.session_id === preferredId)
+    const selectedId = OPTOTAGGING_DATA.sessions.some(
+      (session) => session.session_id === preferredId,
+    )
       ? preferredId
-      : sessions[0].session_id;
+      : OPTOTAGGING_DATA.sessions[0].session_id;
     select.value = selectedId;
     renderSession(selectedId);
   }
 
-  search.addEventListener("input", () => {
-    const query = search.value.trim().toLowerCase();
-    const matches = OPTOTAGGING_DATA.sessions.filter((session) =>
-      session.session_id.toLowerCase().includes(query),
-    );
-    populateOptions(matches, select.value);
-  });
   select.addEventListener("change", () => renderSession(select.value));
   slider.addEventListener("input", scheduleRedraw);
-  parentInput.addEventListener("input", scheduleRedraw);
-  parentInput.addEventListener("change", normalizeParentArea);
+  parentSelect.addEventListener("change", scheduleRedraw);
   window.addEventListener("resize", scheduleRedraw);
   viewButtons.forEach((button) => {
     button.addEventListener("click", () => selectView(button.dataset.view));
@@ -300,5 +275,5 @@
   const initialSession = sessionsById.has(requestedSession)
     ? requestedSession
     : OPTOTAGGING_DATA.default_session_id;
-  populateOptions(OPTOTAGGING_DATA.sessions, initialSession);
+  populateOptions(initialSession);
 })();
