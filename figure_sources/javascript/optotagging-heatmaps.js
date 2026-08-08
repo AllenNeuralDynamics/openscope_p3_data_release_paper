@@ -77,6 +77,15 @@
     return order.filter((unitIndex) => metadata.parent_codes[unitIndex] === areaIndex);
   }
 
+  function normalizeParentArea() {
+    if (!loadedAtlas) return;
+    const validAreas = ["All areas", ...loadedAtlas.metadata.parent_areas];
+    if (!validAreas.includes(parentInput.value.trim())) {
+      parentInput.value = "All areas";
+    }
+    scheduleRedraw();
+  }
+
   function drawPanel(canvas, atlas, condition) {
     const {metadata, scalars} = atlas;
     const units = selectedUnitIndices(metadata, condition);
@@ -280,6 +289,7 @@
   select.addEventListener("change", () => renderSession(select.value));
   slider.addEventListener("input", scheduleRedraw);
   parentInput.addEventListener("input", scheduleRedraw);
+  parentInput.addEventListener("change", normalizeParentArea);
   window.addEventListener("resize", scheduleRedraw);
   viewButtons.forEach((button) => {
     button.addEventListener("click", () => selectView(button.dataset.view));

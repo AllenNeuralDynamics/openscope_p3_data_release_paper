@@ -72,7 +72,8 @@ html.is-embedded .viewer {
 }
 
 .static-view[hidden],
-#interactive-view[hidden] {
+#interactive-view[hidden],
+.session-summary[hidden] {
   display: none !important;
 }
 

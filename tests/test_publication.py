@@ -499,9 +499,8 @@ def test_supplementary_studies_table_is_complete() -> None:
 def test_supplementary_and_power_figures_are_current() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
-    for number in range(1, 5):
+    for number in range(1, 6):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
-    assert "Supplementary Figure 5" not in manuscript
     assert manuscript.count(":enumerated: false\n:width: 100%") >= 3
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
     assert "./interactive/unit-yield.html" in manuscript
@@ -530,6 +529,17 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "standard-oddball Neuropixels, mesoscope, and SLAP2 sessions" in manuscript
     assert "5th–95th percentile nonblink range" in manuscript
     assert "**B,** a dorsal projection" in manuscript
+    assert manuscript.count(
+        "[Supplementary Figure 5](#fig-supp-optotagging-heatmaps)"
+    ) == 1
+    assert "./interactive/optotagging-heatmaps.html" in manuscript
+    assert ":label: fig-supp-optotagging-heatmaps\n:enumerated: false" in manuscript
+    assert (
+        ":placeholder: ./images/figures/generated/optotagging-heatmaps.svg"
+        in manuscript
+    )
+    assert "all 60 source sessions" in manuscript
+    assert "exact laser-on windows" in manuscript
     for obsolete in (
         "segmentation-neuropixels.html",
         "segmentation-mesoscope.html",
@@ -609,7 +619,6 @@ def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     assert "first sequence omission" not in segmentation_text
     assert "first motor mismatch" not in segmentation_text
     assert "fig-supp-segmentation-viewers" not in manuscript
-    assert "Supplementary Figure 5" not in manuscript
     assert (
         "[796630_2025-08-28_14-25-34]"
         "(https://open.quiltdata.com/b/aind-open-data/tree/"

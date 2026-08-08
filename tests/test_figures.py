@@ -817,6 +817,8 @@ def test_optotagging_outputs_are_deterministic_and_accessible(tmp_path: Path) ->
     assert 'id="static-view"' in html
     assert "optotagging.svg" in html
     assert "selectView" in html
+    assert ".session-summary[hidden]" in html
+    assert 'parentInput.addEventListener("change", normalizeParentArea)' in html
     assert "globalThis.OPTOTAGGING_ATLASES" in html
     assert "<canvas" not in html  # Panels are created without duplicating markup.
     assert "createElement(\"canvas\")" in html
