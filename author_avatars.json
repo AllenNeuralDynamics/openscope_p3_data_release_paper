@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "policy": "Remote-only portraits from authoritative public staff profiles; no image files are bundled with the publication.",
-  "verified_on": "2026-08-02",
+  "policy": "Remote-only portraits from authoritative public institutional profiles or pages; no image files are bundled with the publication.",
+  "verified_on": "2026-08-08",
   "contributors": {
     "jerome-lecoq": {
       "name": "Jérôme Lecoq",
@@ -16,6 +16,13 @@
       "avatar_url": "https://cdn.prod.website-files.com/691fabdb8ba70248dd5b7fa8/691fabdb8ba70248dd5b829a_66fb361f83edc9d7b39abe9e_Carter_Peene_SQ.jpeg",
       "width": 800,
       "height": 800
+    },
+    "ryan-gillis": {
+      "name": "Ryan Gillis",
+      "source_page": "https://www.mizumorilab.com/lab-news/brains-program-received-a-sloan-foundation-grant-c58eh-k8ntl-njwza-e97zr-tkt7g-pxwhf-jgcxn-gkncx-y3ds7",
+      "avatar_url": "https://static1.squarespace.com/static/6065458351cb8c7a42973707/60720307eb0ea31892661356/630113dad36fd46ddca3b5f3/1661016548090/IMG_7454_edited_edited.jpg?format=1500w",
+      "width": 1500,
+      "height": 1876
     },
     "ali-williford": {
       "name": "Ali Williford",
@@ -73,28 +80,60 @@
       "width": 1000,
       "height": 1000
     },
+    "jimin-park": {
+      "name": "Jimin Park",
+      "source_page": "https://alleninstitute.org/person/jimin-park",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5947eec300ac1e1e9f0ef_Jimin-Park-square-web.jpeg",
+      "width": 800,
+      "height": 800
+    },
     "peter-a-groblewski": {
       "name": "Peter A Groblewski",
       "source_page": "https://alleninstitute.org/person/peter-groblewski",
       "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c59509881d0cfefba78bbf_Peter_Groblewski_W-SQ.webp",
       "width": 800,
       "height": 800
+    },
+    "maedeh-seyedolmohadesin": {
+      "name": "Maedeh Seyedolmohadesin",
+      "source_page": "https://alleninstitute.org/person/maedeh-seyedolmohadesin",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/6a18c126dd255288fa5f7c81_maedeh_seyedolmohadesin_headshot.jpg",
+      "width": 1200,
+      "height": 1200
+    },
+    "ivana-bussi": {
+      "name": "Ivana Bussi",
+      "source_page": "https://alleninstitute.org/person/ivana-bussi",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c59478211f19a28ab460f5_Ivana_Bussi.jpeg",
+      "width": 800,
+      "height": 800
+    },
+    "karim-oweiss": {
+      "name": "Karim Oweiss",
+      "source_page": "https://faculty.eng.ufl.edu/oweisslab/principal-investigator/",
+      "avatar_url": "https://faculty.eng.ufl.edu/oweisslab/wp-content/uploads/sites/675/2025/05/IMG_0816-2048x1585-1.jpeg",
+      "width": 2048,
+      "height": 1585
+    },
+    "alexander-maier": {
+      "name": "Alexander Maier",
+      "source_page": "https://news.vanderbilt.edu/2017/11/21/discovery-minds-eye-blink/alexander-maier/",
+      "avatar_url": "https://cdn.vanderbilt.edu/vu-news/files/20190417213235/Alexander-Maier.jpg",
+      "width": 600,
+      "height": 456
+    },
+    "manni-he": {
+      "name": "Manni He",
+      "source_page": "https://alleninstitute.org/person/manni-he",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5948cfeb57c9a7fa59427_Manni-He-square-web.jpeg",
+      "width": 800,
+      "height": 800
     }
   },
   "unresolved": {
-    "ryan-gillis": {
-      "name": "Ryan Gillis",
-      "source_page": "https://www.allenneuraldynamics.org/people/ryan-gillis",
-      "reason": "The authoritative staff profile currently uses the generic people placeholder."
-    },
     "casey-lennon-jones": {
       "name": "Casey Lennon-Jones",
       "source_page": "https://www.allenneuraldynamics.org/people/casey-lennon-jones",
-      "reason": "The authoritative staff profile currently uses the generic people placeholder."
-    },
-    "jimin-park": {
-      "name": "Jimin Park",
-      "source_page": "https://www.allenneuraldynamics.org/people/jimin-park",
       "reason": "The authoritative staff profile currently uses the generic people placeholder."
     }
   }

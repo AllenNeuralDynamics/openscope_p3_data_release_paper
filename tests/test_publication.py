@@ -4,6 +4,7 @@ import json
 import re
 import runpy
 import struct
+import urllib.parse
 from pathlib import Path
 
 import pytest
@@ -157,19 +158,30 @@ def test_authorship_snapshot_is_portal_backed() -> None:
     assert commit
     assert 'project: "p3_data_release"' in authors
     assert f"commit={commit.group(1)}&format=json" in authors
-    assert authors.count('\n      name: "') == 14
-    assert 'name: "Jérôme Lecoq"' in authors
-    assert 'name: "Peter A Groblewski"' in authors
+    assert authors.count('\n      name: "') == 19
+    for contributor in (
+        "Jérôme Lecoq",
+        "Peter A Groblewski",
+        "Maedeh Seyedolmohadesin",
+        "Ivana Bussi",
+        "Karim Oweiss",
+        "Alexander Maier",
+        "Manni He",
+    ):
+        assert f'name: "{contributor}"' in authors
     assert avatars["version"] == 1
-    assert len(avatars["contributors"]) == 11
-    assert len(avatars["unresolved"]) == 3
+    assert len(avatars["contributors"]) == 18
+    assert len(avatars["unresolved"]) == 1
     assert set(avatars["contributors"]).isdisjoint(avatars["unresolved"])
-    assert authors.count('\n      avatar_url: "https://') == 11
+    assert authors.count('\n      avatar_url: "https://') == 18
     for author_id, record in avatars["contributors"].items():
         assert record["source_page"].startswith("https://")
-        assert record["avatar_url"].startswith(
-            "https://cdn.prod.website-files.com/"
-        )
+        assert urllib.parse.urlparse(record["avatar_url"]).netloc in {
+            "cdn.prod.website-files.com",
+            "static1.squarespace.com",
+            "faculty.eng.ufl.edu",
+            "cdn.vanderbilt.edu",
+        }
         assert record["width"] >= 400
         assert record["height"] >= 400
         author_block = re.search(
