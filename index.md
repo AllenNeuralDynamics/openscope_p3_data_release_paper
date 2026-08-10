@@ -46,7 +46,7 @@ This subsection still needs additional synthesis of the unresolved conceptual ch
 
 ## Relationship to the companion review
 
-This data release follows up a community review paper which synthesizes the theoretical motivations, identifies the key convergences and divergences in the predictive processing literature, and details the experimental hypotheses that this dataset was designed to test. Specifically, the dataset allows testing of two overarching alternative hypotheses: (H0) that different types of prediction errors involve fundamentally distinct neural mechanisms with specialized circuits for each type, or (H1) that a common computational principle underlies all mismatch responses, with apparent differences reflecting implementation variations.
+This data release follows up a community review paper which synthesizes the theoretical motivations, identifies the key convergences and divergences in the predictive processing literature, and details the experimental hypotheses that this dataset was designed to test {cite:p}`aizenbud2026neural`. Specifically, the dataset allows testing of two overarching alternative hypotheses: (H0) that different types of prediction errors involve fundamentally distinct neural mechanisms with specialized circuits for each type, or (H1) that a common computational principle underlies all mismatch responses, with apparent differences reflecting implementation variations.
 
 ## What gap this dataset fills
 
