@@ -492,8 +492,10 @@ denotes the nominal probe port (A-F). In the **Static** view, **A,** an oblique
 projection shows the trajectories across the depth-shaded Allen CCF whole-brain
 surface; **B,** a dorsal projection shows their anteroposterior and mediolateral
 distribution. Both panels use a semi-transparent brain surface, anatomical
-direction markers, and calibrated 2 mm scale bars. Electrode coordinates
-and area annotations come from the public draft of Dandiset 001637; the brain
+direction markers, and calibrated 2 mm scale bars; the trajectories extend
+laterally toward the L direction marker, matching the stereotaxic mediolateral
+convention. Electrode coordinates and area annotations come from the public draft
+of Dandiset 001637; the brain
 surface is a 100-micrometer mesh derived from the Allen CCF 2017 25-micrometer
 annotation volume. In total, 332 probe
 trajectories from 57 sessions and 16 mice had finite CCF coordinates. Three of

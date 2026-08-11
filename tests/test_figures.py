@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import re
+import statistics
 import struct
 from io import BytesIO
 from pathlib import Path
@@ -1076,6 +1077,33 @@ def test_neuropixels_trajectory_snapshot_is_source_backed() -> None:
     assert {row["reason"] for row in provenance["exclusions"]} == {
         "missing-ccf-coordinates:x,y,z"
     }
+    atlas_midline_um = payload["brainSurface"]["annotationShape"][2] * 12.5
+    planned_entry_lateral_um = {
+        "A": 800,
+        "B": 2_000,
+        "C": 2_300,
+        "D": 4_200,
+        "E": 2_600,
+        "F": 1_500,
+    }
+    observed_entry_lateral_um = {
+        probe: statistics.median(
+            atlas_midline_um - record["points"][0][2]
+            for record in payload["insertions"]
+            if record["probe"] == probe
+        )
+        for probe in planned_entry_lateral_um
+    }
+    source_sign_error_um = statistics.mean(
+        abs(observed_entry_lateral_um[probe] - planned_lateral)
+        for probe, planned_lateral in planned_entry_lateral_um.items()
+    )
+    reflected_sign_error_um = statistics.mean(
+        abs(-observed_entry_lateral_um[probe] - planned_lateral)
+        for probe, planned_lateral in planned_entry_lateral_um.items()
+    )
+    assert source_sign_error_um < 500
+    assert reflected_sign_error_um > 4_000
 
 
 def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> None:
@@ -1097,6 +1125,9 @@ def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> Non
     assert "preserveDrawingBuffer: true" in html
     assert "camera.position.clone().sub(controls.target).normalize()" in html
     assert "orientationRenderer.render(orientationScene, orientationCamera)" in html
+    assert "atlasCenter.x - point[2]" in html
+    assert "point[2] - atlasCenter.x" not in html
+    assert "camera.fov = fittedVerticalFov(camera.aspect)" in html
     assert '<div class="orientation"' not in html
     assert '"insertions":332' in html
     assert 'role="img"' in svg
@@ -1130,6 +1161,22 @@ def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> Non
     assert "localized insertions ·" not in svg
     assert ".viewer.static-active .source-strip" in html
     assert svg.count("<polyline ") == 664
+    payload = load_neuropixels_trajectory_data()
+    insertion_count = len(payload["insertions"])
+    trajectory_polylines = re.findall(r'<polyline points="([^"]+)"', svg)
+    dorsal_polylines = trajectory_polylines[insertion_count:]
+    assert len(dorsal_polylines) == insertion_count
+    atlas_midline_um = payload["brainSurface"]["annotationShape"][2] * 12.5
+    lateral_and_screen_x = []
+    for record, polyline in zip(
+        payload["insertions"], dorsal_polylines, strict=True
+    ):
+        first_screen_x = float(polyline.split(maxsplit=1)[0].split(",", maxsplit=1)[0])
+        lateral_um = atlas_midline_um - record["points"][0][2]
+        lateral_and_screen_x.append((lateral_um, first_screen_x))
+    most_medial = min(lateral_and_screen_x, key=lambda item: item[0])
+    most_lateral = max(lateral_and_screen_x, key=lambda item: item[0])
+    assert most_lateral[1] > most_medial[1]
     assert "__NEUROPIXELS_TRAJECTORY_" not in html
     assert "__EMBED_AUTO_HEIGHT_JS__" not in html
     copied_static = (

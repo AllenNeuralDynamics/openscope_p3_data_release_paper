@@ -346,6 +346,10 @@ def test_importer_preserves_opening_figure_narrative() -> None:
     assert "[Figure 5](#fig-aligned-neural-signals)" in importer["NEURAL_VIEWER_BLOCK"]
     assert "Supplementary Figure 3" in importer["NEUROPIXELS_TRAJECTORY_BLOCK"]
     assert "332 probe" in importer["NEUROPIXELS_TRAJECTORY_BLOCK"]
+    trajectory_text = " ".join(
+        importer["NEUROPIXELS_TRAJECTORY_BLOCK"].split()
+    )
+    assert "trajectories extend laterally toward the L direction marker" in trajectory_text
 
     source = (
         "brain fixation and brain histology (see **Figure 2**). "
@@ -532,6 +536,7 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "Three of the 60 source sessions are excluded" in manuscript
     assert "100-micrometer mesh derived from the Allen CCF 2017" in manuscript
     assert "**A,** an oblique projection" in manuscript
+    assert "trajectories extend laterally toward the L direction marker" in manuscript
     assert "### Eye tracking across modalities" in manuscript
     assert manuscript.count("[Supplementary Figure 4](#fig-supp-eye-tracking)") == 1
     assert "./interactive/eye-tracking-viewer.html" in manuscript
