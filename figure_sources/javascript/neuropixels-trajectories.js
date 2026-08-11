@@ -45,8 +45,10 @@ const mouseIds = [...new Set(data.insertions.map((record) => record.mouseId))].s
 elements.mouse.append(new Option("All mice", "all"));
 mouseIds.forEach((mouseId) => elements.mouse.append(new Option(mouseId, mouseId)));
 
+const BASE_VERTICAL_FOV = 32;
+const REFERENCE_ASPECT = 1.4;
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(32, 1, 10, 60000);
+const camera = new THREE.PerspectiveCamera(BASE_VERTICAL_FOV, 1, 10, 60000);
 const renderer = new THREE.WebGLRenderer({
   alpha: true,
   antialias: true,
@@ -136,7 +138,7 @@ const atlasCenter = new THREE.Vector3(
 
 function worldPoint(point) {
   return new THREE.Vector3(
-    point[2] - atlasCenter.x,
+    atlasCenter.x - point[2],
     atlasCenter.y - point[1],
     atlasCenter.z - point[0],
   );
@@ -278,6 +280,14 @@ function setCameraPreset(name) {
   controls.update();
 }
 
+function fittedVerticalFov(aspect) {
+  if (aspect >= REFERENCE_ASPECT) return BASE_VERTICAL_FOV;
+  const baseRadians = THREE.MathUtils.degToRad(BASE_VERTICAL_FOV);
+  return THREE.MathUtils.radToDeg(
+    2 * Math.atan(Math.tan(baseRadians / 2) * REFERENCE_ASPECT / aspect),
+  );
+}
+
 function resizeRenderer() {
   const width = elements.canvas.clientWidth;
   const height = elements.canvas.clientHeight;
@@ -289,6 +299,7 @@ function resizeRenderer() {
   ) {
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
+    camera.fov = fittedVerticalFov(camera.aspect);
     camera.updateProjectionMatrix();
   }
 }

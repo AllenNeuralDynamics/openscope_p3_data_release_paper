@@ -5888,7 +5888,7 @@ def write_neuropixels_trajectory_svg(
     def atlas_coordinates(point: list[int]) -> tuple[float, float, float]:
         anterior_posterior, dorsal_ventral, medial_lateral = point
         return (
-            medial_lateral - center[2],
+            center[2] - medial_lateral,
             center[1] - dorsal_ventral,
             center[0] - anterior_posterior,
         )
