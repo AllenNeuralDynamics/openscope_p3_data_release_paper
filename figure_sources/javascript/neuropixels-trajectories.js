@@ -267,7 +267,7 @@ function selectTrajectory(record) {
 
 const cameraPresets = {
   oblique: { position: [11200, 7300, 11600], up: [0, 1, 0] },
-  dorsal: { position: [0, 17500, 0.01], up: [0, 0, -1] },
+  dorsal: { position: [0, 17500, 0.01], up: [0, 0, 1] },
   coronal: { position: [0, 1000, 17500], up: [0, 1, 0] },
   sagittal: { position: [17500, 1000, 0], up: [0, 1, 0] },
 };

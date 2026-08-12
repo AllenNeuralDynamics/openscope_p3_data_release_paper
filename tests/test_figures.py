@@ -1128,6 +1128,7 @@ def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> Non
     assert "atlasCenter.x - point[2]" in html
     assert "point[2] - atlasCenter.x" not in html
     assert "camera.fov = fittedVerticalFov(camera.aspect)" in html
+    assert "dorsal: { position: [0, 17500, 0.01], up: [0, 0, 1] }" in html
     assert '<div class="orientation"' not in html
     assert '"insertions":332' in html
     assert 'role="img"' in svg
@@ -1166,17 +1167,29 @@ def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> Non
     trajectory_polylines = re.findall(r'<polyline points="([^"]+)"', svg)
     dorsal_polylines = trajectory_polylines[insertion_count:]
     assert len(dorsal_polylines) == insertion_count
-    atlas_midline_um = payload["brainSurface"]["annotationShape"][2] * 12.5
-    lateral_and_screen_x = []
+    shape = payload["brainSurface"]["annotationShape"]
+    center = tuple(dimension * 12.5 for dimension in shape)
+    static_screen_x = []
+    static_screen_y = []
+    interactive_screen_x = []
+    interactive_screen_y = []
     for record, polyline in zip(
         payload["insertions"], dorsal_polylines, strict=True
     ):
-        first_screen_x = float(polyline.split(maxsplit=1)[0].split(",", maxsplit=1)[0])
-        lateral_um = atlas_midline_um - record["points"][0][2]
-        lateral_and_screen_x.append((lateral_um, first_screen_x))
-    most_medial = min(lateral_and_screen_x, key=lambda item: item[0])
-    most_lateral = max(lateral_and_screen_x, key=lambda item: item[0])
-    assert most_lateral[1] > most_medial[1]
+        screen_x, screen_y = map(
+            float, polyline.split(maxsplit=1)[0].split(",", maxsplit=1)
+        )
+        anterior_posterior, dorsal_ventral, medial_lateral = record["points"][0]
+        world_x = center[2] - medial_lateral
+        world_y = center[1] - dorsal_ventral
+        world_z = center[0] - anterior_posterior
+        camera_depth = 17_500 - world_y
+        static_screen_x.append(screen_x)
+        static_screen_y.append(screen_y)
+        interactive_screen_x.append(-world_x / camera_depth)
+        interactive_screen_y.append(-world_z / camera_depth)
+    assert statistics.correlation(static_screen_x, interactive_screen_x) > 0.99
+    assert statistics.correlation(static_screen_y, interactive_screen_y) > 0.99
     assert "__NEUROPIXELS_TRAJECTORY_" not in html
     assert "__EMBED_AUTO_HEIGHT_JS__" not in html
     copied_static = (
