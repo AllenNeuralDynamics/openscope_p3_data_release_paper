@@ -5712,7 +5712,7 @@ def ccf_static_view_axes(
     tuple[float, float, float],
 ]:
     if view == "dorsal":
-        return (1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0)
+        return (-1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0)
     if view != "oblique":
         raise RuntimeError(f"Unsupported static CCF view: {view}")
     toward_camera = normalized_vector((11_200.0, 7_300.0, 11_600.0))
