@@ -45,6 +45,7 @@ OUTPUT_FIELDS = (
     "modality",
     "session_stimulus",
     "qc",
+    "qc_tags",
     "source_row",
 )
 
@@ -97,6 +98,7 @@ def normalized_source_rows(source_bytes: bytes) -> tuple[list[dict[str, str]], i
                 "modality": MODALITY_NAMES[source_modality],
                 "mouse_id": mouse_id,
                 "qc": clean_cell(row.get("QC")),
+                "qc_tags": clean_cell(row.get("QC Tags")),
                 "session_stimulus": clean_cell(row.get("Session stimulus")),
                 "source_row": str(index + 3),
                 "source_session_id": clean_cell(row.get("Session id")),
@@ -137,7 +139,7 @@ def main() -> None:
         "notes": (
             "Complete EPHYS, MESO, and SLAP2 worksheet rows in source order. Repeated "
             "and aborted records are retained to reproduce the supplied static plots; "
-            "the interactive explorer remains the separate 164-session inventory."
+            "the interactive explorer selects valid session IDs whose QC status is Pass."
         ),
     }
     PROVENANCE_PATH.write_text(

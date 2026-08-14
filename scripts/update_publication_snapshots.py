@@ -168,7 +168,7 @@ def update_sessions(source_bytes: bytes | None = None) -> Path:
             "notes": (
                 "Complete EPHYS, MESO, and SLAP2 worksheet rows in source order. Repeated "
                 "and aborted records are retained to reproduce the supplied static plots; "
-                "the interactive explorer remains a separate grouped-session inventory."
+                "the interactive explorer selects valid session IDs whose QC status is Pass."
             ),
         },
     )
@@ -191,11 +191,20 @@ def semantic_session_records(content: bytes) -> dict[tuple[str, str], tuple[str,
             row["date"],
             row["session_stimulus"],
             row["qc"],
+            row.get("qc_tags", ""),
         )
         if key in records and records[key] != value:
             raise RuntimeError(f"Session snapshot contains conflicting records: {key}")
         records[key] = value
     return records
+
+
+def derived_session_records(content: bytes) -> dict[tuple[str, str], tuple[str, ...]]:
+    """Return fields that affect running-statistics and behavior-frame derivatives."""
+    return {
+        key: value[:3]
+        for key, value in semantic_session_records(content).items()
+    }
 
 
 def refresh_session_snapshot_dependents(
@@ -206,8 +215,8 @@ def refresh_session_snapshot_dependents(
     current_bytes = session_path.read_bytes()
     if (
         previous_session_bytes is not None
-        and semantic_session_records(previous_session_bytes)
-        != semantic_session_records(current_bytes)
+        and derived_session_records(previous_session_bytes)
+        != derived_session_records(current_bytes)
     ):
         raise RuntimeError(
             "Session semantics changed; regenerate running-statistics.json and "

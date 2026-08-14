@@ -1,4 +1,5 @@
 import csv
+import datetime as dt
 import hashlib
 import json
 import re
@@ -44,19 +45,48 @@ def publication_snapshot_updater() -> dict:
     )
 
 
+def test_session_snapshot_extracts_qc_and_qc_tags() -> None:
+    extractor = runpy.run_path(
+        str(REPO_ROOT / "scripts" / "extract_experimental_sessions.py")
+    )
+    frame = extractor["pd"].DataFrame(
+        [
+            {
+                "Modality": "MESO",
+                "Mouse id": 101,
+                "Experimental date": dt.datetime(2026, 1, 1),
+                "Session id": "session-a",
+                "Session stimulus": "OPTICAL_SESSION1_SEQUENCE",
+                "QC": "Fail",
+                "QC Tags": "Motion correction, Mouse stressed",
+            }
+        ]
+    )
+    extractor["normalized_source_rows"].__globals__["pd"].read_excel = (
+        lambda *args, **kwargs: frame
+    )
+
+    rows, worksheet_rows = extractor["normalized_source_rows"](b"workbook")
+
+    assert worksheet_rows == 1
+    assert rows[0]["qc"] == "Fail"
+    assert rows[0]["qc_tags"] == "Motion correction, Mouse stressed"
+    assert extractor["OUTPUT_FIELDS"][-3:] == ("qc", "qc_tags", "source_row")
+
+
 def test_session_snapshot_refresh_repins_derived_provenance(tmp_path: Path) -> None:
     updater = publication_snapshot_updater()
     session_path = tmp_path / "experimental-sessions.csv"
     running_path = tmp_path / "running-statistics.json"
     behavior_path = tmp_path / "behavior-static-frames.provenance.json"
     previous = (
-        b"source_session_id,mouse_id,date,modality,session_stimulus,qc,source_row\n"
-        b"session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,8\n"
-        b"session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,12\n"
+        b"source_session_id,mouse_id,date,modality,session_stimulus,qc,qc_tags,source_row\n"
+        b"session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,,8\n"
+        b"session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,,12\n"
     )
     session_path.write_text(
-        "source_session_id,mouse_id,date,modality,session_stimulus,qc,source_row\n"
-        "session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,8\n",
+        "source_session_id,mouse_id,date,modality,session_stimulus,qc,qc_tags,source_row\n"
+        "session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,,8\n",
         encoding="utf-8",
     )
     running_path.write_text(
@@ -97,14 +127,32 @@ def test_session_snapshot_refresh_rejects_semantic_changes(tmp_path: Path) -> No
     updater = publication_snapshot_updater()
     session_path = tmp_path / "experimental-sessions.csv"
     session_path.write_text(
-        "source_session_id,mouse_id,date,modality,session_stimulus,qc,source_row\n"
-        "session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,8\n",
+        "source_session_id,mouse_id,date,modality,session_stimulus,qc,qc_tags,source_row\n"
+        "session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,,8\n",
         encoding="utf-8",
     )
-    previous = session_path.read_bytes().replace(b",Pass,", b",Fail,")
+    previous = session_path.read_bytes().replace(
+        b"OPTICAL_SESSION1_SEQUENCE", b"OPTICAL_SESSION2_DURATION"
+    )
 
     with pytest.raises(RuntimeError, match="Session semantics changed"):
         updater["refresh_session_snapshot_dependents"](session_path, previous)
+
+
+def test_session_snapshot_qc_tag_changes_do_not_invalidate_analysis() -> None:
+    updater = publication_snapshot_updater()
+    current = (
+        "source_session_id,mouse_id,date,modality,session_stimulus,qc,qc_tags,source_row\n"
+        'session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Fail,"Motion, Stress",8\n'
+    ).encode()
+    previous = current.replace(b"Motion, Stress", b"Motion")
+
+    assert updater["derived_session_records"](previous) == updater[
+        "derived_session_records"
+    ](current)
+    assert updater["semantic_session_records"](previous) != updater[
+        "semantic_session_records"
+    ](current)
 
 
 def test_manuscript_marks_author_list_as_provisional() -> None:
@@ -414,6 +462,10 @@ def test_methods_are_collapsed_as_one_section() -> None:
     assert ":label: fig-multimodal-pipelines" not in methods
     assert "[Figure 3](#fig-multimodal-pipelines)" in methods
     assert "#### Neuropixels Ephys NWB Packaging Pipeline" in methods
+    assert "#### SLAP2 synchronization" in methods
+    assert "#### SLAP2 NWB Packaging Pipeline" in methods
+    assert "11f8d942-a12c-44b5-84db-d084164294d1" in methods
+    assert "f8d26d18-3daf-45fd-9671-32b68d2a9441" in methods
 
     import_script = runpy.run_path(
         str(REPO_ROOT / "scripts" / "import_google_doc.py")
@@ -544,29 +596,21 @@ def test_nwb_file_contents_are_in_data_records() -> None:
     assert 'nwbfile.processing[plane]["dff_timeseries"]' in records
 
 
-def test_imported_data_tables_have_body_cells() -> None:
+def test_data_explorer_uses_generated_assets_without_manuscript_data() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
-    tables = re.findall(
-        r'<table class="publication-data-table [^"]+".*?</table>',
-        manuscript,
-        re.DOTALL,
-    )
-
-    assert len(tables) == 2
-    for table in tables:
-        assert "<tbody>" in table
-        assert "<td" in table
-        assert "<thead>" in table
-        assert "id-disclosure" in table
-        assert "data-full-value" in table
 
     assert manuscript.count("interactive/data-explorer.html") == 1
     assert ":placeholder: ./images/figures/generated/session-inventory.svg" in manuscript
     assert ":label: fig-recording-session-inventory" in manuscript
     assert "Recording-session inventory and quality-control summary" in manuscript
-    assert "**A,** Neuropixels uses 62 worksheet rows" in manuscript
+    assert "Failed sessions are unfilled with borders colored by session\ntype" in manuscript
+    assert re.search(
+        r"numbered\s+markers identify descriptive QC tags",
+        manuscript,
+    )
     assert "whitespace\nseparates the motor-first and sequence-first groups" in manuscript
-    assert '<div class="publication-data-source" hidden aria-hidden="true">' in manuscript
+    assert "publication-data-source" not in manuscript
+    assert "publication-data-table" not in manuscript
     assert "View grouped static summary tables" not in manuscript
 
 
@@ -588,7 +632,10 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "Rows compare Neuropixels electrophysiology" in manuscript
     assert "Columns show each rig geometry" in manuscript
     assert "nine native-resolution images" in manuscript
-    assert "searchable, filterable tables for 39 mice and 164" in manuscript
+    assert re.search(
+        r"searchable, filterable tables sourced from local\s+CSV snapshots",
+        manuscript,
+    )
     assert "./interactive/neural-viewer.html" in manuscript
     assert ":label: fig-aligned-neural-signals" in manuscript
     assert ":placeholder: ./images/figures/generated/raw-neural-recordings.svg" in manuscript

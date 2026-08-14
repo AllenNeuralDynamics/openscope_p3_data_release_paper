@@ -835,24 +835,22 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
         provenance["vendored_sha256"]
     )
     assert provenance["worksheet_rows"] == 198
-    assert provenance["rows"] == 197
-    assert provenance["source_rows"] == 197
+    assert provenance["rows"] == 198
+    assert provenance["source_rows"] == 198
     assert provenance["modality_rows"] == {
         "mesoscope": 91,
-        "neuropixels": 62,
-        "slap2": 44,
+        "neuropixels": 64,
+        "slap2": 43,
     }
 
     payload = load_experimental_session_records()
     records = payload["records"]
-    assert len(records) == 197
-    assert [int(record["source_row"]) for record in records] == [
-        row for row in range(3, 201) if row != 82
-    ]
+    assert len(records) == 198
+    assert [int(record["source_row"]) for record in records] == list(range(3, 201))
     assert {
         modality: len(modality_session_records(records, modality))
         for modality in ("neuropixels", "mesoscope", "slap2")
-    } == {"neuropixels": 62, "mesoscope": 91, "slap2": 28}
+    } == {"neuropixels": 64, "mesoscope": 91, "slap2": 29}
 
     mesoscope_rows = session_panel_rows(records, "mesoscope")
     assert [row["mouseId"] for row in mesoscope_rows] == [
@@ -890,11 +888,11 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
         "828409",
         "828408",
     ]
-    assert [len(row["sessions"]) for row in slap2_rows] == [3, 1, 4, 2, 4, 4, 4, 6]
+    assert [len(row["sessions"]) for row in slap2_rows] == [3, 1, 5, 2, 4, 4, 4, 6]
 
     svg_path = write_session_inventory_svg(tmp_path / "session-inventory.svg")
     svg = svg_path.read_text(encoding="utf-8")
-    assert 'width="1150" height="640"' in svg
+    assert 'width="1150" height="680"' in svg
     assert svg.count('class="platform-heading" data-modality=') == 3
     assert_modality_title_scale(svg)
     assert svg.count('class="platform-logo"') == 3
@@ -911,23 +909,57 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert 'id="session-inventory-legend"' in svg
     assert "Session type" in svg
     assert "Quality control" in svg
-    assert "Missing / failed session" in svg
-    assert "One probe failed" in svg
-    assert "Motion correction partially failed" in svg
-    assert "SLAP2 stopped halfway" in svg
-    assert svg.count('class="session-qc-outline"') == 22
-    assert svg.count('class="session-qc-outline" data-qc-kind="session-fail"') == 12
-    assert len(
-        re.findall(r'<rect class="session-qc-outline"[^>]+stroke="#FF0000"', svg)
-    ) == 17
-    assert re.search(r'<rect class="session-block"[^>]+stroke="#FF0000"', svg) is None
-    assert re.search(
-        r'<rect class="session-qc-outline"[^>]+stroke="#FF0000"', svg
+    assert (
+        '<rect x="120" y="42" width="24" height="16" fill="none" '
+        'stroke="#69716F" stroke-width="2"/>'
+    ) in svg
+    assert "Failed session (type-colored border)" in svg
+    assert "Missing expected session" not in svg
+    assert "QC tags" in svg
+    assert "<circle" not in svg
+    assert 'font-family="IBM Plex Mono, monospace" font-size="10"' in svg
+    assert svg.index(">Pilot session</text>") < svg.index(">Missing running</text>")
+    assert svg.index(">Missing running</text>") < svg.index(">One probe excluded</text>")
+    assert svg.index(">Mouse asleep</text>") < svg.index(">Poor brain health</text>")
+    assert "One probe excluded" in svg
+    assert svg.count(">Motion correction problems</text>") == 1
+    assert "Motion correction issue" not in svg
+    assert "SLAP2 stopped early" in svg
+    assert svg.count(">Cell matching problems</text>") == 1
+    assert svg.count(">Sync problems</text>") == 1
+    assert svg.count('class="session-qc-outline"') == 21
+    assert svg.count('class="session-qc-outline" data-qc-kind="session-fail"') == 21
+    failed_blocks = re.findall(
+        r'<rect class="session-block"[^>]+fill="none" '
+        r'stroke="(#[0-9A-F]{6})" stroke-width="2"/>',
+        svg,
     )
+    assert len(failed_blocks) == 21
+    assert set(failed_blocks) == {
+        SESSION_TYPE_COLORS["sensorimotor"],
+        SESSION_TYPE_COLORS["standard"],
+        SESSION_TYPE_COLORS["sequence"],
+        SESSION_TYPE_COLORS["duration"],
+    }
+    filled_blocks = re.findall(
+        r'<rect class="session-block"[^>]+fill="(#[0-9A-F]{6})" '
+        r'stroke="(#[0-9A-F]{6})" stroke-width="2"/>',
+        svg,
+    )
+    assert filled_blocks
+    assert all(fill == stroke for fill, stroke in filled_blocks)
+    assert "<pattern" not in svg
+    assert svg.count('class="session-qc-tags"') == 76
+    assert svg.count('class="session-qc-tags" data-qc-tags=') == 76
+    assert svg.count('<tspan ') == 6
+    assert (
+        'font-weight="700" fill="#E5E7EB" stroke="#1F292B" '
+        'stroke-width="1" paint-order="stroke"'
+    ) in svg
     assert "Recording sessions per mouse</text>" not in svg
     assert "worksheet rows ·" not in svg
     assert "Static panels follow" not in svg
-    assert "stroke-dasharray" not in svg
+    assert 'stroke-dasharray="3 2"' not in svg
     assert ">C1</text>" not in svg
     assert ">C2</text>" not in svg
     assert svg.count(">Session number</text>") == 1
@@ -938,7 +970,7 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
             svg,
         )
     }
-    assert session_widths == {32.8}
+    assert session_widths == {29.8}
     panel_title_positions = [
         float(position)
         for position in re.findall(
@@ -959,7 +991,7 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
             first_session_positions,
             strict=True,
         )
-    ] == [66, 66, 66]
+    ] == [67.5, 67.5, 67.5]
     assert max(
         following - current
         for current, following in zip(
@@ -969,13 +1001,36 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
         )
     ) < 500
     assert svg.count('class="session-axis"') == 1
+    mouse_y_positions = {
+        modality: [
+            float(position)
+            for position in re.findall(
+                rf'<text class="mouse-id" data-modality="{modality}" '
+                rf'x="[^"]+" y="([^"]+)"',
+                svg,
+            )
+        ]
+        for modality in ("neuropixels", "mesoscope", "slap2")
+    }
+    mouse_y_steps = {
+        modality: [
+            following - current
+            for current, following in zip(positions[:-1], positions[1:], strict=True)
+        ]
+        for modality, positions in mouse_y_positions.items()
+    }
+    assert set(mouse_y_steps["neuropixels"]) == {28, 56}
+    assert set(mouse_y_steps["mesoscope"]) == {28, 56}
+    assert set(mouse_y_steps["slap2"]) == {28}
     legend_position = re.search(
         r'id="session-inventory-legend" transform="translate\(([^ ]+) ([^)]+)\)"',
         svg,
     )
     assert legend_position is not None
-    assert float(legend_position.group(1)) == first_session_positions[1]
-    assert float(legend_position.group(2)) == 480
+    assert float(legend_position.group(1)) == 310
+    legend_y = float(legend_position.group(2))
+    assert legend_y == 421
+    assert legend_y - (mouse_y_positions["mesoscope"][-1] - 4) == 56
 
 
 def test_literature_comparison_is_deterministic(tmp_path: Path) -> None:
@@ -1857,10 +1912,18 @@ def test_publication_table_data() -> None:
 
     animals = data["tables"]["animals"]
     sessions = data["tables"]["sessions"]
+    with SESSION_RECORDS_PATH.open(newline="", encoding="utf-8") as stream:
+        source_sessions = list(csv.DictReader(stream))
+    expected_session_ids = {
+        row["source_session_id"]
+        for row in source_sessions
+        if row["qc"].strip().casefold() == "pass"
+        and row["source_session_id"].strip() not in {"", "aborted"}
+    }
     assert len(animals["rows"]) == 39
-    assert len(sessions["rows"]) == 164
     assert len({row["values"][0] for row in animals["rows"]}) == 39
-    assert len({row["values"][0] for row in sessions["rows"]}) == 164
+    assert {row["values"][0] for row in sessions["rows"]} == expected_session_ids
+    assert {row["qc"] for row in sessions["rows"]} == {"pass"}
     assert sessions["headers"] == ["Session ID", "Mouse ID", "Date", "Modality", "Context"]
     failed_mouse = next(row for row in animals["rows"] if row["values"][0] == "841193")
     assert failed_mouse["values"][3] == "FAILED"
