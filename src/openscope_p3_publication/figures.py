@@ -3426,8 +3426,8 @@ SESSION_QC_TAGS = (
     ("pilot session", "Pilot session"),
     ("missing running", "Missing running"),
     ("1 probe excluded", "One probe excluded"),
-    ("saturation events", "Saturation events"),
     ("poor opto response", "Poor opto response"),
+    ("saturation events", "Saturation events"),
     ("high frequency noise contamination", "High-frequency noise contamination"),
     ("z-drift", "Z-drift"),
     ("motion correction failure", "Motion correction problems"),
@@ -3519,7 +3519,7 @@ def session_qc_tag_numbers(record: dict | None) -> list[int]:
             raise RuntimeError(f"Unsupported session QC tag: {raw_tag.strip()}") from exc
         if number not in numbers:
             numbers.append(number)
-    return numbers
+    return sorted(numbers)
 
 
 def session_context(record: dict) -> str:
@@ -3605,6 +3605,12 @@ def session_panel_rows(records: list[dict], modality: str) -> list[dict]:
                 {"context": session_context(record), "record": record}
                 for record in mouse_records
             ]
+        if sessions and all(
+            session["record"] is not None
+            and session["record"]["qc"].strip().casefold() == "fail"
+            for session in sessions
+        ):
+            continue
         rows.append(
             {
                 "cohort": cohort,
@@ -3667,9 +3673,11 @@ def append_session_block(
         overlay_target = overlays if overlays is not None else svg
         label = ",".join(str(number) for number in qc_tag_numbers)
         center_x = x + width / 2
+        number_fill = "#000000" if qc_kind == "session-fail" else "#FFFFFF"
+        number_stroke = "#FFFFFF" if qc_kind == "session-fail" else "#000000"
         text_style = (
             'text-anchor="middle" font-family="IBM Plex Mono, monospace" '
-            'font-weight="700" fill="#E5E7EB" stroke="#1F292B" '
+            f'font-weight="700" fill="{number_fill}" stroke="{number_stroke}" '
             'stroke-width="1" paint-order="stroke"'
         )
         if len(qc_tag_numbers) > 3:

@@ -880,15 +880,13 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     slap2_rows = session_panel_rows(records, "slap2")
     assert [row["mouseId"] for row in slap2_rows] == [
         "851453",
-        "851452",
         "845207",
-        "841193",
         "841191",
         "829704",
         "828409",
         "828408",
     ]
-    assert [len(row["sessions"]) for row in slap2_rows] == [3, 1, 5, 2, 4, 4, 4, 6]
+    assert [len(row["sessions"]) for row in slap2_rows] == [3, 5, 4, 4, 4, 6]
 
     svg_path = write_session_inventory_svg(tmp_path / "session-inventory.svg")
     svg = svg_path.read_text(encoding="utf-8")
@@ -920,6 +918,7 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert 'font-family="IBM Plex Mono, monospace" font-size="10"' in svg
     assert svg.index(">Pilot session</text>") < svg.index(">Missing running</text>")
     assert svg.index(">Missing running</text>") < svg.index(">One probe excluded</text>")
+    assert svg.index(">Poor opto response</text>") < svg.index(">Saturation events</text>")
     assert svg.index(">Mouse asleep</text>") < svg.index(">Poor brain health</text>")
     assert "One probe excluded" in svg
     assert svg.count(">Motion correction problems</text>") == 1
@@ -927,14 +926,14 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert "SLAP2 stopped early" in svg
     assert svg.count(">Cell matching problems</text>") == 1
     assert svg.count(">Sync problems</text>") == 1
-    assert svg.count('class="session-qc-outline"') == 21
-    assert svg.count('class="session-qc-outline" data-qc-kind="session-fail"') == 21
+    assert svg.count('class="session-qc-outline"') == 18
+    assert svg.count('class="session-qc-outline" data-qc-kind="session-fail"') == 18
     failed_blocks = re.findall(
         r'<rect class="session-block"[^>]+fill="none" '
         r'stroke="(#[0-9A-F]{6})" stroke-width="2"/>',
         svg,
     )
-    assert len(failed_blocks) == 21
+    assert len(failed_blocks) == 18
     assert set(failed_blocks) == {
         SESSION_TYPE_COLORS["sensorimotor"],
         SESSION_TYPE_COLORS["standard"],
@@ -949,13 +948,28 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert filled_blocks
     assert all(fill == stroke for fill, stroke in filled_blocks)
     assert "<pattern" not in svg
-    assert svg.count('class="session-qc-tags"') == 76
-    assert svg.count('class="session-qc-tags" data-qc-tags=') == 76
+    assert svg.count('class="session-qc-tags"') == 73
+    assert svg.count('class="session-qc-tags" data-qc-tags=') == 73
+    assert all(
+        numbers == sorted(numbers)
+        for label in re.findall(r'data-qc-tags="([0-9,]+)"', svg)
+        for numbers in [[int(number) for number in label.split(",")]]
+    )
     assert svg.count('<tspan ') == 6
-    assert (
-        'font-weight="700" fill="#E5E7EB" stroke="#1F292B" '
-        'stroke-width="1" paint-order="stroke"'
-    ) in svg
+    assert svg.count('class="session-qc-tags" data-qc-tags=') == 14 + 59
+    white_qc_numbers = re.findall(
+        r'class="session-qc-tags"[^>]+fill="#FFFFFF" stroke="#000000" '
+        r'stroke-width="1"',
+        svg,
+    )
+    black_qc_numbers = re.findall(
+        r'class="session-qc-tags"[^>]+fill="#000000" stroke="#FFFFFF" '
+        r'stroke-width="1"',
+        svg,
+    )
+    assert len(white_qc_numbers) + len(black_qc_numbers) == 73
+    assert len(black_qc_numbers) == 17
+    assert len(white_qc_numbers) == 56
     assert "Recording sessions per mouse</text>" not in svg
     assert "worksheet rows ·" not in svg
     assert "Static panels follow" not in svg

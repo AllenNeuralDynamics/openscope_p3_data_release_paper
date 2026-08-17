@@ -103,9 +103,8 @@ def write_snapshot(
             "vendored_sha256": hashlib.sha256(vendored_bytes).hexdigest(),
         }
     )
-    output.with_suffix(".provenance.json").write_text(
-        json.dumps(provenance, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    output.with_suffix(".provenance.json").write_bytes(
+        (json.dumps(provenance, indent=2, sort_keys=True) + "\n").encode()
     )
     print(f"Wrote {provenance['rows']} rows to {output}")
     return output
@@ -259,10 +258,11 @@ def refresh_session_snapshot_dependents(
     behavior_provenance["running_statistics_sha256"] = hashlib.sha256(
         running_bytes
     ).hexdigest()
-    BEHAVIOR_STATIC_PROVENANCE_PATH.write_text(
-        json.dumps(behavior_provenance, indent=2, ensure_ascii=True, sort_keys=True)
-        + "\n",
-        encoding="utf-8",
+    BEHAVIOR_STATIC_PROVENANCE_PATH.write_bytes(
+        (
+            json.dumps(behavior_provenance, indent=2, ensure_ascii=True, sort_keys=True)
+            + "\n"
+        ).encode()
     )
 
 

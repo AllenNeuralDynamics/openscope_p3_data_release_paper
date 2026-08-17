@@ -142,9 +142,9 @@ def test_session_snapshot_refresh_rejects_semantic_changes(tmp_path: Path) -> No
 def test_session_snapshot_qc_tag_changes_do_not_invalidate_analysis() -> None:
     updater = publication_snapshot_updater()
     current = (
-        "source_session_id,mouse_id,date,modality,session_stimulus,qc,qc_tags,source_row\n"
-        'session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Fail,"Motion, Stress",8\n'
-    ).encode()
+        b"source_session_id,mouse_id,date,modality,session_stimulus,qc,qc_tags,source_row\n"
+        b'session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Fail,"Motion, Stress",8\n'
+    )
     previous = current.replace(b"Motion, Stress", b"Motion")
 
     assert updater["derived_session_records"](previous) == updater[
