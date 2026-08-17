@@ -1,0 +1,70 @@
+{
+  "assets": {
+    "mesoscope": {
+      "api_url": "https://api.dandiarchive.org/api/assets/ab44a0f7-2864-4a30-8988-0b76aec28fa6/",
+      "asset_id": "ab44a0f7-2864-4a30-8988-0b76aec28fa6",
+      "content_size": 4671820041,
+      "dandiset_id": "001768",
+      "dandiset_url": "https://dandiarchive.org/dandiset/001768/draft/files",
+      "path": "sub-832700/sub-832700_ses-multiplane-ophys-832700-2026-01-29-11-18-09_ophys.nwb",
+      "sha256": "af52b3cbb224e85bc80ab5883eab4c0b40a6be42d134bfd3b8d3e66aa8f733dd",
+      "url": "https://dandiarchive.s3.amazonaws.com/blobs/bd5/3f7/bd53f709-6243-44c9-bb36-51fb0e84b234"
+    },
+    "neuropixels": {
+      "api_url": "https://api.dandiarchive.org/api/assets/03973a42-cf55-476f-80d7-85bc402fa57b/",
+      "asset_id": "03973a42-cf55-476f-80d7-85bc402fa57b",
+      "content_size": 13703955952,
+      "dandiset_id": "001637",
+      "dandiset_url": "https://dandiarchive.org/dandiset/001637/draft/files",
+      "path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-09-10-32-54_ecephys.nwb",
+      "sha256": "75c425992a9443a6b7bb19b00469469788d6be4dd8c721714d0692e214fe7bf9",
+      "url": "https://dandiarchive.s3.amazonaws.com/blobs/1a3/a02/1a3a0214-c40e-49ed-9ada-9379c9fca1e8"
+    },
+    "slap2": {
+      "api_url": "https://api.dandiarchive.org/api/assets/1b6509ef-70d7-46e4-9c8e-587bb6ace95f/",
+      "asset_id": "1b6509ef-70d7-46e4-9c8e-587bb6ace95f",
+      "content_size": 1467934164,
+      "dandiset_id": "001424",
+      "dandiset_url": "https://dandiarchive.org/dandiset/001424/draft/files",
+      "path": "sub-796630/sub-796630_ses-SLAP2-796630-2025-08-28-14-25-34_image+ophys.nwb",
+      "sha256": "af8798fbd52184adfce210ad1e6442c49dfc3488f1195062b48d00f25e3206b6",
+      "url": "https://dandiarchive.s3.amazonaws.com/blobs/e95/21c/e9521c86-5587-473c-990d-ed432bb65d28"
+    }
+  },
+  "notes": "Each modality exposes every probe or imaging plane in one representative session. Filters and traces come from the matched DANDI NWB; Neuropixels time-by-depth views reuse the pinned public AP excerpts recorded in raw-neural-excerpts.json and overlay sorted-unit spike times from the matched NWB. Mesoscope images retain display (y, x), with fast x horizontal. SLAP2 base images, labels, and overlays share a publication-level axis transpose, placing fast x vertically.",
+  "retrieved_date": "2026-08-06",
+  "source_raw_neural_sha256": "d9c5e84a3417c44ec6a929763e59bb61db20f2ff7bc3a7a55b3bbaa32b6f99d8",
+  "vendored_media_sha256": {
+    "mesoscope-visl-4-filters.png": "448e2ccb615feff6ee0b25ba2c695ac911471601586a10a52b9132772ad38d1f",
+    "mesoscope-visl-4-labels.png": "85d91745cd54c8ef53ec7d3378a2dbb9f7d5a621751a2e5daf69b4a55ef7e588",
+    "mesoscope-visl-4-mean.png": "313c2e5609f5b5a940c0cf942c73cede0387a67f8fed290e4df4292296275be3",
+    "mesoscope-visl-5-filters.png": "805d471f19a79edb8f2a51e818d606b85ded76c2328f9269c1fd64c1c1c314b4",
+    "mesoscope-visl-5-labels.png": "cbbd4456600b1315ec463a392186eb3ec84092759ac18a49f29c82f94ab9de68",
+    "mesoscope-visl-5-mean.png": "ba29e7da26f4173d7f021b136b69d20410a1708744580f7c02587c678922667c",
+    "mesoscope-visl-6-filters.png": "dd43da7cf4544c90142ffdccad60af08fe106c7a763f15ecf9f154c7c6250a53",
+    "mesoscope-visl-6-labels.png": "a6b0bf6479b14948a78c2a6d46b3fe4b694d4d27519f2a79d3852f0e0342c2bf",
+    "mesoscope-visl-6-mean.png": "299fb77a52a1d211297e2f189cc647a63f952837407ae1fa4b5d033570816f85",
+    "mesoscope-visl-7-filters.png": "a8c7050b920c55acb589cf04fd167032ed1f00292f77829f27e1a8fae578dd70",
+    "mesoscope-visl-7-labels.png": "a6084d05758b333551e36055e094e64a09b949122dc4132cfc0bde885e25d4d2",
+    "mesoscope-visl-7-mean.png": "11e44bc4e4a28aa883ef39f7053ee37c6df7bf0d340694f4c88bb30ca1c9b72d",
+    "mesoscope-visp-0-filters.png": "5f01bec11b8b9f5d9ebe0c615593ae63bb82c6ce8e31c6ffd058a5f4f55f4db1",
+    "mesoscope-visp-0-labels.png": "4fc58f57d5a7feb241054e6b795e8f8ce50f8d362a9349b08472bc12904413ce",
+    "mesoscope-visp-0-mean.png": "7300e03ce4160a665025c311ff4f429a9e4b6cff9be9212e847ca736d3a1be60",
+    "mesoscope-visp-1-filters.png": "1c0f9e2a7b0bb99e333ef7028be4e934a115ad6d3422b128d108bf4b1b585f3c",
+    "mesoscope-visp-1-labels.png": "75c9ac1a5daefa1d5aaf4b43fca5acf2eb6c3893c8074f94d9a8e0c3a9900c5f",
+    "mesoscope-visp-1-mean.png": "a327dc8c5b79831742d29388e3cc766a76b04b32f7ecab225f84f2cadcf166f7",
+    "mesoscope-visp-2-filters.png": "51cb4ca1f43a0de0bc1be355b443651d9222a6440c632132e7bae0a7924e2547",
+    "mesoscope-visp-2-labels.png": "674aeafd838a4d4c984705b590f793b73baa304b686ec3a89100df9d2be3176d",
+    "mesoscope-visp-2-mean.png": "140df47ee4e338f7ffe5650e578501f6a0ab08acb8dda86636697d9ea67a1241",
+    "mesoscope-visp-3-filters.png": "9a92c04609c0c9eb8838a1732806552068eedcd0dd2095faa33c4d65c5e5910c",
+    "mesoscope-visp-3-labels.png": "a8776b5f132848b2942457cbd2aeaab3db621be1ef86c792607b4e51140922dc",
+    "mesoscope-visp-3-mean.png": "a728ced2e9e79b60443d6e9f9aef375b37dd775cc12954e7d9ffb73c47622dd2",
+    "slap2-dmd1-filters.png": "8fe8b914f0688f6fa1c492918593670d9394bfc0eeec2bfab5fd2f93b7ecd6ad",
+    "slap2-dmd1-labels.png": "62b9def00aa4a0ec45e437fbdd07aebcdfbfe5869657835053dad50f2b527409",
+    "slap2-dmd1-mean.png": "2fd0f13fae2808b80fe4a077a67f87bb64eae03e6471ea5a40c299977f3059ef",
+    "slap2-dmd2-filters.png": "7c236dbceb47c06dcea0a6809c597b858a6dc89b97576e6fc98d3dd9703be258",
+    "slap2-dmd2-labels.png": "18696710004d16ca69ce13cc04ececada37678976a27161579a4e9117bbc3f13",
+    "slap2-dmd2-mean.png": "f55ac30d1c6ca8ccecc1706214340293274297db6350c7d80715019f96694b4b"
+  },
+  "vendored_sha256": "9eac2894138827891490eff0d4792f52cf87b657cc95d1277ba8795902ad2a9c"
+}

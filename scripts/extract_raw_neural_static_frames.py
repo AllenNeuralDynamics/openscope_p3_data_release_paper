@@ -220,7 +220,8 @@ def main() -> None:
             "sheets for dependency-free HTML and PDF figure generation. Mesoscope "
             "stills are independently contrast-scaled. Each SLAP2 still merges its "
             "aligned green iGluSnFR4f and red RCaMP3 channels without temporal averaging "
-            "and applies a max-channel hue-preserving gamma of 0.55."
+            "and applies a max-channel hue-preserving gamma of 0.55 after the shared "
+            "stored-(x, y) to display-(y, x) transpose."
         ),
     }
     NEURAL_STATIC_FRAME_PROVENANCE_PATH.write_text(

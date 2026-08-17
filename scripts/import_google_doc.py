@@ -261,13 +261,13 @@ FIGURE_PRESENTATION_OVERRIDES = {
         ),
     },
     "image5.png": {
-        "path": "./images/figures/generated/figure-06-unit-extraction-plan.svg",
+        "path": "./images/figures/generated/figure-07-unit-extraction-plan.svg",
     },
     "image3.png": {
-        "path": "./images/figures/generated/figure-07-basic-stimuli-plan.svg",
+        "path": "./images/figures/generated/figure-08-basic-stimuli-plan.svg",
     },
     "image4.png": {
-        "path": "./images/figures/generated/figure-09-standard-oddball-plan.svg",
+        "path": "./images/figures/generated/figure-10-standard-oddball-plan.svg",
     },
 }
 FIGURE_REFERENCE_REPLACEMENTS = {
@@ -284,15 +284,15 @@ FIGURE_REFERENCE_REPLACEMENTS = {
         "six Neuropixels probes simultaneously (see [Figure 3](#fig-multimodal-pipelines))"
     ),
     "Figure 6 and the modality subsections below remain an analysis outline.": (
-        "[Figure 6](#fig-unit-extraction-plan) and the modality subsections below remain "
+        "[Figure 7](#fig-unit-extraction-plan) and the modality subsections below remain "
         "an analysis outline."
     ),
     "This analysis and Figure 7 are planning placeholders.": (
-        "This analysis and [Figure 7](#fig-basic-stimuli-plan) are planning placeholders."
+        "This analysis and [Figure 8](#fig-basic-stimuli-plan) are planning placeholders."
     ),
     "This analysis, the questions below, and Figure 9 are planning placeholders.": (
         "This analysis, the questions below, and "
-        "[Figure 9](#fig-standard-oddball-plan) are planning placeholders."
+        "[Figure 10](#fig-standard-oddball-plan) are planning placeholders."
     ),
 }
 
@@ -409,6 +409,12 @@ MESOSCOPE_RAW_SOURCE = (
     "multiplane-ophys_832700_2026-01-29_11-18-09/) "
     "([DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files))"
 )
+SLAP2_RAW_SOURCE = (
+    "[796630_2025-08-28_14-25-34]"
+    "(https://open.quiltdata.com/b/aind-open-data/tree/"
+    "796630_2025-08-28_14-25-34/) "
+    "([DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files))"
+)
 
 NEURAL_VIEWER_BLOCK = f"""## Raw data across recording modalities
 
@@ -444,8 +450,9 @@ structure or cortical layer. The displayed AP samples are not median-corrected,
 so common-mode fluctuations across contacts remain visible as vertical stripes.
 Mesoscope views are unprocessed 512 × 512 ScanImage channel frames. SLAP2 views
 map native sparse detector samples onto acquisition-plan superpixels, reduce the
-1280 × 800 acquisition-coordinate raster by 2×, and encode the resulting
-640 × 400 lossless WebP frames. A dim structural reference is used only outside
+stored 1280 × 800 acquisition-coordinate raster by 2×, transpose it for
+publication display, and encode the resulting 400 × 640 lossless WebP frames,
+with the fast-scanning x axis vertical. A dim structural reference is used only outside
 sampled dendritic pixels. Microscopy
 playback uses elapsed time within each four-second excerpt. Selectors report CCF
 structures and layers for each probe; area, layer, and depth for each mesoscope
@@ -454,7 +461,7 @@ plane; and indicator plus remote-focus depth below pia (91 µm for DMD1 and
 and contrast-scaled independently for display. Source sessions are Neuropixels
 {NEUROPIXELS_RAW_SOURCE}; mesoscope {MESOSCOPE_RAW_SOURCE};
 and SLAP2
-[796630_2025-08-28_14-25-34](https://open.quiltdata.com/b/aind-open-data/tree/796630_2025-08-28_14-25-34/).
+{SLAP2_RAW_SOURCE}.
 :::"""
 
 OTHER_STUDIES_BLOCK = """:::{iframe} ./interactive/literature-comparison.html
@@ -485,14 +492,126 @@ denotes the nominal probe port (A-F). In the **Static** view, **A,** an oblique
 projection shows the trajectories across the depth-shaded Allen CCF whole-brain
 surface; **B,** a dorsal projection shows their anteroposterior and mediolateral
 distribution. Both panels use a semi-transparent brain surface, anatomical
-direction markers, and calibrated 2 mm scale bars. Electrode coordinates
-and area annotations come from the public draft of Dandiset 001637; the brain
+direction markers, and calibrated 2 mm scale bars; the trajectories extend
+laterally toward the L direction marker, matching the stereotaxic mediolateral
+convention. Electrode coordinates and area annotations come from the public draft
+of Dandiset 001637; the brain
 surface is a 100-micrometer mesh derived from the Allen CCF 2017 25-micrometer
 annotation volume. In total, 332 probe
 trajectories from 57 sessions and 16 mice had finite CCF coordinates. Three of
 the 60 source sessions are excluded because their NWB electrode tables lack
 `x`, `y`, and `z` coordinates.
 :::"""
+
+SEGMENTATION_VIEWER_BLOCK = """Representative unit-extraction filters and matched
+activity traces are shown in [Figure 6](#fig-segmentation-viewers).
+
+:::{iframe} ./interactive/segmentation-viewer.html
+:label: fig-segmentation-viewers
+:width: 100%
+:title: Unit extraction across recording modalities
+:placeholder: ./images/figures/generated/figure-06-segmentation-viewers.svg
+
+Unit extraction filters and matched activity across recording modalities.
+Modality tabs use the same platform logos as the other multimodal figures, and
+the source selector switches among every probe or imaging plane in one
+representative session. The tabs use the same representative sessions as the
+raw-data view in [Figure 5](#fig-aligned-neural-signals) and derive their
+filters and traces from the matched public NWBs. The **Neuropixels** tab
+provides all six probes from `ecephys_830846_2026-03-09_10-32-54`. Each source displays
+100 ms of unaveraged AP voltage with sorted-spike detections overlaid at their
+spike times and nearest displayed peak channels; common-mode correction is
+enabled by default and can be toggled to reveal the uncorrected samples.
+Selecting a marker or unit highlights its depth and waveform-spread band and
+shows a 12 s binned-rate trace plus its peak-channel mean template. The
+**Mesoscope** tab provides all eight VISp and VISl planes from
+`multiplane-ophys_832700_2026-01-29_11-18-09`,
+outlining each plane's complete NWB segmentation over a grayscale average
+projection; selection reveals classification probabilities, footprint geometry,
+and a 30 s ΔF/F (%) trace. The **SLAP2** tab provides DMD1 and DMD2 from
+`SLAP2_796630_2025-08-28-14-25-34`, outlining each plane's complete source
+segmentation over a grayscale mean image; its column-major stored (x, y) arrays
+and masks receive the same publication-level axis transpose. Mesoscope
+projections retain their stored display orientation. The fast-scanning x axis
+is horizontal for mesoscope and vertical for SLAP2. SLAP2 selection
+reveals a 30 s, approximately 200 Hz ΔF/F (%) trace. Microscopy background controls alter only
+grayscale image intensity, while filter colors remain fixed. No tab shows
+stimulus annotations. The stacked static fallback preserves one representative
+source per modality and shows twenty activity-bearing filters sampled evenly across
+filter order as vertically stacked traces with shared within-modality scales.
+Data come from the public drafts of
+[DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files),
+[DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files), and
+[DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files).
+:::"""
+
+MAIN_FIGURE_PROMOTION_REPLACEMENTS = {
+    "./images/figures/generated/figure-06-unit-extraction-plan.svg": (
+        "./images/figures/generated/figure-07-unit-extraction-plan.svg"
+    ),
+    "./images/figures/generated/figure-07-basic-stimuli-plan.svg": (
+        "./images/figures/generated/figure-08-basic-stimuli-plan.svg"
+    ),
+    "./images/figures/generated/figure-09-standard-oddball-plan.svg": (
+        "./images/figures/generated/figure-10-standard-oddball-plan.svg"
+    ),
+    "[Figure 6](#fig-unit-extraction-plan)": "[Figure 7](#fig-unit-extraction-plan)",
+    "[Figure 7](#fig-basic-stimuli-plan)": "[Figure 8](#fig-basic-stimuli-plan)",
+    "[Figure 8](#fig-behavior-tracking)": "[Figure 9](#fig-behavior-tracking)",
+    "[Figure 9](#fig-standard-oddball-plan)": (
+        "[Figure 10](#fig-standard-oddball-plan)"
+    ),
+}
+
+NWB_ACCESS_INTRO = """All data from this project are packaged as Neurodata
+Without Borders (NWB) files and deposited on the DANDI Archive. Neuropixels
+electrophysiology sessions are available at
+[DANDI:001637](https://dandiarchive.org/dandiset/001637), mesoscope two-photon
+imaging sessions at [DANDI:001768](https://dandiarchive.org/dandiset/001768),
+and SLAP2 dendritic-imaging sessions at
+[DANDI:001424](https://dandiarchive.org/dandiset/001424). Use the tabs below"""
+
+SLAP2_NWB_TAB = "\n".join(
+    [
+        ":::{tab-item} SLAP2",
+        "",
+        (
+            "**SLAP2 NWB files "
+            "([DANDI:001424](https://dandiarchive.org/dandiset/001424)):**"
+        ),
+        "connect source masks, mean and activity images, and fluorescence traces within",
+        "each DMD imaging path.",
+        "",
+        "| Question | NWB contents | Representative PyNWB entry point |",
+        "| --- | --- | --- |",
+        (
+            "| Where and how was each DMD path imaged? | `/general/optophysiology` "
+            "describes the DMD1 and DMD2 imaging planes, optical channels, device, "
+            "indicator, and field geometry. | `nwbfile.imaging_planes`, "
+            "`nwbfile.devices` |"
+        ),
+        (
+            "| Which pixels belong to each extracted source? | `/processing/ophys/"
+            "ImageSegmentation/PlaneSegmentation_DMD*` stores one weighted `pixel_mask` "
+            "per source. | `nwbfile.processing[\"ophys\"][\"ImageSegmentation\"]` |"
+        ),
+        (
+            "| What source and structural images are available? | `/processing/ophys/"
+            "DMD*_mean_image_channel*` stores mean channel images, and "
+            "`DMD*_activity_image` stores the source-localization activity projection. | "
+            "`nwbfile.processing[\"ophys\"][\"DMD1_activity_image\"]` |"
+        ),
+        (
+            "| How does each source change over time? | `/processing/ophys/"
+            "Fluorescence_DMD*/DMD*_dFF` stores source ΔF/F with timestamps; the "
+            "corresponding `DMD*_F0` series stores baseline fluorescence. | "
+            "`nwbfile.processing[\"ophys\"][\"Fluorescence_DMD1\"]"
+            "[\"DMD1_dFF\"]` |"
+        ),
+        "",
+        ":::",
+    ]
+)
 
 BEHAVIOR_VIEWER_BLOCK = """:::{iframe} ./interactive/behavior-viewer.html
 :label: fig-behavior-tracking
@@ -539,7 +658,7 @@ behavioral videos together with synchronized running-wheel signals, processed
 eye-tracking outputs, and stimulus-presentation intervals. Depending on the
 recording platform, the available views include body or behavior, face, eye,
 and nose cameras. The synchronized multimodal examples in
-[Figure 8](#fig-behavior-tracking) show these streams alongside the wheel signal and
+[Figure 9](#fig-behavior-tracking) show these streams alongside the wheel signal and
 current stimulus state. Existing NWB products provide wheel rotation and
 running speed, plus pupil, corneal-reflection, and eye-ellipse fits with
 likely-blink flags. The underlying videos remain available so investigators can
@@ -1149,6 +1268,65 @@ def add_neuropixels_trajectory_figure(markdown: str) -> str:
     )
 
 
+def add_segmentation_viewer_figures(markdown: str) -> str:
+    heading = "## Units extraction"
+    if markdown.count(heading) != 1:
+        raise RuntimeError("Expected one Units extraction heading.")
+    if ":label: fig-segmentation-viewers\n" in markdown:
+        return markdown
+    legacy_pattern = re.compile(
+        r"\n:::\{iframe\} \./interactive/segmentation-viewer\.html\n"
+        r":label: fig-supp-segmentation-viewers\n.*?\n:::\n",
+        re.DOTALL,
+    )
+    markdown, legacy_count = legacy_pattern.subn("\n", markdown)
+    if legacy_count > 1:
+        raise RuntimeError("Expected at most one legacy segmentation viewer figure.")
+    legacy_description_pattern = re.compile(
+        r"Representative extraction filters and their matched activity traces can be\s+"
+        r"inspected together in\s+"
+        r"\[Supplementary Figure 5\]\(#fig-supp-segmentation-viewers\)\. Its "
+        r"Neuropixels,\s+Mesoscope, and SLAP2 tabs use the same representative "
+        r"sessions as the raw-data\s+view in "
+        r"\[Figure 5\]\(#fig-aligned-neural-signals\) and derive their filters and\s+"
+        r"traces from the matched public NWBs\."
+    )
+    markdown, description_count = legacy_description_pattern.subn("", markdown)
+    if description_count > 1:
+        raise RuntimeError("Expected at most one legacy segmentation viewer link.")
+    for old, new in MAIN_FIGURE_PROMOTION_REPLACEMENTS.items():
+        markdown = markdown.replace(old, new)
+    return markdown.replace(
+        heading,
+        f"{heading}\n\n{SEGMENTATION_VIEWER_BLOCK}",
+        1,
+    )
+
+
+def add_slap2_nwb_contents(markdown: str) -> str:
+    heading = "## NWB file contents"
+    end_heading = "# Data validation"
+    if markdown.count(heading) != 1 or markdown.count(end_heading) != 1:
+        raise RuntimeError("Expected one NWB contents and Data validation heading.")
+    start = markdown.index(heading)
+    stop = markdown.index(end_heading, start)
+    section = markdown[start:stop]
+    intro_pattern = re.compile(
+        r"All data from this project are packaged as Neurodata\s+Without Borders.*?"
+        r"Use the tabs below",
+        re.DOTALL,
+    )
+    section, count = intro_pattern.subn(NWB_ACCESS_INTRO, section, count=1)
+    if count != 1:
+        raise RuntimeError("Expected one NWB access introduction.")
+    if ":::{tab-item} SLAP2" not in section:
+        closing = section.rfind("\n::::")
+        if closing < 0:
+            raise RuntimeError("Expected the NWB tab-set closing fence.")
+        section = f"{section[:closing]}\n{SLAP2_NWB_TAB}\n{section[closing:]}"
+    return f"{markdown[:start]}{section}{markdown[stop:]}"
+
+
 def move_glossary_to_end(markdown: str) -> str:
     pattern = re.compile(
         r"\n## Glossary\n(?P<body>.*?)\n# Data validation\n",
@@ -1260,7 +1438,9 @@ def build_index(markdown: str) -> str:
     markdown = replace_behavior_analysis_text(markdown)
     markdown = relocate_supplementary_implant_figure(markdown)
     markdown = add_neuropixels_trajectory_figure(markdown)
+    markdown = add_segmentation_viewer_figures(markdown)
     markdown = move_glossary_to_end(markdown)
+    markdown = add_slap2_nwb_contents(markdown)
     data_validation_heading = "# Data validation"
     if markdown.count(data_validation_heading) != 1:
         raise RuntimeError("Expected one Data validation heading.")

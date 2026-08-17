@@ -12,11 +12,11 @@ __DATA_EXPLORER_CSS__
 <body>
   <main class="explorer" id="data-explorer">
     <div class="view-switch" role="group" aria-label="Interactive or static view">
-      <button type="button" class="view-button" data-view="interactive" aria-pressed="false">Interactive</button>
-      <button type="button" class="view-button active" data-view="static" aria-pressed="true">Static</button>
+      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
     </div>
 
-    <div id="interactive-view" hidden>
+    <div id="interactive-view">
       <header class="explorer-header">
         <nav class="dataset-tabs" id="dataset-tabs" aria-label="Choose a data table"></nav>
         <p class="data-access-note" id="data-access-note" hidden>
@@ -41,7 +41,7 @@ __DATA_EXPLORER_CSS__
       </section>
     </div>
 
-    <section class="static-view" id="static-view" aria-label="Static session inventory">
+    <section class="static-view" id="static-view" aria-label="Static session inventory" hidden>
       <div class="static-shell">
         <img src="__SESSION_INVENTORY_IMAGE__" alt="Three panels showing Neuropixels, mesoscope, and SLAP2 sessions per mouse with context and QC status.">
       </div>

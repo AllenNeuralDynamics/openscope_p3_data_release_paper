@@ -142,18 +142,18 @@
       },
       "frame_index": 30,
       "frame_size": [
-        640,
-        400
+        400,
+        640
       ],
       "frame_time_seconds": 1.026271,
       "modality": "slap2",
       "option_id": "dmd1-composite",
-      "output_sha256": "7bcbf9415278e609111677abfc6a7d68f0b8028feb7e7b74ca284776d44070f4",
+      "output_sha256": "a29af0244bf520837752a1475b0d4e4b587309eb76bbde1af6a4a08640c7cc0a",
       "source_option_ids": [
         "dmd1-detector-1",
         "dmd1-detector-2"
       ],
-      "source_sheet_sha256": "314d99ca375ce69a46ce98afbfa819b640d313c1019da34ff9a868c19b1498be",
+      "source_sheet_sha256": "930866a54cca51a9a3698ad11272bfc04ce7f06efde6d53e9e37dee1589a64b3",
       "spatial_downsample_factor": 2,
       "temporal_averaging_frames": 1
     },
@@ -171,23 +171,23 @@
       },
       "frame_index": 30,
       "frame_size": [
-        640,
-        400
+        400,
+        640
       ],
       "frame_time_seconds": 1.032353,
       "modality": "slap2",
       "option_id": "dmd2-composite",
-      "output_sha256": "2c8469b7a04c6f032f598faf74a147d7aa287c5e56f6491502f35720a5d1cbd7",
+      "output_sha256": "65bd0148f1895afd665a4ceb974134a78de5f7cb49199f4e096826b0bb6f6758",
       "source_option_ids": [
         "dmd2-detector-1",
         "dmd2-detector-2"
       ],
-      "source_sheet_sha256": "f2548cf79a349ac4fa5ccdc46bd930de4053549d1f96d53566d35a6162fa26d2",
+      "source_sheet_sha256": "31d85803812735763d57ffe55b55a30c51062096fd3e04de789e7132b383c168",
       "spatial_downsample_factor": 2,
       "temporal_averaging_frames": 1
     }
   ],
-  "notes": "Representative middle frames extracted from committed lossless movie sheets for dependency-free HTML and PDF figure generation. Mesoscope stills are independently contrast-scaled. Each SLAP2 still merges its aligned green iGluSnFR4f and red RCaMP3 channels without temporal averaging and applies a max-channel hue-preserving gamma of 0.55.",
-  "raw_neural_excerpts_sha256": "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c",
+  "notes": "Representative middle frames extracted from committed lossless movie sheets for dependency-free HTML and PDF figure generation. Mesoscope stills are independently contrast-scaled. Each SLAP2 still merges its aligned green iGluSnFR4f and red RCaMP3 channels without temporal averaging and applies a max-channel hue-preserving gamma of 0.55 after the shared stored-(x, y) to display-(y, x) transpose.",
+  "raw_neural_excerpts_sha256": "d9c5e84a3417c44ec6a929763e59bb61db20f2ff7bc3a7a55b3bbaa32b6f99d8",
   "version": 2
 }

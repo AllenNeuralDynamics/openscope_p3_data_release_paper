@@ -1,0 +1,25 @@
+:root {
+  --figure-font-sans: "Myriad Pro", Arial, sans-serif;
+  --figure-font-mono: "IBM Plex Mono", monospace;
+  --figure-type-panel-title: 1.25rem;
+  --figure-type-section-title: 1rem;
+  --figure-type-body: 0.875rem;
+  --figure-type-control: 0.8125rem;
+  --figure-type-metadata: 0.75rem;
+  --figure-type-axis: 0.75rem;
+  --figure-line-body: 1.45;
+  --figure-line-compact: 1.3;
+}
+
+body {
+  font-family: var(--figure-font-sans);
+  font-size: var(--figure-type-body);
+  line-height: var(--figure-line-body);
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+  font-size: var(--figure-type-control);
+}

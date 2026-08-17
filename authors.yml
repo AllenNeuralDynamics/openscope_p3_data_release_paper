@@ -3,10 +3,10 @@
 version: 1
 source:
   project: "p3_data_release"
-  endpoint: "https://metadata-portal.allenneuraldynamics.org/contributions/get?project=p3_data_release&commit=ee685d6ae9e147b294d84a873d98e0d3&format=json"
+  endpoint: "https://metadata-portal.allenneuraldynamics.org/contributions/get?project=p3_data_release&commit=4c0ca209e07a4124901602e49d34495c&format=json"
   contribution_form: "https://data.allenneuraldynamics.org/contributions/add?project=p3_data_release"
-  commit: "ee685d6ae9e147b294d84a873d98e0d3"
-  timestamp: "2026-07-27T20:10:10.420586+00:00"
+  commit: "4c0ca209e07a4124901602e49d34495c"
+  timestamp: "2026-08-06T19:08:37.120080+00:00"
 portal:
   sections:
     - "Background"
@@ -31,7 +31,7 @@ portal:
     - "Oddball-response analysis"
     - "Surgical implant design"
     - "Data sharing infrastructure"
-  doi: null
+  doi: []
   assets: []
   edit_locked: false
   show_sections: false
@@ -50,12 +50,15 @@ project:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
       roles:
         - "Conceptualization"
-        - "Methodology"
-        - "Software"
-        - "Validation"
-        - "Formal analysis"
-        - "Resources"
         - "Data curation"
+        - "Formal analysis"
+        - "Funding acquisition"
+        - "Methodology"
+        - "Project administration"
+        - "Software"
+        - "Supervision"
+        - "Validation"
+        - "Visualization"
         - "Writing – original draft"
         - "Writing – review & editing"
       credit_levels:
@@ -63,45 +66,169 @@ project:
           role: "Conceptualization"
           level: "lead"
         -
+          role: "Data curation"
+          level: "supporting"
+        -
+          role: "Formal analysis"
+          level: "equal"
+        -
+          role: "Funding acquisition"
+          level: "lead"
+        -
           role: "Methodology"
+          level: "lead"
+        -
+          role: "Project administration"
           level: "lead"
         -
           role: "Software"
           level: "lead"
         -
+          role: "Supervision"
+          level: "lead"
+        -
           role: "Validation"
           level: "equal"
         -
-          role: "Formal analysis"
-          level: "supporting"
-        -
-          role: "Resources"
+          role: "Visualization"
           level: "lead"
-        -
-          role: "Data curation"
-          level: "supporting"
         -
           role: "Writing – original draft"
           level: "lead"
         -
           role: "Writing – review & editing"
           level: "lead"
-      section_contributions: []
+      section_contributions:
+        -
+          section: "SLAP2 data validation"
+          effort: "equal"
+        -
+          section: "SLAP2 neuronal recordings"
+          effort: "equal"
+        -
+          section: "SLAP2 data processing"
+          effort: "equal"
+        -
+          section: "Background"
+          effort: "lead"
+        -
+          section: "Experimental design"
+          effort: "lead"
+        -
+          section: "Neuropixels data processing"
+          effort: "supporting"
+        -
+          section: "NWB packaging"
+          effort: "supporting"
+        -
+          section: "Stimulus implementation"
+          effort: "lead"
+        -
+          section: "Hardware support and design"
+          effort: "supporting"
+        -
+          section: "Signal to Noise analysis"
+          effort: "supporting"
+        -
+          section: "Data sharing infrastructure"
+          effort: "equal"
+        -
+          section: "Mesoscope data validation"
+          effort: "supporting"
+        -
+          section: "Neuropixels data validation"
+          effort: "supporting"
+        -
+          section: "Receptive field analysis"
+          effort: "supporting"
+        -
+          section: "Oddball-response analysis"
+          effort: "supporting"
+        -
+          section: "Surgical implant design"
+          effort: "supporting"
       social_links:
         -
           platform: "orcid"
           url: "https://orcid.org/0000-0002-0131-0938"
-      is_admin: true
+      is_admin: false
       from_asset: false
     -
       id: "r-carter-peene"
       name: "R. Carter Peene"
       avatar_url: "https://cdn.prod.website-files.com/691fabdb8ba70248dd5b7fa8/691fabdb8ba70248dd5b829a_66fb361f83edc9d7b39abe9e_Carter_Peene_SQ.jpeg"
       orcid: "0009-0000-6660-2264"
-      affiliations: []
-      roles: []
-      credit_levels: []
-      section_contributions: []
+      affiliations:
+        - "Allen Institute for Neural Dynamics, Seattle, WA"
+      roles:
+        - "Data curation"
+        - "Software"
+        - "Validation"
+        - "Visualization"
+        - "Writing – original draft"
+        - "Writing – review & editing"
+      credit_levels:
+        -
+          role: "Data curation"
+          level: "lead"
+          description: "Maintained and developed in part data tracking spreadsheet and systems to accurately annotate qc, metadata and track the location and processing/packaging status of data"
+        -
+          role: "Software"
+          level: "equal"
+          description: "Maintained and developed in part; data tracking infrastructure, uploading, processing, syncing and packaging pipelines,"
+        -
+          role: "Validation"
+          level: "supporting"
+          description: "Helped produce QC and validation plots for packaging, synchronizing and processing"
+        -
+          role: "Visualization"
+          level: "supporting"
+          description: "Helped produce some plots and interactive visualizations"
+        -
+          role: "Writing – original draft"
+          level: "equal"
+          description: "Wrote methods sections for software stack; processing, packaging, and synching"
+        -
+          role: "Writing – review & editing"
+          level: "supporting"
+          description: "Helped review and edit paper in Myst form"
+      section_contributions:
+        -
+          section: "SLAP2 neuronal recordings"
+          effort: "supporting"
+          description: "Aided in rig software development"
+        -
+          section: "SLAP2 data processing"
+          effort: "equal"
+          description: "Helped develop processing pipelines on Code Ocean"
+        -
+          section: "NWB packaging"
+          effort: "lead"
+          description: "Created and maintained NWB packaging pipelines for all modalities"
+        -
+          section: "Stimulus implementation"
+          effort: "supporting"
+          description: "Helped debug some stimulus scripts in Bonsai"
+        -
+          section: "Mesoscope data validation"
+          effort: "supporting"
+          description: "Helped QC problems with processing"
+        -
+          section: "Neuropixels data validation"
+          effort: "supporting"
+          description: "Helped investigate QC problems with processing"
+        -
+          section: "SLAP2 data validation"
+          effort: "equal"
+          description: "Validated and QC'd output of all sessions and partoculrly temporal synchronization stack and metadata"
+        -
+          section: "Receptive field analysis"
+          effort: "equal"
+          description: "Wrote some RF code"
+        -
+          section: "Data sharing infrastructure"
+          effort: "lead"
+          description: "Developed in part and maintained data tracking and data sharing infrastructure"
       social_links:
         -
           platform: "orcid"
@@ -111,26 +238,23 @@ project:
     -
       id: "ryan-gillis"
       name: "Ryan Gillis"
+      avatar_url: "https://static1.squarespace.com/static/6065458351cb8c7a42973707/60720307eb0ea31892661356/630113dad36fd46ddca3b5f3/1661016548090/IMG_7454_edited_edited.jpg?format=1500w"
       orcid: "0009-0000-1879-6519"
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
       roles:
-        - "Software"
-        - "Validation"
+        - "Data curation"
         - "Investigation"
         - "Resources"
-        - "Data curation"
+        - "Software"
+        - "Validation"
         - "Writing – original draft"
         - "Writing – review & editing"
       credit_levels:
         -
-          role: "Software"
+          role: "Data curation"
           level: "supporting"
-          description: "Maintained and adapted exisiting local sorting and QC pipeline to accommodate this project, adapted Jupyter workflow for this project"
-        -
-          role: "Validation"
-          level: "supporting"
-          description: "Performed pilot experiments and validated stimuli"
+          description: "Responsible for probe track annotations, electrode/channel alignment, and reviewed QC for each session"
         -
           role: "Investigation"
           level: "lead"
@@ -140,9 +264,13 @@ project:
           level: "supporting"
           description: "Maintained Neuropixels probes and replaced probes when broken"
         -
-          role: "Data curation"
+          role: "Software"
           level: "supporting"
-          description: "Responsible for probe track annotations, electrode/channel alignment, and reviewed QC for each session"
+          description: "Maintained and adapted exisiting local sorting and QC pipeline to accommodate this project, adapted Jupyter workflow for this project"
+        -
+          role: "Validation"
+          level: "supporting"
+          description: "Performed pilot experiments and validated stimuli"
         -
           role: "Writing – original draft"
           level: "supporting"
@@ -178,17 +306,17 @@ project:
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
       roles:
-        - "Writing – review & editing"
         - "Supervision"
+        - "Writing – review & editing"
       credit_levels:
-        -
-          role: "Writing – review & editing"
-          level: "supporting"
-          description: "Reviewed and edited experimental animals and surgery methods sections"
         -
           role: "Supervision"
           level: "lead"
           description: "Manage surgery team and schedule"
+        -
+          role: "Writing – review & editing"
+          level: "supporting"
+          description: "Reviewed and edited experimental animals and surgery methods sections"
       section_contributions:
         -
           section: "Animal surgeries"
@@ -204,17 +332,17 @@ project:
       name: "Casey Lennon-Jones"
       affiliations: []
       roles:
-        - "Validation"
+        - "Data curation"
         - "Investigation"
         - "Resources"
-        - "Data curation"
+        - "Validation"
         - "Writing – original draft"
         - "Writing – review & editing"
       credit_levels:
         -
-          role: "Validation"
-          level: "supporting"
-          description: "Conducted the pilot electrophysiology experiments."
+          role: "Data curation"
+          level: "equal"
+          description: "Performed probe annotations for all electrophysiology experiments, as well as curated all electrophysiology data assets to be aligned to the CCF. I also performed all the alignments to the CCF."
         -
           role: "Investigation"
           level: "lead"
@@ -224,9 +352,9 @@ project:
           level: "supporting"
           description: "Maintained stock of experiment materials such as probes, dyes, agarose, silicon oil, and others. Maintained equipment used for data collection. Worked with other researchers to ensure proper data storage."
         -
-          role: "Data curation"
-          level: "equal"
-          description: "Performed probe annotations for all electrophysiology experiments, as well as curated all electrophysiology data assets to be aligned to the CCF. I also performed all the alignments to the CCF."
+          role: "Validation"
+          level: "supporting"
+          description: "Conducted the pilot electrophysiology experiments."
         -
           role: "Writing – original draft"
           level: "supporting"
@@ -252,21 +380,29 @@ project:
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
       roles:
-        - "Validation"
         - "Data curation"
+        - "Supervision"
+        - "Validation"
+        - "Visualization"
         - "Writing – original draft"
         - "Writing – review & editing"
-        - "Visualization"
-        - "Supervision"
       credit_levels:
+        -
+          role: "Data curation"
+          level: "equal"
+          description: "Participated in areas alignment for each session"
+        -
+          role: "Supervision"
+          level: "equal"
+          description: "Supervised, managed and organized data collection"
         -
           role: "Validation"
           level: "equal"
           description: "QC"
         -
-          role: "Data curation"
-          level: "equal"
-          description: "Participated in areas alignment for each session"
+          role: "Visualization"
+          level: "supporting"
+          description: "figure"
         -
           role: "Writing – original draft"
           level: "supporting"
@@ -275,14 +411,6 @@ project:
           role: "Writing – review & editing"
           level: "supporting"
           description: "Methods and figures"
-        -
-          role: "Visualization"
-          level: "supporting"
-          description: "figure"
-        -
-          role: "Supervision"
-          level: "equal"
-          description: "Supervised, managed and organized data collection"
       section_contributions:
         -
           section: "Neuropixels neuronal recordings"
@@ -308,17 +436,17 @@ project:
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
       roles:
-        - "Writing – review & editing"
         - "Supervision"
+        - "Writing – review & editing"
       credit_levels:
-        -
-          role: "Writing – review & editing"
-          level: "supporting"
-          description: "Wrote methods section for behavior"
         -
           role: "Supervision"
           level: "lead"
           description: "supervised behavior training"
+        -
+          role: "Writing – review & editing"
+          level: "supporting"
+          description: "Wrote methods section for behavior"
       section_contributions:
         -
           section: "Behavioral training"
@@ -370,17 +498,17 @@ project:
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
       roles:
-        - "Methodology"
         - "Investigation"
+        - "Methodology"
       credit_levels:
-        -
-          role: "Methodology"
-          level: "equal"
-          description: "Script testing and troubleshooting"
         -
           role: "Investigation"
           level: "equal"
           description: "Surgery (9%) and behavior training (42%)"
+        -
+          role: "Methodology"
+          level: "equal"
+          description: "Script testing and troubleshooting"
       section_contributions:
         -
           section: "Animal surgeries"
@@ -489,6 +617,7 @@ project:
     -
       id: "jimin-park"
       name: "Jimin Park"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5947eec300ac1e1e9f0ef_Jimin-Park-square-web.jpeg"
       affiliations: []
       roles:
         - "Investigation"
@@ -563,6 +692,202 @@ project:
         -
           platform: "orcid"
           url: "https://orcid.org/0000-0002-8415-1118"
+      is_admin: false
+      from_asset: false
+    -
+      id: "maedeh-seyedolmohadesin"
+      name: "Maedeh Seyedolmohadesin"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/6a18c126dd255288fa5f7c81_maedeh_seyedolmohadesin_headshot.jpg"
+      orcid: "0000-0003-3742-394X"
+      affiliations:
+        - "Allen Institute for Neural Dynamics, Seattle, WA"
+      roles:
+        - "Data curation"
+        - "Investigation"
+        - "Software"
+        - "Validation"
+        - "Visualization"
+        - "Writing – original draft"
+        - "Writing – review & editing"
+      credit_levels:
+        -
+          role: "Data curation"
+          level: "supporting"
+        -
+          role: "Investigation"
+          level: "equal"
+        -
+          role: "Software"
+          level: "supporting"
+        -
+          role: "Validation"
+          level: "equal"
+        -
+          role: "Visualization"
+          level: "supporting"
+        -
+          role: "Writing – original draft"
+          level: "supporting"
+        -
+          role: "Writing – review & editing"
+          level: "supporting"
+      section_contributions:
+        -
+          section: "SLAP2 neuronal recordings"
+          effort: "equal"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0000-0003-3742-394X"
+      is_admin: false
+      from_asset: false
+    -
+      id: "ivana-bussi"
+      name: "Ivana Bussi"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c59478211f19a28ab460f5_Ivana_Bussi.jpeg"
+      orcid: "0000-0003-4721-763X"
+      affiliations:
+        - "Allen Institute for Neural Dynamics, Seattle, WA"
+      roles:
+        - "Funding acquisition"
+        - "Project administration"
+      credit_levels:
+        -
+          role: "Funding acquisition"
+          level: "equal"
+          description: "I contributed to securing internal funding for the project, as well as acquiring and managing federal funding through the NIH U24 grant."
+        -
+          role: "Project administration"
+          level: "equal"
+          description: "I have contributed to project management, including coordination of internal teams, communication with external collaborators, meetings, and operational and administrative support."
+      section_contributions: []
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0000-0003-4721-763X"
+      is_admin: false
+      from_asset: false
+    -
+      id: "karim-oweiss"
+      name: "Karim Oweiss"
+      avatar_url: "https://faculty.eng.ufl.edu/oweisslab/wp-content/uploads/sites/675/2025/05/IMG_0816-2048x1585-1.jpeg"
+      orcid: "0000-0002-1175-7258"
+      affiliations:
+        - "University of Florida"
+      roles:
+        - "Formal analysis"
+        - "Supervision"
+        - "Writing – review & editing"
+      credit_levels:
+        -
+          role: "Formal analysis"
+          level: "equal"
+          description: "Analysis of neural data and receptive field analysis."
+        -
+          role: "Supervision"
+          level: "equal"
+          description: "Supervised Nicholas Rodriguez in all aspects of the analysis"
+        -
+          role: "Writing – review & editing"
+          level: "supporting"
+          description: "Comments and suggestions to improve writing and readability"
+      section_contributions:
+        -
+          section: "Mesoscope data validation"
+          effort: "equal"
+        -
+          section: "Receptive field analysis"
+          effort: "equal"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0000-0002-1175-7258"
+      is_admin: false
+      from_asset: false
+    -
+      id: "alexander-maier"
+      name: "Alexander Maier"
+      avatar_url: "https://cdn.vanderbilt.edu/vu-news/files/20190417213235/Alexander-Maier.jpg"
+      orcid: "0000-0002-7250-502X"
+      affiliations:
+        - "Vanderbilt University, Nashville, TN"
+      roles:
+        - "Conceptualization"
+        - "Formal analysis"
+        - "Investigation"
+        - "Software"
+        - "Writing – review & editing"
+      credit_levels:
+        -
+          role: "Conceptualization"
+          level: "supporting"
+          description: "pilot analyses, sanity checks for QA"
+        -
+          role: "Formal analysis"
+          level: "equal"
+          description: "python notebooks for initial receptive field analysis, orientation tuning, and oddballs across modalities"
+        -
+          role: "Investigation"
+          level: "supporting"
+          description: "data evaluation across modalities and paradigms"
+        -
+          role: "Software"
+          level: "supporting"
+          description: "python notebooks, GitHub repos"
+        -
+          role: "Writing – review & editing"
+          level: "supporting"
+          description: "misc. edits, suggestions, and revisions"
+      section_contributions:
+        -
+          section: "Background"
+          effort: "supporting"
+        -
+          section: "Stimulus implementation"
+          effort: "supporting"
+        -
+          section: "Mesoscope data validation"
+          effort: "supporting"
+        -
+          section: "Neuropixels data validation"
+          effort: "supporting"
+        -
+          section: "SLAP2 data validation"
+          effort: "supporting"
+        -
+          section: "Receptive field analysis"
+          effort: "equal"
+        -
+          section: "Oddball-response analysis"
+          effort: "equal"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0000-0002-7250-502X"
+      is_admin: false
+      from_asset: false
+    -
+      id: "manni-he"
+      name: "Manni He"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5948cfeb57c9a7fa59427_Manni-He-square-web.jpeg"
+      orcid: "0009-0001-4237-900X"
+      affiliations:
+        - "Allen Institute for Neural Dynamics, Seattle, WA"
+      roles:
+        - "Resources"
+      credit_levels:
+        -
+          role: "Resources"
+          level: "supporting"
+          description: "SLAP2 microscope and mesoscope optical alignment, characterization, and validation"
+      section_contributions:
+        -
+          section: "Hardware support and design"
+          effort: "supporting"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0009-0001-4237-900X"
       is_admin: false
       from_asset: false
   affiliations: []

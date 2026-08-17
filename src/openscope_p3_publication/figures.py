@@ -29,6 +29,7 @@ FIGURE_TYPE_SCALE = {
     "label": 15,
     "small": 12,
 }
+FIGURE_TYPE_SMALL = FIGURE_TYPE_SCALE["small"]
 SESSION_TYPE_COLORS = {
     "sensorimotor": "#283185",
     "standard": "#22BCAD",
@@ -57,7 +58,10 @@ def write_svg_output(output: Path, svg: list[str]) -> None:
 
     def normalized_text_tag(match: re.Match[str]) -> str:
         tag = match.group(0)
-        if f'font-family="{FIGURE_SANS_FONT}"' not in tag:
+        if not any(
+            f'font-family="{font}"' in tag
+            for font in (FIGURE_SANS_FONT, FIGURE_MONO_FONT)
+        ):
             return tag
         return re.sub(r'font-size="([0-9.]+)"', normalized_font_size, tag)
 
@@ -113,13 +117,13 @@ UNIT_EXTRACTION_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-04-unit-extraction-p
 BASIC_STIMULI_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-05-basic-stimuli-plan.png"
 STANDARD_ODDBALL_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-07-standard-oddball-plan.png"
 UNIT_EXTRACTION_PLAN_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-06-unit-extraction-plan.svg"
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-07-unit-extraction-plan.svg"
 )
 BASIC_STIMULI_PLAN_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-07-basic-stimuli-plan.svg"
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-08-basic-stimuli-plan.svg"
 )
 STANDARD_ODDBALL_PLAN_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-09-standard-oddball-plan.svg"
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-10-standard-oddball-plan.svg"
 )
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
@@ -154,6 +158,62 @@ NEURAL_STATIC_FRAME_PROVENANCE_PATH = (
 )
 NEURAL_STATIC_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "raw-neural-recordings.svg"
+)
+SEGMENTATION_VIEWER_DATA_PATH = DATA_DIR / "segmentation-viewers.json"
+SEGMENTATION_VIEWER_PROVENANCE_PATH = SEGMENTATION_VIEWER_DATA_PATH.with_suffix(
+    ".provenance.json"
+)
+SEGMENTATION_VIEWER_MEDIA_DIR = (
+    REPO_ROOT / "figure_sources" / "media" / "segmentation-viewers"
+)
+SEGMENTATION_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "segmentation-viewer.html"
+SEGMENTATION_VIEWER_TITLES = {
+    "neuropixels": "Neuropixels unit-template viewer",
+    "mesoscope": "Mesoscope ROI segmentation viewer",
+    "slap2": "SLAP2 source-segmentation viewer",
+}
+SEGMENTATION_PANEL_LABELS = {
+    "neuropixels": ("A", "B"),
+    "mesoscope": ("C", "D"),
+    "slap2": ("E", "F"),
+}
+SEGMENTATION_FILTER_COLORS = (
+    (37, 170, 225),
+    (140, 198, 63),
+    (204, 175, 45),
+    (214, 92, 72),
+    (36, 188, 173),
+    (177, 96, 173),
+)
+SEGMENTATION_VIEWER_STATIC_OUTPUTS = {
+    "neuropixels": (
+        REPO_ROOT
+        / "images"
+        / "figures"
+        / "generated"
+        / "figure-06-neuropixels-unit-filters.svg"
+    ),
+    "mesoscope": (
+        REPO_ROOT
+        / "images"
+        / "figures"
+        / "generated"
+        / "figure-06-mesoscope-roi-filters.svg"
+    ),
+    "slap2": (
+        REPO_ROOT
+        / "images"
+        / "figures"
+        / "generated"
+        / "figure-06-slap2-source-filters.svg"
+    ),
+}
+SEGMENTATION_VIEWER_STATIC_OUTPUT = (
+    REPO_ROOT
+    / "images"
+    / "figures"
+    / "generated"
+    / "figure-06-segmentation-viewers.svg"
 )
 SLAP2_STATIC_COMPOSITES = {
     "dmd1-composite": ("dmd1-detector-1", "dmd1-detector-2"),
@@ -202,6 +262,26 @@ NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT = (
 )
 NEUROPIXELS_TRAJECTORY_INTERACTIVE_OUTPUT = (
     REPO_ROOT / "interactive" / "neuropixels-trajectories.html"
+)
+OPTOTAGGING_HEATMAP_DATA_PATH = DATA_DIR / "optotagging-heatmaps.json"
+OPTOTAGGING_HEATMAP_PROVENANCE_PATH = OPTOTAGGING_HEATMAP_DATA_PATH.with_suffix(
+    ".provenance.json"
+)
+OPTOTAGGING_STATIC_SUMMARY_PATH = DATA_DIR / "optotagging-static-summary.json"
+OPTOTAGGING_HEATMAP_SOURCE_DIR = (
+    REPO_ROOT / "figure_sources" / "media" / "optotagging"
+)
+OPTOTAGGING_STATIC_LEGACY_SOURCE = (
+    OPTOTAGGING_HEATMAP_SOURCE_DIR / "optotagging-static-legacy.svg"
+)
+OPTOTAGGING_STATIC_SOURCE = (
+    OPTOTAGGING_HEATMAP_SOURCE_DIR / "optotagging-static-composite.svg"
+)
+OPTOTAGGING_HEATMAP_INTERACTIVE_OUTPUT = (
+    REPO_ROOT / "interactive" / "optotagging-heatmaps.html"
+)
+OPTOTAGGING_HEATMAP_STATIC_OUTPUT = (
+    REPO_ROOT / "images" / "figures" / "generated" / "optotagging-heatmaps.svg"
 )
 MEDIA_DIR = REPO_ROOT / "figure_sources" / "media"
 PLATFORM_LOGO_PROVENANCE_PATH = (
@@ -331,7 +411,7 @@ def write_merged_figure_1_svg(output: Path = MERGED_FIGURE_1_OUTPUT) -> Path:
     cohort_panel_path = write_figure_1_panel_c_svg()
     cohort_panel = (
         "data:image/svg+xml;base64,"
-        f"{base64.b64encode(cohort_panel_path.read_bytes()).decode()}"
+        f"{base64.b64encode(normalized_text_bytes(cohort_panel_path)).decode()}"
     )
     svg = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1620" '
@@ -589,25 +669,6 @@ def append_hardware_image(
     )
 
 
-def append_hardware_caption(
-    svg: list[str],
-    *,
-    x: float,
-    y: float,
-    lines: tuple[str, ...],
-    font_size: int = HARDWARE_DESCRIPTION_FONT_SIZE,
-) -> None:
-    svg.append(
-        f'<text class="hardware-caption" x="{x}" y="{y}" text-anchor="middle" '
-        f'font-family="Source Sans 3, sans-serif" font-size="{font_size}" '
-        'font-weight="600" fill="#4D5553">'
-    )
-    for line_index, line in enumerate(lines):
-        dy = 0 if line_index == 0 else 24
-        svg.append(f'<tspan x="{x}" dy="{dy}">{escape(line)}</tspan>')
-    svg.append("</text>")
-
-
 def fitted_image_bounds(asset: dict, box: tuple[float, float, float, float]) -> tuple[float, ...]:
     x, y, width, height = box
     aspect_ratio = asset["width"] / asset["height"]
@@ -643,8 +704,6 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             "rig": (220, 105, 515, 360),
             "platform": (775, 112, 410, 343),
             "target": (1320, 120, 390, 330),
-            "caption_y": 88,
-            "caption": ("6 probes spanning cortical and", "subcortical structures"),
         },
         {
             "modality": "mesoscope",
@@ -653,8 +712,6 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             "rig": (220, 505, 515, 365),
             "platform": (765, 525, 430, 312),
             "target": (1235, 505, 520, 350),
-            "caption_y": 490,
-            "caption": ("8 imaging planes across VISp and VISlm",),
         },
         {
             "modality": "slap2",
@@ -663,8 +720,6 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             "rig": (220, 920, 515, 335),
             "platform": (765, 925, 430, 312),
             "target": (1290, 905, 380, 345),
-            "caption_y": 1272,
-            "caption": ("Dual-plane dendritic imaging of a VISp", "layer II/III pyramidal neuron"),
         },
     )
     svg = [
@@ -727,12 +782,6 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             y=row["target"][1],
             width=row["target"][2],
             height=row["target"][3],
-        )
-        append_hardware_caption(
-            svg,
-            x=1510,
-            y=row["caption_y"],
-            lines=row["caption"],
         )
     neuropixels_bounds = fitted_image_bounds(
         assets["neuropixels_brain_targeting"], rows[0]["target"]
@@ -899,6 +948,8 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
     svg.extend(
         [
             '<g class="mesoscope-target-legend">',
+            '<rect x="1277" y="507" width="160" height="104" rx="3" '
+            'fill="#FFFFFF" fill-opacity="0.9"/>',
             '<line x1="1288" y1="525" x2="1317" y2="525" '
             'stroke="#8FD246" stroke-width="4"/>',
             '<text x="1325" y="531" font-family="Source Sans 3, sans-serif" '
@@ -916,20 +967,24 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
             '<text x="1325" y="600" font-family="Source Sans 3, sans-serif" '
             'font-size="12" fill="#303536">Layer V</text>',
             '<text x="1318" y="746" font-family="Source Sans 3, sans-serif" '
-            'font-size="15" font-weight="700" fill="#293133">VISlm</text>',
+            'font-size="15" font-weight="700" fill="#172126" stroke="#FFFFFF" '
+            'stroke-width="4" paint-order="stroke">VISlm</text>',
             '<text x="1460" y="716" font-family="Source Sans 3, sans-serif" '
-            'font-size="15" font-weight="700" fill="#293133">VISp</text>',
+            'font-size="15" font-weight="700" fill="#172126" stroke="#FFFFFF" '
+            'stroke-width="4" paint-order="stroke">VISp</text>',
             '</g>',
             f'<text class="slap2-plane-label" x="{slap2_plane_label_x:.2f}" '
             f'y="{apical_plane_label_y:.2f}" '
             'font-family="Source Sans 3, sans-serif" '
             f'font-size="{HARDWARE_DESCRIPTION_FONT_SIZE}" font-weight="700" '
-            'fill="#293133">Apical plane</text>',
+            'fill="#172126" stroke="#FFFFFF" stroke-width="4" '
+            'paint-order="stroke">Apical plane</text>',
             f'<text class="slap2-plane-label" x="{slap2_plane_label_x:.2f}" '
             f'y="{proximal_plane_label_y:.2f}" '
             'font-family="Source Sans 3, sans-serif" '
             f'font-size="{HARDWARE_DESCRIPTION_FONT_SIZE}" font-weight="700" '
-            'fill="#293133">Proximal plane</text>',
+            'fill="#172126" stroke="#FFFFFF" stroke-width="4" '
+            'paint-order="stroke">Proximal plane</text>',
         ]
     )
     svg.append("</svg>")
@@ -1182,8 +1237,7 @@ def load_stimulus_table_excerpts(sources: dict) -> dict[str, dict]:
         filename = source["example_table_url"].rsplit("/", maxsplit=1)[-1]
         metadata = provenance_by_name[filename]
         path = STIMULUS_EXCERPT_DIR / filename
-        checksum = hashlib.sha256(path.read_bytes()).hexdigest()
-        if checksum != metadata["vendored_sha256"]:
+        if not text_sha256_matches(path, metadata["vendored_sha256"]):
             raise RuntimeError(f"Stimulus excerpt checksum mismatch: {filename}")
         if source["sha256"] != metadata["source_sha256"]:
             raise RuntimeError(f"Stimulus source checksum mismatch: {filename}")
@@ -1213,7 +1267,7 @@ def load_shared_stimulus_table_excerpts(sources: dict) -> dict[str, dict]:
     if source["sha256"] != metadata["source_sha256"]:
         raise RuntimeError("Shared stimulus source checksum mismatch.")
     path = STIMULUS_EXCERPT_DIR / metadata["filename"]
-    if hashlib.sha256(path.read_bytes()).hexdigest() != metadata["vendored_sha256"]:
+    if not text_sha256_matches(path, metadata["vendored_sha256"]):
         raise RuntimeError("Shared stimulus excerpt checksum mismatch.")
     with path.open(newline="", encoding="utf-8-sig") as stream:
         source_rows = list(csv.DictReader(stream))
@@ -1258,6 +1312,14 @@ def load_embed_auto_height() -> str:
     return (JAVASCRIPT_DIR / "embed-auto-height.js").read_text(encoding="utf-8")
 
 
+def load_figure_stylesheet(name: str) -> str:
+    typography = (JAVASCRIPT_DIR / "figure-typography.css").read_text(
+        encoding="utf-8"
+    )
+    stylesheet = (JAVASCRIPT_DIR / name).read_text(encoding="utf-8")
+    return f"{typography}\n\n{stylesheet}"
+
+
 def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     sources = json.loads(STIMULUS_SOURCES_PATH.read_text(encoding="utf-8"))
@@ -1273,10 +1335,10 @@ def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
         "stimulusTableExcerpts": load_stimulus_table_excerpts(sources),
     }
     template = (JAVASCRIPT_DIR / "stimulus-viewer.html").read_text(encoding="utf-8")
-    stylesheet = (JAVASCRIPT_DIR / "stimulus-viewer.css").read_text(encoding="utf-8")
+    stylesheet = load_figure_stylesheet("stimulus-viewer.css")
     javascript = (JAVASCRIPT_DIR / "stimulus-viewer.js").read_text(encoding="utf-8")
     static_output = write_context_controls_svg()
-    static_data = base64.b64encode(static_output.read_bytes()).decode()
+    static_data = base64.b64encode(normalized_text_bytes(static_output)).decode()
     html = (
         template.replace("__SIMULATOR_CSS__", stylesheet)
         .replace("__PANEL_D_IMAGE__", f"data:image/svg+xml;base64,{static_data}")
@@ -1300,9 +1362,9 @@ def write_data_explorer_html(
     payload = load_publication_table_data()
     if refresh_static:
         write_session_inventory_svg(static_output)
-    static_data = base64.b64encode(static_output.read_bytes()).decode()
+    static_data = base64.b64encode(normalized_text_bytes(static_output)).decode()
     template = (JAVASCRIPT_DIR / "data-explorer.html").read_text(encoding="utf-8")
-    stylesheet = (JAVASCRIPT_DIR / "data-explorer.css").read_text(encoding="utf-8")
+    stylesheet = load_figure_stylesheet("data-explorer.css")
     javascript = (JAVASCRIPT_DIR / "data-explorer.js").read_text(encoding="utf-8")
     html = (
         template.replace("__DATA_EXPLORER_CSS__", stylesheet)
@@ -1323,8 +1385,7 @@ def write_literature_comparison_html(
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     provenance = json.loads(OTHER_STUDIES_PROVENANCE_PATH.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(OTHER_STUDIES_PATH.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(OTHER_STUDIES_PATH, provenance["vendored_sha256"]):
         raise RuntimeError("Other-studies table checksum does not match its provenance.")
     with OTHER_STUDIES_PATH.open(newline="", encoding="utf-8") as stream:
         rows = list(csv.reader(stream))
@@ -1340,9 +1401,7 @@ def write_literature_comparison_html(
     template = (JAVASCRIPT_DIR / "literature-comparison.html").read_text(
         encoding="utf-8"
     )
-    stylesheet = (JAVASCRIPT_DIR / "literature-comparison.css").read_text(
-        encoding="utf-8"
-    )
+    stylesheet = load_figure_stylesheet("literature-comparison.css")
     javascript = (JAVASCRIPT_DIR / "literature-comparison.js").read_text(
         encoding="utf-8"
     )
@@ -1367,7 +1426,7 @@ def write_unit_yield_html(
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_unit_yield_data(data_path, provenance_path)
     template = (JAVASCRIPT_DIR / "unit-yield.html").read_text(encoding="utf-8")
-    stylesheet = (JAVASCRIPT_DIR / "unit-yield.css").read_text(encoding="utf-8")
+    stylesheet = load_figure_stylesheet("unit-yield.css")
     javascript = (JAVASCRIPT_DIR / "unit-yield.js").read_text(encoding="utf-8")
     html = (
         template.replace("__UNIT_YIELD_CSS__", stylesheet)
@@ -1381,6 +1440,704 @@ def write_unit_yield_html(
     output.write_text(html, encoding="utf-8", newline="\n")
     return output
 
+
+def load_optotagging_heatmap_data(
+    data_path: Path = OPTOTAGGING_HEATMAP_DATA_PATH,
+    provenance_path: Path = OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    media_dir: Path = OPTOTAGGING_HEATMAP_SOURCE_DIR,
+) -> dict:
+    """Load and validate the committed representative optotagging snapshot."""
+
+    payload = json.loads(data_path.read_text(encoding="utf-8"))
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    version = payload.get("version")
+    if version not in {1, 2} or provenance.get("version") != version:
+        raise RuntimeError("Optotagging heatmap snapshot version is not supported.")
+    if not text_sha256_matches(data_path, provenance.get("manifest_sha256", "")):
+        raise RuntimeError("Optotagging heatmap manifest checksum does not match.")
+
+    sessions = payload.get("sessions", [])
+    if (
+        not sessions
+        or payload.get("session_count") != len(sessions)
+        or provenance.get("session_count") != len(sessions)
+        or payload.get("total_unit_count")
+        != sum(session.get("unit_count", 0) for session in sessions)
+        or provenance.get("total_unit_count") != payload.get("total_unit_count")
+    ):
+        raise RuntimeError("Optotagging heatmap coverage metadata is inconsistent.")
+
+    asset_manifest = provenance.get("asset_manifest", [])
+    skipped_assets = provenance.get("skipped_assets", [])
+    failed_assets = provenance.get("failed_assets", [])
+    expected_asset_count = provenance.get(
+        "source_session_count",
+        len(sessions) + len(skipped_assets) + len(failed_assets),
+    )
+    asset_manifest_sha256 = hashlib.sha256(
+        json.dumps(asset_manifest, separators=(",", ":"), sort_keys=True).encode()
+    ).hexdigest()
+    if (
+        expected_asset_count < len(sessions)
+        or len(asset_manifest) != expected_asset_count
+        or asset_manifest_sha256 != provenance.get("asset_manifest_sha256")
+        or any(
+            not asset.get("digest", {}).get("dandi:sha2-256")
+            for asset in asset_manifest
+        )
+    ):
+        raise RuntimeError("Optotagging source asset manifest is invalid.")
+
+    session_ids = [session.get("session_id") for session in sessions]
+    if (
+        session_ids != sorted(session_ids)
+        or len(session_ids) != len(set(session_ids))
+        or payload.get("default_session_id") not in session_ids
+    ):
+        raise RuntimeError("Optotagging heatmap session inventory is invalid.")
+
+    media_manifest = []
+    for session in sessions:
+        if version == 2:
+            atlas_file = session.get("atlas_file", "")
+            numeric_png_file = session.get("numeric_png_file", "")
+            if (
+                Path(atlas_file).name != atlas_file
+                or not atlas_file.endswith(".atlas.json")
+                or Path(numeric_png_file).name != numeric_png_file
+                or not numeric_png_file.endswith(".atlas.png")
+            ):
+                raise RuntimeError("Invalid optotagging numeric atlas path.")
+            atlas_bytes = (media_dir / atlas_file).read_bytes()
+            numeric_png = (media_dir / numeric_png_file).read_bytes()
+            if (
+                hashlib.sha256(atlas_bytes).hexdigest() != session.get("atlas_sha256")
+                or hashlib.sha256(numeric_png).hexdigest()
+                != session.get("numeric_png_sha256")
+                or len(numeric_png) < 24
+                or not numeric_png.startswith(b"\x89PNG\r\n\x1a\n")
+                or numeric_png[24:26] != b"\x08\x00"
+            ):
+                raise RuntimeError(
+                    f"Optotagging numeric atlas is invalid: {atlas_file}"
+                )
+            atlas = json.loads(atlas_bytes)
+            unit_count = session.get("unit_count")
+            parent_areas = atlas.get("parent_areas", [])
+            parent_codes = atlas.get("parent_codes", [])
+            orders = atlas.get("strongest_first_unit_indices", {})
+            condition_names = [
+                condition["table_name"] for condition in payload["conditions"]
+            ]
+            expected_offsets = {
+                condition_name: index * unit_count
+                for index, condition_name in enumerate(condition_names)
+            }
+            quantization = atlas.get("quantization", {})
+            time_seconds = atlas.get("time_seconds", [])
+            expected_units = list(range(unit_count))
+            png_width, png_height = struct.unpack(">II", numeric_png[16:24])
+            if (
+                atlas.get("version") != 2
+                or atlas.get("unit_count") != unit_count
+                or atlas.get("numeric_png_file") != numeric_png_file
+                or parent_areas != sorted(set(parent_areas))
+                or not all(isinstance(area, str) and area for area in parent_areas)
+                or len(parent_codes) != unit_count
+                or any(code < 0 or code >= len(parent_areas) for code in parent_codes)
+                or set(orders) != set(condition_names)
+                or any(sorted(order) != expected_units for order in orders.values())
+                or atlas.get("condition_row_offsets") != expected_offsets
+                or quantization
+                != {
+                    "dtype": "int8",
+                    "scale": 15.875,
+                    "range": [-8.0, 8.0],
+                    "nan_sentinel": -128,
+                    "png_channels": "single-channel uint8 viewed as signed int8",
+                }
+                or len(time_seconds) != 2
+                or not all(isinstance(value, int | float) for value in time_seconds)
+                or not math.isfinite(time_seconds[0])
+                or not math.isfinite(time_seconds[1])
+                or time_seconds[0] >= time_seconds[1]
+                or png_width != atlas.get("time_bin_count")
+                or png_width <= 0
+                or png_height != unit_count * len(condition_names)
+            ):
+                raise RuntimeError(
+                    f"Optotagging numeric atlas metadata is invalid: {atlas_file}"
+                )
+            media_manifest.extend(
+                [
+                    {"file": atlas_file, "sha256": session["atlas_sha256"]},
+                    {
+                        "file": numeric_png_file,
+                        "sha256": session["numeric_png_sha256"],
+                    },
+                ]
+            )
+            if "image_file" not in session:
+                continue
+        image_file = session.get("image_file", "")
+        relative_image = Path(image_file)
+        if (
+            not image_file
+            or relative_image.name != image_file
+            or relative_image.suffix.lower() != ".webp"
+        ):
+            raise RuntimeError(f"Invalid optotagging image path: {image_file}")
+        image_path = media_dir / image_file
+        image = image_path.read_bytes()
+        if (
+            len(image) < 12
+            or not image.startswith(b"RIFF")
+            or image[8:12] != b"WEBP"
+            or hashlib.sha256(image).hexdigest() != session.get("image_sha256")
+            or not isinstance(session.get("image_width"), int)
+            or not isinstance(session.get("image_height"), int)
+            or session["image_width"] <= 0
+            or session["image_height"] <= 0
+        ):
+            raise RuntimeError(f"Optotagging heatmap image is invalid: {image_file}")
+        if version == 1:
+            media_manifest.append(
+                {
+                    "image_file": image_file,
+                    "image_sha256": session["image_sha256"],
+                }
+            )
+        else:
+            media_manifest.append(
+                {"file": image_file, "sha256": session["image_sha256"]}
+            )
+
+    media_manifest_sha256 = hashlib.sha256(
+        json.dumps(media_manifest, separators=(",", ":"), sort_keys=True).encode()
+    ).hexdigest()
+    if media_manifest_sha256 != provenance.get("media_manifest_sha256"):
+        raise RuntimeError("Optotagging heatmap media manifest checksum does not match.")
+    return payload
+
+
+def write_optotagging_heatmap_html(
+    output: Path = OPTOTAGGING_HEATMAP_INTERACTIVE_OUTPUT,
+    data_path: Path = OPTOTAGGING_HEATMAP_DATA_PATH,
+    provenance_path: Path = OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    media_dir: Path = OPTOTAGGING_HEATMAP_SOURCE_DIR,
+    static_output: Path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT,
+    static_source: Path | None = None,
+) -> Path:
+    """Build the standalone representative-session optotagging heatmap explorer."""
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    payload = load_optotagging_heatmap_data(data_path, provenance_path, media_dir)
+    if static_source is None:
+        static_source = media_dir / OPTOTAGGING_STATIC_SOURCE.name
+    write_optotagging_heatmap_svg(
+        static_output,
+        data_path,
+        provenance_path,
+        media_dir,
+        static_source=static_source,
+    )
+    template = (JAVASCRIPT_DIR / "optotagging-heatmaps.html").read_text(
+        encoding="utf-8"
+    )
+    stylesheet = load_figure_stylesheet("optotagging-heatmaps.css")
+    javascript = (JAVASCRIPT_DIR / "optotagging-heatmaps.js").read_text(
+        encoding="utf-8"
+    )
+    embedded_atlases = {}
+    if payload["version"] == 2:
+        for session in payload["sessions"]:
+            atlas = json.loads(
+                (media_dir / session["atlas_file"]).read_text(encoding="utf-8")
+            )
+            numeric_png = (media_dir / session["numeric_png_file"]).read_bytes()
+            embedded_atlases[session["session_id"]] = {
+                "metadata": atlas,
+                "image": (
+                    "data:image/png;base64,"
+                    + base64.b64encode(numeric_png).decode("ascii")
+                ),
+            }
+    html = (
+        template.replace("__OPTOTAGGING_CSS__", stylesheet)
+        .replace(
+            "__OPTOTAGGING_STATIC_IMAGE__",
+            f"media/optotagging/{static_output.name}",
+        )
+        .replace(
+            "__OPTOTAGGING_DATA__",
+            json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
+        )
+        .replace(
+            "__OPTOTAGGING_ATLASES__",
+            json.dumps(
+                embedded_atlases,
+                ensure_ascii=True,
+                separators=(",", ":"),
+                sort_keys=True,
+            ),
+        )
+        .replace("__OPTOTAGGING_JS__", javascript)
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+    )
+    output.write_text(html, encoding="utf-8", newline="\n")
+
+    media_output = output.parent / "media" / "optotagging"
+    if media_output.exists():
+        shutil.rmtree(media_output)
+    media_output.mkdir(parents=True)
+    if payload["version"] == 1:
+        for session in payload["sessions"]:
+            shutil.copy2(
+                media_dir / session["image_file"],
+                media_output / session["image_file"],
+            )
+    shutil.copy2(static_output, media_output / static_output.name)
+    return output
+
+
+def load_optotagging_static_summary(
+    summary_path: Path = OPTOTAGGING_STATIC_SUMMARY_PATH,
+) -> dict:
+    """Load and validate yield distributions extracted from the legacy static SVG."""
+
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    source_path = REPO_ROOT / summary.get("source", "")
+    source_session_count = summary.get("source_session_count")
+    if (
+        summary.get("version") != 1
+        or not isinstance(source_session_count, int)
+        or source_session_count <= 0
+        or not source_path.is_file()
+        or hashlib.sha256(source_path.read_bytes()).hexdigest()
+        != summary.get("source_sha256")
+    ):
+        raise RuntimeError("Optotagging static-summary provenance is invalid.")
+
+    def validate_records(records: list[dict], expected_count: int | None = None) -> None:
+        labels = [record.get("label") for record in records]
+        if len(labels) != len(set(labels)) or any(not label for label in labels):
+            raise RuntimeError("Optotagging static-summary labels are invalid.")
+        for record in records:
+            counts = record.get("counts", [])
+            sampled_session_count = record.get("sampled_session_count")
+            if (
+                not counts
+                or sampled_session_count != len(counts)
+                or len(counts) > source_session_count
+                or expected_count is not None
+                and len(counts) != expected_count
+                or any(not isinstance(count, int) or count < 0 for count in counts)
+                or not math.isclose(
+                    statistics.fmean(counts),
+                    record.get("mean", math.nan),
+                    abs_tol=1e-6,
+                )
+            ):
+                raise RuntimeError(
+                    f"Optotagging static-summary values are invalid: {record.get('label')}"
+                )
+
+    overall = summary.get("overall")
+    major_parent = summary.get("major_parent", [])
+    structures = summary.get("structures", [])
+    if not isinstance(overall, dict) or len(major_parent) != 10 or len(structures) != 48:
+        raise RuntimeError("Optotagging static-summary dimensions changed.")
+    validate_records([overall], expected_count=source_session_count)
+    validate_records(major_parent)
+    validate_records(structures)
+    return summary
+
+
+def optotagging_heatmap_color(value: float | None, limit: float = 3.0) -> tuple[int, int, int]:
+    if value is None or not math.isfinite(value):
+        return (230, 230, 230)
+    fraction = max(-1.0, min(1.0, value / limit))
+    cold = (59, 76, 192)
+    middle = (247, 247, 247)
+    warm = (180, 4, 38)
+    start, end = (cold, middle) if fraction < 0 else (middle, warm)
+    amount = fraction + 1 if fraction < 0 else fraction
+    return tuple(
+        round(left + amount * (right - left))
+        for left, right in zip(start, end, strict=True)
+    )
+
+
+def optotagging_static_heatmap_png(
+    payload: dict,
+    media_dir: Path,
+    *,
+    session_id: str,
+    condition_name: str,
+) -> tuple[bytes, dict]:
+    session = next(
+        (record for record in payload["sessions"] if record["session_id"] == session_id),
+        None,
+    )
+    if session is None:
+        raise RuntimeError(f"Static optotagging session is unavailable: {session_id}")
+    metadata = json.loads((media_dir / session["atlas_file"]).read_text(encoding="utf-8"))
+    width, height, scalars = decode_grayscale_png(media_dir / session["numeric_png_file"])
+    unit_count = metadata["unit_count"]
+    if height != unit_count * len(payload["conditions"]):
+        raise RuntimeError("Optotagging static atlas dimensions changed.")
+    row_offset = metadata["condition_row_offsets"][condition_name]
+    order = metadata["strongest_first_unit_indices"][condition_name]
+    scale = metadata["quantization"]["scale"]
+    nan_sentinel = metadata["quantization"]["nan_sentinel"]
+    pixels = bytearray(width * unit_count * 3)
+    for display_row, unit_index in enumerate(order):
+        source_offset = (row_offset + unit_index) * width
+        target_offset = display_row * width * 3
+        for column in range(width):
+            unsigned = scalars[source_offset + column]
+            quantized = unsigned if unsigned < 128 else unsigned - 256
+            value = None if quantized == nan_sentinel else quantized / scale
+            color = optotagging_heatmap_color(value)
+            target = target_offset + column * 3
+            pixels[target : target + 3] = bytes(color)
+    return encode_rgb_png(width, unit_count, bytes(pixels)), metadata
+
+
+def append_optotagging_panel_heading(
+    svg: list[str],
+    *,
+    label: str,
+    title: str | None,
+    x: float,
+    y: float,
+) -> None:
+    svg.append(
+        f'<text x="{x}" y="{y}" font-family="{FIGURE_SANS_FONT}" '
+        f'font-size="{FIGURE_TYPE_SCALE["panel"]}" font-weight="700" '
+        f'fill="#263033">{label}</text>'
+    )
+    if title:
+        svg.append(
+            f'<text x="{x + 46}" y="{y - 2}" font-family="{FIGURE_SANS_FONT}" '
+            f'font-size="{FIGURE_TYPE_SCALE["modality"]}" font-weight="700" '
+            f'fill="#263033">{escape(title)}</text>'
+        )
+
+
+def append_optotagging_yield_panel(
+    svg: list[str],
+    records: list[dict],
+    *,
+    label: str,
+    y_axis_label: str,
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    tick_step: int,
+    label_width: float,
+    bar_height: float = 12,
+    point_radius: float = 2.1,
+) -> None:
+    records = sorted(records, key=lambda record: (-record["mean"], record["label"]))
+    append_optotagging_panel_heading(svg, label=label, title=None, x=x, y=y + 32)
+    plot_left = x + label_width
+    plot_right = x + width - 48
+    plot_top = y + 70
+    plot_bottom = y + height - 54
+    maximum = max(max(record["counts"]) for record in records)
+    axis_max = max(tick_step, math.ceil(maximum / tick_step) * tick_step)
+    plot_width = plot_right - plot_left
+    row_height = (plot_bottom - plot_top) / len(records)
+    for tick in range(0, axis_max + 1, tick_step):
+        tick_x = plot_left + tick / axis_max * plot_width
+        svg.extend(
+            [
+                f'<line x1="{tick_x:.2f}" y1="{plot_bottom}" x2="{tick_x:.2f}" '
+                f'y2="{plot_bottom + 6}" stroke="#69716F" stroke-width="1.2"/>',
+                f'<text x="{tick_x:.2f}" y="{plot_bottom + 19}" text-anchor="middle" '
+                f'font-family="{FIGURE_MONO_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
+                f'fill="#68706E">{tick}</text>',
+            ]
+        )
+    for row_index, record in enumerate(records):
+        center_y = plot_top + (row_index + 0.5) * row_height
+        mean_x = plot_left + record["mean"] / axis_max * plot_width
+        half_bar = bar_height / 2
+        svg.extend(
+            [
+                f'<text x="{plot_left - 9}" y="{center_y + 4:.2f}" text-anchor="end" '
+                f'font-family="{FIGURE_SANS_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
+                f'font-weight="600" fill="#303536">{escape(record["label"])}</text>',
+                f'<rect x="{plot_left}" y="{center_y - half_bar:.2f}" '
+                f'width="{max(0, mean_x - plot_left):.2f}" height="{bar_height:g}" '
+                'fill="#315F73" fill-opacity="0.68"/>',
+                f'<line x1="{mean_x:.2f}" y1="{center_y - half_bar - 2:.2f}" '
+                f'x2="{mean_x:.2f}" y2="{center_y + half_bar + 2:.2f}" '
+                'stroke="#1F434F" stroke-width="2"/>',
+                f'<text x="{x + width - 2}" y="{center_y + 4:.2f}" text-anchor="end" '
+                f'font-family="{FIGURE_MONO_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
+                f'fill="#68706E">n={record["sampled_session_count"]}</text>',
+            ]
+        )
+        for point_index, count in enumerate(record["counts"]):
+            point_x = plot_left + count / axis_max * plot_width
+            jitter = (((point_index * 37) % 13) - 6) / 6 * min(4, row_height * 0.18)
+            svg.append(
+                f'<circle cx="{point_x:.2f}" cy="{center_y + jitter:.2f}" '
+                f'r="{point_radius:g}" '
+                'fill="#596663" fill-opacity="0.48"/>'
+            )
+    svg.extend(
+        [
+            f'<text x="{plot_left - 9}" y="{plot_top - 12}" text-anchor="end" '
+            f'font-family="{FIGURE_SANS_FONT}" font-size="15" '
+            f'fill="#303536">{escape(y_axis_label)}</text>',
+            f'<line x1="{plot_left}" y1="{plot_bottom}" x2="{plot_right}" '
+            f'y2="{plot_bottom}" stroke="#69716F" stroke-width="1.4"/>',
+            f'<text x="{(plot_left + plot_right) / 2:.2f}" y="{y + height - 8}" '
+            f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" font-size="15" '
+            'fill="#303536">Optotagged cells per session</text>',
+        ]
+    )
+
+
+def write_optotagging_static_source(
+    output: Path = OPTOTAGGING_STATIC_SOURCE,
+    data_path: Path = OPTOTAGGING_HEATMAP_DATA_PATH,
+    provenance_path: Path = OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    media_dir: Path = OPTOTAGGING_HEATMAP_SOURCE_DIR,
+    summary_path: Path = OPTOTAGGING_STATIC_SUMMARY_PATH,
+) -> Path:
+    """Render the publication-style static optotagging figure from committed data."""
+
+    payload = load_optotagging_heatmap_data(data_path, provenance_path, media_dir)
+    summary = load_optotagging_static_summary(summary_path)
+    session_id = payload["default_session_id"]
+    condition_name = "5 hz pulse train_presentations"
+    condition = next(
+        item for item in payload["conditions"] if item["table_name"] == condition_name
+    )
+    heatmap_png, metadata = optotagging_static_heatmap_png(
+        payload,
+        media_dir,
+        session_id=session_id,
+        condition_name=condition_name,
+    )
+    session = next(item for item in payload["sessions"] if item["session_id"] == session_id)
+    condition_counts = session["condition_counts"][condition_name]
+    pulse_count = round(
+        condition_counts["pulses"] / condition_counts["presentations"]
+    )
+    heatmap_uri = base64.b64encode(heatmap_png).decode("ascii")
+    width, height = 1200, 960
+    yield_color = "#315F73"
+    svg = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
+        '<title id="title">Optotagging response and yield summary</title>',
+        '<desc id="description">Four panels show a representative five-hertz '
+        f'laser-aligned response from {escape(session_id)}, overall optotagged-cell '
+        'yield, yield by major parent area, and the eighteen structures with the highest '
+        'mean yield.</desc>',
+        '<defs><linearGradient id="optotagging-z" x1="0" x2="1" y1="0" y2="0">'
+        '<stop offset="0" stop-color="#3B4CC0"/><stop offset="0.5" '
+        'stop-color="#F7F7F7"/><stop offset="1" stop-color="#B40426"/>'
+        '</linearGradient></defs>',
+        f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
+    ]
+
+    append_optotagging_panel_heading(
+        svg,
+        label="A",
+        title=None,
+        x=35,
+        y=64,
+    )
+    plot_left, plot_top, plot_width, plot_height = 92, 116, 646, 265
+    svg.append(
+        f'<image href="data:image/png;base64,{heatmap_uri}" x="{plot_left}" '
+        f'y="{plot_top}" width="{plot_width}" height="{plot_height}" '
+        'preserveAspectRatio="none"/>'
+    )
+    time_start, time_end = metadata["time_seconds"]
+
+    def time_x(value: float) -> float:
+        return plot_left + (value - time_start) / (time_end - time_start) * plot_width
+
+    pulse_width = max(
+        3,
+        condition["pulse_width_seconds"] / (time_end - time_start) * plot_width,
+    )
+    for pulse_index in range(pulse_count):
+        pulse_x = time_x(pulse_index / condition["pulse_frequency_hz"])
+        svg.append(
+            f'<rect x="{pulse_x:.2f}" y="100" width="{pulse_width:.2f}" height="9" '
+            f'fill="{yield_color}"/>'
+        )
+    laser_x = time_x(0)
+    svg.extend(
+        [
+            f'<line x1="{laser_x:.2f}" y1="{plot_top}" x2="{laser_x:.2f}" '
+            f'y2="{plot_top + plot_height}" stroke="#263033" stroke-width="1.4" '
+            'stroke-dasharray="6 5"/>',
+            f'<rect x="{plot_left}" y="{plot_top}" width="{plot_width}" '
+            f'height="{plot_height}" fill="none" stroke="#69716F" stroke-width="1.2"/>',
+            f'<text x="48" y="{plot_top + plot_height / 2:.2f}" '
+            f'transform="rotate(-90 48 {plot_top + plot_height / 2:.2f})" '
+            f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" font-size="15" '
+            'fill="#303536">Units</text>',
+            f'<text x="82" y="{plot_top + 5}" text-anchor="end" '
+            f'font-family="{FIGURE_MONO_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
+            'fill="#68706E">1</text>',
+            f'<text x="82" y="{plot_top + plot_height}" text-anchor="end" '
+            f'font-family="{FIGURE_MONO_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
+            f'fill="#68706E">{metadata["unit_count"]:,}</text>',
+        ]
+    )
+    for tick in (-0.5, 0, 0.5, 1.0):
+        if not time_start <= tick <= time_end:
+            continue
+        tick_x = time_x(tick)
+        svg.extend(
+            [
+                f'<line x1="{tick_x:.2f}" y1="{plot_top + plot_height}" '
+                f'x2="{tick_x:.2f}" y2="{plot_top + plot_height + 7}" '
+                'stroke="#69716F" stroke-width="1.2"/>',
+                f'<text x="{tick_x:.2f}" y="{plot_top + plot_height + 23}" '
+                f'text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
+                f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">{tick:g}</text>',
+            ]
+        )
+    svg.extend(
+        [
+            f'<text x="{plot_left + plot_width / 2:.2f}" y="419" text-anchor="middle" '
+            f'font-family="{FIGURE_SANS_FONT}" font-size="15" fill="#303536">'
+            'Time from laser onset (s)</text>',
+            '<rect x="92" y="438" width="245" height="12" fill="url(#optotagging-z)"/>',
+            f'<text x="92" y="466" text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">-3</text>',
+            f'<text x="214.5" y="466" text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">0</text>',
+            f'<text x="337" y="466" text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">+3</text>',
+            f'<text x="353" y="449" font-family="{FIGURE_SANS_FONT}" font-size="13" '
+            'fill="#303536">Baseline z score</text>',
+        ]
+    )
+
+    append_optotagging_panel_heading(
+        svg,
+        label="B",
+        title=None,
+        x=790,
+        y=64,
+    )
+    overall = summary["overall"]
+    overall_left, overall_right = 820, 1145
+    overall_top, overall_bottom = 126, 390
+    overall_max = max(20, math.ceil(max(overall["counts"]) / 20) * 20)
+    for tick in range(0, overall_max + 1, 20):
+        tick_x = overall_left + tick / overall_max * (overall_right - overall_left)
+        svg.extend(
+            [
+                f'<line x1="{tick_x:.2f}" y1="{overall_bottom}" x2="{tick_x:.2f}" '
+                f'y2="{overall_bottom + 6}" stroke="#69716F" stroke-width="1.2"/>',
+                f'<text x="{tick_x:.2f}" y="{overall_bottom + 19}" text-anchor="middle" '
+                f'font-family="{FIGURE_MONO_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
+                f'fill="#68706E">{tick}</text>',
+            ]
+        )
+    for point_index, count in enumerate(overall["counts"]):
+        point_x = overall_left + count / overall_max * (overall_right - overall_left)
+        point_y = overall_top + 24 + ((point_index * 37) % 17) / 16 * (
+            overall_bottom - overall_top - 48
+        )
+        svg.append(
+            f'<circle cx="{point_x:.2f}" cy="{point_y:.2f}" r="3.1" '
+            'fill="#596663" fill-opacity="0.58"/>'
+        )
+    overall_mean_x = overall_left + overall["mean"] / overall_max * (
+        overall_right - overall_left
+    )
+    svg.extend(
+        [
+            f'<line x1="{overall_mean_x:.2f}" y1="{overall_top}" '
+            f'x2="{overall_mean_x:.2f}" y2="{overall_bottom}" '
+            f'stroke="{yield_color}" stroke-width="4"/>',
+            f'<text x="{overall_mean_x + 7:.2f}" y="{overall_top + 15}" '
+            f'font-family="{FIGURE_SANS_FONT}" font-size="13" font-weight="700" '
+            f'fill="{yield_color}">Mean {overall["mean"]:.1f}</text>',
+            f'<line x1="{overall_left}" y1="{overall_bottom}" x2="{overall_right}" '
+            f'y2="{overall_bottom}" stroke="#69716F" stroke-width="1.4"/>',
+            f'<text x="{(overall_left + overall_right) / 2:.2f}" y="427" '
+            f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" font-size="15" '
+            'fill="#303536">Optotagged cells per session</text>',
+        ]
+    )
+
+    append_optotagging_yield_panel(
+        svg,
+        summary["major_parent"],
+        label="C",
+        y_axis_label="Major parent area",
+        x=35,
+        y=500,
+        width=545,
+        height=430,
+        tick_step=10,
+        label_width=112,
+    )
+    top_structures = sorted(
+        summary["structures"],
+        key=lambda record: (-record["mean"], record["label"]),
+    )[:18]
+    append_optotagging_yield_panel(
+        svg,
+        top_structures,
+        label="D",
+        y_axis_label="Structure acronym",
+        x=620,
+        y=500,
+        width=545,
+        height=430,
+        tick_step=5,
+        label_width=104,
+        bar_height=8,
+        point_radius=1.7,
+    )
+    svg.append("</svg>")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    write_svg_output(output, svg)
+    return output
+
+
+def write_optotagging_heatmap_svg(
+    output: Path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT,
+    data_path: Path = OPTOTAGGING_HEATMAP_DATA_PATH,
+    provenance_path: Path = OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    media_dir: Path = OPTOTAGGING_HEATMAP_SOURCE_DIR,
+    static_source: Path | None = None,
+) -> Path:
+    """Copy the source static composite into the publication outputs."""
+
+    load_optotagging_heatmap_data(data_path, provenance_path, media_dir)
+    if static_source is None:
+        static_source = media_dir / OPTOTAGGING_STATIC_SOURCE.name
+    svg = static_source.read_text(encoding="utf-8")
+    required_text = (
+        "Optotagging response and yield summary",
+        "Major parent area",
+        "Structure acronym",
+    )
+    if "<svg" not in svg or any(text not in svg for text in required_text):
+        raise RuntimeError("Optotagging static composite does not match its source figure.")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(svg, encoding="utf-8", newline="\n")
+    return output
+
+
 def write_neuropixels_trajectory_html(
     output: Path = NEUROPIXELS_TRAJECTORY_INTERACTIVE_OUTPUT,
     static_output: Path = NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT,
@@ -1393,9 +2150,7 @@ def write_neuropixels_trajectory_html(
     template = (JAVASCRIPT_DIR / "neuropixels-trajectories.html").read_text(
         encoding="utf-8"
     )
-    stylesheet = (JAVASCRIPT_DIR / "neuropixels-trajectories.css").read_text(
-        encoding="utf-8"
-    )
+    stylesheet = load_figure_stylesheet("neuropixels-trajectories.css")
     javascript = (JAVASCRIPT_DIR / "neuropixels-trajectories.js").read_text(
         encoding="utf-8"
     )
@@ -1691,9 +2446,9 @@ def write_eye_tracking_static_svg(
                     f'fill="#707674">{unit}</text>',
                     f'<text x="{plot_left + 6}" y="{top + 14}" '
                     'font-family="IBM Plex Mono, monospace" '
-                    f'font-size="10" fill="#707674">{high:.0f}</text>',
+                    f'font-size="{FIGURE_TYPE_SMALL}" fill="#707674">{high:.0f}</text>',
                     f'<text x="{plot_left + 6}" y="{top + trace_height - 5}" '
-                    'font-family="IBM Plex Mono, monospace" font-size="10" '
+                    f'font-family="IBM Plex Mono, monospace" font-size="{FIGURE_TYPE_SMALL}" '
                     f'fill="#707674">{low:.0f}</text>',
                 ]
             )
@@ -1728,7 +2483,7 @@ def write_eye_tracking_viewer_html(
     payload = load_eye_tracking_excerpts()
     write_eye_tracking_static_svg(static_output)
     template = (JAVASCRIPT_DIR / "eye-tracking-viewer.html").read_text(encoding="utf-8")
-    stylesheet = (JAVASCRIPT_DIR / "eye-tracking-viewer.css").read_text(encoding="utf-8")
+    stylesheet = load_figure_stylesheet("eye-tracking-viewer.css")
     javascript = (JAVASCRIPT_DIR / "eye-tracking-viewer.js").read_text(encoding="utf-8")
     html = (
         template.replace("__EYE_TRACKING_CSS__", stylesheet)
@@ -1773,8 +2528,7 @@ def load_running_statistics(path: Path = RUNNING_STATISTICS_PATH) -> dict:
         or payload.get("threshold_cm_s") != 1.0
         or [context.get("id") for context in payload.get("contexts", [])]
         != expected_contexts
-        or source.get("sha256")
-        != hashlib.sha256(SESSION_RECORDS_PATH.read_bytes()).hexdigest()
+        or not text_sha256_matches(SESSION_RECORDS_PATH, source.get("sha256", ""))
         or calibration.get("counts_per_revolution") != SLAP2_COUNTS_PER_REVOLUTION
         or calibration.get("wheel_radius_cm") != SLAP2_WHEEL_RADIUS_CM
         or not math.isclose(
@@ -1904,12 +2658,14 @@ def load_behavior_static_frames(
     provenance = json.loads(
         BEHAVIOR_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
-    source_checksum = hashlib.sha256(BEHAVIOR_EXCERPTS_PATH.read_bytes()).hexdigest()
-    running_checksum = hashlib.sha256(RUNNING_STATISTICS_PATH.read_bytes()).hexdigest()
     if (
         provenance.get("version") != 2
-        or provenance.get("behavior_excerpts_sha256") != source_checksum
-        or provenance.get("running_statistics_sha256") != running_checksum
+        or not text_sha256_matches(
+            BEHAVIOR_EXCERPTS_PATH, provenance.get("behavior_excerpts_sha256", "")
+        )
+        or not text_sha256_matches(
+            RUNNING_STATISTICS_PATH, provenance.get("running_statistics_sha256", "")
+        )
         or provenance.get("local_time_seconds") != BEHAVIOR_STATIC_LOCAL_TIME_SECONDS
     ):
         raise RuntimeError("Static behavior frame provenance is not supported.")
@@ -2381,7 +3137,7 @@ def write_behavior_viewer_html(
         session["logo"] = logo_data_uris[session["id"]]
     write_behavior_static_svg(static_output)
     template = (JAVASCRIPT_DIR / "behavior-viewer.html").read_text(encoding="utf-8")
-    stylesheet = (JAVASCRIPT_DIR / "behavior-viewer.css").read_text(encoding="utf-8")
+    stylesheet = load_figure_stylesheet("behavior-viewer.css")
     javascript = (JAVASCRIPT_DIR / "behavior-viewer.js").read_text(encoding="utf-8")
     html = (
         template.replace("__BEHAVIOR_CSS__", stylesheet)
@@ -2410,12 +3166,13 @@ def load_neural_excerpts(
     behavior_path: Path = BEHAVIOR_EXCERPTS_PATH,
 ) -> dict:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    behavior_checksum = hashlib.sha256(behavior_path.read_bytes()).hexdigest()
     if (
-        payload.get("version") != 7
+        payload.get("version") != 8
         or payload.get("windowStartSeconds") != -1.0
         or payload.get("windowEndSeconds") != 3.0
-        or payload.get("behaviorExcerptSha256") != behavior_checksum
+        or not text_sha256_matches(
+            behavior_path, payload.get("behaviorExcerptSha256", "")
+        )
     ):
         raise RuntimeError("Neural excerpt schema or behavior source is not supported.")
     sessions = payload.get("sessions", [])
@@ -2499,8 +3256,17 @@ def load_neural_excerpts(
                         option.get("compositeAssetPath", "")
                     ).name
                     slap2_asset_valid = (
-                        option.get("frameWidth") == 640
-                        and option.get("frameHeight") == 400
+                        option.get("frameWidth") == 400
+                        and option.get("frameHeight") == 640
+                        and option.get("displayWidth") == 800
+                        and option.get("displayHeight") == 1280
+                        and option.get("nativeWidth") == 1280
+                        and option.get("nativeHeight") == 800
+                        and option.get("storedWidth") == 1280
+                        and option.get("storedHeight") == 800
+                        and option.get("displayTransform")
+                        == "transpose-for-publication"
+                        and option.get("fastScanAxis") == "vertical"
                         and option.get("spatialDownsampleFactor") == 2
                         and option.get("spriteEncoding") == "lossless WebP"
                         and composite_path.is_file()
@@ -2531,6 +3297,158 @@ def load_neural_excerpts(
     return payload
 
 
+def load_segmentation_viewers(
+    path: Path = SEGMENTATION_VIEWER_DATA_PATH,
+    provenance_path: Path = SEGMENTATION_VIEWER_PROVENANCE_PATH,
+) -> dict:
+    source_bytes = path.read_bytes()
+    payload = json.loads(source_bytes)
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    if (
+        payload.get("version") != 4
+        or hashlib.sha256(source_bytes).hexdigest() != provenance.get("vendored_sha256")
+        or hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest()
+        != provenance.get("source_raw_neural_sha256")
+    ):
+        raise RuntimeError("Segmentation viewer snapshot provenance is invalid.")
+
+    viewers = payload.get("viewers", [])
+    expected_sources = {
+        "neuropixels": {
+            "probe-a": 569,
+            "probe-b": 502,
+            "probe-c": 534,
+            "probe-d": 799,
+            "probe-e": 542,
+            "probe-f": 604,
+        },
+        "mesoscope": {
+            "visp_0": 399,
+            "visp_1": 463,
+            "visp_2": 70,
+            "visp_3": 277,
+            "visl_4": 374,
+            "visl_5": 356,
+            "visl_6": 124,
+            "visl_7": 321,
+        },
+        "slap2": {"dmd1": 45, "dmd2": 74},
+    }
+    if [viewer.get("id") for viewer in viewers] != list(expected_sources):
+        raise RuntimeError("Segmentation viewers must contain the three modalities in order.")
+    for modality in viewers:
+        modality_id = modality["id"]
+        expected_asset = provenance.get("assets", {}).get(modality_id)
+        if modality.get("asset") != expected_asset:
+            raise RuntimeError(f"Segmentation viewer DANDI asset changed: {modality_id}")
+        sources = modality.get("sources", [])
+        expected_counts = expected_sources[modality_id]
+        if [source.get("sourceId") for source in sources] != list(expected_counts):
+            raise RuntimeError(f"Segmentation source inventory changed: {modality_id}")
+        for source in sources:
+            source_id = source["sourceId"]
+            if modality_id != "neuropixels":
+                source["traceLabel"] = "ΔF/F (%)"
+                source["traceScale"] = 100
+                source["traceUnit"] = "%"
+            filter_count = expected_counts[source_id]
+            rows = source.get("traceRows")
+            columns = source.get("traceColumns")
+            try:
+                trace_data = base64.b64decode(
+                    source.get("traceDataBase64", ""),
+                    validate=True,
+                )
+            except ValueError as exc:
+                raise RuntimeError(
+                    f"Segmentation trace encoding is invalid: {modality_id}/{source_id}"
+                ) from exc
+            if (
+                source.get("asset") != expected_asset
+                or source.get("filterCount") != filter_count
+                or len(source.get("filters", [])) != filter_count
+                or rows != filter_count
+                or not isinstance(columns, int)
+                or columns < 100
+                or len(trace_data) != rows * columns * 4
+                or len(source.get("traceTimesSeconds", [])) != columns
+                or source["traceTimesSeconds"][0] < 0
+                or "activityImage" in source
+                or "eventLabel" in source
+                or "context" in source
+                or any(
+                    "snr" in record or "firingRateHz" in record
+                    for record in source.get("filters", [])
+                )
+            ):
+                raise RuntimeError(
+                    f"Segmentation source dimensions changed: {modality_id}/{source_id}"
+                )
+
+            if modality_id != "neuropixels" and (
+                source.get("fastScanAxis")
+                != ("horizontal" if modality_id == "mesoscope" else "vertical")
+                or source.get("displayTransform")
+                != ("stored-yx" if modality_id == "mesoscope" else "transpose-for-publication")
+            ):
+                raise RuntimeError(
+                    f"Segmentation scan orientation changed: {modality_id}/{source_id}"
+                )
+
+            for field in ("baseImage", "labelImage", "filterOverlay"):
+                record = source.get(field)
+                if not record:
+                    continue
+                media_path = REPO_ROOT / "figure_sources" / record["assetPath"]
+                expected_sha256 = provenance["vendored_media_sha256"].get(
+                    media_path.name
+                )
+                if (
+                    not media_path.is_file()
+                    or hashlib.sha256(media_path.read_bytes()).hexdigest()
+                    != record["sha256"]
+                    or record["sha256"] != expected_sha256
+                ):
+                    raise RuntimeError(
+                        f"Segmentation viewer media checksum changed: {media_path.name}"
+                    )
+
+            if modality_id != "neuropixels":
+                continue
+            waveform_columns = source.get("waveformColumns")
+            waveform_data = base64.b64decode(
+                source.get("waveformDataBase64", ""),
+                validate=True,
+            )
+            raw_data = base64.b64decode(
+                source.get("rawDataBase64", ""),
+                validate=True,
+            )
+            spike_events = source.get("spikeEvents", [])
+            if (
+                source.get("waveformRows") != filter_count
+                or waveform_columns != 210
+                or len(waveform_data) != filter_count * waveform_columns * 4
+                or source.get("viewType") != "spike-map"
+                or source.get("rawRows") != 96
+                or source.get("rawColumns") != 3000
+                or len(raw_data) != source["rawRows"] * source["rawColumns"]
+                or not spike_events
+                or any(
+                    event.get("filterIndex") not in range(filter_count)
+                    or event.get("row") not in range(source["rawRows"])
+                    or not source["rawTimeStartMs"]
+                    <= event.get("timeMs", -1)
+                    <= source["rawTimeEndMs"]
+                    for event in spike_events
+                )
+            ):
+                raise RuntimeError(
+                    f"Neuropixels spike-map dimensions changed: {source_id}"
+                )
+    return payload
+
+
 def png_chunk(chunk_type: bytes, data: bytes) -> bytes:
     checksum = zlib.crc32(chunk_type)
     checksum = zlib.crc32(data, checksum)
@@ -2553,6 +3471,168 @@ def encode_rgb_png(width: int, height: int, pixels: bytes) -> bytes:
             png_chunk(b"IEND", b""),
         )
     )
+
+
+def paeth_predictor(left: int, above: int, upper_left: int) -> int:
+    estimate = left + above - upper_left
+    left_distance = abs(estimate - left)
+    above_distance = abs(estimate - above)
+    upper_left_distance = abs(estimate - upper_left)
+    if left_distance <= above_distance and left_distance <= upper_left_distance:
+        return left
+    if above_distance <= upper_left_distance:
+        return above
+    return upper_left
+
+
+def decode_rgb_png(path: Path) -> tuple[int, int, bytes]:
+    encoded = path.read_bytes()
+    if not encoded.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise RuntimeError(f"PNG signature is invalid: {path.name}")
+    position = 8
+    width = height = None
+    compressed = []
+    while position < len(encoded):
+        length = struct.unpack(">I", encoded[position : position + 4])[0]
+        chunk_type = encoded[position + 4 : position + 8]
+        chunk = encoded[position + 8 : position + 8 + length]
+        position += length + 12
+        if chunk_type == b"IHDR":
+            width, height, depth, color, compression, filtering, interlace = (
+                struct.unpack(">IIBBBBB", chunk)
+            )
+            if (depth, color, compression, filtering, interlace) != (8, 2, 0, 0, 0):
+                raise RuntimeError(f"PNG format is unsupported: {path.name}")
+        elif chunk_type == b"IDAT":
+            compressed.append(chunk)
+        elif chunk_type == b"IEND":
+            break
+    if width is None or height is None or not compressed:
+        raise RuntimeError(f"PNG data is incomplete: {path.name}")
+
+    raw = zlib.decompress(b"".join(compressed))
+    stride = width * 3
+    expected = height * (stride + 1)
+    if len(raw) != expected:
+        raise RuntimeError(f"PNG scanline length changed: {path.name}")
+    pixels = bytearray()
+    previous = bytearray(stride)
+    for row_index in range(height):
+        offset = row_index * (stride + 1)
+        filter_type = raw[offset]
+        scanline = bytearray(raw[offset + 1 : offset + stride + 1])
+        for index, value in enumerate(scanline):
+            left = scanline[index - 3] if index >= 3 else 0
+            above = previous[index]
+            upper_left = previous[index - 3] if index >= 3 else 0
+            if filter_type == 1:
+                value += left
+            elif filter_type == 2:
+                value += above
+            elif filter_type == 3:
+                value += (left + above) // 2
+            elif filter_type == 4:
+                value += paeth_predictor(left, above, upper_left)
+            elif filter_type != 0:
+                raise RuntimeError(f"PNG filter is unsupported: {filter_type}")
+            scanline[index] = value & 0xFF
+        pixels.extend(scanline)
+        previous = scanline
+    return width, height, bytes(pixels)
+
+
+def decode_grayscale_png(path: Path) -> tuple[int, int, bytes]:
+    encoded = path.read_bytes()
+    if not encoded.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise RuntimeError(f"PNG signature is invalid: {path.name}")
+    position = 8
+    width = height = None
+    compressed = []
+    while position < len(encoded):
+        length = struct.unpack(">I", encoded[position : position + 4])[0]
+        chunk_type = encoded[position + 4 : position + 8]
+        chunk = encoded[position + 8 : position + 8 + length]
+        position += length + 12
+        if chunk_type == b"IHDR":
+            width, height, depth, color, compression, filtering, interlace = (
+                struct.unpack(">IIBBBBB", chunk)
+            )
+            if (depth, color, compression, filtering, interlace) != (8, 0, 0, 0, 0):
+                raise RuntimeError(f"PNG format is unsupported: {path.name}")
+        elif chunk_type == b"IDAT":
+            compressed.append(chunk)
+        elif chunk_type == b"IEND":
+            break
+    if width is None or height is None or not compressed:
+        raise RuntimeError(f"PNG data is incomplete: {path.name}")
+
+    raw = zlib.decompress(b"".join(compressed))
+    stride = width
+    if len(raw) != height * (stride + 1):
+        raise RuntimeError(f"PNG scanline length changed: {path.name}")
+    pixels = bytearray()
+    previous = bytearray(stride)
+    for row_index in range(height):
+        offset = row_index * (stride + 1)
+        filter_type = raw[offset]
+        scanline = bytearray(raw[offset + 1 : offset + stride + 1])
+        for index, value in enumerate(scanline):
+            left = scanline[index - 1] if index else 0
+            above = previous[index]
+            upper_left = previous[index - 1] if index else 0
+            if filter_type == 1:
+                value += left
+            elif filter_type == 2:
+                value += above
+            elif filter_type == 3:
+                value += (left + above) // 2
+            elif filter_type == 4:
+                value += paeth_predictor(left, above, upper_left)
+            elif filter_type != 0:
+                raise RuntimeError(f"PNG filter is unsupported: {filter_type}")
+            scanline[index] = value & 0xFF
+        pixels.extend(scanline)
+        previous = scanline
+    return width, height, bytes(pixels)
+
+
+def represented_filter_fill_png(viewer: dict, indices: list[int]) -> bytes:
+    label_path = REPO_ROOT / "figure_sources" / viewer["labelImage"]["assetPath"]
+    width, height, labels = decode_rgb_png(label_path)
+    color_by_label = {
+        index + 1: SEGMENTATION_FILTER_COLORS[index % len(SEGMENTATION_FILTER_COLORS)]
+        for index in indices
+    }
+    pixels = bytearray(width * height * 4)
+    for pixel_index in range(width * height):
+        source = pixel_index * 3
+        label = labels[source] + (labels[source + 1] << 8) + (labels[source + 2] << 16)
+        color = color_by_label.get(label)
+        if color is None:
+            continue
+        target = pixel_index * 4
+        pixels[target : target + 4] = bytes((*color, 120))
+    return encode_rgba_png(width, height, bytes(pixels))
+
+
+def common_median_corrected_rgb(
+    raw: bytes,
+    rows: int,
+    columns: int,
+    contrast: float,
+) -> bytes:
+    if len(raw) != rows * columns:
+        raise RuntimeError("Raw AP buffer does not match its declared dimensions.")
+    common_mode = [
+        statistics.median(raw[column::columns])
+        for column in range(columns)
+    ]
+    rgb = bytearray(len(raw) * 3)
+    for index, value in enumerate(raw):
+        centered = value - common_mode[index % columns]
+        gray = max(0, min(255, round(127.5 + centered * contrast)))
+        rgb[index * 3 : index * 3 + 3] = bytes((gray, gray, gray))
+    return bytes(rgb)
 
 
 def encode_rgba_png(width: int, height: int, pixels: bytes) -> bytes:
@@ -2601,10 +3681,12 @@ def load_neural_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
     provenance = json.loads(
         NEURAL_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
-    source_checksum = hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest()
     if (
         provenance.get("version") != 2
-        or provenance.get("raw_neural_excerpts_sha256") != source_checksum
+        or not text_sha256_matches(
+            NEURAL_EXCERPTS_PATH,
+            provenance.get("raw_neural_excerpts_sha256", ""),
+        )
     ):
         raise RuntimeError("Static neural frame provenance is not supported.")
 
@@ -2740,16 +3822,11 @@ def append_neuropixels_raw_card(
         [
             f'<g class="raw-image-card" data-modality="neuropixels" '
             f'data-option-id="{option["id"]}">',
-            f'<rect x="{x + 5:.2f}" y="{y + 6:.2f}" width="{card_width}" '
-            f'height="{card_height}" rx="3" fill="#D9DEDC" opacity="0.65"/>',
             f'<rect x="{x:.2f}" y="{y:.2f}" width="{card_width}" '
             f'height="{card_height}" rx="3" fill="#FFFFFF" stroke="#8F9996"/>',
             f'<text x="{x + 9:.2f}" y="{y + 19:.2f}" '
             'font-family="Source Sans 3, sans-serif" font-size="13" '
             f'font-weight="700" fill="#303536">{escape(option["label"])}</text>',
-            f'<text x="{x + card_width - 9:.2f}" y="{y + 19:.2f}" '
-            'font-family="IBM Plex Mono, monospace" font-size="10" '
-            f'text-anchor="end" fill="#59615F">±{option["valueLimit"]:.0f} µV</text>',
         ]
     )
     for index, segment in enumerate(option["anatomySegments"]):
@@ -2770,7 +3847,7 @@ def append_neuropixels_raw_card(
             svg.append(
                 f'<text x="{anatomy_x + anatomy_width / 2:.2f}" '
                 f'y="{segment_y + segment_height / 2 + 3:.2f}" '
-                'font-family="Source Sans 3, sans-serif" font-size="8" '
+            'font-family="Source Sans 3, sans-serif" font-size="8" '
                 f'font-weight="600" text-anchor="middle" fill="#3F4745">'
                 f'{escape(segment["label"])}</text>'
             )
@@ -2794,13 +3871,13 @@ def append_neuropixels_raw_card(
                     f'<line x1="{tick_x:.2f}" y1="{image_y + image_height:.2f}" '
                     f'x2="{tick_x:.2f}" y2="{axis_y:.2f}" stroke="#6C7572"/>',
                     f'<text x="{tick_x:.2f}" y="{axis_y + 13:.2f}" '
-                    'font-family="IBM Plex Mono, monospace" font-size="9" '
+                    f'font-family="IBM Plex Mono, monospace" font-size="{FIGURE_TYPE_SMALL}" '
                     f'text-anchor="middle" fill="#59615F">{milliseconds}</text>',
                 ]
             )
         svg.append(
             f'<text x="{heatmap_x + heatmap_width / 2:.2f}" y="{axis_y + 29:.2f}" '
-            'font-family="Source Sans 3, sans-serif" font-size="10" '
+            f'font-family="Source Sans 3, sans-serif" font-size="{FIGURE_TYPE_SMALL}" '
             'text-anchor="middle" fill="#4D5553">100 ms raw AP excerpt</text>'
         )
     svg.append("</g>")
@@ -2821,7 +3898,9 @@ def append_microscopy_raw_card(
     padding = 7
     header_height = 27
     image_width = card_width - 2 * padding
-    image_height = image_width * option["nativeHeight"] / option["nativeWidth"]
+    display_width = option.get("displayWidth", option["nativeWidth"])
+    display_height = option.get("displayHeight", option["nativeHeight"])
+    image_height = image_width * display_height / display_width
     card_height = header_height + image_height + padding
     image_x = x + padding
     image_y = y + header_height
@@ -2830,8 +3909,6 @@ def append_microscopy_raw_card(
         [
             f'<g class="raw-image-card" data-modality="{modality}" '
             f'data-option-id="{option["id"]}" data-card-width="{card_width:.0f}">',
-            f'<rect x="{x + 5:.2f}" y="{y + 6:.2f}" width="{card_width}" '
-            f'height="{card_height:.2f}" rx="3" fill="#D9DEDC" opacity="0.65"/>',
             f'<rect x="{x:.2f}" y="{y:.2f}" width="{card_width}" '
             f'height="{card_height:.2f}" rx="3" fill="#FFFFFF" stroke="#8F9996"/>',
             f'<text x="{x + padding:.2f}" y="{y + 18:.2f}" '
@@ -2850,7 +3927,7 @@ def append_microscopy_raw_card(
             x=image_x + 12,
             y=image_y + image_height - 14,
             display_width=image_width,
-            native_width=option["nativeWidth"],
+            native_width=display_width,
             microns_per_pixel=option["micronsPerPixel"],
             microns=50 if modality == "mesoscope" else 25,
         )
@@ -2969,13 +4046,13 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         depth = option["remoteFocusDepthBelowPiaUm"]
         append_microscopy_raw_card(
             svg,
-            x=1240 + index * 10,
-            y=detail_card_y + index * 205,
-            card_width=500,
+            x=1240 + index * 270,
+            y=detail_card_y,
+            card_width=265,
             option=option,
             path=frame_paths[("slap2", composite_id)],
             modality="slap2",
-            label=f"{dmd} · {depth:g} µm · green + red composite",
+            label=f"{dmd} · {depth:g} µm",
             show_scale=index == len(SLAP2_STATIC_COMPOSITES) - 1,
         )
     svg.append("</svg>")
@@ -2997,7 +4074,7 @@ def write_neural_viewer_html(
         for field in ("alignment", "context", "event", "stimulus"):
             session.pop(field, None)
     template = (JAVASCRIPT_DIR / "neural-viewer.html").read_text(encoding="utf-8")
-    stylesheet = (JAVASCRIPT_DIR / "neural-viewer.css").read_text(encoding="utf-8")
+    stylesheet = load_figure_stylesheet("neural-viewer.css")
     javascript = (JAVASCRIPT_DIR / "neural-viewer.js").read_text(encoding="utf-8")
     html = (
         template.replace("__NEURAL_CSS__", stylesheet)
@@ -3041,8 +4118,7 @@ def load_data_access_table(
 ) -> dict:
     """Load the vendored Data Access Summary snapshot."""
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(data_path.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(data_path, provenance["vendored_sha256"]):
         raise RuntimeError("Data Access checksum does not match its provenance record.")
     with data_path.open(newline="", encoding="utf-8-sig") as stream:
         source_rows = list(csv.DictReader(stream))
@@ -3148,8 +4224,7 @@ def load_individual_animal_table() -> dict:
         "SLAP2": ("slap2", "SLAP2"),
     }
     provenance = json.loads(ANIMAL_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(ANIMAL_RECORDS_PATH.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(ANIMAL_RECORDS_PATH, provenance["vendored_sha256"]):
         raise RuntimeError("Animal worksheet checksum does not match its provenance record.")
     with ANIMAL_RECORDS_PATH.open(newline="", encoding="utf-8") as stream:
         source_rows = list(csv.DictReader(stream))
@@ -3210,8 +4285,7 @@ def load_unit_yield_data(
     provenance_path: Path = UNIT_YIELD_PROVENANCE_PATH,
 ) -> dict:
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(data_path.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(data_path, provenance["vendored_sha256"]):
         raise RuntimeError("Unit-yield data checksum does not match its provenance record.")
     with data_path.open(newline="", encoding="utf-8") as stream:
         source_rows = list(csv.DictReader(stream))
@@ -3295,9 +4369,8 @@ def load_neuropixels_trajectory_data(
 ) -> dict:
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
     data_bytes = data_path.read_bytes()
-    checksum = hashlib.sha256(data_bytes).hexdigest()
-    if provenance.get("version") != 1 or checksum != provenance.get(
-        "vendored_sha256"
+    if provenance.get("version") != 1 or not text_sha256_matches(
+        data_path, provenance.get("vendored_sha256", "")
     ):
         raise RuntimeError(
             "Neuropixels trajectory checksum does not match its provenance record."
@@ -3467,8 +4540,7 @@ def load_experimental_session_records(
     provenance_path: Path = SESSION_RECORDS_PROVENANCE_PATH,
 ) -> dict:
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(data_path.read_bytes()).hexdigest()
-    if checksum != provenance["vendored_sha256"]:
+    if not text_sha256_matches(data_path, provenance["vendored_sha256"]):
         raise RuntimeError("Session worksheet checksum does not match its provenance.")
     with data_path.open(newline="", encoding="utf-8") as stream:
         records = list(csv.DictReader(stream))
@@ -3853,7 +4925,7 @@ def write_session_inventory_svg(
                         f'<line x1="{x:.2f}" y1="{chart_bottom}" x2="{x:.2f}" '
                         f'y2="{chart_bottom + 6}" stroke="#69716F" stroke-width="1"/>',
                         f'<text x="{x:.2f}" y="{chart_bottom + 23}" '
-                        'font-family="IBM Plex Mono, monospace" font-size="11" '
+                        f'font-family="IBM Plex Mono, monospace" font-size="{FIGURE_TYPE_SMALL}" '
                         f'text-anchor="middle" fill="#68706E">{tick_value}</text>',
                     ]
                 )
@@ -3989,7 +5061,7 @@ def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
             if block_width >= 80:
                 svg.append(
                     f'<text x="{x + block_width / 2:.2f}" y="{y + 27}" '
-                    f'font-family="{FIGURE_SANS_FONT}" font-size="11" '
+                    f'font-family="{FIGURE_SANS_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
                     f'text-anchor="middle" fill="#172126">{escape(block.name)}</text>'
                 )
             x += block_width
@@ -4017,26 +5089,6 @@ def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
     return output
 
 
-UNIT_YIELD_COLORS = (
-    "#087F8C",
-    "#C65D13",
-    "#3157B7",
-    "#8A4F9E",
-    "#4E7B32",
-    "#A47C00",
-    "#B33C2E",
-    "#377D6A",
-    "#6D5D9B",
-    "#A24B72",
-    "#53758C",
-    "#7A6A2F",
-    "#3E6F41",
-    "#985B35",
-    "#4F65A8",
-    "#7F556D",
-)
-
-
 def write_unit_yield_svg(
     output: Path = UNIT_YIELD_STATIC_OUTPUT,
     data_path: Path = UNIT_YIELD_DATA_PATH,
@@ -4054,8 +5106,7 @@ def write_unit_yield_svg(
     plot_height = height - top - bottom
     days = sorted({record["day"] for record in records})
     min_day, max_day = min(days), max(days)
-    maximum = max(record["percentOfDay1"] for record in records)
-    y_max = max(120, math.ceil(maximum / 20) * 20)
+    y_max = 140
 
     def x_position(day: int) -> float:
         if min_day == max_day:
@@ -4066,10 +5117,6 @@ def write_unit_yield_svg(
         return top + plot_height - value / y_max * plot_height
 
     mouse_ids = sorted({record["mouse_id"] for record in records})
-    color_by_mouse = {
-        mouse_id: UNIT_YIELD_COLORS[index % len(UNIT_YIELD_COLORS)]
-        for index, mouse_id in enumerate(mouse_ids)
-    }
     records_by_mouse = {
         mouse_id: [record for record in records if record["mouse_id"] == mouse_id]
         for mouse_id in mouse_ids
@@ -4089,13 +5136,12 @@ def write_unit_yield_svg(
         'fill="#68706E">Each mouse is normalized to its day-1 QC units per probe</text>',
     ]
 
-    tick_step = 20 if y_max <= 200 else 40
-    for value in range(0, y_max + 1, tick_step):
+    for value in range(0, y_max + 1, 20):
         y = y_position(value)
         svg.extend(
             [
-                f'<line x1="{left}" y1="{y:.2f}" x2="{width - right}" y2="{y:.2f}" '
-                'stroke="#E2E5E4" stroke-width="1"/>',
+                f'<line x1="{left - 7}" y1="{y:.2f}" x2="{left}" y2="{y:.2f}" '
+                'stroke="#69716F" stroke-width="1.5"/>',
                 f'<text x="{left - 14}" y="{y + 5:.2f}" text-anchor="end" '
                 'font-family="Source Sans 3, sans-serif" font-size="13" '
                 f'fill="#68706E">{value}</text>',
@@ -4109,21 +5155,20 @@ def write_unit_yield_svg(
         'stroke-dasharray="7 6"/>'
     )
 
-    for mouse_id, mouse_records in records_by_mouse.items():
+    for mouse_records in records_by_mouse.values():
         points = " ".join(
             f'{x_position(record["day"]):.2f},{y_position(record["percentOfDay1"]):.2f}'
             for record in mouse_records
         )
-        color = color_by_mouse[mouse_id]
         svg.append(
-            f'<polyline points="{points}" fill="none" stroke="{color}" stroke-width="2" '
-            'stroke-opacity="0.52"/>'
+            f'<polyline points="{points}" fill="none" stroke="#9AA29F" '
+            'stroke-width="1.5" stroke-opacity="0.62"/>'
         )
         for record in mouse_records:
             svg.append(
                 f'<circle cx="{x_position(record["day"]):.2f}" '
                 f'cy="{y_position(record["percentOfDay1"]):.2f}" r="4" '
-                f'fill="{color}" fill-opacity="0.72"/>'
+                'fill="#9AA29F" fill-opacity="0.72"/>'
             )
 
     mean_points = " ".join(
@@ -4173,9 +5218,9 @@ def write_unit_yield_svg(
             'stroke-width="2"/>',
             '<text x="952" y="48" font-family="Source Sans 3, sans-serif" '
             'font-size="14" fill="#303536">Daily mean</text>',
-            '<line x1="1055" y1="43" x2="1093" y2="43" stroke="#53758C" '
-            'stroke-width="2" stroke-opacity="0.65"/>',
-            '<circle cx="1074" cy="43" r="4" fill="#53758C"/>',
+            '<line x1="1055" y1="43" x2="1093" y2="43" stroke="#9AA29F" '
+            'stroke-width="1.5" stroke-opacity="0.72"/>',
+            '<circle cx="1074" cy="43" r="4" fill="#9AA29F"/>',
             '<text x="1102" y="48" font-family="Source Sans 3, sans-serif" '
             'font-size="14" fill="#303536">Mouse</text>',
             "</svg>",
@@ -4223,7 +5268,7 @@ def ccf_static_view_axes(
     tuple[float, float, float],
 ]:
     if view == "dorsal":
-        return (1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0)
+        return (-1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0)
     if view != "oblique":
         raise RuntimeError(f"Unsupported static CCF view: {view}")
     toward_camera = normalized_vector((11_200.0, 7_300.0, 11_600.0))
@@ -4399,7 +5444,7 @@ def write_neuropixels_trajectory_svg(
     def atlas_coordinates(point: list[int]) -> tuple[float, float, float]:
         anterior_posterior, dorsal_ventral, medial_lateral = point
         return (
-            medial_lateral - center[2],
+            center[2] - medial_lateral,
             center[1] - dorsal_ventral,
             center[0] - anterior_posterior,
         )
@@ -4591,8 +5636,12 @@ def main() -> None:
     behavior_viewer_path = write_behavior_viewer_html()
     eye_tracking_viewer_path = write_eye_tracking_viewer_html()
     neural_viewer_path = write_neural_viewer_html()
+    segmentation_viewer_path = write_segmentation_viewers()
     unit_yield_html_path = write_unit_yield_html()
     trajectory_html_path = write_neuropixels_trajectory_html()
+    optotagging_source_path = write_optotagging_static_source()
+    optotagging_html_path = write_optotagging_heatmap_html()
+    optotagging_svg_path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT
     svg_path = write_static_svg()
     unit_yield_svg_path = write_unit_yield_svg()
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
@@ -4611,9 +5660,14 @@ def main() -> None:
     print(f"Wrote {eye_tracking_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {neural_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEURAL_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
+    print(f"Wrote {segmentation_viewer_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {SEGMENTATION_VIEWER_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {trajectory_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
+    print(f"Wrote {optotagging_source_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {optotagging_html_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {optotagging_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")
 

@@ -48,7 +48,7 @@
     anatomyRight: 160,
     plotBottom: 458,
     plotLeft: 168,
-    plotRight: 830,
+    plotRight: 870,
     plotTop: 42,
   };
 
@@ -176,7 +176,7 @@
       drawText(formatNumber(depth, 0), layout.anatomyLeft - 10, y + (index === 0 ? 8 : index === 2 ? -2 : 4), {
         align: "right",
         color: "#59615f",
-        size: 11,
+        size: 12,
       });
     });
     context.save();
@@ -188,26 +188,6 @@
       size: 12,
     });
     context.restore();
-
-    const colorbarX = layout.plotRight + 9;
-    const gradient = context.createLinearGradient(0, layout.plotBottom, 0, layout.plotTop);
-    gradient.addColorStop(0, "rgb(28,77,151)");
-    gradient.addColorStop(0.5, "rgb(246,246,246)");
-    gradient.addColorStop(1, "rgb(189,54,41)");
-    context.fillStyle = gradient;
-    context.fillRect(colorbarX, layout.plotTop, 12, layout.plotBottom - layout.plotTop);
-    drawText(`+${formatNumber(option.valueLimit, 0)}`, colorbarX + 18, layout.plotTop + 8, {
-      color: "#59615f",
-      size: 10,
-    });
-    drawText("0", colorbarX + 18, (layout.plotTop + layout.plotBottom) / 2 + 4, {
-      color: "#59615f",
-      size: 10,
-    });
-    drawText(`-${formatNumber(option.valueLimit, 0)} µV`, colorbarX + 18, layout.plotBottom, {
-      color: "#59615f",
-      size: 10,
-    });
 
     const axisY = layout.plotBottom + 7;
     for (let index = 0; index <= 4; index += 1) {
@@ -224,14 +204,14 @@
       drawText(`${Math.round(milliseconds)}`, x, axisY + 14, {
         align: "center",
         color: "#59615f",
-        size: 10,
+        size: 12,
         weight: 500,
       });
     }
     drawText("Excerpt time (ms)", (layout.plotLeft + layout.plotRight) / 2, 510, {
       align: "center",
       color: "#4d5553",
-      size: 11,
+      size: 12,
     });
   }
 
@@ -240,7 +220,7 @@
     drawText("CCF", layout.anatomyLeft + width / 2, layout.plotTop - 13, {
       align: "center",
       color: "#4d5553",
-      size: 11,
+      size: 12,
       weight: 700,
     });
     option.anatomySegments.forEach((segment, index) => {
@@ -251,12 +231,12 @@
         ? "#f5f6f6"
         : index % 2 === 0 ? "#e2e7e5" : "#eef1f0";
       context.fillRect(layout.anatomyLeft, top, width, height);
-      if (height >= 11) {
+      if (height >= 15) {
         drawText(segment.label, layout.anatomyLeft + width / 2, top + height / 2, {
           align: "center",
           baseline: "middle",
           color: "#3f4745",
-          size: 9,
+          size: 12,
           weight: 600,
         });
       }
@@ -384,7 +364,8 @@
   function drawScaleBar(option, x, y, width, height) {
     const micronsPerPixel = Number(option.micronsPerPixel);
     if (!Number.isFinite(micronsPerPixel) || micronsPerPixel <= 0) return;
-    const barWidth = width * scaleBarMicrons / (option.nativeWidth * micronsPerPixel);
+    const displayWidth = option.displayWidth || option.nativeWidth;
+    const barWidth = width * scaleBarMicrons / (displayWidth * micronsPerPixel);
     const barX = x + width - barWidth - 18;
     const barY = y + height - 18;
 
@@ -576,7 +557,9 @@
       }
     } else if (session.viewType === "movie") {
       const index = nearestIndex(option.frameTimes, state.playhead);
-      content = `<strong>${formatTime(elapsedTime(option.frameTimes[index]))}</strong><br>Raw frame ${index + 1} of ${option.frameCount}<br>${option.nativeWidth} × ${option.nativeHeight} source pixels`;
+      const storedWidth = option.storedWidth || option.nativeWidth;
+      const storedHeight = option.storedHeight || option.nativeHeight;
+      content = `<strong>${formatTime(elapsedTime(option.frameTimes[index]))}</strong><br>Raw frame ${index + 1} of ${option.frameCount}<br>${storedWidth} × ${storedHeight} stored pixels`;
     }
     if (!content) {
       hideTooltip();

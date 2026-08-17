@@ -4,6 +4,9 @@ import hashlib
 import json
 import math
 import re
+import statistics
+import struct
+from io import BytesIO
 from pathlib import Path
 
 import pytest
@@ -30,8 +33,19 @@ from openscope_p3_publication.figures import (
     NEURAL_STATIC_FRAME_PROVENANCE_PATH,
     NEUROPIXELS_TRAJECTORY_DATA_PATH,
     NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH,
+    OPTOTAGGING_HEATMAP_DATA_PATH,
+    OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
+    OPTOTAGGING_HEATMAP_SOURCE_DIR,
+    OPTOTAGGING_STATIC_LEGACY_SOURCE,
+    OPTOTAGGING_STATIC_SOURCE,
+    OPTOTAGGING_STATIC_SUMMARY_PATH,
     REPO_ROOT,
     RUNNING_STATISTICS_PATH,
+    SEGMENTATION_VIEWER_DATA_PATH,
+    SEGMENTATION_VIEWER_OUTPUT,
+    SEGMENTATION_VIEWER_PROVENANCE_PATH,
+    SEGMENTATION_VIEWER_STATIC_OUTPUT,
+    SEGMENTATION_VIEWER_STATIC_OUTPUTS,
     SESSION_RECORDS_PATH,
     SESSION_RECORDS_PROVENANCE_PATH,
     SESSION_TYPE_COLORS,
@@ -42,6 +56,7 @@ from openscope_p3_publication.figures import (
     UNIT_YIELD_PROVENANCE_PATH,
     ZEBRA_MOVIE_SOURCE,
     ZEBRA_POSTER_SOURCE,
+    common_median_corrected_rgb,
     load_behavior_excerpts,
     load_data_access_table,
     load_experimental_design_sources,
@@ -50,13 +65,17 @@ from openscope_p3_publication.figures import (
     load_hardware_sources,
     load_neural_excerpts,
     load_neuropixels_trajectory_data,
+    load_optotagging_heatmap_data,
+    load_optotagging_static_summary,
     load_publication_table_data,
     load_running_statistics,
+    load_segmentation_viewers,
     load_shared_stimulus_table_excerpts,
     load_stimulus_table_excerpts,
     load_unit_yield_data,
     modality_session_records,
     session_panel_rows,
+    text_sha256_matches,
     total_duration_minutes,
     write_basic_stimuli_plan_svg,
     write_behavior_static_svg,
@@ -74,6 +93,13 @@ from openscope_p3_publication.figures import (
     write_neural_viewer_html,
     write_neuropixels_trajectory_html,
     write_neuropixels_trajectory_svg,
+    write_optotagging_heatmap_html,
+    write_optotagging_heatmap_svg,
+    write_optotagging_static_source,
+    write_segmentation_viewer_html,
+    write_segmentation_viewer_static_svg,
+    write_segmentation_viewer_svg,
+    write_segmentation_viewers,
     write_session_inventory_svg,
     write_standard_oddball_plan_svg,
     write_static_svg,
@@ -81,6 +107,40 @@ from openscope_p3_publication.figures import (
     write_unit_extraction_plan_svg,
     write_unit_yield_html,
     write_unit_yield_svg,
+)
+
+try:
+    import numpy as np
+    import pandas as pd
+    from PIL import Image
+
+    from openscope_p3_publication.optotagging import (
+        CONDITIONS,
+        SessionAnalysis,
+        SessionSkipped,
+        _unit_anatomy_acronyms,
+        allen_major_parent_acronyms,
+        baseline_zscore,
+        build_session_numeric_atlas,
+        compute_psth,
+        compute_response_metrics,
+        expand_pulse_times,
+        heatmap_response_scores,
+        mean_firing_rate_during_pulses,
+        order_heatmap_rows,
+        quantize_zscores,
+        strongest_first_indices,
+        validate_nwb,
+        write_results,
+    )
+except ModuleNotFoundError:
+    HAS_OPTOTAGGING_ANALYSIS_DEPS = False
+else:
+    HAS_OPTOTAGGING_ANALYSIS_DEPS = True
+
+requires_optotagging_analysis_deps = pytest.mark.skipif(
+    not HAS_OPTOTAGGING_ANALYSIS_DEPS,
+    reason="Optotagging analysis dependencies are installed ad hoc by the extractor.",
 )
 
 
@@ -142,6 +202,50 @@ def test_experimental_design_data() -> None:
         "Sequence mismatch": "#B16027",
         "Duration mismatch": "#CCAF2D",
     }
+
+
+def test_interactive_figures_share_readable_typography() -> None:
+    source_dir = REPO_ROOT / "figure_sources" / "javascript"
+    typography = (source_dir / "figure-typography.css").read_text(encoding="utf-8")
+    assert "--figure-type-panel-title: 1.25rem" in typography
+    assert "--figure-type-section-title: 1rem" in typography
+    assert "--figure-type-body: 0.875rem" in typography
+    assert "--figure-type-control: 0.8125rem" in typography
+    assert "--figure-type-metadata: 0.75rem" in typography
+    assert "--figure-type-axis: 0.75rem" in typography
+
+    stylesheets = sorted(source_dir.glob("*.css"))
+    panel_stylesheets = [
+        path for path in stylesheets if path.name != "figure-typography.css"
+    ]
+    for path in panel_stylesheets:
+        content = path.read_text(encoding="utf-8")
+        for value, unit in re.findall(r"font-size:\s*([0-9.]+)(px|rem)", content):
+            pixels = float(value) * (16 if unit == "rem" else 1)
+            assert pixels >= 12, (path.name, pixels)
+
+    for name in ("neural-viewer.js", "segmentation-viewer.js"):
+        javascript = (source_dir / name).read_text(encoding="utf-8")
+        assert all(int(size) >= 12 for size in re.findall(r"\bsize:\s*(\d+)", javascript))
+
+    for path in sorted((REPO_ROOT / "interactive").glob("*.html")):
+        assert "--figure-type-metadata: 0.75rem" in path.read_text(encoding="utf-8")
+
+    for path in sorted((REPO_ROOT / "images" / "figures" / "generated").glob("*.svg")):
+        svg = path.read_text(encoding="utf-8")
+        width_match = re.search(r'<svg[^>]+width="([0-9.]+)"', svg)
+        sizes = [float(size) for size in re.findall(r'font-size="([0-9.]+)"', svg)]
+        if width_match is None or not sizes:
+            continue
+        if path.name in {"figure-01-overview.svg", "raw-neural-recordings.svg"}:
+            minimum = min(sizes)
+        else:
+            minimum = (
+                min(sizes)
+                * FIGURE_REFERENCE_WIDTH
+                / float(width_match.group(1))
+            )
+        assert minimum >= FIGURE_TYPE_SCALE["small"], (path.name, minimum)
 
 
 def test_session_type_colors_are_consistent_across_figure_surfaces() -> None:
@@ -233,6 +337,9 @@ def test_unit_yield_outputs_are_deterministic_and_inspectable(tmp_path: Path) ->
     svg = svg_path.read_text(encoding="utf-8")
 
     assert 'id="unit-yield-chart" viewBox="0 0 960 410"' in html
+    assert "const mouseNeutral = \"#9AA29F\"" in html
+    assert "const selectedMouse = \"#087F8C\"" in html
+    assert 'state.metric === "percent" ? 140' in html
     assert "min-width: 620px;" in html
     assert "@media (max-width: 560px)" in html
     assert 'id="mouse-select"' in html
@@ -251,11 +358,660 @@ def test_unit_yield_outputs_are_deterministic_and_inspectable(tmp_path: Path) ->
     assert 'role="img"' in svg
     assert "QC-passing Neuropixels unit yield" in svg
     assert "Day 4" in svg
+    assert ">140</text>" in svg
+    assert 'stroke="#9AA29F"' in svg
+    assert 'stroke="#E2E5E4"' not in svg
 
     write_unit_yield_html(html_path)
     write_unit_yield_svg(svg_path)
     assert html_path.read_text(encoding="utf-8") == html
     assert svg_path.read_text(encoding="utf-8") == svg
+
+
+@requires_optotagging_analysis_deps
+def test_expand_optotagging_pulse_times_uses_duration_and_frequency() -> None:
+    pulses = expand_pulse_times(
+        np.array([1.0, 3.0]),
+        np.array([1.0, 0.5]),
+        frequency_hz=5.0,
+    )
+
+    assert pulses == pytest.approx([1.0, 1.2, 1.4, 1.6, 1.8, 3.0, 3.2])
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_psth_returns_event_averaged_rate() -> None:
+    centers, rates = compute_psth(
+        np.array([0.001, 1.001]),
+        np.array([0.0, 1.0]),
+        window=(0.0, 0.004),
+        bin_seconds=0.001,
+    )
+
+    assert centers == pytest.approx([0.0005, 0.0015, 0.0025, 0.0035])
+    assert rates == pytest.approx([0.0, 1000.0, 0.0, 0.0])
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_response_metrics_match_paired_pre_post_counts() -> None:
+    condition = CONDITIONS[1]
+    metrics = compute_response_metrics(
+        np.array([-0.005, 0.004, 0.006, 0.995, 1.004, 1.006]),
+        np.array([0.0, 1.0]),
+        condition,
+    )
+
+    assert metrics["pre_mean"] == pytest.approx(100.0)
+    assert metrics["post_mean"] == pytest.approx(200.0)
+    assert metrics["modulation_index"] == pytest.approx(1 / 3)
+    assert 0.0 <= metrics["p_value"] <= 1.0
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_response_metrics_can_skip_unused_wilcoxon() -> None:
+    metrics = compute_response_metrics(
+        np.array([-0.005, 0.004, 0.006]),
+        np.array([0.0]),
+        CONDITIONS[1],
+        compute_p_value=False,
+    )
+
+    assert metrics["pre_mean"] == pytest.approx(100.0)
+    assert metrics["post_mean"] == pytest.approx(200.0)
+    assert metrics["modulation_index"] == pytest.approx(1 / 3)
+    assert np.isnan(metrics["p_value"])
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_heatmap_normalization_and_modulation_ordering() -> None:
+    time_seconds = np.array([-0.002, -0.001, 0.001, 0.002])
+    psths = np.array(
+        [
+            [0.0, 2.0, 5.0, 5.0],
+            [0.0, 2.0, 2.0, 2.0],
+        ]
+    )
+
+    zscored = baseline_zscore(psths, time_seconds)
+    order = order_heatmap_rows(np.array([0.8, -0.2, np.nan, 0.8]))
+
+    assert zscored[0] == pytest.approx([-1.0, 1.0, 4.0, 4.0])
+    assert order.tolist() == [2, 1, 0, 3]
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_mean_firing_rate_during_exact_laser_pulses() -> None:
+    rate = mean_firing_rate_during_pulses(
+        spike_times=np.array(
+            [
+                0.001,
+                0.009,
+                0.015,
+                0.201,
+                0.209,
+                0.215,
+                0.401,
+                0.409,
+                0.415,
+            ]
+        ),
+        pulse_times=np.array([0.0, 0.2, 0.4]),
+        pulse_width_seconds=0.010,
+    )
+
+    assert rate == pytest.approx(200.0)
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_heatmap_ordering_uses_exact_laser_rate() -> None:
+    analysis = type(
+        "Analysis",
+        (),
+        {
+            "metrics": pd.DataFrame(
+                {"raised_cosine_presentations__modulation_index": [0.2, 0.8]}
+            ),
+            "pulse_firing_rates": {
+                "raised_cosine_presentations": np.array([7.0, 3.0]),
+                "5 hz pulse train_presentations": np.array([40.0, 10.0]),
+                "40 hz pulse train_presentations": np.array([5.0, 25.0]),
+            },
+        },
+    )()
+
+    raised_scores, raised_label = heatmap_response_scores(analysis, CONDITIONS[0])
+    five_hz_scores, five_hz_label = heatmap_response_scores(analysis, CONDITIONS[1])
+    forty_hz_scores, forty_hz_label = heatmap_response_scores(analysis, CONDITIONS[2])
+
+    assert raised_scores.tolist() == [7.0, 3.0]
+    assert raised_label == "mean firing during 1000 ms pulses"
+    assert five_hz_scores.tolist() == [40.0, 10.0]
+    assert five_hz_label == "mean firing during 10 ms pulses"
+    assert forty_hz_scores.tolist() == [5.0, 25.0]
+    assert forty_hz_label == "mean firing during 6 ms pulses"
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_strongest_first_order_is_stable_and_puts_nan_last() -> None:
+    order = strongest_first_indices(np.array([2.0, np.nan, 4.0, 4.0, -1.0]))
+
+    assert order.tolist() == [2, 3, 0, 4, 1]
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_allen_major_parent_mapping_uses_hierarchy() -> None:
+    class Regions:
+        def acronym2id(self, acronym):
+            return {"VISp": np.array([1]), "CP": np.array([2]), "unknown": np.array([])}[
+                acronym
+            ]
+
+        def ancestors(self, region_id):
+            values = {
+                1: np.array(["root", "CH", "CTX", "Isocortex", "VISp"]),
+                2: np.array(["root", "CH", "CNU", "STR", "STRd", "CP"]),
+            }
+            return type("Ancestors", (), {"acronym": values[region_id]})()
+
+    parents = allen_major_parent_acronyms(
+        ["VISp", "CP", "unknown"],
+        brain_regions=Regions(),
+    )
+
+    assert parents.tolist() == ["Isocortex", "STR", "Other"]
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_unit_anatomy_uses_ragged_electrode_references() -> None:
+    nwb = {
+        "units": {
+            "id": np.array([1, 2]),
+            "electrodes": np.array([4, 2, 3]),
+            "electrodes_index": np.array([2, 3]),
+            "extremum_channel_index": np.array([1, 0]),
+        },
+        "general/extracellular_ephys/electrodes": {
+            "location": np.array(["A", "B", "VISp", "CP", "TH"]),
+        },
+    }
+
+    assert _unit_anatomy_acronyms(nwb).tolist() == ["VISp", "CP"]
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_unit_anatomy_uses_probe_local_extremum_indices() -> None:
+    nwb = {
+        "units": {
+            "id": np.array([1, 2]),
+            "device_name": np.array(["ProbeA", "ProbeB"]),
+            "extremum_channel_index": np.array([1, 0]),
+        },
+        "general/extracellular_ephys/electrodes": {
+            "group_name": np.array(["ProbeA", "ProbeB", "ProbeA"]),
+            "location": np.array(["VISp", "TH", "CP"]),
+        },
+    }
+
+    assert _unit_anatomy_acronyms(nwb).tolist() == ["CP", "TH"]
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_unit_anatomy_is_optional_for_legacy_nwbs() -> None:
+    nwb = {"units": {"id": np.array([1, 2])}}
+
+    assert _unit_anatomy_acronyms(nwb).tolist() == ["Other", "Other"]
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_numeric_atlas_retains_rows_and_laser_orders() -> None:
+    time_seconds = np.linspace(-0.5, 1.2, 10, endpoint=False)
+    psths = np.array(
+        [
+            np.linspace(0, 9, 10),
+            np.linspace(9, 0, 10),
+            np.ones(10),
+        ]
+    )
+    analysis = SessionAnalysis(
+        session_id="ecephys_test",
+        asset_id="asset",
+        asset_path="session.nwb",
+        metrics=pd.DataFrame({"unit_id": ["a", "b", "c"]}),
+        psths={condition.table_name: psths for condition in CONDITIONS},
+        pulse_firing_rates={
+            condition.table_name: np.array([2.0, 5.0, np.nan])
+            for condition in CONDITIONS
+        },
+        time_seconds=time_seconds,
+        trial_counts={condition.table_name: 1 for condition in CONDITIONS},
+        pulse_counts={condition.table_name: 1 for condition in CONDITIONS},
+        unit_count=3,
+        major_parent_acronyms=np.array(["TH", "Isocortex", "TH"]),
+    )
+
+    metadata, image = build_session_numeric_atlas(analysis)
+
+    assert image.startswith(b"\x89PNG\r\n\x1a\n")
+    with Image.open(BytesIO(image)) as atlas_image:
+        assert atlas_image.mode == "L"
+        assert atlas_image.size == (10, 9)
+    assert metadata["parent_areas"] == ["Isocortex", "TH"]
+    assert metadata["parent_codes"] == [1, 0, 1]
+    assert metadata["strongest_first_unit_indices"][
+        "raised_cosine_presentations"
+    ] == [1, 0, 2]
+    assert metadata["time_bin_count"] == 10
+    assert metadata["quantization"]["dtype"] == "int8"
+    assert metadata["quantization"]["scale"] == pytest.approx(127 / 8)
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_atlas_quantization_reserves_nan_sentinel() -> None:
+    quantized = quantize_zscores(
+        np.array([-9.0, -8.0, -4.0, 0.0, 4.0, 8.0, 9.0, np.nan])
+    )
+
+    assert quantized.dtype == np.int8
+    assert quantized.tolist() == [-127, -127, -64, 0, 64, 127, 127, -128]
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_validate_nwb_reports_missing_conditions() -> None:
+    with pytest.raises(SessionSkipped, match="missing optotagging tables"):
+        validate_nwb({"intervals": {}, "units": {}})
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_write_results_round_trips_parquet(tmp_path: Path) -> None:
+    metric_columns = {
+        "asset_id": ["asset-1"],
+        "asset_path": ["sub-1/session.nwb"],
+        "session_id": ["ecephys_1"],
+        "unit_id": ["unit-1"],
+    }
+    for condition in CONDITIONS:
+        for metric in ("pre_mean", "post_mean", "modulation_index", "p_value"):
+            metric_columns[f"{condition.table_name}__{metric}"] = [0.25]
+    metrics = pd.DataFrame(metric_columns)
+    assets = [
+        {
+            "asset_id": "asset-1",
+            "asset_path": "sub-1/session.nwb",
+            "modified": "2026-01-01T00:00:00+00:00",
+            "size": 123,
+        }
+    ]
+
+    parquet_path, provenance_path = write_results(
+        metrics,
+        assets=assets,
+        skipped=[],
+        failed=[],
+        output_dir=tmp_path,
+    )
+
+    pd.testing.assert_frame_equal(pd.read_parquet(parquet_path), metrics)
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    assert provenance["rows"] == 1
+    assert provenance["sessions"] == 1
+    assert len(provenance["output_sha256"]) == 64
+
+
+def test_optotagging_snapshot_is_source_backed(tmp_path: Path) -> None:
+    payload = load_optotagging_heatmap_data()
+    provenance = json.loads(
+        OPTOTAGGING_HEATMAP_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+
+    assert text_sha256_matches(
+        OPTOTAGGING_HEATMAP_DATA_PATH,
+        provenance["manifest_sha256"],
+    )
+    assert payload["session_count"] == 3
+    assert payload["version"] == 2
+    assert payload["total_unit_count"] == sum(
+        session["unit_count"] for session in payload["sessions"]
+    )
+    assert payload["default_session_id"] == "ecephys_830851_2026-03-19_10-49-11"
+    assert (
+        payload["static_example_session_id"]
+        == "ecephys_830851_2026-03-19_10-49-11"
+    )
+    assert len(payload["sessions"]) == 3
+    assert payload["selection"] == {
+        "strategy": "nearest_all_session_optotagged_cell_yield_percentiles",
+        "source_session_count": 60,
+        "sessions": {
+            "ecephys_830851_2026-03-19_10-49-11": {
+                "optotagged_cell_count": 39,
+                "target_yield_percentile": 0.5,
+            },
+            "ecephys_832691_2026-03-24_10-04-30": {
+                "optotagged_cell_count": 84,
+                "target_yield_percentile": 0.95,
+            },
+            "ecephys_848390_2026-05-06_09-54-56": {
+                "optotagged_cell_count": 68,
+                "target_yield_percentile": 0.8,
+            },
+        },
+    }
+    assert provenance["failed_assets"] == []
+    assert provenance["skipped_assets"] == []
+    assert provenance["source_session_count"] == 60
+    assert len(provenance["asset_manifest"]) == 60
+    assert all(
+        asset["digest"]["dandi:sha2-256"]
+        for asset in provenance["asset_manifest"]
+    )
+    assert {
+        path.name for path in OPTOTAGGING_HEATMAP_SOURCE_DIR.glob("*.atlas.json")
+    } == {session["atlas_file"] for session in payload["sessions"]}
+    assert {
+        path.name for path in OPTOTAGGING_HEATMAP_SOURCE_DIR.glob("*.atlas.png")
+    } == {session["numeric_png_file"] for session in payload["sessions"]}
+    assert {path.name for path in OPTOTAGGING_HEATMAP_SOURCE_DIR.glob("*.webp")} == {
+        session["image_file"]
+        for session in payload["sessions"]
+        if "image_file" in session
+    }
+    interactive_html = (
+        REPO_ROOT / "interactive" / "optotagging-heatmaps.html"
+    ).read_text(encoding="utf-8")
+    assert "globalThis.OPTOTAGGING_ATLASES" in interactive_html
+    assert interactive_html.count("data:image/png;base64,") == 3
+    assert {
+        path.name
+        for path in (REPO_ROOT / "interactive" / "media" / "optotagging").iterdir()
+    } == {"optotagging-heatmaps.svg"}
+    summary = load_optotagging_static_summary()
+    assert summary["source"] == OPTOTAGGING_STATIC_LEGACY_SOURCE.relative_to(
+        REPO_ROOT
+    ).as_posix()
+    assert summary["source_sha256"] == hashlib.sha256(
+        OPTOTAGGING_STATIC_LEGACY_SOURCE.read_bytes()
+    ).hexdigest()
+    assert summary["source_session_count"] == 60
+    assert summary["overall"]["sampled_session_count"] == 60
+    assert summary["overall"]["mean"] == pytest.approx(46.316667)
+    assert len(summary["major_parent"]) == 10
+    assert len(summary["structures"]) == 48
+    assert [record["sampled_session_count"] for record in summary["major_parent"]] == [
+        58,
+        58,
+        60,
+        58,
+        54,
+        28,
+        12,
+        6,
+        4,
+        23,
+    ]
+    assert OPTOTAGGING_STATIC_SUMMARY_PATH.is_file()
+    static_svg = OPTOTAGGING_STATIC_SOURCE.read_text(encoding="utf-8")
+    assert 'width="1200" height="960"' in static_svg
+    assert 'role="img" aria-labelledby="title description"' in static_svg
+    assert "Optotagging response and yield summary" in static_svg
+    assert "Laser-aligned 5 Hz response" not in static_svg
+    assert "Overall yield" not in static_svg
+    assert "Major parent area" in static_svg
+    assert "Structure acronym" in static_svg
+    expected_structures = sorted(
+        summary["structures"],
+        key=lambda record: (-record["mean"], record["label"]),
+    )[:18]
+    assert all(f'>{record["label"]}</text>' in static_svg for record in expected_structures)
+    assert static_svg.count('height="8"') == 18
+    assert 'stroke="#DDE1DF"' not in static_svg
+    assert ">Session</text>" not in static_svg
+    assert all(f">{label}</text>" in static_svg for label in "ABCD")
+    assert FIGURE_SANS_FONT in static_svg
+    assert FIGURE_MONO_FONT in static_svg
+    assert "DejaVuSans" not in static_svg
+    assert "#315F73" in static_svg
+    assert "#3B4CC0" in static_svg
+    assert "#B40426" in static_svg
+    assert not any(color in static_svg for color in ("#82ed83", "#ed828e", "#a4d3ed"))
+    regenerated = write_optotagging_static_source(tmp_path / "optotagging-static.svg")
+    assert regenerated.read_bytes() == OPTOTAGGING_STATIC_SOURCE.read_bytes()
+
+
+def test_optotagging_outputs_are_deterministic_and_accessible(tmp_path: Path) -> None:
+    media_dir = tmp_path / "source-media"
+    media_dir.mkdir()
+    static_source = media_dir / "optotagging-static-composite.svg"
+    image = b"RIFF\x04\x00\x00\x00WEBP"
+    image_file = "ecephys_test.webp"
+    image_sha256 = hashlib.sha256(image).hexdigest()
+    (media_dir / image_file).write_bytes(image)
+    session = {
+        "asset_id": "asset-1",
+        "asset_path": "sub-1/session.nwb",
+        "image_file": image_file,
+        "image_height": 1,
+        "image_sha256": image_sha256,
+        "image_width": 1,
+        "session_id": "ecephys_test",
+        "unit_count": 12,
+        "condition_counts": {},
+    }
+    payload = {
+        "version": 1,
+        "default_session_id": "ecephys_test",
+        "session_count": 1,
+        "total_unit_count": 12,
+        "conditions": [],
+        "psth": {},
+        "sessions": [session],
+    }
+    data_path = tmp_path / "optotagging-heatmaps.json"
+    data_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    image_manifest = [{"image_file": image_file, "image_sha256": image_sha256}]
+    asset_manifest = [
+        {
+            "asset_id": "asset-1",
+            "asset_path": "sub-1/session.nwb",
+            "digest": {"dandi:sha2-256": "source-checksum"},
+        }
+    ]
+    provenance = {
+        "version": 1,
+        "asset_manifest": asset_manifest,
+        "asset_manifest_sha256": hashlib.sha256(
+            json.dumps(asset_manifest, separators=(",", ":"), sort_keys=True).encode()
+        ).hexdigest(),
+        "failed_assets": [],
+        "manifest_sha256": hashlib.sha256(data_path.read_bytes()).hexdigest(),
+        "media_manifest_sha256": hashlib.sha256(
+            json.dumps(image_manifest, separators=(",", ":"), sort_keys=True).encode()
+        ).hexdigest(),
+        "session_count": 1,
+        "skipped_assets": [],
+        "total_unit_count": 12,
+    }
+    provenance_path = tmp_path / "optotagging-heatmaps.provenance.json"
+    provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+    static_source.write_text(
+        '<svg role="img"><text>Optotagging response and yield summary</text>'
+        "<text>Major parent area</text><text>Structure acronym</text></svg>",
+        encoding="utf-8",
+    )
+
+    html_path = write_optotagging_heatmap_html(
+        tmp_path / "interactive" / "optotagging.html",
+        data_path,
+        provenance_path,
+        media_dir,
+        static_output=tmp_path / "optotagging.svg",
+    )
+    svg_path = write_optotagging_heatmap_svg(
+        tmp_path / "optotagging.svg",
+        data_path,
+        provenance_path,
+        media_dir,
+    )
+    html = html_path.read_text(encoding="utf-8")
+    svg = svg_path.read_text(encoding="utf-8")
+
+    assert 'label for="session-select"' in html
+    assert 'label for="parent-area"' in html
+    assert 'label for="color-limit"' in html
+    assert '<select id="session-select"></select>' in html
+    assert '<select id="parent-area" disabled>' in html
+    assert 'id="session-search"' not in html
+    assert "<datalist" not in html
+    assert 'type="search"' not in html
+    assert 'type="range" min="0.5" max="8" step="0.5" value="3"' in html
+    assert 'data-view="interactive"' in html
+    assert 'data-view="static"' in html
+    assert 'id="interactive-view"' in html
+    assert 'id="static-view"' in html
+    assert "Four-panel optotagging figure" in html
+    assert "optotagging.svg" in html
+    assert "selectView" in html
+    assert 'parentSelect.addEventListener("change", scheduleRedraw)' in html
+    assert "normalizeParentArea" not in html
+    assert "globalThis.OPTOTAGGING_ATLASES" in html
+    assert "<canvas" not in html  # Panels are created without duplicating markup.
+    assert "createElement(\"canvas\")" in html
+    assert 'aria-live="polite"' in html
+    assert '"default_session_id":"ecephys_test"' in html
+    assert "__OPTOTAGGING_" not in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+    assert (html_path.parent / "media" / "optotagging" / image_file).read_bytes() == image
+    assert (
+        html_path.parent / "media" / "optotagging" / "optotagging.svg"
+    ).read_bytes() == svg_path.read_bytes()
+    assert not list(
+        (html_path.parent / "media" / "optotagging").glob("*.atlas.js")
+    )
+    assert 'role="img"' in svg
+    assert "Optotagging response and yield summary" in svg
+    assert "Major parent area" in svg
+    assert "Structure acronym" in svg
+
+    write_optotagging_heatmap_html(
+        html_path,
+        data_path,
+        provenance_path,
+        media_dir,
+        static_output=svg_path,
+    )
+    write_optotagging_heatmap_svg(
+        svg_path,
+        data_path,
+        provenance_path,
+        media_dir,
+    )
+    assert html_path.read_text(encoding="utf-8") == html
+    assert svg_path.read_text(encoding="utf-8") == svg
+
+    (media_dir / image_file).write_bytes(image + b"changed")
+    with pytest.raises(RuntimeError, match="image is invalid"):
+        load_optotagging_heatmap_data(data_path, provenance_path, media_dir)
+
+
+def test_optotagging_version_2_numeric_atlas_validation(tmp_path: Path) -> None:
+    media_dir = tmp_path / "media"
+    media_dir.mkdir()
+    atlas_file = "ecephys_test.atlas.json"
+    png_file = "ecephys_test.atlas.png"
+    image_file = "ecephys_test.webp"
+    atlas = {
+        "version": 2,
+        "unit_count": 2,
+        "time_bin_count": 2,
+        "time_seconds": [-0.5, 1.2],
+        "numeric_png_file": png_file,
+        "parent_areas": ["TH"],
+        "parent_codes": [0, 0],
+        "strongest_first_unit_indices": {"raised": [1, 0]},
+        "condition_row_offsets": {"raised": 0},
+        "quantization": {
+            "dtype": "int8",
+            "scale": 15.875,
+            "range": [-8.0, 8.0],
+            "nan_sentinel": -128,
+            "png_channels": "single-channel uint8 viewed as signed int8",
+        },
+    }
+    assets = {
+        atlas_file: (json.dumps(atlas) + "\n").encode(),
+        png_file: (
+            b"\x89PNG\r\n\x1a\n"
+            + b"\x00" * 8
+            + struct.pack(">II", 2, 2)
+            + b"\x08\x00"
+        ),
+        image_file: b"RIFF\x04\x00\x00\x00WEBP",
+    }
+    for filename, content in assets.items():
+        (media_dir / filename).write_bytes(content)
+    session = {
+        "asset_id": "asset-1",
+        "asset_path": "session.nwb",
+        "session_id": "ecephys_test",
+        "unit_count": 2,
+        "condition_counts": {"raised": {"presentations": 1, "pulses": 1}},
+        "atlas_file": atlas_file,
+        "atlas_sha256": hashlib.sha256(assets[atlas_file]).hexdigest(),
+        "numeric_png_file": png_file,
+        "numeric_png_sha256": hashlib.sha256(assets[png_file]).hexdigest(),
+        "image_file": image_file,
+        "image_sha256": hashlib.sha256(assets[image_file]).hexdigest(),
+        "image_width": 1,
+        "image_height": 1,
+    }
+    payload = {
+        "version": 2,
+        "default_session_id": "ecephys_test",
+        "session_count": 1,
+        "total_unit_count": 2,
+        "conditions": [{"table_name": "raised", "display_name": "Raised"}],
+        "psth": {},
+        "sessions": [session],
+    }
+    data_path = tmp_path / "snapshot.json"
+    data_path.write_text(json.dumps(payload), encoding="utf-8")
+    asset_manifest = [
+        {
+            "asset_id": "asset-1",
+            "asset_path": "session.nwb",
+            "digest": {"dandi:sha2-256": "source"},
+        }
+    ]
+    media_manifest = [
+        {"file": atlas_file, "sha256": session["atlas_sha256"]},
+        {"file": png_file, "sha256": session["numeric_png_sha256"]},
+        {"file": image_file, "sha256": session["image_sha256"]},
+    ]
+    provenance = {
+        "version": 2,
+        "manifest_sha256": hashlib.sha256(data_path.read_bytes()).hexdigest(),
+        "session_count": 1,
+        "total_unit_count": 2,
+        "asset_manifest": asset_manifest,
+        "asset_manifest_sha256": hashlib.sha256(
+            json.dumps(asset_manifest, separators=(",", ":"), sort_keys=True).encode()
+        ).hexdigest(),
+        "media_manifest_sha256": hashlib.sha256(
+            json.dumps(media_manifest, separators=(",", ":"), sort_keys=True).encode()
+        ).hexdigest(),
+        "skipped_assets": [],
+        "failed_assets": [],
+    }
+    provenance_path = tmp_path / "snapshot.provenance.json"
+    provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+
+    assert load_optotagging_heatmap_data(
+        data_path,
+        provenance_path,
+        media_dir,
+    ) == payload
 
 
 def test_neuropixels_trajectory_snapshot_is_source_backed() -> None:
@@ -321,6 +1077,33 @@ def test_neuropixels_trajectory_snapshot_is_source_backed() -> None:
     assert {row["reason"] for row in provenance["exclusions"]} == {
         "missing-ccf-coordinates:x,y,z"
     }
+    atlas_midline_um = payload["brainSurface"]["annotationShape"][2] * 12.5
+    planned_entry_lateral_um = {
+        "A": 800,
+        "B": 2_000,
+        "C": 2_300,
+        "D": 4_200,
+        "E": 2_600,
+        "F": 1_500,
+    }
+    observed_entry_lateral_um = {
+        probe: statistics.median(
+            atlas_midline_um - record["points"][0][2]
+            for record in payload["insertions"]
+            if record["probe"] == probe
+        )
+        for probe in planned_entry_lateral_um
+    }
+    source_sign_error_um = statistics.mean(
+        abs(observed_entry_lateral_um[probe] - planned_lateral)
+        for probe, planned_lateral in planned_entry_lateral_um.items()
+    )
+    reflected_sign_error_um = statistics.mean(
+        abs(-observed_entry_lateral_um[probe] - planned_lateral)
+        for probe, planned_lateral in planned_entry_lateral_um.items()
+    )
+    assert source_sign_error_um < 500
+    assert reflected_sign_error_um > 4_000
 
 
 def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> None:
@@ -342,6 +1125,10 @@ def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> Non
     assert "preserveDrawingBuffer: true" in html
     assert "camera.position.clone().sub(controls.target).normalize()" in html
     assert "orientationRenderer.render(orientationScene, orientationCamera)" in html
+    assert "atlasCenter.x - point[2]" in html
+    assert "point[2] - atlasCenter.x" not in html
+    assert "camera.fov = fittedVerticalFov(camera.aspect)" in html
+    assert "dorsal: { position: [0, 17500, 0.01], up: [0, 0, 1] }" in html
     assert '<div class="orientation"' not in html
     assert '"insertions":332' in html
     assert 'role="img"' in svg
@@ -375,6 +1162,34 @@ def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> Non
     assert "localized insertions ·" not in svg
     assert ".viewer.static-active .source-strip" in html
     assert svg.count("<polyline ") == 664
+    payload = load_neuropixels_trajectory_data()
+    insertion_count = len(payload["insertions"])
+    trajectory_polylines = re.findall(r'<polyline points="([^"]+)"', svg)
+    dorsal_polylines = trajectory_polylines[insertion_count:]
+    assert len(dorsal_polylines) == insertion_count
+    shape = payload["brainSurface"]["annotationShape"]
+    center = tuple(dimension * 12.5 for dimension in shape)
+    static_screen_x = []
+    static_screen_y = []
+    interactive_screen_x = []
+    interactive_screen_y = []
+    for record, polyline in zip(
+        payload["insertions"], dorsal_polylines, strict=True
+    ):
+        screen_x, screen_y = map(
+            float, polyline.split(maxsplit=1)[0].split(",", maxsplit=1)
+        )
+        anterior_posterior, dorsal_ventral, medial_lateral = record["points"][0]
+        world_x = center[2] - medial_lateral
+        world_y = center[1] - dorsal_ventral
+        world_z = center[0] - anterior_posterior
+        camera_depth = 17_500 - world_y
+        static_screen_x.append(screen_x)
+        static_screen_y.append(screen_y)
+        interactive_screen_x.append(-world_x / camera_depth)
+        interactive_screen_y.append(-world_z / camera_depth)
+    assert statistics.correlation(static_screen_x, interactive_screen_x) > 0.99
+    assert statistics.correlation(static_screen_y, interactive_screen_y) > 0.99
     assert "__NEUROPIXELS_TRAJECTORY_" not in html
     assert "__EMBED_AUTO_HEIGHT_JS__" not in html
     copied_static = (
@@ -389,6 +1204,304 @@ def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> Non
     write_neuropixels_trajectory_svg(svg_path)
     assert html_path.read_text(encoding="utf-8") == html
     assert svg_path.read_text(encoding="utf-8") == svg
+
+
+def test_segmentation_viewer_snapshot_is_source_backed() -> None:
+    payload = load_segmentation_viewers()
+    provenance = json.loads(
+        SEGMENTATION_VIEWER_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+
+    assert hashlib.sha256(SEGMENTATION_VIEWER_DATA_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
+    )
+    assert payload["version"] == 4
+    viewers = {viewer["id"]: viewer for viewer in payload["viewers"]}
+    expected_counts = {
+        "neuropixels": [569, 502, 534, 799, 542, 604],
+        "mesoscope": [399, 463, 70, 277, 374, 356, 124, 321],
+        "slap2": [45, 74],
+    }
+    assert {
+        modality: [source["filterCount"] for source in viewer["sources"]]
+        for modality, viewer in viewers.items()
+    } == expected_counts
+    assert {
+        modality: viewer["asset"]["dandiset_id"]
+        for modality, viewer in viewers.items()
+    } == {
+        "neuropixels": "001637",
+        "mesoscope": "001768",
+        "slap2": "001424",
+    }
+    assert viewers["slap2"]["asset"]["asset_id"] == (
+        "1b6509ef-70d7-46e4-9c8e-587bb6ace95f"
+    )
+    assert [source["sourceId"] for source in viewers["neuropixels"]["sources"]] == [
+        "probe-a", "probe-b", "probe-c", "probe-d", "probe-e", "probe-f"
+    ]
+    assert [source["sourceId"] for source in viewers["mesoscope"]["sources"]] == [
+        "visp_0", "visp_1", "visp_2", "visp_3",
+        "visl_4", "visl_5", "visl_6", "visl_7",
+    ]
+    assert [source["sourceId"] for source in viewers["slap2"]["sources"]] == [
+        "dmd1", "dmd2"
+    ]
+    for source in viewers["neuropixels"]["sources"]:
+        assert source["waveformColumns"] == 210
+        assert source["viewType"] == "spike-map"
+        assert (source["rawRows"], source["rawColumns"]) == (96, 3000)
+        assert len(base64.b64decode(source["rawDataBase64"])) == 288_000
+        assert source["spikeEvents"]
+        assert source["traceColumns"] == 600
+        assert source["traceTimesSeconds"][-1] == pytest.approx(11.99)
+        assert all(
+            "isQcPassing" not in row
+            and "snr" not in row
+            and "firingRateHz" not in row
+            for row in source["filters"]
+        )
+    for source in (*viewers["mesoscope"]["sources"], *viewers["slap2"]["sources"]):
+        assert source["traceTimesSeconds"][-1] > 29.8
+        assert "activityImage" not in source
+        assert source["traceLabel"] == "ΔF/F (%)"
+        assert source["traceScale"] == 100
+        assert source["traceUnit"] == "%"
+    assert {
+        source["fastScanAxis"] for source in viewers["mesoscope"]["sources"]
+    } == {"horizontal"}
+    assert {
+        source["fastScanAxis"] for source in viewers["slap2"]["sources"]
+    } == {"vertical"}
+    assert {
+        source["displayTransform"] for source in viewers["mesoscope"]["sources"]
+    } == {"stored-yx"}
+    assert {
+        source["displayTransform"] for source in viewers["slap2"]["sources"]
+    } == {"transpose-for-publication"}
+    assert (
+        viewers["slap2"]["sources"][0]["baseImage"]["width"],
+        viewers["slap2"]["sources"][0]["baseImage"]["height"],
+    ) == (408, 427)
+    assert (
+        viewers["slap2"]["sources"][1]["baseImage"]["width"],
+        viewers["slap2"]["sources"][1]["baseImage"]["height"],
+    ) == (587, 429)
+    referenced_media = {
+        Path(source[field]["assetPath"]).name
+        for viewer in viewers.values()
+        for source in viewer["sources"]
+        for field in ("baseImage", "labelImage", "filterOverlay")
+        if field in source
+    }
+    assert set(provenance["vendored_media_sha256"]) == referenced_media
+    assert len(referenced_media) == 30
+    assert not any("activity" in name for name in referenced_media)
+
+
+def test_common_median_correction_removes_time_column_offsets() -> None:
+    corrected = common_median_corrected_rgb(
+        bytes((10, 20, 30, 110, 120, 130)),
+        rows=2,
+        columns=3,
+        contrast=1,
+    )
+
+    assert corrected == bytes((78, 78, 78) * 3 + (178, 178, 178) * 3)
+
+
+def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
+    html_path = write_segmentation_viewer_html(tmp_path / "segmentation-viewer.html")
+    html = html_path.read_text(encoding="utf-8")
+    assert 'id="modality-selector"' in html
+    assert 'role="tablist"' in html
+    assert 'id="source-select"' in html
+    assert 'id="source-label"' in html
+    assert 'id="source-canvas"' in html
+    assert 'id="filter-select"' in html
+    assert 'id="activity-chart"' in html
+    assert 'id="background-intensity"' in html
+    assert 'id="common-mode-toggle"' in html
+    assert 'id="common-mode-control"' in html
+    assert 'class="view-button active" data-view="interactive"' in html
+    assert 'data-view="static"' in html
+    assert 'id="interactive-view"' in html
+    assert 'id="static-view"' in html
+    assert "twenty vertically stacked activity traces per modality" in html
+    assert 'id="panel-label"' not in html
+    assert 'id="session-line"' not in html
+    assert 'id="viewer-title"' in html
+    assert 'const colors = ["#25aae1", "#8cc63f", "#ccaf2d"' in html
+    assert 'context.filter = "grayscale(1)"' not in html
+    assert "filterColor(event.filterIndex)" in html
+    assert 'id="overlay-opacity"' not in html
+    for source_id in (
+        "probe-a", "probe-b", "probe-c", "probe-d", "probe-e", "probe-f",
+        "visp_0", "visp_1", "visp_2", "visp_3",
+        "visl_4", "visl_5", "visl_6", "visl_7", "dmd1", "dmd2",
+    ):
+        assert f'"sourceId":"{source_id}"' in html
+    assert "protocol.viewers.map" in html
+    assert "activateModality" in html
+    assert "activateSource" in html
+    assert "populateSourceSelect" in html
+    assert 'class="modality-logo"' in html
+    assert html.count("data:image/png;base64,") == 3
+    assert "tab-count" not in html
+    assert 'id="filter-count"' not in html
+    assert 'id="qc-toggle"' not in html
+    assert 'id="qc-key"' not in html
+    assert 'id="activity-toggle"' not in html
+    assert 'id="activity-key"' not in html
+    assert "isQcPassing" not in html
+    assert "activityImage" not in html
+    assert "firingRateHz" not in html
+    assert '"snr"' not in html
+    assert "Firing rate" not in html
+    assert '["SNR"' not in html
+    assert 'document.querySelector("body > main")' in html
+    assert "[hidden] { display: none !important; }" in html
+    assert "filterAt(event)" in html
+    assert "chart-event" not in html
+    assert "Sequence omission" not in html
+    assert "Motor orientation 90" not in html
+    assert "Common-mode-corrected AP voltage" in html
+    assert "Raw AP voltage" in html
+    assert "Detected sorted spikes" not in html
+    assert "Extraction filters" not in html
+    assert "Fast scan" not in html
+    assert 'id="trace-window"' not in html
+    assert "0.0–30.0 s" not in html
+    assert "Peak channel</span>" not in html
+    assert '["Peak channel", String(filter.peakChannel)]' in html
+    assert '["Source", String(filter.id + 1)]' in html
+    assert r"\u0394F/F (%)" in html
+    assert '"traceScale":100' in html
+    assert "value * scale" in html
+    assert 'options.yUnit === "%"' in html
+    assert "const margin = { left: 96, right: 40" in html
+    assert "Source Delta F/F" not in html
+    assert 'context.fillStyle = "#ffffff"' in html
+    assert "context.filter = \"grayscale(1)\"" not in html
+    assert "const colors = [" in html
+    assert 'class="chart-tick"' in html
+    assert "Raw AP contrast" in html
+    assert "Background intensity" in html
+    assert "state.overlayOpacity" not in html
+    assert "dandiset/001637/draft/files" in html
+    assert "dandiset/001768/draft/files" in html
+    assert "dandiset/001424/draft/files" in html
+    assert "__SEGMENTATION_" not in html
+    assert "__EMBED_AUTO_HEIGHT_JS__" not in html
+
+    static_paths = {
+        modality: tmp_path / SEGMENTATION_VIEWER_STATIC_OUTPUTS[modality].name
+        for modality in SEGMENTATION_VIEWER_STATIC_OUTPUTS
+    }
+    first_static_renders = {}
+    for modality, panel_labels, removed_heading in (
+        ("neuropixels", ("A", "B"), "Neuropixels unit-template viewer"),
+        ("mesoscope", ("C", "D"), "Mesoscope ROI segmentation viewer"),
+        ("slap2", ("E", "F"), "SLAP2 source-segmentation viewer"),
+    ):
+        svg_path = write_segmentation_viewer_svg(modality, static_paths[modality])
+        svg = svg_path.read_text(encoding="utf-8")
+        first_static_renders[modality] = svg
+        assert 'role="img"' in svg
+        assert 'filter id="neutral-overlay"' not in svg
+        assert "Mouse " not in svg
+        for panel_label in panel_labels:
+            assert f">{panel_label}</text>" in svg
+        assert "Selected filter" not in svg
+        assert " filters</text>" not in svg
+        assert "Activity traces ·" not in svg
+        assert svg.count('class="static-modality-logo"') == 1
+        assert removed_heading not in svg.split("</title>", maxsplit=1)[1]
+        assert '<rect x="748" y="100"' not in svg
+        assert svg.count('class="static-activity-trace"') == 20
+        assert svg.count('class="trace-scale-bar"') == 2
+        assert 'class="trace-scale-tick"' not in svg
+        assert svg.count('stroke="#000000" stroke-width="4"') == 2
+        assert 'stroke="#E2E6E4"' not in svg
+        assert "Fast scan" not in svg
+        if modality == "neuropixels":
+            assert "Probe length from tip (µm)" in svg
+            assert 'transform="rotate(-90' not in svg
+            assert svg.count('data-vertical-gain="1"') == 20
+            assert "310 detected spikes" not in svg
+            assert "common-mode-corrected AP voltage" not in svg
+            assert "Sequence omission" not in svg
+            assert 'fill="#25AAE1"' in svg
+            assert "Binned spike rate" not in svg
+        else:
+            expected_gain = "3" if modality == "mesoscope" else "2"
+            assert svg.count(f'data-vertical-gain="{expected_gain}"') == 20
+            assert svg.count("<clipPath") == 20
+            assert svg.count("data:image/png;base64,") >= 3
+            assert 'filter="url(#neutral-overlay)"' not in svg
+            assert svg.count('class="represented-filter-fills"') == 1
+            assert 'class="represented-filter"' not in svg
+            assert "<circle" not in svg
+            assert "ΔF/F (%)" not in svg
+            assert "%</text>" in svg
+
+    combined_path = write_segmentation_viewer_static_svg(
+        tmp_path / "figure-06-segmentation-viewers.svg",
+        static_paths,
+    )
+    combined_svg = combined_path.read_text(encoding="utf-8")
+    assert 'width="1400" height="2280"' in combined_svg
+    assert 'role="img"' in combined_svg
+    assert combined_svg.count("data:image/svg+xml;base64,") == 3
+
+    copied_media = tmp_path / "media" / "segmentation-viewers"
+    assert {path.name for path in copied_media.glob("*.png")} == set(
+        json.loads(
+            SEGMENTATION_VIEWER_PROVENANCE_PATH.read_text(encoding="utf-8")
+        )["vendored_media_sha256"]
+    )
+    assert (copied_media / SEGMENTATION_VIEWER_STATIC_OUTPUT.name).read_bytes() == (
+        SEGMENTATION_VIEWER_STATIC_OUTPUT.read_bytes()
+    )
+    assert write_segmentation_viewer_html(html_path).read_text(encoding="utf-8") == html
+    assert write_segmentation_viewer_static_svg(
+        combined_path,
+        static_paths,
+    ).read_text(encoding="utf-8") == combined_svg
+    for modality, svg in first_static_renders.items():
+        assert write_segmentation_viewer_svg(
+            modality,
+            static_paths[modality],
+        ).read_text(encoding="utf-8") == svg
+
+
+def test_segmentation_viewer_orchestrator_writes_all_modalities(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output_path = tmp_path / SEGMENTATION_VIEWER_OUTPUT.name
+    combined_static_path = tmp_path / SEGMENTATION_VIEWER_STATIC_OUTPUT.name
+    static_paths = {
+        modality: tmp_path / f"segmentation-{modality}.svg"
+        for modality in ("neuropixels", "mesoscope", "slap2")
+    }
+    monkeypatch.setattr(
+        "openscope_p3_publication.figures.SEGMENTATION_VIEWER_OUTPUT",
+        output_path,
+    )
+    monkeypatch.setattr(
+        "openscope_p3_publication.figures.SEGMENTATION_VIEWER_STATIC_OUTPUT",
+        combined_static_path,
+    )
+    monkeypatch.setattr(
+        "openscope_p3_publication.figures.SEGMENTATION_VIEWER_STATIC_OUTPUTS",
+        static_paths,
+    )
+
+    assert write_segmentation_viewers() == output_path
+    assert output_path.is_file()
+    assert combined_static_path.is_file()
+    assert all(path.is_file() for path in static_paths.values())
 
 
 def test_stimulus_sources_are_pinned() -> None:
@@ -448,9 +1561,9 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert 'data-view="static"' in html
     assert ">Interactive</button>" in html
     assert ">Static</button>" in html
-    assert 'class="view-button active" data-view="static" aria-pressed="true"' in html
-    assert '<div id="playback-view" hidden>' in html
-    assert 'selectView("static")' in html
+    assert 'class="view-button active" data-view="playback" aria-pressed="true"' in html
+    assert '<div id="playback-view">' in html
+    assert 'selectView("playback")' in html
     assert 'id="static-panel"' in html
     assert "data:image/svg+xml;base64," in html
     assert "detailed context, control, receptive-field, and zebra-movie blocks" in html
@@ -463,7 +1576,9 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert html.index('id="block-track"') < html.index('id="stimulus-canvas"')
     assert 'id="context-selector"' in html
     assert "--context-start" in html
-    assert "contextButton.textContent = sessionLabels[index]" in html
+    assert 'contextButton.textContent = "Context"' in html
+    assert 'elements.sessionTitle.textContent = "Context block"' in html
+    assert "contextButton.textContent = sessionLabels[index]" not in html
     assert "grid-template-columns: minmax(0, 1fr);" in html
     assert 'id="stimulus-video"' in html
     assert 'class="source-links"' not in html
@@ -624,14 +1739,11 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert "Rig geometry" in svg
     assert "Mouse platform" in svg
     assert "Brain targeting" in svg
-    assert '<text class="hardware-caption" x="1510" y="88"' in svg
-    assert '<text class="hardware-caption" x="1510" y="490"' in svg
-    assert re.search(
-        r'<text class="hardware-caption" x="1510" y="490"[^>]+font-size="18"',
-        svg,
-    )
+    assert 'class="hardware-caption"' not in svg
+    assert "6 probes spanning cortical" not in svg
+    assert "8 imaging planes across" not in svg
+    assert "Dual-plane dendritic imaging" not in svg
     assert "pan-neuronal calcium imaging" not in svg
-    assert '<text class="hardware-caption" x="1510" y="1272"' in svg
     assert "Behavior cohorts" not in svg
     assert "motor cohort" not in svg.lower()
     assert svg.count('class="zoom-focus-box"') == 2
@@ -665,10 +1777,10 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert svg.count('data-layer="V"') == 2
     assert svg.count('class="slap2-plane-label"') == 2
     hardware_description_sizes = re.findall(
-        r'class="(?:hardware-caption|slap2-plane-label)"[^>]+font-size="([^"]+)"',
+        r'class="slap2-plane-label"[^>]+font-size="([^"]+)"',
         svg,
     )
-    assert hardware_description_sizes == ["18"] * 5
+    assert hardware_description_sizes == ["18"] * 2
     plane_label_positions = re.findall(
         r'class="slap2-plane-label" x="([^"]+)" y="([^"]+)"', svg
     )
@@ -688,6 +1800,8 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
         assert label in svg
     assert '<text x="1318" y="746"' in svg
     assert '<text x="1460" y="716"' in svg
+    assert 'class="mesoscope-target-legend"' in svg
+    assert svg.count('paint-order="stroke"') == 4
     for asset_id in assets:
         assert f'data-asset="{asset_id}"' in svg
 
@@ -696,21 +1810,21 @@ def test_placeholder_plans_mask_obsolete_figure_numbers(tmp_path: Path) -> None:
     cases = (
         (
             write_unit_extraction_plan_svg,
-            "figure-06-unit-extraction-plan.svg",
+            "figure-07-unit-extraction-plan.svg",
             "Unit extraction → signal and noise amplitude",
             "Figure 4",
             2,
         ),
         (
             write_basic_stimuli_plan_svg,
-            "figure-07-basic-stimuli-plan.svg",
+            "figure-08-basic-stimuli-plan.svg",
             "Basic stimuli → unit/system identification",
             "Figure 5",
             1,
         ),
         (
             write_standard_oddball_plan_svg,
-            "figure-09-standard-oddball-plan.svg",
+            "figure-10-standard-oddball-plan.svg",
             "Responses to standard oddball stimuli",
             "Figure 7",
             2,
@@ -742,10 +1856,9 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
     assert 'data-view="interactive"' in html
     assert 'data-view="static"' in html
     assert 'id="static-view"' in html
-    assert 'class="view-button active" data-view="static" aria-pressed="true"' in html
-    assert '<div id="interactive-view" hidden>' in html
-    assert 'selectView("static")' in html
-    assert 'selectView("interactive")' not in html
+    assert 'class="view-button active" data-view="interactive" aria-pressed="true"' in html
+    assert '<div id="interactive-view">' in html
+    assert 'selectView("interactive")' in html
     assert "data:image/svg+xml;base64," in html
     assert "selectView" in html
     assert 'document.querySelector("body > main")' in html
@@ -1196,6 +2309,9 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "Control versus context-block running" not in html
     assert "videoTimeAt" in html
     assert "localTimeAt" in html
+    assert html.count('id="play-toggle"') == 1
+    assert 'id="stage-play"' not in html
+    assert "stagePlay" not in html
     assert 'document.querySelector("body > main")' in html
     assert 'classList.add("is-embedded")' in html
     assert 'document.documentElement.style.overflow = "hidden"' in html
@@ -1295,6 +2411,13 @@ def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "synchronized-eye-tracking.svg" in html
     assert "videoTimeAt" in html
     assert "localTimeAt" in html
+    assert html.count('id="play-toggle"') == 1
+    assert 'id="stage-play"' not in html
+    assert "stagePlay" not in html
+    assert '<details class="session-metadata">' in html
+    assert '<details class="session-metadata" open>' not in html
+    assert html.index('id="pupil-trace"') < html.index('class="session-metadata"')
+    assert html.index('class="session-metadata"') < html.index('id="source-links"')
     assert "aind-open-data.s3.us-west-2.amazonaws.com" in html
     assert 'document.querySelector("body > main")' in html
     assert "@media (max-width: 760px)" in html
@@ -1585,7 +2708,7 @@ def test_running_statistics_are_source_backed_and_mouse_aggregated() -> None:
 
 def test_neural_excerpts_are_source_backed_and_aligned() -> None:
     assert hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest() == (
-        "9d0e183aa6f4f1329389a9d4b2b4753efc4403c642f734446a94c97d617b1e0c"
+        "d9c5e84a3417c44ec6a929763e59bb61db20f2ff7bc3a7a55b3bbaa32b6f99d8"
     )
     payload = load_neural_excerpts(NEURAL_EXCERPTS_PATH)
 
@@ -1715,7 +2838,20 @@ def test_neural_excerpts_are_source_backed_and_aligned() -> None:
             option["spriteEncoding"],
         )
         for option in slap2_options
-    } == {(640, 400, 2, "lossless WebP")}
+    } == {(400, 640, 2, "lossless WebP")}
+    assert {
+        (
+            option["nativeWidth"],
+            option["nativeHeight"],
+            option["displayWidth"],
+            option["displayHeight"],
+            option["storedWidth"],
+            option["storedHeight"],
+            option["displayTransform"],
+        )
+        for option in slap2_options
+    } == {(1280, 800, 800, 1280, 1280, 800, "transpose-for-publication")}
+    assert {option["fastScanAxis"] for option in slap2_options} == {"vertical"}
     for green_option, red_option in zip(
         slap2_options[0::2], slap2_options[1::2], strict=True
     ):
@@ -1802,6 +2938,7 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert 'button.append(logo, session.label)' in html
     assert "Raw AP acquisition voltage" in html
     assert "Raw AP acquisition" in html
+    assert "colorbarX" not in html
     assert "Raw 30 kHz AP acquisition voltage with CCF boundaries" in html
     assert "drawAnatomySegments" in html
     assert "anatomySegments" in html
@@ -1811,6 +2948,9 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "apDataBase64" not in html
     assert "Raw two-photon frames" in html
     assert "Sparse raw detector frames" in html
+    assert "storedWidth || option.nativeWidth" in html
+    assert "storedHeight || option.nativeHeight" in html
+    assert "option.displayWidth || option.nativeWidth" in html
     assert "dataBase64" in html
     assert "mesoscope-visp-0.webp" in html
     assert "rangeSha256" in html
@@ -1867,7 +3007,7 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
             assert contrast["high_percentile"] == 99.5
             assert 0 <= contrast["low_value"] < contrast["high_value"] <= 255
         else:
-            assert record["frame_size"] == [640, 400]
+            assert record["frame_size"] == [400, 640]
             assert record["spatial_downsample_factor"] == 2
             assert record["temporal_averaging_frames"] == 1
             assert record["display_contrast"] == {
@@ -1892,30 +3032,35 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert svg.count('class="raw-image-card" data-modality="neuropixels"') == 6
     assert svg.count('class="raw-image-card" data-modality="mesoscope"') == 8
     assert svg.count('class="raw-image-card" data-modality="slap2"') == 2
+    assert svg.count('data-modality="slap2" data-option-id=') == 2
+    assert svg.count('data-card-width="265"') == 2
     assert svg.count('class="raw-card-image"') == 16
     assert svg.count('data-modality="mesoscope" data-option-id=') == 8
     assert svg.count('data-card-width="255"') == 8
-    assert svg.count('data-modality="slap2" data-option-id=') == 2
-    assert svg.count('data-card-width="500"') == 2
     assert "Probe A" in svg
     assert "Probe F" in svg
     assert "VISp · 4 planes" in svg
     assert "VISl · 4 planes" in svg
-    assert "DMD1 · 91 µm · green + red composite" in svg
-    assert "DMD2 · 123.75 µm · green + red composite" in svg
+    assert "DMD1 · 91 µm" in svg
+    assert "DMD2 · 123.75 µm" in svg
+    assert "green + red composite" not in svg
     assert svg.count(">50 µm</text>") == 1
     assert svg.count(">25 µm</text>") == 1
     assert "6 probe recordings · all raw excerpts stacked" in svg
     assert "8 planes · 4 VISp + 4 VISl · all raw frames stacked" in svg
     assert "2 VISp planes · merged green + red channels" in svg
+    assert "±" not in svg
+    assert "µV" not in svg
+    assert 'font-size="12" font-weight="600" text-anchor="middle"' in svg
     assert svg.count('class="neural-detail-label"') == 3
     assert re.findall(
         r'class="neural-detail-label"[^>]+\sy="([^"]+)"[^>]+font-size="([^"]+)"',
         svg,
     ) == [("122", "18")] * 3
     assert '<rect x="650.00" y="135.00" width="255"' in svg
-    assert '<rect x="1240.00" y="135.00" width="500"' in svg
-    assert '<rect x="1255.00" y="346.00" width="500"' in svg
+    assert '<rect x="1240.00" y="135.00" width="265"' in svg
+    assert '<rect x="1510.00" y="135.00" width="265"' in svg
+    assert "#D9DEDC" not in svg
     assert "scale-card" not in svg
     assert "playback" not in svg.lower()
     assert "event onset" not in svg.lower()

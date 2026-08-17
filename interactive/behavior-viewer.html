@@ -6,6 +6,32 @@
   <meta name="color-scheme" content="light">
   <title>Synchronized behavior across recording modalities</title>
   <style>
+:root {
+  --figure-font-sans: "Myriad Pro", Arial, sans-serif;
+  --figure-font-mono: "IBM Plex Mono", monospace;
+  --figure-type-panel-title: 1.25rem;
+  --figure-type-section-title: 1rem;
+  --figure-type-body: 0.875rem;
+  --figure-type-control: 0.8125rem;
+  --figure-type-metadata: 0.75rem;
+  --figure-type-axis: 0.75rem;
+  --figure-line-body: 1.45;
+  --figure-line-compact: 1.3;
+}
+
+body {
+  font-family: var(--figure-font-sans);
+  font-size: var(--figure-type-body);
+  line-height: var(--figure-line-body);
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+  font-size: var(--figure-type-control);
+}
+
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap");
 
 :root {
@@ -151,13 +177,13 @@ html.is-embedded .viewer { min-height: 0; }
 .context-label {
   margin: 0 0 2px;
   color: var(--accent);
-  font-size: 0.75rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 700;
 }
 
 .session-header h1 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--figure-type-section-title);
   font-weight: 650;
   letter-spacing: 0;
   line-height: 1.25;
@@ -180,7 +206,7 @@ html.is-embedded .viewer { min-height: 0; }
   background: var(--wash);
   color: #496375;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.66rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 500;
   text-decoration: none;
 }
@@ -215,7 +241,7 @@ html.is-embedded .viewer { min-height: 0; }
   background: transparent;
   color: #cbd0ce;
   cursor: pointer;
-  font-size: 0.72rem;
+  font-size: var(--figure-type-control);
   font-weight: 600;
 }
 
@@ -252,7 +278,7 @@ html.is-embedded .viewer { min-height: 0; }
   gap: 8px;
   pointer-events: none;
   color: #fff;
-  font-size: 0.7rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 600;
   text-shadow: 0 1px 3px #000;
 }
@@ -265,7 +291,7 @@ html.is-embedded .viewer { min-height: 0; }
   border-radius: 3px;
   background: rgba(20, 23, 22, 0.72);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.61rem;
+  font-size: var(--figure-type-metadata);
   text-shadow: none;
 }
 
@@ -282,7 +308,7 @@ html.is-embedded .viewer { min-height: 0; }
 }
 
 .video-unavailable[hidden] { display: none; }
-.video-unavailable span { color: #bfc5c2; font-size: 0.75rem; }
+.video-unavailable span { color: #bfc5c2; font-size: var(--figure-type-metadata); }
 
 .event-badge {
   position: absolute;
@@ -293,29 +319,9 @@ html.is-embedded .viewer { min-height: 0; }
   border-radius: 3px;
   background: #fff;
   color: #9d352b;
-  font-size: 0.68rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 700;
 }
-
-.stage-play {
-  position: absolute;
-  z-index: 4;
-  top: 50%;
-  left: 50%;
-  width: 52px;
-  height: 52px;
-  display: grid;
-  place-items: center;
-  transform: translate(-50%, -50%);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 50%;
-  background: rgba(23, 26, 25, 0.72);
-  color: #fff;
-  cursor: pointer;
-  font-size: 1.1rem;
-}
-
-.stage-play[hidden] { display: none; }
 
 .stimulus-panel {
   min-width: 0;
@@ -334,7 +340,7 @@ html.is-embedded .viewer { min-height: 0; }
 
 .panel-heading h2 {
   margin: 0;
-  font-size: 0.83rem;
+  font-size: var(--figure-type-section-title);
   font-weight: 700;
   letter-spacing: 0;
 }
@@ -342,7 +348,7 @@ html.is-embedded .viewer { min-height: 0; }
 #trial-type,
 #trace-unit {
   color: var(--muted);
-  font-size: 0.66rem;
+  font-size: var(--figure-type-metadata);
 }
 
 #stimulus-canvas {
@@ -361,13 +367,13 @@ html.is-embedded .viewer { min-height: 0; }
 }
 
 .stimulus-details div { min-width: 0; }
-.stimulus-details dt { color: var(--muted); font-size: 0.62rem; }
+.stimulus-details dt { color: var(--muted); font-size: var(--figure-type-metadata); }
 .stimulus-details dd {
   margin: 1px 0 0;
   overflow: hidden;
   color: var(--ink);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.68rem;
+  font-size: var(--figure-type-metadata);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -403,7 +409,7 @@ html.is-embedded .viewer { min-height: 0; }
   min-width: 112px;
   color: var(--muted);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.68rem;
+  font-size: var(--figure-type-metadata);
   text-align: right;
 }
 
@@ -414,7 +420,7 @@ html.is-embedded .viewer { min-height: 0; }
 #trace-value {
   color: var(--accent);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.72rem;
+  font-size: var(--figure-type-metadata);
   font-weight: 500;
 }
 
@@ -431,7 +437,7 @@ html.is-embedded .viewer { min-height: 0; }
   justify-content: center;
   gap: 7px;
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: var(--figure-type-metadata);
 }
 
 .event-line {
@@ -443,7 +449,7 @@ html.is-embedded .viewer { min-height: 0; }
 
 @media (max-width: 560px) {
   .modality-tabs { padding: 0 7px; }
-  .modality-tab { min-width: 0; flex: 1; gap: 4px; padding: 0 6px; font-size: 0.75rem; }
+  .modality-tab { min-width: 0; flex: 1; gap: 4px; padding: 0 6px; font-size: var(--figure-type-control); }
   .modality-logo { width: 32px; height: 32px; flex-basis: 32px; }
   .session-header { padding: 10px; align-items: flex-start; flex-direction: column; gap: 8px; }
   .source-links { justify-content: flex-start; }
@@ -489,9 +495,6 @@ html.is-embedded .viewer { min-height: 0; }
             <span>The synchronized trace and stimulus remain active.</span>
           </div>
           <span class="event-badge" id="event-badge" hidden>Mismatch</span>
-          <button class="stage-play" id="stage-play" type="button" aria-label="Play synchronized excerpt" title="Play">
-            <span aria-hidden="true">&#9654;</span>
-          </button>
         </div>
       </div>
 
@@ -562,7 +565,6 @@ html.is-embedded .viewer { min-height: 0; }
     sessionTitle: document.getElementById("session-title"),
     sourceLinks: document.getElementById("source-links"),
     spatialFrequency: document.getElementById("spatial-frequency"),
-    stagePlay: document.getElementById("stage-play"),
     staticView: document.getElementById("static-view"),
     stimulusCanvas: document.getElementById("stimulus-canvas"),
     streamStatus: document.getElementById("stream-status"),
@@ -812,7 +814,6 @@ html.is-embedded .viewer { min-height: 0; }
       state.playing ? "Pause synchronized excerpt" : "Play synchronized excerpt",
     );
     elements.playToggle.title = state.playing ? "Pause" : "Play";
-    elements.stagePlay.hidden = state.playing;
   }
 
   function tick() {
@@ -968,7 +969,6 @@ html.is-embedded .viewer { min-height: 0; }
   elements.video.addEventListener("error", videoFailed);
   elements.video.addEventListener("ended", pause);
   elements.playToggle.addEventListener("click", togglePlay);
-  elements.stagePlay.addEventListener("click", togglePlay);
   elements.timeline.addEventListener("input", (event) => seek(Number(event.target.value)));
   elements.timeline.addEventListener("change", () => {
     if (state.playing) play();

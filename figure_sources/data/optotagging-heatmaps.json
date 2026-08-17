@@ -1,0 +1,148 @@
+{
+  "conditions": [
+    {
+      "count_window_seconds": 0.5,
+      "display_name": "Raised cosine",
+      "ordering": "mean_firing_rate_during_exact_pulses",
+      "post_delay_seconds": 0.25,
+      "pulse_frequency_hz": 1.0,
+      "pulse_width_seconds": 1.0,
+      "table_name": "raised_cosine_presentations"
+    },
+    {
+      "count_window_seconds": 0.01,
+      "display_name": "5 Hz pulse train",
+      "ordering": "mean_firing_rate_during_exact_pulses",
+      "post_delay_seconds": 0.002,
+      "pulse_frequency_hz": 5.0,
+      "pulse_width_seconds": 0.01,
+      "table_name": "5 hz pulse train_presentations"
+    },
+    {
+      "count_window_seconds": 0.01,
+      "display_name": "40 Hz pulse train",
+      "ordering": "mean_firing_rate_during_exact_pulses",
+      "post_delay_seconds": 0.002,
+      "pulse_frequency_hz": 40.0,
+      "pulse_width_seconds": 0.006,
+      "table_name": "40 hz pulse train_presentations"
+    }
+  ],
+  "default_session_id": "ecephys_830851_2026-03-19_10-49-11",
+  "psth": {
+    "alignment": "presentation laser onset",
+    "baseline": "time < 0 seconds",
+    "bin_seconds": 0.001,
+    "color_limits_zscore": [
+      -3,
+      3
+    ],
+    "display_bin_count": 256,
+    "interactive_color_limit_range": [
+      0.5,
+      8
+    ],
+    "interactive_color_limit_step": 0.5,
+    "storage": "baseline-zscored contiguous-bin means, clipped to [-8, 8], quantized to signed int8 at 1/15.875 z-score per step, with NaN sentinel -128, in a lossless single-channel PNG",
+    "window_seconds": [
+      -0.5,
+      1.2
+    ]
+  },
+  "selection": {
+    "sessions": {
+      "ecephys_830851_2026-03-19_10-49-11": {
+        "optotagged_cell_count": 39,
+        "target_yield_percentile": 0.5
+      },
+      "ecephys_832691_2026-03-24_10-04-30": {
+        "optotagged_cell_count": 84,
+        "target_yield_percentile": 0.95
+      },
+      "ecephys_848390_2026-05-06_09-54-56": {
+        "optotagged_cell_count": 68,
+        "target_yield_percentile": 0.8
+      }
+    },
+    "source_session_count": 60,
+    "strategy": "nearest_all_session_optotagged_cell_yield_percentiles"
+  },
+  "session_count": 3,
+  "sessions": [
+    {
+      "asset_id": "0167df0a-b5f1-45bd-9659-c32ac132d875",
+      "asset_path": "sub-830851/sub-830851_ses-ecephys-830851-2026-03-19-10-49-11_ecephys.nwb",
+      "atlas_file": "ecephys_830851_2026-03-19_10-49-11.atlas.json",
+      "atlas_sha256": "60c4d0ed0202205f84ca42a3ba45f47cacd0e8d290b7ff0c140d2eb4ac295d41",
+      "condition_counts": {
+        "40 hz pulse train_presentations": {
+          "presentations": 150,
+          "pulses": 6000
+        },
+        "5 hz pulse train_presentations": {
+          "presentations": 150,
+          "pulses": 750
+        },
+        "raised_cosine_presentations": {
+          "presentations": 150,
+          "pulses": 150
+        }
+      },
+      "numeric_png_file": "ecephys_830851_2026-03-19_10-49-11.atlas.png",
+      "numeric_png_sha256": "c1f8af796f0ee3ee7d5be5d5a6269e5e66d8da09ab394fb1b459badbba911734",
+      "session_id": "ecephys_830851_2026-03-19_10-49-11",
+      "unit_count": 1736
+    },
+    {
+      "asset_id": "e8dc5ef4-720b-4fb4-a493-e8dc2ef2b8d6",
+      "asset_path": "sub-832691/sub-832691_ses-ecephys-832691-2026-03-24-10-04-30_ecephys.nwb",
+      "atlas_file": "ecephys_832691_2026-03-24_10-04-30.atlas.json",
+      "atlas_sha256": "66050c8b9a69eb91a560c6e8efe59b384ee25a8dc803e01dde7fe4b12ac2cdc4",
+      "condition_counts": {
+        "40 hz pulse train_presentations": {
+          "presentations": 150,
+          "pulses": 6000
+        },
+        "5 hz pulse train_presentations": {
+          "presentations": 150,
+          "pulses": 750
+        },
+        "raised_cosine_presentations": {
+          "presentations": 150,
+          "pulses": 150
+        }
+      },
+      "numeric_png_file": "ecephys_832691_2026-03-24_10-04-30.atlas.png",
+      "numeric_png_sha256": "d725158b711ae7e3ce97ea47f5f66a6643695554f0b89ec57df85097073feebc",
+      "session_id": "ecephys_832691_2026-03-24_10-04-30",
+      "unit_count": 2314
+    },
+    {
+      "asset_id": "0e5b530a-e22d-4bf8-a5d7-5108229c899a",
+      "asset_path": "sub-848390/sub-848390_ses-ecephys-848390-2026-05-06-09-54-56_ecephys.nwb",
+      "atlas_file": "ecephys_848390_2026-05-06_09-54-56.atlas.json",
+      "atlas_sha256": "94c0896985181edcde482f93a6c1debc4a9e737dafbf534a20bb2b2b28dcc5f4",
+      "condition_counts": {
+        "40 hz pulse train_presentations": {
+          "presentations": 149,
+          "pulses": 5960
+        },
+        "5 hz pulse train_presentations": {
+          "presentations": 150,
+          "pulses": 750
+        },
+        "raised_cosine_presentations": {
+          "presentations": 149,
+          "pulses": 149
+        }
+      },
+      "numeric_png_file": "ecephys_848390_2026-05-06_09-54-56.atlas.png",
+      "numeric_png_sha256": "7208958438ab9bf63ce19aead2401c15f102728baef8728617cf4b912ed7460a",
+      "session_id": "ecephys_848390_2026-05-06_09-54-56",
+      "unit_count": 2396
+    }
+  ],
+  "static_example_session_id": "ecephys_830851_2026-03-19_10-49-11",
+  "total_unit_count": 6446,
+  "version": 2
+}

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Optotagging heatmaps by session</title>
+  <style>__OPTOTAGGING_CSS__</style>
+</head>
+<body>
+  <main class="viewer" id="optotagging-viewer">
+    <div class="view-switch" role="group" aria-label="Interactive or static view">
+      <button type="button" class="view-button active" data-view="interactive"
+        aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static"
+        aria-pressed="false">Static</button>
+    </div>
+
+    <div id="interactive-view">
+      <header>
+        <p class="eyebrow">OpenScope P3 Neuropixels</p>
+        <h1>Optotagging responses by session</h1>
+        <p class="summary">
+          Select a session to compare raised-cosine, 5 Hz, and 40 Hz laser-aligned
+          responses across all non-noise units.
+        </p>
+      </header>
+      <section class="controls" aria-label="Heatmap controls">
+        <div>
+          <label for="session-select">Session</label>
+          <select id="session-select"></select>
+        </div>
+        <div>
+          <label for="parent-area">Allen major parent</label>
+          <select id="parent-area" disabled>
+            <option value="All areas">All areas</option>
+          </select>
+        </div>
+        <div>
+          <label for="color-limit">Symmetric color limit: ±<output
+            id="color-limit-value" for="color-limit">3</output> z</label>
+          <input id="color-limit" type="range" min="0.5" max="8" step="0.5" value="3">
+        </div>
+      </section>
+      <section class="session-summary" aria-live="polite">
+        <strong id="session-title"></strong>
+        <span id="session-details"></span>
+      </section>
+      <figure id="numeric-figure" hidden>
+        <div id="heatmap-panels" class="heatmap-panels"></div>
+        <div class="color-key" aria-label="Shared coolwarm color scale">
+          <span id="color-min">−3</span><span class="color-gradient"></span>
+          <span>0</span><span class="color-gradient warm"></span>
+          <span id="color-max">+3</span>
+        </div>
+        <figcaption>
+          Rows are baseline z-scored per unit. Parent filtering is applied before each
+          condition is ordered by firing rate during its exact laser-on intervals;
+          strongest responses appear at the top. All panels share the displayed scale.
+        </figcaption>
+      </figure>
+      <figure id="fallback-figure" hidden>
+        <img id="heatmap-image" alt="">
+        <figcaption>Static snapshot. Regenerate the version 2 atlas to enable anatomy
+          filtering and numeric color remapping.</figcaption>
+      </figure>
+    </div>
+
+    <section class="static-view" id="static-view"
+      aria-label="Static default-session optotagging overview" hidden>
+      <div class="static-shell">
+        <img src="__OPTOTAGGING_STATIC_IMAGE__"
+          alt="Four-panel optotagging figure showing a 5 Hz laser-aligned heatmap, overall yield, yield by major parent area, and the top 18 structures.">
+      </div>
+    </section>
+  </main>
+  <script>
+    const OPTOTAGGING_DATA = __OPTOTAGGING_DATA__;
+    globalThis.OPTOTAGGING_ATLASES = __OPTOTAGGING_ATLASES__;
+  </script>
+  <script>__OPTOTAGGING_JS__</script>
+  <script>__EMBED_AUTO_HEIGHT_JS__</script>
+</body>
+</html>

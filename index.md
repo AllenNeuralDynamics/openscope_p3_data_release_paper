@@ -357,7 +357,7 @@ Possible QC failure can come from these cases: white foam buildup on the edge of
 
 #### Optotagging protocol
 
-At the end of every experiment, an optotagging protocol is run during which the cortical surface is stimulated with blue light. In Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)\_EYFP)/wt mice, this protocol allowes us to identify putative Sst+ cortical interneurons by an increase in spiking activity time-locked to laser stimulation (and consequent ChR2 activation). Blue light is delivered by a 473 nm laser (Laser Quantum, model Ciel or Cobolt model 06-MLD). The light source is coupled to a 400 μm diameter fiber optic cable (Thorlabs) or bifurcated fiber bundle (Thorlabs, BFYL4LF01), with the tip(s) positioned such that blue light illuminates the entire cranial window. Two types of stimuli at 3 different light levels are randomly interleaved: a 10 ms pulse, and a 1s raised cosine ramp. For the pulse stimulus, a 0.5 ms ramp is applied at the beginning and end of the pulse. Stimuli are presented at intervals of 1.5 s plus a uniformly distributed delay between 0 and 0.5 s.
+At the end of every experiment, an optotagging protocol is run during which the cortical surface is stimulated with blue light. In Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)\_EYFP)/wt mice, this protocol allowes us to identify putative Sst+ cortical interneurons by an increase in spiking activity time-locked to laser stimulation (and consequent ChR2 activation). Blue light is delivered by a 473 nm laser (Laser Quantum, model Ciel or Cobolt model 06-MLD). The light source is coupled to a 400 μm diameter fiber optic cable (Thorlabs) or bifurcated fiber bundle (Thorlabs, BFYL4LF01), with the tip(s) positioned such that blue light illuminates the entire cranial window. Two types of stimuli at 3 different light levels are randomly interleaved: a 10 ms pulse, and a 1s raised cosine ramp. For the pulse stimulus, a 0.5 ms ramp is applied at the beginning and end of the pulse. Stimuli are presented at intervals of 1.5 s plus a uniformly distributed delay between 0 and 0.5 s. Representative laser-aligned responses and session-level yield summaries are shown in [Supplementary Figure 5](#fig-supp-optotagging-heatmaps).
 
 #### Clearing with life canvas
 
@@ -653,11 +653,13 @@ Repeated and aborted worksheet rows are retained in the Static view and excluded
 :::
 ## NWB file contents
 
-All data from this project are packaged as Neurodata Without Borders (NWB)
-files and deposited on the DANDI Archive. Neuropixels electrophysiology
-sessions are available at [DANDI:001637](https://dandiarchive.org/dandiset/001637),
-and mesoscope two-photon imaging sessions at
-[DANDI:001768](https://dandiarchive.org/dandiset/001768). Use the tabs below as
+All data from this project are packaged as Neurodata
+Without Borders (NWB) files and deposited on the DANDI Archive. Neuropixels
+electrophysiology sessions are available at
+[DANDI:001637](https://dandiarchive.org/dandiset/001637), mesoscope two-photon
+imaging sessions at [DANDI:001768](https://dandiarchive.org/dandiset/001768),
+and SLAP2 dendritic-imaging sessions at
+[DANDI:001424](https://dandiarchive.org/dandiset/001424). Use the tabs below as
 a map from a scientific question to the corresponding NWB object and PyNWB
 entry point. Object names can differ slightly among sessions; the paths shown
 here reflect representative files in these Dandisets.
@@ -708,6 +710,20 @@ summary images remain connected.
 | What does the field of view look like? | Each plane's `images` interface contains average projection, maximum projection, and segmentation-mask summary images. | `nwbfile.processing[plane]["images"]` |
 
 :::
+:::{tab-item} SLAP2
+
+**SLAP2 NWB files ([DANDI:001424](https://dandiarchive.org/dandiset/001424)):**
+connect source masks, mean and activity images, and fluorescence traces within
+each DMD imaging path.
+
+| Question | NWB contents | Representative PyNWB entry point |
+| --- | --- | --- |
+| Where and how was each DMD path imaged? | `/general/optophysiology` describes the DMD1 and DMD2 imaging planes, optical channels, device, indicator, and field geometry. | `nwbfile.imaging_planes`, `nwbfile.devices` |
+| Which pixels belong to each extracted source? | `/processing/ophys/ImageSegmentation/PlaneSegmentation_DMD*` stores one weighted `pixel_mask` per source. | `nwbfile.processing["ophys"]["ImageSegmentation"]` |
+| What source and structural images are available? | `/processing/ophys/DMD*_mean_image_channel*` stores mean channel images, and `DMD*_activity_image` stores the source-localization activity projection. | `nwbfile.processing["ophys"]["DMD1_activity_image"]` |
+| How does each source change over time? | `/processing/ophys/Fluorescence_DMD*/DMD*_dFF` stores source ΔF/F with timestamps; the corresponding `DMD*_F0` series stores baseline fluorescence. | `nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_dFF"]` |
+
+:::
 ::::
 
 NWB files can be streamed directly from DANDI without downloading the complete
@@ -751,8 +767,9 @@ structure or cortical layer. The displayed AP samples are not median-corrected,
 so common-mode fluctuations across contacts remain visible as vertical stripes.
 Mesoscope views are unprocessed 512 × 512 ScanImage channel frames. SLAP2 views
 map native sparse detector samples onto acquisition-plan superpixels, reduce the
-1280 × 800 acquisition-coordinate raster by 2×, and encode the resulting
-640 × 400 lossless WebP frames. A dim structural reference is used only outside
+stored 1280 × 800 acquisition-coordinate raster by 2×, transpose it for
+publication display, and encode the resulting 400 × 640 lossless WebP frames,
+with the fast-scanning x axis vertical. A dim structural reference is used only outside
 sampled dendritic pixels. Microscopy
 playback uses elapsed time within each four-second excerpt. Selectors report CCF
 structures and layers for each probe; area, layer, and depth for each mesoscope
@@ -762,17 +779,59 @@ and contrast-scaled independently for display. Source sessions are Neuropixels
 [ecephys_830846_2026-03-09_10-32-54](https://open.quiltdata.com/b/aind-open-data/tree/ecephys_830846_2026-03-09_10-32-54/) ([DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files));
 mesoscope [multiplane-ophys_832700_2026-01-29_11-18-09](https://open.quiltdata.com/b/aind-open-data/tree/multiplane-ophys_832700_2026-01-29_11-18-09/) ([DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files));
 and SLAP2
-[796630_2025-08-28_14-25-34](https://open.quiltdata.com/b/aind-open-data/tree/796630_2025-08-28_14-25-34/).
+[796630_2025-08-28_14-25-34](https://open.quiltdata.com/b/aind-open-data/tree/796630_2025-08-28_14-25-34/) ([DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files)).
 :::
 
 ## Units extraction
 
-:::{warning} Work in progress
-:class: manuscript-wip
-[Figure 6](#fig-unit-extraction-plan) and the modality subsections below remain an analysis outline. The Neuropixels unit-yield result is current; the other signal-quality, stability, extraction, and cross-session analyses still need final results and prose.
+Representative unit-extraction filters and matched activity traces are shown in
+[Figure 6](#fig-segmentation-viewers).
+
+:::{iframe} ./interactive/segmentation-viewer.html
+:label: fig-segmentation-viewers
+:width: 100%
+:title: Unit extraction across recording modalities
+:placeholder: ./images/figures/generated/figure-06-segmentation-viewers.svg
+
+Unit extraction filters and matched activity across recording modalities.
+Modality tabs use the same platform logos as the other multimodal figures, and
+the source selector switches among every probe or imaging plane in one
+representative session. The tabs use the same representative sessions as the
+raw-data view in [Figure 5](#fig-aligned-neural-signals) and derive their
+filters and traces from the matched public NWBs. The **Neuropixels** tab
+provides all six probes from `ecephys_830846_2026-03-09_10-32-54`. Each source displays
+100 ms of unaveraged AP voltage with sorted-spike detections overlaid at their
+spike times and nearest displayed peak channels; common-mode correction is
+enabled by default and can be toggled to reveal the uncorrected samples.
+Selecting a marker or unit highlights its depth and waveform-spread band and
+shows a 12 s binned-rate trace plus its peak-channel mean template. The
+**Mesoscope** tab provides all eight VISp and VISl planes from
+`multiplane-ophys_832700_2026-01-29_11-18-09`,
+outlining each plane's complete NWB segmentation over a grayscale average
+projection; selection reveals classification probabilities, footprint geometry,
+and a 30 s ΔF/F (%) trace. The **SLAP2** tab provides DMD1 and DMD2 from
+`SLAP2_796630_2025-08-28-14-25-34`, outlining each plane's complete source
+segmentation over a grayscale mean image; its column-major stored (x, y) arrays
+and masks receive the same publication-level axis transpose. Mesoscope
+projections retain their stored display orientation. The fast-scanning x axis
+is horizontal for mesoscope and vertical for SLAP2. SLAP2 selection
+reveals a 30 s, approximately 200 Hz ΔF/F (%) trace. Microscopy background controls alter only
+grayscale image intensity, while filter colors remain fixed. No tab shows
+stimulus annotations. The stacked static fallback preserves one representative
+source per modality and shows twenty activity-bearing filters sampled evenly across
+filter order as vertically stacked traces with shared within-modality scales.
+Data come from the public drafts of
+[DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files),
+[DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files), and
+[DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files).
 :::
 
-:::{figure} ./images/figures/generated/figure-06-unit-extraction-plan.svg
+:::{warning} Work in progress
+:class: manuscript-wip
+[Figure 7](#fig-unit-extraction-plan) and the modality subsections below remain an analysis outline. The Neuropixels unit-yield result is current; the other signal-quality, stability, extraction, and cross-session analyses still need final results and prose.
+:::
+
+:::{figure} ./images/figures/generated/figure-07-unit-extraction-plan.svg
 :label: fig-unit-extraction-plan
 :alt: Draft panel plan for unit extraction and signal-to-noise analysis across modalities.
 :width: 100%
@@ -824,10 +883,10 @@ GROUP3
 
 :::{warning} Work in progress
 :class: manuscript-wip
-This analysis and [Figure 7](#fig-basic-stimuli-plan) are planning placeholders. Receptive-field methods, cross-modality results, and final figure panels still need to be added.
+This analysis and [Figure 8](#fig-basic-stimuli-plan) are planning placeholders. Receptive-field methods, cross-modality results, and final figure panels still need to be added.
 :::
 
-:::{figure} ./images/figures/generated/figure-07-basic-stimuli-plan.svg
+:::{figure} ./images/figures/generated/figure-08-basic-stimuli-plan.svg
 :label: fig-basic-stimuli-plan
 :alt: Draft panel plan for basic stimulus responses across recording modalities.
 :width: 100%
@@ -842,7 +901,7 @@ behavioral videos together with synchronized running-wheel signals, processed
 eye-tracking outputs, and stimulus-presentation intervals. Depending on the
 recording platform, the available views include body or behavior, face, eye,
 and nose cameras. The synchronized multimodal examples in
-[Figure 8](#fig-behavior-tracking) show these streams alongside the wheel signal and
+[Figure 9](#fig-behavior-tracking) show these streams alongside the wheel signal and
 current stimulus state. Existing NWB products provide wheel rotation and
 running speed, plus pupil, corneal-reflection, and eye-ellipse fits with
 likely-blink flags. The underlying videos remain available so investigators can
@@ -916,14 +975,14 @@ cursor makes the timing relationship between all three streams explicit.
 
 :::{warning} Work in progress
 :class: manuscript-wip
-This analysis, the questions below, and [Figure 9](#fig-standard-oddball-plan) are planning placeholders. Final cross-modality oddball-response results and figure panels still need to be added.
+This analysis, the questions below, and [Figure 10](#fig-standard-oddball-plan) are planning placeholders. Final cross-modality oddball-response results and figure panels still need to be added.
 :::
 
 - Stability across the session for all modalities ?
 
 - Orientation tuning plots?
 
-:::{figure} ./images/figures/generated/figure-09-standard-oddball-plan.svg
+:::{figure} ./images/figures/generated/figure-10-standard-oddball-plan.svg
 :label: fig-standard-oddball-plan
 :alt: Placeholder slide for standard oddball responses and stimulus alignment.
 :width: 100%
@@ -1287,7 +1346,7 @@ The conclusion has not yet been drafted.
 :title: Supplementary Figure 3. Recorded Neuropixels trajectories in the Allen CCF.
 :placeholder: ./images/figures/generated/supplementary-neuropixels-trajectories.svg
 
-**Supplementary Figure 3.** Recorded Neuropixels trajectories in the Allen Mouse Brain Common Coordinate Framework (CCF) 2017. The **Interactive** view renders all CCF-localized insertions within a semi-transparent whole-brain surface and supports mouse, probe-port, camera-orientation, and brain-opacity controls. Selecting a trajectory shows its session, localized shank length, source NWB, and contiguous CCF area profile from the dorsal shank end to the tip. Line color denotes the nominal probe port (A-F). In the **Static** view, **A,** an oblique projection shows the trajectories across the depth-shaded Allen CCF whole-brain surface; **B,** a dorsal projection shows their anteroposterior and mediolateral distribution. Both panels use a semi-transparent brain surface, anatomical direction markers, and calibrated 2 mm scale bars. Electrode coordinates and area annotations come from the public draft of Dandiset 001637; the brain surface is a 100-micrometer mesh derived from the Allen CCF 2017 25-micrometer annotation volume. In total, 332 probe trajectories from 57 sessions and 16 mice had finite CCF coordinates. Three of the 60 source sessions are excluded because their NWB electrode tables lack `x`, `y`, and `z` coordinates.
+**Supplementary Figure 3.** Recorded Neuropixels trajectories in the Allen Mouse Brain Common Coordinate Framework (CCF) 2017. The **Interactive** view renders all CCF-localized insertions within a semi-transparent whole-brain surface and supports mouse, probe-port, camera-orientation, and brain-opacity controls. Selecting a trajectory shows its session, localized shank length, source NWB, and contiguous CCF area profile from the dorsal shank end to the tip. Line color denotes the nominal probe port (A-F). In the **Static** view, **A,** an oblique projection shows the trajectories across the depth-shaded Allen CCF whole-brain surface; **B,** a dorsal projection shows their anteroposterior and mediolateral distribution. Both panels use a semi-transparent brain surface, anatomical direction markers, and calibrated 2 mm scale bars; the trajectories extend laterally toward the L direction marker, matching the stereotaxic mediolateral convention. Electrode coordinates and area annotations come from the public draft of Dandiset 001637; the brain surface is a 100-micrometer mesh derived from the Allen CCF 2017 25-micrometer annotation volume. In total, 332 probe trajectories from 57 sessions and 16 mice had finite CCF coordinates. Three of the 60 source sessions are excluded because their NWB electrode tables lack `x`, `y`, and `z` coordinates.
 :::
 
 :::{iframe} ./interactive/eye-tracking-viewer.html
@@ -1298,6 +1357,17 @@ The conclusion has not yet been drafted.
 
 **Supplementary Figure 4.** Synchronized eye tracking in representative standard-oddball Neuropixels, mesoscope, and SLAP2 sessions. The **Interactive** view shows the public eye-camera video, reconstructed visual stimulus, and processed eye fits on a common 16-second clock. Fit-source tabs switch the center field, geometric values, and area trace among the pupil, corneal reflection, and eye ellipse. Marker position gives the selected fit center within the complete camera frame; the dashed crosshair marks its median center across valid nonblink fits from that source session. Marker size and color vary with selected-fit area after scaling to that fit's session-wide 5th–95th percentile nonblink range. The tracking field turns black during likely-blink samples, which are also shown as shaded intervals in the area trace. The **Static** view vertically stacks the raw pupil x position, y position, and area for each modality on the same 0–16-second axis. Teal bands mark the complete 90-degree orientation-deviant presentation and gray bands mark likely-blink intervals; traces break at invalid fits rather than interpolating through them. Neuropixels and mesoscope eye-camera frames are aligned through 100-kHz exposure edges in the session sync file, with reported dropped frames removed before mapping to MP4 time. SLAP2 uses aligned Harp timestamps and packaged pupil-frame indices to map the processed fits to its 30 Hz EyeCamera MP4. Eye fits, blink flags, and stimulus rows come from each public NWB time base. Modality tabs switch among all three source-backed examples, and source links expose the corresponding DANDI and raw S3 records.
 :::
+
+:::{iframe} ./interactive/optotagging-heatmaps.html
+:label: fig-supp-optotagging-heatmaps
+:enumerated: false
+:width: 100%
+:title: Supplementary Figure 5. Optotagging responses and putative optotagged-cell yield.
+:placeholder: ./images/figures/generated/optotagging-heatmaps.svg
+
+**Supplementary Figure 5.** Optotagging responses and putative optotagged-cell yield across Neuropixels sessions. The **Interactive** view displays laser-aligned, baseline-z-scored 1-ms peri-stimulus time histograms for three representative public sessions selected near the 50th, 80th, and 95th percentiles of optotagged-cell yield. Session and Allen major-parent selectors constrain the view to available values, and an adjustable symmetric z-score scale supports comparison of raised-cosine, 5 Hz, and 40 Hz stimulation. Within each condition, units are ordered from strongest to weakest by firing rate measured only during the exact laser-on windows. In the **Static** view, **A,** the 5 Hz response from `ecephys_830851_2026-03-19_10-49-11`; five teal marks denote the exact 10 ms laser pulses, rows are ordered from strongest to weakest pulse-window firing rate, and blue-to-red color denotes negative-to-positive baseline z score. **B,** Overall optotagged-cell yield across all 60 source sessions. **C,** Yield by Allen major parent area. **D,** The 18 structures with the highest mean yield; all 48 structure distributions remain in the supplied source snapshot. In B-D, gray dots denote individual sessions and teal bars or lines denote means. Area-level means include only sessions sampling that area, with the contributing session count shown as *n*. Data come from the public draft of [Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files).
+:::
+
 
 # Supplementary Text 1: Published oddball paradigms and sampling ranges
 
