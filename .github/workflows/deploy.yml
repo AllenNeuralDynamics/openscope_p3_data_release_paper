@@ -85,6 +85,8 @@ jobs:
           node --check figure_sources/javascript/data-explorer.js
           node --check figure_sources/javascript/literature-comparison.js
           node --check figure_sources/javascript/behavior-viewer.js
+          node --check figure_sources/javascript/pupil-event-responses.js
+          node --check figure_sources/javascript/neuropixels-event-responses.js
           node --check figure_sources/javascript/segmentation-viewer.js
           node --check figure_sources/javascript/optotagging-heatmaps.js
 
@@ -100,6 +102,8 @@ jobs:
           test -f _build/html/interactive/data-explorer.html
           test -f _build/html/interactive/literature-comparison.html
           test -f _build/html/interactive/behavior-viewer.html
+          test -f _build/html/interactive/pupil-event-responses.html
+          test -f _build/html/interactive/neuropixels-event-responses.html
           test -f _build/html/interactive/segmentation-viewer.html
           test -f _build/html/interactive/optotagging-heatmaps.html
           test -f _build/html/interactive/media/optotagging/optotagging-heatmaps.svg

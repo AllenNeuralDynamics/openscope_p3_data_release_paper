@@ -1,0 +1,98 @@
+{
+  "analysisSignature": "9c46d56031874d80ead7b27a4b2ff675803ce5c920a558790d09fac849622631",
+  "configuredSessions": [
+    {
+      "asset_id": "03973a42-cf55-476f-80d7-85bc402fa57b",
+      "asset_path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-09-10-32-54_ecephys.nwb",
+      "context": "sequence",
+      "context_table": "Sequence mismatch block_presentations",
+      "control_table": "Control block 2_presentations",
+      "session_id": "ecephys_830846_2026-03-09_10-32-54"
+    },
+    {
+      "asset_id": "77123ffa-5029-4485-a2e5-2eacac954f74",
+      "asset_path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-10-10-17-25_ecephys.nwb",
+      "context": "duration",
+      "context_table": "Duration mismatch block_presentations",
+      "control_table": "Control block 3_presentations",
+      "session_id": "ecephys_830846_2026-03-10_10-17-25"
+    },
+    {
+      "asset_id": "680d1c0c-e338-4d0b-ba29-4329436d2ae2",
+      "asset_path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-11-10-19-32_ecephys.nwb",
+      "context": "standard",
+      "context_table": "Standard mismatch block_presentations",
+      "control_table": "Control block 1_presentations",
+      "session_id": "ecephys_830846_2026-03-11_10-19-32"
+    },
+    {
+      "asset_id": "7b0e4734-f3e6-4733-8318-223a28687ec1",
+      "asset_path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-12-11-09-13_ecephys.nwb",
+      "context": "sensorimotor",
+      "context_table": "Sensory-motor mismatch block_presentations",
+      "control_table": "Control block 4_presentations",
+      "session_id": "ecephys_830846_2026-03-12_11-09-13"
+    }
+  ],
+  "media": [
+    {
+      "path": "figure_sources/media/neuropixels-event-responses/duration-counts.u16.gz",
+      "sha256": "1a33a81d85f9715e515652b652f85dc824664f3b4e6f13f19e6c7054b389ae71",
+      "size": 1897725
+    },
+    {
+      "path": "figure_sources/media/neuropixels-event-responses/duration-waveforms.i8.gz",
+      "sha256": "d8737f55589868a69651b25deb7a8432de531f29a906dded9bdbff6ea1df3c15",
+      "size": 464510
+    },
+    {
+      "path": "figure_sources/media/neuropixels-event-responses/motor-counts.u16.gz",
+      "sha256": "fc42b80aacfd9ebebac7f9532c5cc5509f15dcb72e21fce1d26a6a39de00a401",
+      "size": 1046750
+    },
+    {
+      "path": "figure_sources/media/neuropixels-event-responses/motor-waveforms.i8.gz",
+      "sha256": "28da10168546f104e9c609497061ea63cc4e22d590cf8f685135b5ace0ff2d74",
+      "size": 356595
+    },
+    {
+      "path": "figure_sources/media/neuropixels-event-responses/sequence-counts.u16.gz",
+      "sha256": "6110468ab784f44c03ccaeb4e1b47a195de21f1dea4d54d652c96b04c315cb5e",
+      "size": 1986255
+    },
+    {
+      "path": "figure_sources/media/neuropixels-event-responses/sequence-waveforms.i8.gz",
+      "sha256": "1355241a1ef6c41f41ec763fe444fca5e72f4d4741f45123e26904843fde9541",
+      "size": 455717
+    },
+    {
+      "path": "figure_sources/media/neuropixels-event-responses/standard-counts.u16.gz",
+      "sha256": "bc7989217d2778f29914cc048530a2511f93d12feea01aa294b1dd691f629cbd",
+      "size": 1795255
+    },
+    {
+      "path": "figure_sources/media/neuropixels-event-responses/standard-waveforms.i8.gz",
+      "sha256": "a19c7d78b2e3ac003d23961531bca261c4d7ae85b4fd741cf47bda0231474add",
+      "size": 401722
+    }
+  ],
+  "module": {
+    "path": "src/openscope_p3_publication/neural_responses.py",
+    "sha256": "1f1efb5f0b7c594bd08f40cf09ebd740532b05eeea096e06960bdd32b5567f72"
+  },
+  "outputPath": "figure_sources/data/neuropixels-event-responses.json",
+  "outputSha256": "c261c425a2fbf95071608335a193682813e080b1cf9c618e0c074862d3fdf4e3",
+  "pupilEventModule": {
+    "path": "src/openscope_p3_publication/pupil_responses.py",
+    "sha256": "f56d182bee6de6c79e8a4fa0a55ff7eedecddcf889ab01531b9dee56a2e78573"
+  },
+  "retrievedDate": "2026-08-17",
+  "script": {
+    "path": "scripts/extract_neuropixels_event_responses.py",
+    "sha256": "8065e5c58f4d1ff8574f1afec9d5f07e70dbf2b7d6716828e4268ffb76b7876f"
+  },
+  "sessionCount": 4,
+  "totalQcUnits": 7266,
+  "totalUnits": 13682,
+  "version": 1
+}

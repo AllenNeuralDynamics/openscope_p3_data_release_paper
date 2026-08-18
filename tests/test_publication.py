@@ -515,7 +515,7 @@ def test_supplementary_studies_table_is_complete() -> None:
 def test_supplementary_and_power_figures_are_current() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
-    for number in range(1, 7):
+    for number in range(1, 8):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
     assert manuscript.count(":enumerated: false\n:width: 100%") >= 3
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
@@ -580,6 +580,19 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "shaded bands show ±1 SD across valid trials" in manuscript
     assert "SLAP2 duration responses are marked unavailable" in manuscript
     assert "60 Neuropixels sessions from 16 mice" in manuscript
+    assert "./interactive/neuropixels-event-responses.html" in manuscript
+    assert (
+        ":label: fig-supp-neuropixels-event-responses\n:enumerated: false"
+        in manuscript
+    )
+    assert (
+        ":placeholder: ./images/figures/generated/"
+        "supplementary-neuropixels-event-responses.svg"
+    ) in manuscript
+    assert "units are distinct across sessions" in manuscript
+    assert "all 16 mismatch conditions" in manuscript
+    assert "13,682 sorted units" in manuscript
+    assert "7,266 passed the manuscript QC thresholds" in manuscript
     for obsolete in (
         "segmentation-neuropixels.html",
         "segmentation-mesoscope.html",

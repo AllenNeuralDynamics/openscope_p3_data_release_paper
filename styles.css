@@ -25,7 +25,8 @@
 
 #fig-supp-neuropixels-recorded-trajectories,
 #fig-supp-eye-tracking,
-#fig-supp-pupil-event-responses {
+#fig-supp-pupil-event-responses,
+#fig-supp-neuropixels-event-responses {
   container-type: inline-size;
 }
 
@@ -297,6 +298,11 @@ article table.table-laser-power td:first-child {
   padding-bottom: 0 !important;
 }
 
+#fig-supp-neuropixels-event-responses .relative.inline-block {
+  height: 1500px;
+  padding-bottom: 0 !important;
+}
+
 @media (min-width: 1280px) {
   .myst-primary-sidebar {
     display: none !important;
@@ -376,6 +382,10 @@ article table.table-laser-power td:first-child {
 
   #fig-supp-pupil-event-responses .relative.inline-block {
     height: 1450px;
+  }
+
+  #fig-supp-neuropixels-event-responses .relative.inline-block {
+    height: 1900px;
   }
 }
 
