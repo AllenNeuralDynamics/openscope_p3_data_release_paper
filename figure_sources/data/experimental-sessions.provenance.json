@@ -6,12 +6,12 @@
     "slap2": 43
   },
   "notes": "Complete EPHYS, MESO, and SLAP2 worksheet rows in source order. Repeated and aborted records are retained to reproduce the supplied static plots; the interactive explorer selects valid session IDs whose QC status is Pass.",
-  "retrieved_date": "2026-08-14",
+  "retrieved_date": "2026-08-17",
   "rows": 198,
   "source_rows": 198,
-  "source_sha256": "041b987ca5fa67ae1ad34237d2214a653aafe4d35ba7b8bdd335bf0e07013e95",
+  "source_sha256": "3874d70c434074b8aac9e8bb3ec310abcff189c6506be405e4ba906b0b12cf7e",
   "source_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/edit?usp=sharing",
-  "vendored_sha256": "72c951a172548c89ab315e3b70e7bcfa280be643cbb3b504d0970ce4a1e2d622",
+  "vendored_sha256": "23c4c7893a8033c18c7d52ec36bbb88f9b1640acf7f7882c0e5b465dae26edd4",
   "version": 1,
   "worksheet_rows": 198
 }
