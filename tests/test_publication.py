@@ -515,7 +515,7 @@ def test_supplementary_studies_table_is_complete() -> None:
 def test_supplementary_and_power_figures_are_current() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
-    for number in range(1, 6):
+    for number in range(1, 7):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
     assert manuscript.count(":enumerated: false\n:width: 100%") >= 3
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
@@ -565,6 +565,21 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "selectors constrain the view to available values" in manuscript
     assert "gray dots denote individual sessions and teal bars or lines denote means" in manuscript
     assert "include only sessions sampling that area" in manuscript
+    assert "./interactive/pupil-event-responses.html" in manuscript
+    assert ":label: fig-supp-pupil-event-responses\n:enumerated: false" in manuscript
+    assert (
+        ":placeholder: ./images/figures/generated/"
+        "supplementary-pupil-event-responses.svg"
+    ) in manuscript
+    assert "display-synchronized `start_time`" in manuscript
+    assert "complete recorded interstimulus interval" in manuscript
+    assert "both repeats of standard control C1" in manuscript
+    assert "Duration responses use the following commanded interstimulus interval" in manuscript
+    assert "display-recorded stimulus interval" in manuscript
+    assert "switches between the population event and matched-control means" in manuscript
+    assert "shaded bands show ±1 SD across valid trials" in manuscript
+    assert "SLAP2 duration responses are marked unavailable" in manuscript
+    assert "60 Neuropixels sessions from 16 mice" in manuscript
     for obsolete in (
         "segmentation-neuropixels.html",
         "segmentation-mesoscope.html",

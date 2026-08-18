@@ -109,6 +109,7 @@ For the behavior figure, the stages map to repository files as follows:
 	The cache is optional. Removing it increases download time but must not change the JSON values.
 - `scripts/extract_behavior_excerpts.py` separately writes `figure_sources/data/behavior-excerpts.json`, a compact synchronized excerpt for representative Neuropixels, mesoscope, and SLAP2 sessions.
 - `scripts/extract_behavior_static_frames.py` extracts representative public S3 camera frames into `figure_sources/media/behavior-viewer-static/` and records source URLs, ETags, target/decoded times, display transforms, and output checksums in `behavior-static-frames.provenance.json`.
+- `scripts/extract_pupil_event_responses.py` streams the released P3 NWBs, aligns pupil area to context and matched-control stimulus-table `start_time` values, applies documented pupil-fit quality control, and writes the committed `figure_sources/data/pupil-event-responses.json` intermediate plus provenance.
 - The routine command `uv run build-publication-figures` reads these committed intermediates and media files to produce both `interactive/behavior-viewer.html` and `images/figures/generated/synchronized-behavior.svg`. It does not recompute the many-NWB running analysis.
 
 Use the same architecture for future figures that aggregate units, receptive fields, anatomical coverage, response metrics, or other values across many NWB files: cloud extractor → committed checksummed intermediate → deterministic static and interactive renderers.

@@ -28,4 +28,6 @@ The Neuropixels trajectory viewer uses `images/figures/generated/supplementary-n
 
 The behavior viewer uses `images/figures/generated/synchronized-behavior.svg` as its static HTML view and PDF placeholder. It combines 10 ETag-verified camera stills with source-backed, same-session block-annotated running profiles and ordered mouse-level block means from `figure_sources/data/running-statistics.json`. The SLAP2 profile and aggregate are calibrated to cm/s with the pinned public acquisition convention.
 
+The supplementary pupil-response viewer uses `images/figures/generated/supplementary-pupil-event-responses.svg` as its static HTML view and PDF placeholder. Both outputs are generated offline from the checksum-verified `figure_sources/data/pupil-event-responses.json` snapshot.
+
 Keep data-loading, transformation, and rendering logic in the package. Store small figure inputs under `figure_sources/data/`; large or externally archived inputs should be represented by a manifest containing their URL, version, and checksum.

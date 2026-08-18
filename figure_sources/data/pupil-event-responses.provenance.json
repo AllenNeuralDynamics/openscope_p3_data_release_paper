@@ -1,0 +1,49 @@
+{
+  "analysis_module": {
+    "path": "src/openscope_p3_publication/pupil_responses.py",
+    "sha256": "f56d182bee6de6c79e8a4fa0a55ff7eedecddcf889ab01531b9dee56a2e78573"
+  },
+  "analysis_signature": "c18368304838bfad413c7bbb55574da27215106592d880bd33b32c627fafa0ad",
+  "dandisets": [
+    {
+      "asset_count": 20,
+      "asset_manifest_sha256": "2c9d6bd908415d648c3c7be1d965ee6903ce580a592df7b4c881c1022c42b4ec",
+      "dandiset_id": "001424",
+      "version": "draft"
+    },
+    {
+      "asset_count": 60,
+      "asset_manifest_sha256": "42336298a74ebef633406d62c0356f286c0d30f17a58a6e180c193213ac33162",
+      "dandiset_id": "001637",
+      "version": "draft"
+    },
+    {
+      "asset_count": 86,
+      "asset_manifest_sha256": "ffb4924a76ba2227c98b689125b8adf33bdc67cffdd6021c5c81bfbd55bea9ec",
+      "dandiset_id": "001768",
+      "version": "draft"
+    }
+  ],
+  "exclusion_count": 0,
+  "mouse_record_count": 98,
+  "output_path": "figure_sources/data/pupil-event-responses.json",
+  "output_sha256": "66bb18386e5ad39ff03f280ec46bedd782ee3e6ccf0b241a0e7d046058ad5a71",
+  "retrieved_date": "2026-08-17",
+  "script": {
+    "path": "scripts/extract_pupil_event_responses.py",
+    "sha256": "1ce85ca91e99baffbef35184bfb9958c19134b02808d48e2a5388c3cd17ae3b0"
+  },
+  "session_count": 132,
+  "source_snapshots": {
+    "data_access": {
+      "path": "figure_sources/data/data-access.csv",
+      "sha256": "6e4609df4986f83d54d17679929caefc086c3fad4de351f32c1bbc009774a6c2"
+    },
+    "experimental_sessions": {
+      "path": "figure_sources/data/experimental-sessions.csv",
+      "sha256": "35400ba7c78ef3890f896ddaa722c202e37647d746b6de0269a6d170d60fc91c"
+    }
+  },
+  "summary_count": 80,
+  "version": 1
+}

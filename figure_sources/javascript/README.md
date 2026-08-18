@@ -30,6 +30,14 @@ The synchronized behavior viewer is split into:
 - `behavior-viewer.css`: publication-width and mobile layouts.
 - `behavior-viewer.js`: S3 video seeking, shared playback state, stimulus reconstruction, and trace rendering.
 
+The supplementary pupil-response viewer follows the same source/generated split:
+
+- `pupil-event-responses.html`: modality, cohort, context, event, scale, and mouse controls.
+- `pupil-event-responses.css`: responsive population and raw-trace layouts.
+- `pupil-event-responses.js`: population confidence bands, mouse effects, raw mouse traces, and static-view switching.
+
+Its committed `figure_sources/data/pupil-event-responses.json` payload contains session and population peri-event pupil summaries derived from public NWBs. The browser performs no network requests for scientific data.
+
 `figure_sources/data/behavior-excerpts.json` contains compact event-centered traces and stimulus rows for one real Neuropixels, mesoscope, and SLAP2 session. Camera MP4 files are not copied into the repository; the viewer range-streams them from the public `aind-open-data` bucket. Neuropixels and mesoscope use 100-kHz camera exposure/readout edges from each raw sync file; reported dropped frame IDs are removed before hardware frame indices are mapped to the MP4 60-fps presentation timeline. SLAP2 uses the per-frame `CameraFrameTime` Harp timestamps and maps those frame indices to the MP4 30-fps timeline. Its raw example trace is calibrated at build time with the same pinned conversion used by `running-statistics.json`, so all displayed traces use cm/s. Source URLs, NWB SHA-256 values, camera ETags, and small-source SHA-256 values are included in the payload.
 
 Figure 9's Static view embeds 10 ETag-pinned camera stills beside complete, block-annotated protocol running profiles from the same mice and sessions. It then compares mouse-level mean speed for all eight blocks and all three modalities on one shared cm/s axis. Neuropixels and mesoscope stills retain local excerpt time 8 s; matching SLAP2 stills use profile-session video time 600 s. The Interactive view retains the synchronized 16-second example and its paired control/context summary. Refresh all committed stills with `uv run --with av --with pillow python scripts/extract_behavior_static_frames.py`, or only the matching SLAP2 set with `--modality slap2`.

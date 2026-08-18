@@ -6068,6 +6068,8 @@ def write_neuropixels_trajectory_svg(
 
 
 def main() -> None:
+    from .pupil_figure import write_pupil_event_html, write_pupil_event_svg
+
     merged_figure_1_path = write_merged_figure_1_svg()
     figure_1_panel_c_path = write_figure_1_panel_c_svg()
     hardware_path = write_hardware_figure_svg()
@@ -6079,6 +6081,10 @@ def main() -> None:
     literature_comparison_path = write_literature_comparison_html()
     behavior_viewer_path = write_behavior_viewer_html()
     eye_tracking_viewer_path = write_eye_tracking_viewer_html()
+    pupil_event_svg_path = write_pupil_event_svg()
+    pupil_event_html_path = write_pupil_event_html(
+        static_output=pupil_event_svg_path
+    )
     neural_viewer_path = write_neural_viewer_html()
     segmentation_viewer_path = write_segmentation_viewers()
     unit_yield_html_path = write_unit_yield_html()
@@ -6102,6 +6108,8 @@ def main() -> None:
     print(f"Wrote {behavior_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {BEHAVIOR_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {eye_tracking_viewer_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {pupil_event_svg_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {pupil_event_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {neural_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEURAL_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {segmentation_viewer_path.relative_to(REPO_ROOT)}")
