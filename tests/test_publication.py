@@ -64,24 +64,35 @@ def test_session_snapshot_extracts_qc_and_qc_tags() -> None:
     extractor = runpy.run_path(
         str(REPO_ROOT / "scripts" / "extract_experimental_sessions.py")
     )
-    frame = extractor["pd"].DataFrame(
-        [
-            {
-                "Modality": "MESO",
-                "Mouse id": 101,
-                "Experimental date": dt.datetime(2026, 1, 1),
-                "Session id": "session-a",
-                "Session stimulus": "OPTICAL_SESSION1_SEQUENCE",
-                "QC": "Fail",
-                "QC Tags": "Motion correction, Mouse stressed",
-            }
-        ]
-    )
-    extractor["normalized_source_rows"].__globals__["pd"].read_excel = (
-        lambda *args, **kwargs: frame
-    )
+    source_row = {
+        "Modality": "MESO",
+        "Mouse id": 101,
+        "Experimental date": dt.datetime(2026, 1, 1),
+        "Session id": "session-a",
+        "Session stimulus": "OPTICAL_SESSION1_SEQUENCE",
+        "QC": "Fail",
+        "QC Tags": "Motion correction, Mouse stressed",
+    }
 
-    rows, worksheet_rows = extractor["normalized_source_rows"](b"workbook")
+    class FakeFrame:
+        def __len__(self) -> int:
+            return 1
+
+        def iterrows(self):
+            return iter([(0, source_row)])
+
+    class FakePandas:
+        @staticmethod
+        def isna(value: object) -> bool:
+            return value is None
+
+        @staticmethod
+        def read_excel(*args, **kwargs):
+            return FakeFrame()
+
+    rows, worksheet_rows = extractor["normalized_source_rows"](
+        b"workbook", FakePandas
+    )
 
     assert worksheet_rows == 1
     assert rows[0]["qc"] == "Fail"

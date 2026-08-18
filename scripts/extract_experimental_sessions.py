@@ -11,14 +11,6 @@ import urllib.request
 from datetime import datetime
 from pathlib import Path
 
-try:
-    import pandas as pd
-except ImportError as exc:  # pragma: no cover - optional extraction environment
-    raise SystemExit(
-        "Run with: uv run --with pandas --with python-calamine "
-        "python scripts/extract_experimental_sessions.py"
-    ) from exc
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_PATH = REPO_ROOT / "figure_sources" / "data" / "experimental-sessions.csv"
 PROVENANCE_PATH = OUTPUT_PATH.with_suffix(".provenance.json")
@@ -50,8 +42,8 @@ OUTPUT_FIELDS = (
 )
 
 
-def normalize_mouse_id(value: object) -> str:
-    if pd.isna(value):
+def normalize_mouse_id(value: object, pandas_module) -> str:
+    if pandas_module.isna(value):
         return ""
     if isinstance(value, (int, float)):
         return str(int(value))
@@ -70,12 +62,23 @@ def normalize_date(value: object) -> str:
     raise RuntimeError(f"Unsupported worksheet date: {value!r}")
 
 
-def clean_cell(value: object) -> str:
-    return "" if pd.isna(value) else str(value).strip()
+def clean_cell(value: object, pandas_module) -> str:
+    return "" if pandas_module.isna(value) else str(value).strip()
 
 
-def normalized_source_rows(source_bytes: bytes) -> tuple[list[dict[str, str]], int]:
-    frame = pd.read_excel(
+def normalized_source_rows(
+    source_bytes: bytes,
+    pandas_module=None,
+) -> tuple[list[dict[str, str]], int]:
+    if pandas_module is None:
+        try:
+            import pandas as pandas_module
+        except ImportError as exc:  # pragma: no cover - optional extraction environment
+            raise RuntimeError(
+                "Run with: uv run --with pandas --with python-calamine "
+                "python scripts/extract_experimental_sessions.py"
+            ) from exc
+    frame = pandas_module.read_excel(
         io.BytesIO(source_bytes),
         sheet_name=" SESSIONS TABLE",
         header=1,
@@ -83,13 +86,13 @@ def normalized_source_rows(source_bytes: bytes) -> tuple[list[dict[str, str]], i
     )
     rows = []
     for index, row in frame.iterrows():
-        source_modality = clean_cell(row.get("Modality"))
-        mouse_id = normalize_mouse_id(row.get("Mouse id"))
+        source_modality = clean_cell(row.get("Modality"), pandas_module)
+        mouse_id = normalize_mouse_id(row.get("Mouse id"), pandas_module)
         date_value = row.get("Experimental date")
         if (
             source_modality not in MODALITY_NAMES
             or not mouse_id
-            or pd.isna(date_value)
+            or pandas_module.isna(date_value)
         ):
             continue
         rows.append(
@@ -97,11 +100,13 @@ def normalized_source_rows(source_bytes: bytes) -> tuple[list[dict[str, str]], i
                 "date": normalize_date(date_value),
                 "modality": MODALITY_NAMES[source_modality],
                 "mouse_id": mouse_id,
-                "qc": clean_cell(row.get("QC")),
-                "qc_tags": clean_cell(row.get("QC Tags")),
-                "session_stimulus": clean_cell(row.get("Session stimulus")),
+                "qc": clean_cell(row.get("QC"), pandas_module),
+                "qc_tags": clean_cell(row.get("QC Tags"), pandas_module),
+                "session_stimulus": clean_cell(
+                    row.get("Session stimulus"), pandas_module
+                ),
                 "source_row": str(index + 3),
-                "source_session_id": clean_cell(row.get("Session id")),
+                "source_session_id": clean_cell(row.get("Session id"), pandas_module),
             }
         )
     return rows, len(frame)
