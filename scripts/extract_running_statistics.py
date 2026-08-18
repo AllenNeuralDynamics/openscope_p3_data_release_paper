@@ -1022,9 +1022,8 @@ def main() -> None:
         "version": 2,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(
-        json.dumps(payload, indent=2, ensure_ascii=True, sort_keys=True) + "\n",
-        encoding="utf-8",
+    args.output.write_bytes(
+        (json.dumps(payload, indent=2, ensure_ascii=True, sort_keys=True) + "\n").encode()
     )
 
 

@@ -10,7 +10,6 @@ import re
 import shutil
 import statistics
 import struct
-import xml.etree.ElementTree as ET
 import zlib
 from dataclasses import asdict, dataclass
 from html import escape
@@ -4546,40 +4545,9 @@ def write_segmentation_viewers() -> Path:
     return write_segmentation_viewer_html(SEGMENTATION_VIEWER_OUTPUT)
 
 
-def load_publication_table_data(manuscript_path: Path = REPO_ROOT / "index.md") -> dict:
-    manuscript = manuscript_path.read_text(encoding="utf-8")
-    pattern = re.compile(
-        r'<table class="publication-data-table table-(?P<kind>animals|sessions)".*?'
-        r'</table>',
-        re.DOTALL,
-    )
-    grouped_tables = {}
-    for match in pattern.finditer(manuscript):
-        kind = match.group("kind")
-        table = ET.fromstring(match.group())
-        header_rows = table.findall("./thead/tr")
-        headers = [" ".join("".join(cell.itertext()).split()) for cell in header_rows[-1]]
-        rows = []
-        for row in table.findall("./tbody/tr"):
-            values = [
-                cell.attrib.get("data-full-value")
-                or " ".join("".join(cell.itertext()).split())
-                for cell in row
-            ]
-            rows.append(
-                {
-                    "context": row.attrib.get("data-context", ""),
-                    "modality": row.attrib.get("data-modality", "other"),
-                    "values": values,
-                }
-            )
-        grouped_tables[kind] = {"headers": headers, "rows": rows}
-    if set(grouped_tables) != {"animals", "sessions"}:
-        raise RuntimeError("Expected animals and sessions tables in manuscript.")
-
-    summary_mouse_ids = split_grouped_identifiers(grouped_tables["animals"], count_index=4)
-    animal_table = load_individual_animal_table(summary_mouse_ids)
-    session_table = expand_individual_session_table(grouped_tables["sessions"])
+def load_publication_table_data() -> dict:
+    animal_table = load_individual_animal_table()
+    session_table = load_individual_session_table()
     data_access_table = load_data_access_table()
     return {
         "tables": {
@@ -4696,21 +4664,6 @@ def load_data_access_table(
     }
 
 
-def split_grouped_identifiers(table: dict, count_index: int) -> set[str]:
-    identifiers = []
-    for row in table["rows"]:
-        row_ids = [value.strip() for value in row["values"][-1].split(",") if value.strip()]
-        declared_count = int(row["values"][count_index].split()[0])
-        if declared_count != len(row_ids):
-            raise RuntimeError(
-                f"Declared count {declared_count} does not match {len(row_ids)} identifiers."
-            )
-        identifiers.extend(row_ids)
-    if len(identifiers) != len(set(identifiers)):
-        raise RuntimeError("Grouped table contains duplicate identifiers.")
-    return set(identifiers)
-
-
 def normalized_text_bytes(path: Path) -> bytes:
     """Read text bytes with platform-specific line endings normalized to LF."""
     data = path.read_bytes()
@@ -4725,7 +4678,7 @@ def text_sha256_matches(path: Path, expected: str) -> bool:
     return any(hashlib.sha256(candidate).hexdigest() == expected for candidate in candidates)
 
 
-def load_individual_animal_table(summary_mouse_ids: set[str]) -> dict:
+def load_individual_animal_table() -> dict:
     modality_lookup = {
         "MESO": ("mesoscope", "Two-photon mesoscope"),
         "EPHYS": ("neuropixels", "Neuropixels"),
@@ -4747,18 +4700,15 @@ def load_individual_animal_table(summary_mouse_ids: set[str]) -> dict:
         sex = source["Sex"].strip()
         if not sex or sex == "?":
             sex = "Unknown"
-        included = "Yes" if mouse_id in summary_mouse_ids else "No"
         details = [
             {"label": "Genotype / preparation", "value": source["Transgenic details"].strip()},
             {"label": "Virus(es)", "value": source["Virus(es)"].strip()},
             {"label": "Birth date", "value": source["Birth date"].strip()},
             {"label": "Surgery date(s)", "value": source["Surgery date(s)"].strip()},
             {"label": "Notes", "value": source["Notes"].strip()},
-            {"label": "Included in grouped manuscript table", "value": included},
         ]
         details = [detail for detail in details if detail["value"]]
         csv_values = [source[header] for header in source]
-        csv_values.append(included)
         rows.append(
             {
                 "context": "",
@@ -4774,11 +4724,8 @@ def load_individual_animal_table(summary_mouse_ids: set[str]) -> dict:
     mouse_ids = [row["values"][0] for row in rows]
     if len(mouse_ids) != len(set(mouse_ids)):
         raise RuntimeError("Animal worksheet contains duplicate mouse IDs.")
-    if not summary_mouse_ids.issubset(mouse_ids):
-        missing = sorted(summary_mouse_ids - set(mouse_ids))
-        raise RuntimeError(f"Animal worksheet is missing manuscript mouse IDs: {missing}")
     return {
-        "csvHeaders": [*source_rows[0].keys(), "Included in grouped manuscript table"],
+        "csvHeaders": list(source_rows[0]),
         "detailsColumn": 4,
         "headers": ["Mouse ID", "Modality", "Sex", "QC", "Metadata"],
         "rows": rows,
@@ -4948,32 +4895,47 @@ def load_neuropixels_trajectory_data(
     return payload
 
 
-def expand_individual_session_table(grouped_table: dict) -> dict:
+def load_individual_session_table(
+    data_path: Path = SESSION_RECORDS_PATH,
+    provenance_path: Path = SESSION_RECORDS_PROVENANCE_PATH,
+) -> dict:
+    payload = load_experimental_session_records(data_path, provenance_path)
+    modality_labels = {
+        "mesoscope": "Two-photon mesoscope",
+        "neuropixels": "Neuropixels",
+        "slap2": "SLAP2",
+    }
     rows = []
-    session_ids = split_grouped_identifiers(grouped_table, count_index=2)
-    for group in grouped_table["rows"]:
-        modality_label, context_label = group["values"][:2]
-        for session_id in [
-            value.strip() for value in group["values"][-1].split(",") if value.strip()
-        ]:
-            mouse_id, session_date = session_id.split("_", maxsplit=1)
-            values = [session_id, mouse_id, session_date, modality_label, context_label]
-            rows.append(
-                {
-                    "context": group["context"],
-                    "csvValues": values,
-                    "details": [],
-                    "modality": group["modality"],
-                    "qc": "",
-                    "values": values,
-                }
-            )
+    for record in payload["records"]:
+        session_id = record["source_session_id"].strip()
+        if record["qc"].strip().casefold() != "pass" or session_id in {"", "aborted"}:
+            continue
+        modality = record["modality"]
+        context = session_context(record)
+        values = [
+            session_id,
+            record["mouse_id"],
+            record["date"],
+            modality_labels[modality],
+            SESSION_CONTEXT_LABELS[context],
+        ]
+        rows.append(
+            {
+                "context": context,
+                "csvValues": [record[header] for header in record],
+                "details": [],
+                "modality": modality,
+                "qc": "pass",
+                "values": values,
+            }
+        )
     rows.sort(key=lambda row: (row["values"][2], row["values"][0]))
-    if {row["values"][0] for row in rows} != session_ids:
-        raise RuntimeError("Expanded session IDs do not match grouped session IDs.")
+    session_ids = [row["values"][0] for row in rows]
+    if len(session_ids) != len(set(session_ids)):
+        raise RuntimeError("Passing session records contain duplicate session IDs.")
     headers = ["Session ID", "Mouse ID", "Date", "Modality", "Context"]
     return {
-        "csvHeaders": headers,
+        "csvHeaders": list(payload["records"][0]) if payload["records"] else [],
         "detailsColumn": None,
         "headers": headers,
         "rows": rows,
@@ -4993,6 +4955,32 @@ SESSION_CONTEXT_LABELS = {
     "sequence": "Sequence",
     "duration": "Duration",
     "other/pilot": "Pilot / other",
+}
+SESSION_QC_TAGS = (
+    ("pilot session", "Pilot session"),
+    ("missing running", "Missing running"),
+    ("high frequency noise contamination", "High-frequency noise contamination"),
+    ("z-drift", "Z-drift"),
+    ("motion correction failure", "Motion correction problems"),
+    ("cell matching", "Cell matching problems"),
+    ("slap2 stopped early", "SLAP2 stopped early"),
+    ("blood at insertion", "Blood at insertion site"),
+    ("mouse stress", "Mouse stress"),
+    ("mouse suspected asleep", "Mouse suspected asleep"),
+    (
+        "1 probe excluded for saturation events",
+        "One probe excluded for saturation events",
+    ),
+)
+SESSION_QC_TAG_NUMBERS = {
+    tag: index for index, (tag, _) in enumerate(SESSION_QC_TAGS, start=1)
+}
+SESSION_QC_TAG_ALIASES = {
+    "1 probe excluded": "1 probe excluded for saturation events",
+    "cell matching failure": "cell matching",
+    "motion correction": "motion correction failure",
+    "mouse asleep": "mouse suspected asleep",
+    "zdrift": "z-drift",
 }
 SESSION_ORDER = {
     1: ("sensorimotor", "standard oddball", "sequence", "duration"),
@@ -5045,24 +5033,39 @@ def normalized_session_stimulus(record: dict) -> str:
 def session_qc_kind(record: dict | None, modality: str) -> str:
     if record is None:
         return "missing"
-    qc = record["qc"].lower()
-    if modality == "neuropixels":
-        if "session fail" in qc:
-            return "session-fail"
-        if "fail" in qc:
-            return "probe-fail"
-    elif modality == "mesoscope" and "fail" in qc:
+    qc = record["qc"].strip().casefold()
+    if qc == "fail":
         return "session-fail"
-    elif modality == "slap2":
-        if "motion correction" in qc:
-            return "motion"
-        if "stressed" in qc:
-            return "stressed"
-        if "asleep" in qc:
-            return "asleep"
-        if "stopped" in qc:
-            return "stopped"
     return "ok"
+
+
+def normalized_session_qc_tags(record: dict | None) -> list[str]:
+    if record is None:
+        return []
+    tags = []
+    for raw_tag in record.get("qc_tags", "").split(","):
+        tag = raw_tag.strip().casefold()
+        if tag in {"", "-", "?"}:
+            continue
+        tag = SESSION_QC_TAG_ALIASES.get(tag, tag)
+        if tag not in SESSION_QC_TAG_NUMBERS:
+            raise RuntimeError(f"Unsupported session QC tag: {raw_tag.strip()}")
+        if tag not in tags:
+            tags.append(tag)
+    return tags
+
+
+def session_qc_tag_numbers(
+    record: dict | None,
+    tag_numbers: dict[str, int] | None = None,
+) -> list[int]:
+    tag_numbers = tag_numbers or SESSION_QC_TAG_NUMBERS
+    numbers = [
+        tag_numbers[tag]
+        for tag in normalized_session_qc_tags(record)
+        if tag in tag_numbers
+    ]
+    return sorted(numbers)
 
 
 def session_context(record: dict) -> str:
@@ -5148,6 +5151,12 @@ def session_panel_rows(records: list[dict], modality: str) -> list[dict]:
                 {"context": session_context(record), "record": record}
                 for record in mouse_records
             ]
+        if sessions and all(
+            session["record"] is not None
+            and session["record"]["qc"].strip().casefold() == "fail"
+            for session in sessions
+        ):
+            continue
         rows.append(
             {
                 "cohort": cohort,
@@ -5161,15 +5170,6 @@ def session_panel_rows(records: list[dict], modality: str) -> list[dict]:
     return rows
 
 
-def svg_star(cx: float, cy: float, outer: float = 7, inner: float = 3) -> str:
-    points = []
-    for index in range(10):
-        angle = -math.pi / 2 + index * math.pi / 5
-        radius = outer if index % 2 == 0 else inner
-        points.append(f"{cx + math.cos(angle) * radius:.2f},{cy + math.sin(angle) * radius:.2f}")
-    return " ".join(points)
-
-
 def append_session_block(
     svg: list[str],
     *,
@@ -5179,44 +5179,70 @@ def append_session_block(
     height: float,
     context: str,
     qc_kind: str,
+    qc_tag_numbers: list[int] | None = None,
     element_class: str | None = None,
     overlays: list[str] | None = None,
 ) -> None:
     color = SESSION_CONTEXT_COLORS[context]
     class_attribute = f' class="{element_class}"' if element_class else ""
-    border_colors = {
-        "missing": "#FF0000",
-        "session-fail": "#FF0000",
-        "motion": "#FF0000",
-        "stressed": "#FF69B4",
-        "asleep": "#32CD32",
-        "stopped": "#F5C400",
-    }
-    if qc_kind in border_colors:
+    block_inset = 1.5
+    block_x = x + block_inset
+    block_y = y + block_inset
+    block_width = width - 2 * block_inset
+    block_height = height - 2 * block_inset
+    if qc_kind == "session-fail":
         svg.append(
-            f'<rect{class_attribute} x="{x:.2f}" y="{y:.2f}" '
-            f'width="{width:.2f}" height="{height:.2f}" '
-            f'fill="url(#hatch-{context.replace("/", "-").replace(" ", "-")})" '
-            'stroke="#FFFFFF" stroke-width="1"/>'
+            f'<rect{class_attribute} x="{block_x:.2f}" y="{block_y:.2f}" '
+            f'width="{block_width:.2f}" height="{block_height:.2f}" fill="none" '
+            f'stroke="{color}" stroke-width="2"/>'
         )
         overlay_target = overlays if overlays is not None else svg
         overlay_target.append(
             f'<rect class="session-qc-outline" data-qc-kind="{qc_kind}" '
-            f'x="{x:.2f}" y="{y:.2f}" width="{width:.2f}" height="{height:.2f}" '
-            f'fill="none" stroke="{border_colors[qc_kind]}" stroke-width="2"/>'
+            f'x="{block_x:.2f}" y="{block_y:.2f}" '
+            f'width="{block_width:.2f}" height="{block_height:.2f}" '
+            f'fill="none" stroke="{color}" stroke-width="2"/>'
+        )
+    elif qc_kind == "missing":
+        svg.append(
+            f'<rect{class_attribute} x="{block_x:.2f}" y="{block_y:.2f}" '
+            f'width="{block_width:.2f}" height="{block_height:.2f}" fill="#FFFFFF" '
+            'stroke="#8A9290" stroke-width="1.5" stroke-dasharray="3 2"/>'
         )
     else:
         svg.append(
-            f'<rect{class_attribute} x="{x:.2f}" y="{y:.2f}" '
-            f'width="{width:.2f}" height="{height:.2f}" '
-            f'fill="{color}" stroke="#FFFFFF" stroke-width="1"/>'
+            f'<rect{class_attribute} x="{block_x:.2f}" y="{block_y:.2f}" '
+            f'width="{block_width:.2f}" height="{block_height:.2f}" '
+            f'fill="{color}" stroke="{color}" stroke-width="2"/>'
         )
-    if qc_kind == "probe-fail":
+    if qc_tag_numbers:
         overlay_target = overlays if overlays is not None else svg
-        overlay_target.append(
-            f'<polygon points="{svg_star(x + width / 2, y + height / 2)}" '
-            'fill="#FFFFFF" stroke="#222829" stroke-width="1"/>'
+        label = ",".join(str(number) for number in qc_tag_numbers)
+        center_x = x + width / 2
+        number_fill = "#000000" if qc_kind == "session-fail" else "#FFFFFF"
+        number_stroke = "#FFFFFF" if qc_kind == "session-fail" else "#000000"
+        text_style = (
+            'text-anchor="middle" font-family="IBM Plex Mono, monospace" '
+            f'font-weight="700" fill="{number_fill}" stroke="{number_stroke}" '
+            'stroke-width="1" paint-order="stroke"'
         )
+        if len(qc_tag_numbers) > 3:
+            first_line = ",".join(str(number) for number in qc_tag_numbers[:3])
+            second_line = ",".join(str(number) for number in qc_tag_numbers[3:])
+            overlay_target.append(
+                f'<text class="session-qc-tags" data-qc-tags="{label}" '
+                f'font-size="{FIGURE_TYPE_SMALL}" {text_style}>'
+                f'<tspan x="{center_x:.2f}" y="{y + height / 2 - 1.25:.2f}">'
+                f'{first_line}</tspan>'
+                f'<tspan x="{center_x:.2f}" y="{y + height / 2 + 7.25:.2f}">'
+                f'{second_line}</tspan></text>'
+            )
+        else:
+            overlay_target.append(
+                f'<text class="session-qc-tags" data-qc-tags="{label}" '
+                f'x="{center_x:.2f}" y="{y + height / 2 + 3.6:.2f}" '
+                f'font-size="{FIGURE_TYPE_SMALL}" {text_style}>{label}</text>'
+            )
 
 
 def write_session_inventory_svg(
@@ -5227,11 +5253,11 @@ def write_session_inventory_svg(
     records = payload["records"]
     panel_specs = (
         ("A", "Neuropixels", "neuropixels", 28),
-        ("B", "Mesoscope", "mesoscope", 38),
-        ("C", "SLAP2", "slap2", 38),
+        ("B", "Mesoscope", "mesoscope", 28),
+        ("C", "SLAP2", "slap2", 28),
     )
     width = 1150
-    height = 640
+    height = 680
     panel_gap = 75
     chart_top = 85
     chart_bottom = 570
@@ -5244,6 +5270,25 @@ def write_session_inventory_svg(
         modality: session_panel_rows(records, modality)
         for _, _, modality, _ in panel_specs
     }
+    active_qc_tags = {
+        tag
+        for rows in panel_rows.values()
+        for row in rows
+        for session in row["sessions"]
+        for tag in normalized_session_qc_tags(session["record"])
+    }
+    displayed_qc_tags = tuple(
+        tag_record for tag_record in SESSION_QC_TAGS if tag_record[0] in active_qc_tags
+    )
+    displayed_qc_tag_numbers = {
+        tag: index for index, (tag, _) in enumerate(displayed_qc_tags, start=1)
+    }
+    has_missing_sessions = any(
+        session["record"] is None
+        for rows in panel_rows.values()
+        for row in rows
+        for session in row["sessions"]
+    )
     global_max_sessions = max(
         len(row["sessions"])
         for rows in panel_rows.values()
@@ -5279,24 +5324,7 @@ def write_session_inventory_svg(
         'mesoscope, and SLAP2 mice, grouped by predictive-processing cohort and annotated '
         'with session quality-control status.</desc>',
         f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
-        "<defs>",
     ]
-    for context, color in SESSION_CONTEXT_COLORS.items():
-        pattern_id = context.replace("/", "-").replace(" ", "-")
-        svg.append(
-            f'<pattern id="hatch-{pattern_id}" width="8" height="8" '
-            'patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
-            '<rect width="8" height="8" fill="#FFFFFF"/>'
-            f'<line x1="0" y1="0" x2="0" y2="8" stroke="{color}" stroke-width="3"/>'
-            "</pattern>"
-        )
-    svg.append(
-        '<pattern id="hatch-qc" width="8" height="8" patternUnits="userSpaceOnUse" '
-        'patternTransform="rotate(45)"><rect width="8" height="8" fill="#FFFFFF"/>'
-        '<line x1="0" y1="0" x2="0" y2="8" stroke="#666666" stroke-width="3"/>'
-        "</pattern>"
-    )
-    svg.append("</defs>")
 
     for (panel_letter, panel_title, modality, row_step), panel_left in zip(
         panel_specs, panel_lefts, strict=True
@@ -5343,11 +5371,12 @@ def write_session_inventory_svg(
         y = chart_top
         for row in rows:
             if row["cohort"] != previous_cohort:
-                y += 18
+                y += row_step
                 previous_cohort = row["cohort"]
             y_positions.append(y)
             svg.append(
-                f'<text x="{panel_left + chart_offset - 12}" y="{y + 4:.2f}" '
+                f'<text class="mouse-id" data-modality="{modality}" '
+                f'x="{panel_left + chart_offset - 12}" y="{y + 4:.2f}" '
                 'font-family="IBM Plex Mono, monospace" font-size="12" '
                 f'text-anchor="end" fill="#4D5553">{escape(row["mouseId"])}</text>'
             )
@@ -5362,6 +5391,9 @@ def write_session_inventory_svg(
                     height=bar_height,
                     context=session["context"],
                     qc_kind=session_qc_kind(record, modality),
+                    qc_tag_numbers=session_qc_tag_numbers(
+                        record, displayed_qc_tag_numbers
+                    ),
                     element_class="session-block",
                     overlays=session_overlays,
                 )
@@ -5396,7 +5428,7 @@ def write_session_inventory_svg(
     svg.extend(
         [
             '<g id="session-inventory-legend" '
-            f'transform="translate({panel_lefts[1] + chart_offset:.2f} 480)" '
+            'transform="translate(310 421)" '
             'aria-label="Session type and quality-control legend">',
             '<text x="0" y="13" font-family="Source Sans 3, sans-serif" '
             'font-size="13" font-weight="700" fill="#4D5553">Session type</text>',
@@ -5416,44 +5448,57 @@ def write_session_inventory_svg(
                 f"{escape(SESSION_CONTEXT_LABELS[context_name])}</text>",
             ]
         )
-    svg.append(
-        '<text x="0" y="55" font-family="Source Sans 3, sans-serif" '
-        'font-size="13" font-weight="700" fill="#4D5553">Quality control</text>'
+    svg.extend(
+        [
+            '<text x="0" y="55" font-family="Source Sans 3, sans-serif" '
+            'font-size="13" font-weight="700" fill="#4D5553">Quality control</text>',
+            '<rect x="120" y="42" width="24" height="16" fill="none" '
+            'stroke="#69716F" stroke-width="2"/>',
+            '<text x="152" y="55" font-family="Source Sans 3, sans-serif" '
+            'font-size="12" fill="#68706E">Failed session (type-colored border)</text>',
+            '<text x="0" y="86" font-family="Source Sans 3, sans-serif" '
+            'font-size="13" font-weight="700" fill="#4D5553">QC tags</text>',
+        ]
     )
-    qc_items = (
-        (120, 42, "#FF0000", "Missing / failed session"),
-        (520, 42, "#FF0000", "Motion correction partially failed"),
-        (120, 77, "#FF69B4", "Mouse stressed"),
-        (340, 77, "#32CD32", "Mouse asleep"),
-        (520, 77, "#F5C400", "SLAP2 stopped halfway"),
-    )
-    for x, y, color, label in qc_items:
+    if has_missing_sessions:
         svg.extend(
             [
-                f'<rect x="{x}" y="{y}" width="24" height="16" '
-                f'fill="url(#hatch-qc)" stroke="{color}" stroke-width="2"/>',
-                f'<text x="{x + 32}" y="{y + 13}" '
+                '<rect x="300" y="42" width="24" height="16" fill="#FFFFFF" '
+                'stroke="#8A9290" stroke-width="1.5" stroke-dasharray="3 2"/>',
+                '<text x="332" y="55" font-family="Source Sans 3, sans-serif" '
+                'font-size="12" fill="#68706E">Missing expected session</text>',
+            ]
+        )
+    legend_columns = (120, 322, 524)
+    for index, (_, label) in enumerate(displayed_qc_tags, start=1):
+        column = (index - 1) % len(legend_columns)
+        row = (index - 1) // len(legend_columns)
+        x = legend_columns[column]
+        y = 73 + row * 22
+        svg.extend(
+            [
+                f'<text x="{x + 9}" y="{y + 10}" text-anchor="middle" '
+                f'font-family="IBM Plex Mono, monospace" font-size="{FIGURE_TYPE_SMALL}" '
+                f'font-weight="700" fill="#293133">{index}</text>',
+                f'<text x="{x + 22}" y="{y + 11}" '
                 'font-family="Source Sans 3, sans-serif" '
                 f'font-size="12" fill="#68706E">{label}</text>',
             ]
         )
-    append_session_block(
-        svg,
-        x=340,
-        y=42,
-        width=24,
-        height=16,
-        context="sensorimotor",
-        qc_kind="probe-fail",
-    )
     svg.extend(
         [
-            '<text x="372" y="55" font-family="Source Sans 3, sans-serif" '
-            'font-size="12" fill="#68706E">One probe failed</text>',
             "</g>",
             "</svg>",
         ]
     )
+    svg = [
+        re.sub(
+            r'(<text\b(?![^>]*class="session-qc-tags")[^>]*\bfill=")#[0-9A-Fa-f]{6}(")',
+            r"\g<1>#000000\g<2>",
+            element,
+        )
+        for element in svg
+    ]
     output.parent.mkdir(parents=True, exist_ok=True)
     write_svg_output(output, svg)
     return output

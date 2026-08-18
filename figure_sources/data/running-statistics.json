@@ -42,8 +42,8 @@
       "included_mice": 15,
       "included_sessions": 15,
       "modality": "neuropixels",
-      "worksheet_mice": 15,
-      "worksheet_sessions": 15
+      "worksheet_mice": 16,
+      "worksheet_sessions": 16
     },
     {
       "context": "sequence",
@@ -60,14 +60,14 @@
       "included_mice": 13,
       "included_sessions": 13,
       "modality": "neuropixels",
-      "worksheet_mice": 15,
-      "worksheet_sessions": 15
+      "worksheet_mice": 16,
+      "worksheet_sessions": 16
     },
     {
       "context": "sensorimotor",
       "context_label": "Sensorimotor",
-      "included_mice": 7,
-      "included_sessions": 16,
+      "included_mice": 10,
+      "included_sessions": 23,
       "modality": "mesoscope",
       "worksheet_mice": 10,
       "worksheet_sessions": 23
@@ -75,8 +75,8 @@
     {
       "context": "standard",
       "context_label": "Standard",
-      "included_mice": 7,
-      "included_sessions": 17,
+      "included_mice": 10,
+      "included_sessions": 23,
       "modality": "mesoscope",
       "worksheet_mice": 10,
       "worksheet_sessions": 24
@@ -84,17 +84,17 @@
     {
       "context": "sequence",
       "context_label": "Sequence",
-      "included_mice": 8,
-      "included_sessions": 16,
+      "included_mice": 10,
+      "included_sessions": 20,
       "modality": "mesoscope",
       "worksheet_mice": 10,
-      "worksheet_sessions": 24
+      "worksheet_sessions": 23
     },
     {
       "context": "duration",
       "context_label": "Duration",
-      "included_mice": 8,
-      "included_sessions": 15,
+      "included_mice": 10,
+      "included_sessions": 20,
       "modality": "mesoscope",
       "worksheet_mice": 10,
       "worksheet_sessions": 21
@@ -106,7 +106,7 @@
       "included_sessions": 3,
       "modality": "slap2",
       "worksheet_mice": 8,
-      "worksheet_sessions": 10
+      "worksheet_sessions": 11
     },
     {
       "context": "standard",
@@ -138,15 +138,15 @@
   ],
   "dandisets": [
     {
-      "asset_count": 62,
-      "asset_manifest_sha256": "6ead4c628ef109991db228dbbe78fb128338198b9a9a09c3b89d318ee9eb41f9",
+      "asset_count": 60,
+      "asset_manifest_sha256": "42336298a74ebef633406d62c0356f286c0d30f17a58a6e180c193213ac33162",
       "dandiset_id": "001637",
       "modality": "neuropixels",
       "version": "draft"
     },
     {
-      "asset_count": 64,
-      "asset_manifest_sha256": "98a1c8b848da1c84c56dd76bd6fac9df82db26d00d4c54fbc1e07d4293660eb3",
+      "asset_count": 86,
+      "asset_manifest_sha256": "ffb4924a76ba2227c98b689125b8adf33bdc67cffdd6021c5c81bfbd55bea9ec",
       "dandiset_id": "001768",
       "modality": "mesoscope",
       "version": "draft"
@@ -10742,92 +10742,8 @@
     {
       "modality": "mesoscope",
       "reason": "matching public running source unavailable",
-      "source_row": 49,
-      "source_session_id": "multiplane-ophys_850399_2026-05-21_09-39-31"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 50,
-      "source_session_id": "multiplane-ophys_850399_2026-05-20_09-37-10"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 51,
-      "source_session_id": "multiplane-ophys_850399_2026-05-28_09-55-47"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 52,
-      "source_session_id": "multiplane-ophys_850399_2026-05-27_13-34-48"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 53,
-      "source_session_id": "multiplane-ophys_850399_2026-05-30_10-07-34"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 54,
-      "source_session_id": "multiplane-ophys_850399_2026-05-29_10-06-36"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
       "source_row": 55,
-      "source_session_id": "multiplane-ophys_850399_2026-06-03_09-59-04"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 56,
-      "source_session_id": "multiplane-ophys_850399_2026-06-02_10-59-46"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 80,
-      "source_session_id": "multiplane-ophys_845342_2026-04-02_15-08-49"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 89,
-      "source_session_id": "multiplane-ophys_843001_2026-03-12_12-24-55"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 90,
-      "source_session_id": "multiplane-ophys_843001_2026-03-25_12-01-30"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 146,
-      "source_session_id": "multiplane-ophys_842971_2026-04-29_09-39-57"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 147,
-      "source_session_id": "multiplane-ophys_842971_2026-05-06_09-36-56"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 148,
-      "source_session_id": "multiplane-ophys_842971_2026-05-07_09-22-13"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 149,
-      "source_session_id": "multiplane-ophys_842971_2026-05-08_09-32-15"
+      "source_session_id": "multiplane-ophys_850399_2026-05-30_10-07-34"
     },
     {
       "modality": "mesoscope",
@@ -10850,62 +10766,20 @@
     {
       "modality": "mesoscope",
       "reason": "matching public running source unavailable",
-      "source_row": 192,
-      "source_session_id": "multiplane-ophys_853137_2026-06-23_09-56-28"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 193,
-      "source_session_id": "multiplane-ophys_853137_2026-06-24_11-28-54"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 194,
-      "source_session_id": "multiplane-ophys_853137_2026-06-25_13-03-30"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 195,
-      "source_session_id": "multiplane-ophys_853137_2026-06-26_11-57-03"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 196,
-      "source_session_id": "multiplane-ophys_853137_2026-06-27_12-28-41"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 197,
-      "source_session_id": "multiplane-ophys_853137_2026-07-08_12-09-27"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
       "source_row": 198,
       "source_session_id": "multiplane-ophys_853137_2026-07-09_09-59-39"
     },
     {
-      "modality": "mesoscope",
+      "modality": "neuropixels",
       "reason": "matching public running source unavailable",
-      "source_row": 199,
-      "source_session_id": "multiplane-ophys_853137_2026-07-10_11-45-15"
-    },
-    {
-      "modality": "mesoscope",
-      "reason": "matching public running source unavailable",
-      "source_row": 200,
-      "source_session_id": "multiplane-ophys_853137_2026-07-14_15-24-43"
+      "source_row": 18,
+      "source_session_id": ""
     },
     {
       "modality": "neuropixels",
       "reason": "matching public running source unavailable",
-      "source_row": 122,
-      "source_session_id": ""
+      "source_row": 19,
+      "source_session_id": "ecephys_820459_2025-11-13_14-54-19"
     },
     {
       "modality": "neuropixels",
@@ -10914,79 +10788,77 @@
       "source_session_id": ""
     },
     {
-      "asset_id": "826226c3-22c9-4306-9aa7-49d71e683e17",
+      "modality": "neuropixels",
+      "reason": "matching public running source unavailable",
+      "source_row": 124,
+      "source_session_id": ""
+    },
+    {
+      "asset_id": "3d958caf-28eb-4cfd-ad81-58921f7f4e76",
       "modality": "neuropixels",
       "reason": "NWB processed running series unavailable",
       "source_row": 135,
       "source_session_id": "ecephys_830847_2026-03-09_16-23-49"
     },
     {
-      "asset_id": "5996b247-cf6a-4ee1-8c21-3cc6c790c2b5",
+      "asset_id": "77123ffa-5029-4485-a2e5-2eacac954f74",
       "modality": "neuropixels",
       "reason": "NWB processed running series unavailable",
       "source_row": 136,
       "source_session_id": "ecephys_830846_2026-03-10_10-17-25"
     },
     {
-      "asset_id": "edf27171-131b-4422-b22c-8d64d05f2878",
-      "modality": "neuropixels",
-      "reason": "NWB processed running series unavailable",
-      "source_row": 169,
-      "source_session_id": "ecephys_848387_2026-05-04_16-19-01"
-    },
-    {
-      "asset_id": "3cb5e97d-4611-4fa4-a429-d731cb00d277",
-      "modality": "neuropixels",
-      "reason": "NWB processed running series unavailable",
-      "source_row": 172,
-      "source_session_id": "ecephys_848387_2026-05-07_15-46-10"
-    },
-    {
       "modality": "slap2",
       "reason": "public Harp encoder file unavailable",
-      "source_row": 106,
+      "source_row": 107,
       "source_session_id": "aborted"
     },
     {
       "modality": "slap2",
       "reason": "public Harp encoder file unavailable",
-      "source_row": 108,
+      "source_row": 109,
       "source_session_id": "aborted"
     },
     {
       "modality": "slap2",
       "reason": "public Harp encoder file unavailable",
-      "source_row": 121,
+      "source_row": 122,
       "source_session_id": "841193_2026-02-04_09-20-18"
     },
     {
       "modality": "slap2",
       "reason": "public Harp encoder file unavailable",
-      "source_row": 124,
+      "source_row": 125,
       "source_session_id": "841193_2026-02-17_10-26-41"
     },
     {
       "modality": "slap2",
-      "reason": "SLAP2 stimulus table lacks protocol block 9",
+      "reason": "public Harp encoder file unavailable",
       "source_row": 126,
+      "source_session_id": "aborted"
+    },
+    {
+      "modality": "slap2",
+      "reason": "SLAP2 stimulus table lacks protocol block 9",
+      "source_row": 127,
       "source_session_id": "845207_2026-02-27_10-31-19"
     },
     {
       "modality": "slap2",
       "reason": "public Harp encoder file unavailable",
-      "source_row": 127,
+      "source_row": 128,
       "source_session_id": "845207_2026-04-06_10-07-41"
     },
     {
       "modality": "slap2",
       "reason": "public Harp encoder file unavailable",
-      "source_row": 128,
+      "source_row": 129,
       "source_session_id": "845207_2026-04-09_10-03-56"
     },
     {
       "modality": "slap2",
       "reason": "public Harp encoder file unavailable",
-      "source_row": 129,
+      "source_row": 130,
       "source_session_id": "845207_2026-05-08_13-21-41"
     },
     {
@@ -11482,106 +11354,138 @@
     },
     {
       "block": "standard",
-      "mean_forward_speed_cm_s": 7.4656,
+      "mean_forward_speed_cm_s": 4.0662,
       "modality": "mesoscope",
       "mouse_id": "842971",
-      "session_count": 4,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_842971_2026-04-18_10-13-51",
         "multiplane-ophys_842971_2026-04-22_09-59-38",
         "multiplane-ophys_842971_2026-04-23_09-36-55",
-        "multiplane-ophys_842971_2026-04-24_10-05-17"
+        "multiplane-ophys_842971_2026-04-24_10-05-17",
+        "multiplane-ophys_842971_2026-04-29_09-39-57",
+        "multiplane-ophys_842971_2026-05-06_09-36-56",
+        "multiplane-ophys_842971_2026-05-07_09-22-13",
+        "multiplane-ophys_842971_2026-05-08_09-32-15"
       ]
     },
     {
       "block": "context",
-      "mean_forward_speed_cm_s": 6.8138,
+      "mean_forward_speed_cm_s": 3.9246,
       "modality": "mesoscope",
       "mouse_id": "842971",
-      "session_count": 4,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_842971_2026-04-18_10-13-51",
         "multiplane-ophys_842971_2026-04-22_09-59-38",
         "multiplane-ophys_842971_2026-04-23_09-36-55",
-        "multiplane-ophys_842971_2026-04-24_10-05-17"
+        "multiplane-ophys_842971_2026-04-24_10-05-17",
+        "multiplane-ophys_842971_2026-04-29_09-39-57",
+        "multiplane-ophys_842971_2026-05-06_09-36-56",
+        "multiplane-ophys_842971_2026-05-07_09-22-13",
+        "multiplane-ophys_842971_2026-05-08_09-32-15"
       ]
     },
     {
       "block": "standard_repeat",
-      "mean_forward_speed_cm_s": 7.1067,
+      "mean_forward_speed_cm_s": 3.5889,
       "modality": "mesoscope",
       "mouse_id": "842971",
-      "session_count": 4,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_842971_2026-04-18_10-13-51",
         "multiplane-ophys_842971_2026-04-22_09-59-38",
         "multiplane-ophys_842971_2026-04-23_09-36-55",
-        "multiplane-ophys_842971_2026-04-24_10-05-17"
+        "multiplane-ophys_842971_2026-04-24_10-05-17",
+        "multiplane-ophys_842971_2026-04-29_09-39-57",
+        "multiplane-ophys_842971_2026-05-06_09-36-56",
+        "multiplane-ophys_842971_2026-05-07_09-22-13",
+        "multiplane-ophys_842971_2026-05-08_09-32-15"
       ]
     },
     {
       "block": "sequence",
-      "mean_forward_speed_cm_s": 5.9705,
+      "mean_forward_speed_cm_s": 3.0371,
       "modality": "mesoscope",
       "mouse_id": "842971",
-      "session_count": 4,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_842971_2026-04-18_10-13-51",
         "multiplane-ophys_842971_2026-04-22_09-59-38",
         "multiplane-ophys_842971_2026-04-23_09-36-55",
-        "multiplane-ophys_842971_2026-04-24_10-05-17"
+        "multiplane-ophys_842971_2026-04-24_10-05-17",
+        "multiplane-ophys_842971_2026-04-29_09-39-57",
+        "multiplane-ophys_842971_2026-05-06_09-36-56",
+        "multiplane-ophys_842971_2026-05-07_09-22-13",
+        "multiplane-ophys_842971_2026-05-08_09-32-15"
       ]
     },
     {
       "block": "jitter",
-      "mean_forward_speed_cm_s": 5.6353,
+      "mean_forward_speed_cm_s": 2.883,
       "modality": "mesoscope",
       "mouse_id": "842971",
-      "session_count": 4,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_842971_2026-04-18_10-13-51",
         "multiplane-ophys_842971_2026-04-22_09-59-38",
         "multiplane-ophys_842971_2026-04-23_09-36-55",
-        "multiplane-ophys_842971_2026-04-24_10-05-17"
+        "multiplane-ophys_842971_2026-04-24_10-05-17",
+        "multiplane-ophys_842971_2026-04-29_09-39-57",
+        "multiplane-ophys_842971_2026-05-06_09-36-56",
+        "multiplane-ophys_842971_2026-05-07_09-22-13",
+        "multiplane-ophys_842971_2026-05-08_09-32-15"
       ]
     },
     {
       "block": "open_loop",
-      "mean_forward_speed_cm_s": 11.2202,
+      "mean_forward_speed_cm_s": 7.1934,
       "modality": "mesoscope",
       "mouse_id": "842971",
-      "session_count": 4,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_842971_2026-04-18_10-13-51",
         "multiplane-ophys_842971_2026-04-22_09-59-38",
         "multiplane-ophys_842971_2026-04-23_09-36-55",
-        "multiplane-ophys_842971_2026-04-24_10-05-17"
+        "multiplane-ophys_842971_2026-04-24_10-05-17",
+        "multiplane-ophys_842971_2026-04-29_09-39-57",
+        "multiplane-ophys_842971_2026-05-06_09-36-56",
+        "multiplane-ophys_842971_2026-05-07_09-22-13",
+        "multiplane-ophys_842971_2026-05-08_09-32-15"
       ]
     },
     {
       "block": "movie",
-      "mean_forward_speed_cm_s": 36.874,
+      "mean_forward_speed_cm_s": 20.4246,
       "modality": "mesoscope",
       "mouse_id": "842971",
-      "session_count": 4,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_842971_2026-04-18_10-13-51",
         "multiplane-ophys_842971_2026-04-22_09-59-38",
         "multiplane-ophys_842971_2026-04-23_09-36-55",
-        "multiplane-ophys_842971_2026-04-24_10-05-17"
+        "multiplane-ophys_842971_2026-04-24_10-05-17",
+        "multiplane-ophys_842971_2026-04-29_09-39-57",
+        "multiplane-ophys_842971_2026-05-06_09-36-56",
+        "multiplane-ophys_842971_2026-05-07_09-22-13",
+        "multiplane-ophys_842971_2026-05-08_09-32-15"
       ]
     },
     {
       "block": "rf",
-      "mean_forward_speed_cm_s": 36.1454,
+      "mean_forward_speed_cm_s": 18.233,
       "modality": "mesoscope",
       "mouse_id": "842971",
-      "session_count": 4,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_842971_2026-04-18_10-13-51",
         "multiplane-ophys_842971_2026-04-22_09-59-38",
         "multiplane-ophys_842971_2026-04-23_09-36-55",
-        "multiplane-ophys_842971_2026-04-24_10-05-17"
+        "multiplane-ophys_842971_2026-04-24_10-05-17",
+        "multiplane-ophys_842971_2026-04-29_09-39-57",
+        "multiplane-ophys_842971_2026-05-06_09-36-56",
+        "multiplane-ophys_842971_2026-05-07_09-22-13",
+        "multiplane-ophys_842971_2026-05-08_09-32-15"
       ]
     },
     {
@@ -11722,15 +11626,17 @@
     },
     {
       "block": "standard",
-      "mean_forward_speed_cm_s": 1.4297,
+      "mean_forward_speed_cm_s": 1.4914,
       "modality": "mesoscope",
       "mouse_id": "843001",
-      "session_count": 10,
+      "session_count": 12,
       "source_session_ids": [
         "multiplane-ophys_843001_2026-03-11_11-31-59",
+        "multiplane-ophys_843001_2026-03-12_12-24-55",
         "multiplane-ophys_843001_2026-03-18_11-39-01",
         "multiplane-ophys_843001_2026-03-19_13-01-20",
         "multiplane-ophys_843001_2026-03-21_11-43-22",
+        "multiplane-ophys_843001_2026-03-25_12-01-30",
         "multiplane-ophys_843001_2026-04-01_11-53-58",
         "multiplane-ophys_843001_2026-04-02_12-08-20",
         "multiplane-ophys_843001_2026-04-03_11-46-14",
@@ -11741,15 +11647,17 @@
     },
     {
       "block": "context",
-      "mean_forward_speed_cm_s": 1.1539,
+      "mean_forward_speed_cm_s": 1.1278,
       "modality": "mesoscope",
       "mouse_id": "843001",
-      "session_count": 10,
+      "session_count": 12,
       "source_session_ids": [
         "multiplane-ophys_843001_2026-03-11_11-31-59",
+        "multiplane-ophys_843001_2026-03-12_12-24-55",
         "multiplane-ophys_843001_2026-03-18_11-39-01",
         "multiplane-ophys_843001_2026-03-19_13-01-20",
         "multiplane-ophys_843001_2026-03-21_11-43-22",
+        "multiplane-ophys_843001_2026-03-25_12-01-30",
         "multiplane-ophys_843001_2026-04-01_11-53-58",
         "multiplane-ophys_843001_2026-04-02_12-08-20",
         "multiplane-ophys_843001_2026-04-03_11-46-14",
@@ -11760,15 +11668,17 @@
     },
     {
       "block": "standard_repeat",
-      "mean_forward_speed_cm_s": 0.9457,
+      "mean_forward_speed_cm_s": 0.9565,
       "modality": "mesoscope",
       "mouse_id": "843001",
-      "session_count": 10,
+      "session_count": 12,
       "source_session_ids": [
         "multiplane-ophys_843001_2026-03-11_11-31-59",
+        "multiplane-ophys_843001_2026-03-12_12-24-55",
         "multiplane-ophys_843001_2026-03-18_11-39-01",
         "multiplane-ophys_843001_2026-03-19_13-01-20",
         "multiplane-ophys_843001_2026-03-21_11-43-22",
+        "multiplane-ophys_843001_2026-03-25_12-01-30",
         "multiplane-ophys_843001_2026-04-01_11-53-58",
         "multiplane-ophys_843001_2026-04-02_12-08-20",
         "multiplane-ophys_843001_2026-04-03_11-46-14",
@@ -11779,15 +11689,17 @@
     },
     {
       "block": "sequence",
-      "mean_forward_speed_cm_s": 0.9155,
+      "mean_forward_speed_cm_s": 0.8392,
       "modality": "mesoscope",
       "mouse_id": "843001",
-      "session_count": 10,
+      "session_count": 12,
       "source_session_ids": [
         "multiplane-ophys_843001_2026-03-11_11-31-59",
+        "multiplane-ophys_843001_2026-03-12_12-24-55",
         "multiplane-ophys_843001_2026-03-18_11-39-01",
         "multiplane-ophys_843001_2026-03-19_13-01-20",
         "multiplane-ophys_843001_2026-03-21_11-43-22",
+        "multiplane-ophys_843001_2026-03-25_12-01-30",
         "multiplane-ophys_843001_2026-04-01_11-53-58",
         "multiplane-ophys_843001_2026-04-02_12-08-20",
         "multiplane-ophys_843001_2026-04-03_11-46-14",
@@ -11798,15 +11710,17 @@
     },
     {
       "block": "jitter",
-      "mean_forward_speed_cm_s": 1.0478,
+      "mean_forward_speed_cm_s": 1.0541,
       "modality": "mesoscope",
       "mouse_id": "843001",
-      "session_count": 10,
+      "session_count": 12,
       "source_session_ids": [
         "multiplane-ophys_843001_2026-03-11_11-31-59",
+        "multiplane-ophys_843001_2026-03-12_12-24-55",
         "multiplane-ophys_843001_2026-03-18_11-39-01",
         "multiplane-ophys_843001_2026-03-19_13-01-20",
         "multiplane-ophys_843001_2026-03-21_11-43-22",
+        "multiplane-ophys_843001_2026-03-25_12-01-30",
         "multiplane-ophys_843001_2026-04-01_11-53-58",
         "multiplane-ophys_843001_2026-04-02_12-08-20",
         "multiplane-ophys_843001_2026-04-03_11-46-14",
@@ -11817,15 +11731,17 @@
     },
     {
       "block": "open_loop",
-      "mean_forward_speed_cm_s": 0.868,
+      "mean_forward_speed_cm_s": 0.8409,
       "modality": "mesoscope",
       "mouse_id": "843001",
-      "session_count": 10,
+      "session_count": 12,
       "source_session_ids": [
         "multiplane-ophys_843001_2026-03-11_11-31-59",
+        "multiplane-ophys_843001_2026-03-12_12-24-55",
         "multiplane-ophys_843001_2026-03-18_11-39-01",
         "multiplane-ophys_843001_2026-03-19_13-01-20",
         "multiplane-ophys_843001_2026-03-21_11-43-22",
+        "multiplane-ophys_843001_2026-03-25_12-01-30",
         "multiplane-ophys_843001_2026-04-01_11-53-58",
         "multiplane-ophys_843001_2026-04-02_12-08-20",
         "multiplane-ophys_843001_2026-04-03_11-46-14",
@@ -11836,15 +11752,17 @@
     },
     {
       "block": "movie",
-      "mean_forward_speed_cm_s": 1.0408,
+      "mean_forward_speed_cm_s": 0.9391,
       "modality": "mesoscope",
       "mouse_id": "843001",
-      "session_count": 10,
+      "session_count": 12,
       "source_session_ids": [
         "multiplane-ophys_843001_2026-03-11_11-31-59",
+        "multiplane-ophys_843001_2026-03-12_12-24-55",
         "multiplane-ophys_843001_2026-03-18_11-39-01",
         "multiplane-ophys_843001_2026-03-19_13-01-20",
         "multiplane-ophys_843001_2026-03-21_11-43-22",
+        "multiplane-ophys_843001_2026-03-25_12-01-30",
         "multiplane-ophys_843001_2026-04-01_11-53-58",
         "multiplane-ophys_843001_2026-04-02_12-08-20",
         "multiplane-ophys_843001_2026-04-03_11-46-14",
@@ -11855,15 +11773,17 @@
     },
     {
       "block": "rf",
-      "mean_forward_speed_cm_s": 1.3323,
+      "mean_forward_speed_cm_s": 1.2425,
       "modality": "mesoscope",
       "mouse_id": "843001",
-      "session_count": 10,
+      "session_count": 12,
       "source_session_ids": [
         "multiplane-ophys_843001_2026-03-11_11-31-59",
+        "multiplane-ophys_843001_2026-03-12_12-24-55",
         "multiplane-ophys_843001_2026-03-18_11-39-01",
         "multiplane-ophys_843001_2026-03-19_13-01-20",
         "multiplane-ophys_843001_2026-03-21_11-43-22",
+        "multiplane-ophys_843001_2026-03-25_12-01-30",
         "multiplane-ophys_843001_2026-04-01_11-53-58",
         "multiplane-ophys_843001_2026-04-02_12-08-20",
         "multiplane-ophys_843001_2026-04-03_11-46-14",
@@ -11874,10 +11794,10 @@
     },
     {
       "block": "standard",
-      "mean_forward_speed_cm_s": 43.4297,
+      "mean_forward_speed_cm_s": 41.6198,
       "modality": "mesoscope",
       "mouse_id": "845342",
-      "session_count": 7,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_845342_2026-03-25_14-20-33",
         "multiplane-ophys_845342_2026-03-26_13-33-27",
@@ -11885,15 +11805,16 @@
         "multiplane-ophys_845342_2026-03-30_09-58-06",
         "multiplane-ophys_845342_2026-03-31_11-44-28",
         "multiplane-ophys_845342_2026-04-01_14-12-13",
+        "multiplane-ophys_845342_2026-04-02_15-08-49",
         "multiplane-ophys_845342_2026-04-03_13-57-42"
       ]
     },
     {
       "block": "context",
-      "mean_forward_speed_cm_s": 38.4523,
+      "mean_forward_speed_cm_s": 36.8804,
       "modality": "mesoscope",
       "mouse_id": "845342",
-      "session_count": 7,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_845342_2026-03-25_14-20-33",
         "multiplane-ophys_845342_2026-03-26_13-33-27",
@@ -11901,15 +11822,16 @@
         "multiplane-ophys_845342_2026-03-30_09-58-06",
         "multiplane-ophys_845342_2026-03-31_11-44-28",
         "multiplane-ophys_845342_2026-04-01_14-12-13",
+        "multiplane-ophys_845342_2026-04-02_15-08-49",
         "multiplane-ophys_845342_2026-04-03_13-57-42"
       ]
     },
     {
       "block": "standard_repeat",
-      "mean_forward_speed_cm_s": 37.5706,
+      "mean_forward_speed_cm_s": 36.4013,
       "modality": "mesoscope",
       "mouse_id": "845342",
-      "session_count": 7,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_845342_2026-03-25_14-20-33",
         "multiplane-ophys_845342_2026-03-26_13-33-27",
@@ -11917,15 +11839,16 @@
         "multiplane-ophys_845342_2026-03-30_09-58-06",
         "multiplane-ophys_845342_2026-03-31_11-44-28",
         "multiplane-ophys_845342_2026-04-01_14-12-13",
+        "multiplane-ophys_845342_2026-04-02_15-08-49",
         "multiplane-ophys_845342_2026-04-03_13-57-42"
       ]
     },
     {
       "block": "sequence",
-      "mean_forward_speed_cm_s": 33.0494,
+      "mean_forward_speed_cm_s": 32.2007,
       "modality": "mesoscope",
       "mouse_id": "845342",
-      "session_count": 7,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_845342_2026-03-25_14-20-33",
         "multiplane-ophys_845342_2026-03-26_13-33-27",
@@ -11933,15 +11856,16 @@
         "multiplane-ophys_845342_2026-03-30_09-58-06",
         "multiplane-ophys_845342_2026-03-31_11-44-28",
         "multiplane-ophys_845342_2026-04-01_14-12-13",
+        "multiplane-ophys_845342_2026-04-02_15-08-49",
         "multiplane-ophys_845342_2026-04-03_13-57-42"
       ]
     },
     {
       "block": "jitter",
-      "mean_forward_speed_cm_s": 33.619,
+      "mean_forward_speed_cm_s": 32.5136,
       "modality": "mesoscope",
       "mouse_id": "845342",
-      "session_count": 7,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_845342_2026-03-25_14-20-33",
         "multiplane-ophys_845342_2026-03-26_13-33-27",
@@ -11949,15 +11873,16 @@
         "multiplane-ophys_845342_2026-03-30_09-58-06",
         "multiplane-ophys_845342_2026-03-31_11-44-28",
         "multiplane-ophys_845342_2026-04-01_14-12-13",
+        "multiplane-ophys_845342_2026-04-02_15-08-49",
         "multiplane-ophys_845342_2026-04-03_13-57-42"
       ]
     },
     {
       "block": "open_loop",
-      "mean_forward_speed_cm_s": 36.0788,
+      "mean_forward_speed_cm_s": 34.9848,
       "modality": "mesoscope",
       "mouse_id": "845342",
-      "session_count": 7,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_845342_2026-03-25_14-20-33",
         "multiplane-ophys_845342_2026-03-26_13-33-27",
@@ -11965,15 +11890,16 @@
         "multiplane-ophys_845342_2026-03-30_09-58-06",
         "multiplane-ophys_845342_2026-03-31_11-44-28",
         "multiplane-ophys_845342_2026-04-01_14-12-13",
+        "multiplane-ophys_845342_2026-04-02_15-08-49",
         "multiplane-ophys_845342_2026-04-03_13-57-42"
       ]
     },
     {
       "block": "movie",
-      "mean_forward_speed_cm_s": 36.0619,
+      "mean_forward_speed_cm_s": 35.0352,
       "modality": "mesoscope",
       "mouse_id": "845342",
-      "session_count": 7,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_845342_2026-03-25_14-20-33",
         "multiplane-ophys_845342_2026-03-26_13-33-27",
@@ -11981,15 +11907,16 @@
         "multiplane-ophys_845342_2026-03-30_09-58-06",
         "multiplane-ophys_845342_2026-03-31_11-44-28",
         "multiplane-ophys_845342_2026-04-01_14-12-13",
+        "multiplane-ophys_845342_2026-04-02_15-08-49",
         "multiplane-ophys_845342_2026-04-03_13-57-42"
       ]
     },
     {
       "block": "rf",
-      "mean_forward_speed_cm_s": 21.1211,
+      "mean_forward_speed_cm_s": 20.8033,
       "modality": "mesoscope",
       "mouse_id": "845342",
-      "session_count": 7,
+      "session_count": 8,
       "source_session_ids": [
         "multiplane-ophys_845342_2026-03-25_14-20-33",
         "multiplane-ophys_845342_2026-03-26_13-33-27",
@@ -11997,6 +11924,7 @@
         "multiplane-ophys_845342_2026-03-30_09-58-06",
         "multiplane-ophys_845342_2026-03-31_11-44-28",
         "multiplane-ophys_845342_2026-04-01_14-12-13",
+        "multiplane-ophys_845342_2026-04-02_15-08-49",
         "multiplane-ophys_845342_2026-04-03_13-57-42"
       ]
     },
@@ -12134,6 +12062,270 @@
         "multiplane-ophys_846289_2026-04-21_10-51-37",
         "multiplane-ophys_846289_2026-04-23_14-15-03",
         "multiplane-ophys_846289_2026-04-27_09-47-06"
+      ]
+    },
+    {
+      "block": "standard",
+      "mean_forward_speed_cm_s": 1.0572,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "session_count": 7,
+      "source_session_ids": [
+        "multiplane-ophys_850399_2026-05-20_09-37-10",
+        "multiplane-ophys_850399_2026-05-21_09-39-31",
+        "multiplane-ophys_850399_2026-05-27_13-34-48",
+        "multiplane-ophys_850399_2026-05-28_09-55-47",
+        "multiplane-ophys_850399_2026-05-29_10-06-36",
+        "multiplane-ophys_850399_2026-06-02_10-59-46",
+        "multiplane-ophys_850399_2026-06-03_09-59-04"
+      ]
+    },
+    {
+      "block": "context",
+      "mean_forward_speed_cm_s": 0.6482,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "session_count": 7,
+      "source_session_ids": [
+        "multiplane-ophys_850399_2026-05-20_09-37-10",
+        "multiplane-ophys_850399_2026-05-21_09-39-31",
+        "multiplane-ophys_850399_2026-05-27_13-34-48",
+        "multiplane-ophys_850399_2026-05-28_09-55-47",
+        "multiplane-ophys_850399_2026-05-29_10-06-36",
+        "multiplane-ophys_850399_2026-06-02_10-59-46",
+        "multiplane-ophys_850399_2026-06-03_09-59-04"
+      ]
+    },
+    {
+      "block": "standard_repeat",
+      "mean_forward_speed_cm_s": 0.7432,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "session_count": 7,
+      "source_session_ids": [
+        "multiplane-ophys_850399_2026-05-20_09-37-10",
+        "multiplane-ophys_850399_2026-05-21_09-39-31",
+        "multiplane-ophys_850399_2026-05-27_13-34-48",
+        "multiplane-ophys_850399_2026-05-28_09-55-47",
+        "multiplane-ophys_850399_2026-05-29_10-06-36",
+        "multiplane-ophys_850399_2026-06-02_10-59-46",
+        "multiplane-ophys_850399_2026-06-03_09-59-04"
+      ]
+    },
+    {
+      "block": "sequence",
+      "mean_forward_speed_cm_s": 0.4577,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "session_count": 7,
+      "source_session_ids": [
+        "multiplane-ophys_850399_2026-05-20_09-37-10",
+        "multiplane-ophys_850399_2026-05-21_09-39-31",
+        "multiplane-ophys_850399_2026-05-27_13-34-48",
+        "multiplane-ophys_850399_2026-05-28_09-55-47",
+        "multiplane-ophys_850399_2026-05-29_10-06-36",
+        "multiplane-ophys_850399_2026-06-02_10-59-46",
+        "multiplane-ophys_850399_2026-06-03_09-59-04"
+      ]
+    },
+    {
+      "block": "jitter",
+      "mean_forward_speed_cm_s": 1.0708,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "session_count": 7,
+      "source_session_ids": [
+        "multiplane-ophys_850399_2026-05-20_09-37-10",
+        "multiplane-ophys_850399_2026-05-21_09-39-31",
+        "multiplane-ophys_850399_2026-05-27_13-34-48",
+        "multiplane-ophys_850399_2026-05-28_09-55-47",
+        "multiplane-ophys_850399_2026-05-29_10-06-36",
+        "multiplane-ophys_850399_2026-06-02_10-59-46",
+        "multiplane-ophys_850399_2026-06-03_09-59-04"
+      ]
+    },
+    {
+      "block": "open_loop",
+      "mean_forward_speed_cm_s": 1.055,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "session_count": 7,
+      "source_session_ids": [
+        "multiplane-ophys_850399_2026-05-20_09-37-10",
+        "multiplane-ophys_850399_2026-05-21_09-39-31",
+        "multiplane-ophys_850399_2026-05-27_13-34-48",
+        "multiplane-ophys_850399_2026-05-28_09-55-47",
+        "multiplane-ophys_850399_2026-05-29_10-06-36",
+        "multiplane-ophys_850399_2026-06-02_10-59-46",
+        "multiplane-ophys_850399_2026-06-03_09-59-04"
+      ]
+    },
+    {
+      "block": "movie",
+      "mean_forward_speed_cm_s": 2.4469,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "session_count": 7,
+      "source_session_ids": [
+        "multiplane-ophys_850399_2026-05-20_09-37-10",
+        "multiplane-ophys_850399_2026-05-21_09-39-31",
+        "multiplane-ophys_850399_2026-05-27_13-34-48",
+        "multiplane-ophys_850399_2026-05-28_09-55-47",
+        "multiplane-ophys_850399_2026-05-29_10-06-36",
+        "multiplane-ophys_850399_2026-06-02_10-59-46",
+        "multiplane-ophys_850399_2026-06-03_09-59-04"
+      ]
+    },
+    {
+      "block": "rf",
+      "mean_forward_speed_cm_s": 1.0213,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "session_count": 7,
+      "source_session_ids": [
+        "multiplane-ophys_850399_2026-05-20_09-37-10",
+        "multiplane-ophys_850399_2026-05-21_09-39-31",
+        "multiplane-ophys_850399_2026-05-27_13-34-48",
+        "multiplane-ophys_850399_2026-05-28_09-55-47",
+        "multiplane-ophys_850399_2026-05-29_10-06-36",
+        "multiplane-ophys_850399_2026-06-02_10-59-46",
+        "multiplane-ophys_850399_2026-06-03_09-59-04"
+      ]
+    },
+    {
+      "block": "standard",
+      "mean_forward_speed_cm_s": 22.1407,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "session_count": 8,
+      "source_session_ids": [
+        "multiplane-ophys_853137_2026-06-23_09-56-28",
+        "multiplane-ophys_853137_2026-06-24_11-28-54",
+        "multiplane-ophys_853137_2026-06-25_13-03-30",
+        "multiplane-ophys_853137_2026-06-26_11-57-03",
+        "multiplane-ophys_853137_2026-06-27_12-28-41",
+        "multiplane-ophys_853137_2026-07-08_12-09-27",
+        "multiplane-ophys_853137_2026-07-10_11-45-15",
+        "multiplane-ophys_853137_2026-07-14_15-24-43"
+      ]
+    },
+    {
+      "block": "context",
+      "mean_forward_speed_cm_s": 24.5312,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "session_count": 8,
+      "source_session_ids": [
+        "multiplane-ophys_853137_2026-06-23_09-56-28",
+        "multiplane-ophys_853137_2026-06-24_11-28-54",
+        "multiplane-ophys_853137_2026-06-25_13-03-30",
+        "multiplane-ophys_853137_2026-06-26_11-57-03",
+        "multiplane-ophys_853137_2026-06-27_12-28-41",
+        "multiplane-ophys_853137_2026-07-08_12-09-27",
+        "multiplane-ophys_853137_2026-07-10_11-45-15",
+        "multiplane-ophys_853137_2026-07-14_15-24-43"
+      ]
+    },
+    {
+      "block": "standard_repeat",
+      "mean_forward_speed_cm_s": 20.5744,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "session_count": 8,
+      "source_session_ids": [
+        "multiplane-ophys_853137_2026-06-23_09-56-28",
+        "multiplane-ophys_853137_2026-06-24_11-28-54",
+        "multiplane-ophys_853137_2026-06-25_13-03-30",
+        "multiplane-ophys_853137_2026-06-26_11-57-03",
+        "multiplane-ophys_853137_2026-06-27_12-28-41",
+        "multiplane-ophys_853137_2026-07-08_12-09-27",
+        "multiplane-ophys_853137_2026-07-10_11-45-15",
+        "multiplane-ophys_853137_2026-07-14_15-24-43"
+      ]
+    },
+    {
+      "block": "sequence",
+      "mean_forward_speed_cm_s": 15.258,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "session_count": 8,
+      "source_session_ids": [
+        "multiplane-ophys_853137_2026-06-23_09-56-28",
+        "multiplane-ophys_853137_2026-06-24_11-28-54",
+        "multiplane-ophys_853137_2026-06-25_13-03-30",
+        "multiplane-ophys_853137_2026-06-26_11-57-03",
+        "multiplane-ophys_853137_2026-06-27_12-28-41",
+        "multiplane-ophys_853137_2026-07-08_12-09-27",
+        "multiplane-ophys_853137_2026-07-10_11-45-15",
+        "multiplane-ophys_853137_2026-07-14_15-24-43"
+      ]
+    },
+    {
+      "block": "jitter",
+      "mean_forward_speed_cm_s": 20.874,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "session_count": 8,
+      "source_session_ids": [
+        "multiplane-ophys_853137_2026-06-23_09-56-28",
+        "multiplane-ophys_853137_2026-06-24_11-28-54",
+        "multiplane-ophys_853137_2026-06-25_13-03-30",
+        "multiplane-ophys_853137_2026-06-26_11-57-03",
+        "multiplane-ophys_853137_2026-06-27_12-28-41",
+        "multiplane-ophys_853137_2026-07-08_12-09-27",
+        "multiplane-ophys_853137_2026-07-10_11-45-15",
+        "multiplane-ophys_853137_2026-07-14_15-24-43"
+      ]
+    },
+    {
+      "block": "open_loop",
+      "mean_forward_speed_cm_s": 16.626,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "session_count": 8,
+      "source_session_ids": [
+        "multiplane-ophys_853137_2026-06-23_09-56-28",
+        "multiplane-ophys_853137_2026-06-24_11-28-54",
+        "multiplane-ophys_853137_2026-06-25_13-03-30",
+        "multiplane-ophys_853137_2026-06-26_11-57-03",
+        "multiplane-ophys_853137_2026-06-27_12-28-41",
+        "multiplane-ophys_853137_2026-07-08_12-09-27",
+        "multiplane-ophys_853137_2026-07-10_11-45-15",
+        "multiplane-ophys_853137_2026-07-14_15-24-43"
+      ]
+    },
+    {
+      "block": "movie",
+      "mean_forward_speed_cm_s": 16.4777,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "session_count": 8,
+      "source_session_ids": [
+        "multiplane-ophys_853137_2026-06-23_09-56-28",
+        "multiplane-ophys_853137_2026-06-24_11-28-54",
+        "multiplane-ophys_853137_2026-06-25_13-03-30",
+        "multiplane-ophys_853137_2026-06-26_11-57-03",
+        "multiplane-ophys_853137_2026-06-27_12-28-41",
+        "multiplane-ophys_853137_2026-07-08_12-09-27",
+        "multiplane-ophys_853137_2026-07-10_11-45-15",
+        "multiplane-ophys_853137_2026-07-14_15-24-43"
+      ]
+    },
+    {
+      "block": "rf",
+      "mean_forward_speed_cm_s": 19.4118,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "session_count": 8,
+      "source_session_ids": [
+        "multiplane-ophys_853137_2026-06-23_09-56-28",
+        "multiplane-ophys_853137_2026-06-24_11-28-54",
+        "multiplane-ophys_853137_2026-06-25_13-03-30",
+        "multiplane-ophys_853137_2026-06-26_11-57-03",
+        "multiplane-ophys_853137_2026-06-27_12-28-41",
+        "multiplane-ophys_853137_2026-07-08_12-09-27",
+        "multiplane-ophys_853137_2026-07-10_11-45-15",
+        "multiplane-ophys_853137_2026-07-14_15-24-43"
       ]
     },
     {
@@ -14265,6 +14457,21 @@
       ]
     },
     {
+      "context": "sensorimotor",
+      "context_label": "Sensorimotor",
+      "context_mean_forward_speed_cm_s": 0.075,
+      "control_mean_forward_speed_cm_s": 0.09,
+      "mean_forward_speed_cm_s": 0.2112,
+      "modality": "mesoscope",
+      "mouse_id": "842971",
+      "running_fraction": 0.029794,
+      "session_count": 2,
+      "source_session_ids": [
+        "multiplane-ophys_842971_2026-05-07_09-22-13",
+        "multiplane-ophys_842971_2026-05-08_09-32-15"
+      ]
+    },
+    {
       "context": "sequence",
       "context_label": "Sequence",
       "context_mean_forward_speed_cm_s": 13.1498,
@@ -14277,6 +14484,21 @@
       "source_session_ids": [
         "multiplane-ophys_842971_2026-04-18_10-13-51",
         "multiplane-ophys_842971_2026-04-22_09-59-38"
+      ]
+    },
+    {
+      "context": "standard",
+      "context_label": "Standard",
+      "context_mean_forward_speed_cm_s": 1.9959,
+      "control_mean_forward_speed_cm_s": 1.663,
+      "mean_forward_speed_cm_s": 2.4287,
+      "modality": "mesoscope",
+      "mouse_id": "842971",
+      "running_fraction": 0.109774,
+      "session_count": 2,
+      "source_session_ids": [
+        "multiplane-ophys_842971_2026-04-29_09-39-57",
+        "multiplane-ophys_842971_2026-05-06_09-36-56"
       ]
     },
     {
@@ -14357,15 +14579,16 @@
     {
       "context": "sensorimotor",
       "context_label": "Sensorimotor",
-      "context_mean_forward_speed_cm_s": 1.3786,
-      "control_mean_forward_speed_cm_s": 0.7372,
-      "mean_forward_speed_cm_s": 1.0,
+      "context_mean_forward_speed_cm_s": 1.4236,
+      "control_mean_forward_speed_cm_s": 0.9025,
+      "mean_forward_speed_cm_s": 1.0821,
       "modality": "mesoscope",
       "mouse_id": "843001",
-      "running_fraction": 0.191663,
-      "session_count": 3,
+      "running_fraction": 0.207173,
+      "session_count": 4,
       "source_session_ids": [
         "multiplane-ophys_843001_2026-03-11_11-31-59",
+        "multiplane-ophys_843001_2026-03-12_12-24-55",
         "multiplane-ophys_843001_2026-03-18_11-39-01",
         "multiplane-ophys_843001_2026-04-16_09-36-51"
       ]
@@ -14388,30 +14611,32 @@
     {
       "context": "standard",
       "context_label": "Standard",
-      "context_mean_forward_speed_cm_s": 0.1643,
-      "control_mean_forward_speed_cm_s": 0.1814,
-      "mean_forward_speed_cm_s": 0.2355,
+      "context_mean_forward_speed_cm_s": 0.2322,
+      "control_mean_forward_speed_cm_s": 0.3037,
+      "mean_forward_speed_cm_s": 0.3037,
       "modality": "mesoscope",
       "mouse_id": "843001",
-      "running_fraction": 0.046245,
-      "session_count": 3,
+      "running_fraction": 0.054514,
+      "session_count": 4,
       "source_session_ids": [
         "multiplane-ophys_843001_2026-03-19_13-01-20",
         "multiplane-ophys_843001_2026-03-21_11-43-22",
+        "multiplane-ophys_843001_2026-03-25_12-01-30",
         "multiplane-ophys_843001_2026-04-11_13-05-48"
       ]
     },
     {
       "context": "duration",
       "context_label": "Duration",
-      "context_mean_forward_speed_cm_s": 64.2409,
-      "control_mean_forward_speed_cm_s": 60.7302,
-      "mean_forward_speed_cm_s": 60.0628,
+      "context_mean_forward_speed_cm_s": 45.0589,
+      "control_mean_forward_speed_cm_s": 43.9356,
+      "mean_forward_speed_cm_s": 43.1069,
       "modality": "mesoscope",
       "mouse_id": "845342",
-      "running_fraction": 0.90393,
-      "session_count": 1,
+      "running_fraction": 0.747683,
+      "session_count": 2,
       "source_session_ids": [
+        "multiplane-ophys_845342_2026-04-02_15-08-49",
         "multiplane-ophys_845342_2026-04-03_13-57-42"
       ]
     },
@@ -14518,6 +14743,125 @@
       "source_session_ids": [
         "multiplane-ophys_846289_2026-04-15_13-55-19",
         "multiplane-ophys_846289_2026-04-16_13-56-40"
+      ]
+    },
+    {
+      "context": "duration",
+      "context_label": "Duration",
+      "context_mean_forward_speed_cm_s": 0.7556,
+      "control_mean_forward_speed_cm_s": 1.0046,
+      "mean_forward_speed_cm_s": 0.9605,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "running_fraction": 0.109359,
+      "session_count": 2,
+      "source_session_ids": [
+        "multiplane-ophys_850399_2026-05-27_13-34-48",
+        "multiplane-ophys_850399_2026-05-28_09-55-47"
+      ]
+    },
+    {
+      "context": "sensorimotor",
+      "context_label": "Sensorimotor",
+      "context_mean_forward_speed_cm_s": 0.5233,
+      "control_mean_forward_speed_cm_s": 0.2177,
+      "mean_forward_speed_cm_s": 0.4494,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "running_fraction": 0.066102,
+      "session_count": 2,
+      "source_session_ids": [
+        "multiplane-ophys_850399_2026-06-02_10-59-46",
+        "multiplane-ophys_850399_2026-06-03_09-59-04"
+      ]
+    },
+    {
+      "context": "sequence",
+      "context_label": "Sequence",
+      "context_mean_forward_speed_cm_s": 0.2006,
+      "control_mean_forward_speed_cm_s": 0.2743,
+      "mean_forward_speed_cm_s": 0.4148,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "running_fraction": 0.0442,
+      "session_count": 2,
+      "source_session_ids": [
+        "multiplane-ophys_850399_2026-05-20_09-37-10",
+        "multiplane-ophys_850399_2026-05-21_09-39-31"
+      ]
+    },
+    {
+      "context": "standard",
+      "context_label": "Standard",
+      "context_mean_forward_speed_cm_s": 1.5786,
+      "control_mean_forward_speed_cm_s": 3.287,
+      "mean_forward_speed_cm_s": 3.5386,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "running_fraction": 0.35679,
+      "session_count": 1,
+      "source_session_ids": [
+        "multiplane-ophys_850399_2026-05-29_10-06-36"
+      ]
+    },
+    {
+      "context": "duration",
+      "context_label": "Duration",
+      "context_mean_forward_speed_cm_s": 20.2092,
+      "control_mean_forward_speed_cm_s": 16.7253,
+      "mean_forward_speed_cm_s": 18.2125,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "running_fraction": 0.722757,
+      "session_count": 2,
+      "source_session_ids": [
+        "multiplane-ophys_853137_2026-06-23_09-56-28",
+        "multiplane-ophys_853137_2026-07-10_11-45-15"
+      ]
+    },
+    {
+      "context": "sensorimotor",
+      "context_label": "Sensorimotor",
+      "context_mean_forward_speed_cm_s": 20.8438,
+      "control_mean_forward_speed_cm_s": 16.8884,
+      "mean_forward_speed_cm_s": 17.3901,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "running_fraction": 0.830869,
+      "session_count": 2,
+      "source_session_ids": [
+        "multiplane-ophys_853137_2026-06-26_11-57-03",
+        "multiplane-ophys_853137_2026-06-27_12-28-41"
+      ]
+    },
+    {
+      "context": "sequence",
+      "context_label": "Sequence",
+      "context_mean_forward_speed_cm_s": 31.0931,
+      "control_mean_forward_speed_cm_s": 26.3235,
+      "mean_forward_speed_cm_s": 29.0639,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "running_fraction": 0.812064,
+      "session_count": 2,
+      "source_session_ids": [
+        "multiplane-ophys_853137_2026-07-08_12-09-27",
+        "multiplane-ophys_853137_2026-07-14_15-24-43"
+      ]
+    },
+    {
+      "context": "standard",
+      "context_label": "Standard",
+      "context_mean_forward_speed_cm_s": 25.9788,
+      "control_mean_forward_speed_cm_s": 17.0649,
+      "mean_forward_speed_cm_s": 18.5889,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "running_fraction": 0.794856,
+      "session_count": 2,
+      "source_session_ids": [
+        "multiplane-ophys_853137_2026-06-24_11-28-54",
+        "multiplane-ophys_853137_2026-06-25_13-03-30"
       ]
     },
     {
@@ -18357,6 +18701,374 @@
       "source_session_id": "multiplane-ophys_842971_2026-04-24_10-05-17"
     },
     {
+      "analysis_bins": 87152,
+      "block_mean_forward_speed_cm_s": {
+        "context": 3.8336,
+        "jitter": 0.4282,
+        "movie": 11.3882,
+        "open_loop": 10.1714,
+        "rf": 0.2557,
+        "sequence": 0.0507,
+        "standard": 1.813,
+        "standard_repeat": 0.0361
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 409.66678,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 29.23306
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2002.81368,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 410.00045
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2383.93589,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2003.14735
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2682.38821,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2383.93589
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3067.21355,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2683.28898
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3461.68901,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3067.21355
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4061.6543,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3461.68901
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4385.46128,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4061.67136
+        }
+      ],
+      "context": "standard",
+      "context_analysis_bins": 31856,
+      "context_label": "Standard",
+      "context_mean_forward_speed_cm_s": 3.8336,
+      "control_analysis_bins": 36761,
+      "control_mean_forward_speed_cm_s": 2.6635,
+      "date": "2026-04-29",
+      "duration_seconds": 4357.6,
+      "mean_forward_speed_cm_s": 4.1117,
+      "modality": "mesoscope",
+      "mouse_id": "842971",
+      "running_fraction": 0.147134,
+      "source": {
+        "asset_id": "a16d3078-a22c-49cf-b10a-1d527124ce79",
+        "download_url": "https://api.dandiarchive.org/api/assets/a16d3078-a22c-49cf-b10a-1d527124ce79/download/",
+        "modified": "2026-08-11T03:40:50.431580Z",
+        "path": "sub-842971/sub-842971_ses-multiplane-ophys-842971-2026-04-29-09-39-57_ophys.nwb",
+        "size": 5070206615
+      },
+      "source_row": 146,
+      "source_session_id": "multiplane-ophys_842971_2026-04-29_09-39-57"
+    },
+    {
+      "analysis_bins": 87152,
+      "block_mean_forward_speed_cm_s": {
+        "context": 0.1581,
+        "jitter": 0.0202,
+        "movie": 2.9523,
+        "open_loop": 2.4661,
+        "rf": 0.0236,
+        "sequence": 0.0097,
+        "standard": 0.6004,
+        "standard_repeat": 0.0161
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 408.29953,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 27.85384
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2001.44659,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 408.63314
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2382.5687,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2001.78013
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2681.02116,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2382.5687
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3065.91311,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2681.9218
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3460.38799,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3065.91311
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4060.35396,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3460.38799
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4384.12759,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4060.37091
+        }
+      ],
+      "context": "standard",
+      "context_analysis_bins": 31856,
+      "context_label": "Standard",
+      "context_mean_forward_speed_cm_s": 0.1581,
+      "control_analysis_bins": 36763,
+      "control_mean_forward_speed_cm_s": 0.6626,
+      "date": "2026-05-06",
+      "duration_seconds": 4357.6,
+      "mean_forward_speed_cm_s": 0.7456,
+      "modality": "mesoscope",
+      "mouse_id": "842971",
+      "running_fraction": 0.072414,
+      "source": {
+        "asset_id": "31b0789e-de41-4c40-97c3-915919d0397a",
+        "download_url": "https://api.dandiarchive.org/api/assets/31b0789e-de41-4c40-97c3-915919d0397a/download/",
+        "modified": "2026-08-08T03:14:21.560563Z",
+        "path": "sub-842971/sub-842971_ses-multiplane-ophys-842971-2026-05-06-09-36-56_ophys.nwb",
+        "size": 4574181998
+      },
+      "source_row": 147,
+      "source_session_id": "multiplane-ophys_842971_2026-05-06_09-36-56"
+    },
+    {
+      "analysis_bins": 86511,
+      "block_mean_forward_speed_cm_s": {
+        "context": 0.0934,
+        "jitter": 0.0247,
+        "movie": 1.4791,
+        "open_loop": 0.0134,
+        "rf": 0.644,
+        "sequence": 0.2745,
+        "standard": 0.2352,
+        "standard_repeat": 0.205
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 418.6229,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 38.18073
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 1979.64271,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 418.6229
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2360.7649,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 1979.97632
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2659.21721,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2360.7649
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3044.14271,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2660.11797
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3438.61789,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3044.14271
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4038.58344,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3438.61789
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4362.34057,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4038.60508
+        }
+      ],
+      "context": "sensorimotor",
+      "context_analysis_bins": 31221,
+      "context_label": "Sensorimotor",
+      "context_mean_forward_speed_cm_s": 0.0934,
+      "control_analysis_bins": 36762,
+      "control_mean_forward_speed_cm_s": 0.1437,
+      "date": "2026-05-07",
+      "duration_seconds": 4325.55,
+      "mean_forward_speed_cm_s": 0.3482,
+      "modality": "mesoscope",
+      "mouse_id": "842971",
+      "running_fraction": 0.045035,
+      "source": {
+        "asset_id": "47e74e39-8f6c-4083-a7a2-903465748278",
+        "download_url": "https://api.dandiarchive.org/api/assets/47e74e39-8f6c-4083-a7a2-903465748278/download/",
+        "modified": "2026-08-08T05:18:29.076665Z",
+        "path": "sub-842971/sub-842971_ses-multiplane-ophys-842971-2026-05-07-09-22-13_ophys.nwb",
+        "size": 4376551869
+      },
+      "source_row": 148,
+      "source_session_id": "multiplane-ophys_842971_2026-05-07_09-22-13"
+    },
+    {
+      "analysis_bins": 86511,
+      "block_mean_forward_speed_cm_s": {
+        "context": 0.0566,
+        "jitter": 0.0502,
+        "movie": 0.0817,
+        "open_loop": 0.0157,
+        "rf": 0.3592,
+        "sequence": 0.0798,
+        "standard": 0.0185,
+        "standard_repeat": 0.0277
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 433.01355,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 52.56706
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 1994.03332,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 433.01355
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2375.15552,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 1994.36699
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2673.60793,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2375.15552
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3058.51663,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2674.50873
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3452.99174,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3058.51663
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4052.95739,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3452.99174
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4376.7311,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4052.97449
+        }
+      ],
+      "context": "sensorimotor",
+      "context_analysis_bins": 31221,
+      "context_label": "Sensorimotor",
+      "context_mean_forward_speed_cm_s": 0.0566,
+      "control_analysis_bins": 36764,
+      "control_mean_forward_speed_cm_s": 0.0364,
+      "date": "2026-05-08",
+      "duration_seconds": 4325.55,
+      "mean_forward_speed_cm_s": 0.0741,
+      "modality": "mesoscope",
+      "mouse_id": "842971",
+      "running_fraction": 0.014553,
+      "source": {
+        "asset_id": "2c63a437-a60f-4be1-b9de-54f5149cb280",
+        "download_url": "https://api.dandiarchive.org/api/assets/2c63a437-a60f-4be1-b9de-54f5149cb280/download/",
+        "modified": "2026-08-08T04:50:24.405205Z",
+        "path": "sub-842971/sub-842971_ses-multiplane-ophys-842971-2026-05-08-09-32-15_ophys.nwb",
+        "size": 4075936829
+      },
+      "source_row": 149,
+      "source_session_id": "multiplane-ophys_842971_2026-05-08_09-32-15"
+    },
+    {
       "analysis_bins": 88553,
       "block_mean_forward_speed_cm_s": {
         "context": 1.1604,
@@ -18445,7 +19157,7 @@
         "path": "sub-843000/sub-843000_ses-multiplane-ophys-843000-2026-03-03-12-18-14_ophys.nwb",
         "size": 4420485609
       },
-      "source_row": 95,
+      "source_row": 96,
       "source_session_id": "multiplane-ophys_843000_2026-03-03_12-18-14"
     },
     {
@@ -18537,7 +19249,7 @@
         "path": "sub-843000/sub-843000_ses-multiplane-ophys-843000-2026-03-04-13-46-36_ophys.nwb",
         "size": 4456279462
       },
-      "source_row": 96,
+      "source_row": 97,
       "source_session_id": "multiplane-ophys_843000_2026-03-04_13-46-36"
     },
     {
@@ -18629,7 +19341,7 @@
         "path": "sub-843000/sub-843000_ses-multiplane-ophys-843000-2026-03-10-12-00-54_ophys.nwb",
         "size": 4560124536
       },
-      "source_row": 97,
+      "source_row": 98,
       "source_session_id": "multiplane-ophys_843000_2026-03-10_12-00-54"
     },
     {
@@ -18721,7 +19433,7 @@
         "path": "sub-843000/sub-843000_ses-multiplane-ophys-843000-2026-03-11-14-27-49_ophys.nwb",
         "size": 4657796497
       },
-      "source_row": 98,
+      "source_row": 99,
       "source_session_id": "multiplane-ophys_843000_2026-03-11_14-27-49"
     },
     {
@@ -18813,7 +19525,7 @@
         "path": "sub-843000/sub-843000_ses-multiplane-ophys-843000-2026-03-17-12-23-04_ophys.nwb",
         "size": 4626401363
       },
-      "source_row": 99,
+      "source_row": 100,
       "source_session_id": "multiplane-ophys_843000_2026-03-17_12-23-04"
     },
     {
@@ -18905,7 +19617,7 @@
         "path": "sub-843000/sub-843000_ses-multiplane-ophys-843000-2026-03-18-14-44-34_ophys.nwb",
         "size": 4517618815
       },
-      "source_row": 100,
+      "source_row": 101,
       "source_session_id": "multiplane-ophys_843000_2026-03-18_14-44-34"
     },
     {
@@ -18997,7 +19709,7 @@
         "path": "sub-843000/sub-843000_ses-multiplane-ophys-843000-2026-03-19-15-05-20_ophys.nwb",
         "size": 4495904035
       },
-      "source_row": 101,
+      "source_row": 102,
       "source_session_id": "multiplane-ophys_843000_2026-03-19_15-05-20"
     },
     {
@@ -19181,8 +19893,100 @@
         "path": "sub-843001/sub-843001_ses-multiplane-ophys-843001-2026-03-11-11-31-59_ophys.nwb",
         "size": 4866242538
       },
-      "source_row": 83,
+      "source_row": 84,
       "source_session_id": "multiplane-ophys_843001_2026-03-11_11-31-59"
+    },
+    {
+      "analysis_bins": 86511,
+      "block_mean_forward_speed_cm_s": {
+        "context": 1.5587,
+        "jitter": 1.2951,
+        "movie": 0.5588,
+        "open_loop": 1.1351,
+        "rf": 1.2578,
+        "sequence": 0.8724,
+        "standard": 2.074,
+        "standard_repeat": 1.5117
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 418.52622,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 38.0841
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 1979.54581,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 418.52622
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2360.66783,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 1979.8794
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2659.12009,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2360.66783
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3043.99545,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2660.02086
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3438.4693,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3043.99545
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4038.43605,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3438.4693
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4362.22637,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4038.4531
+        }
+      ],
+      "context": "sensorimotor",
+      "context_analysis_bins": 31220,
+      "context_label": "Sensorimotor",
+      "context_mean_forward_speed_cm_s": 1.5587,
+      "control_analysis_bins": 36762,
+      "control_mean_forward_speed_cm_s": 1.3982,
+      "date": "2026-03-12",
+      "duration_seconds": 4325.55,
+      "mean_forward_speed_cm_s": 1.3285,
+      "modality": "mesoscope",
+      "mouse_id": "843001",
+      "running_fraction": 0.253702,
+      "source": {
+        "asset_id": "73a4edd9-9ff8-4a6c-91c5-759feb31eaed",
+        "download_url": "https://api.dandiarchive.org/api/assets/73a4edd9-9ff8-4a6c-91c5-759feb31eaed/download/",
+        "modified": "2026-08-08T05:16:30.502628Z",
+        "path": "sub-843001/sub-843001_ses-multiplane-ophys-843001-2026-03-12-12-24-55_ophys.nwb",
+        "size": 5036709272
+      },
+      "source_row": 90,
+      "source_session_id": "multiplane-ophys_843001_2026-03-12_12-24-55"
     },
     {
       "analysis_bins": 86512,
@@ -19273,7 +20077,7 @@
         "path": "sub-843001/sub-843001_ses-multiplane-ophys-843001-2026-03-18-11-39-01_ophys.nwb",
         "size": 4570640603
       },
-      "source_row": 84,
+      "source_row": 85,
       "source_session_id": "multiplane-ophys_843001_2026-03-18_11-39-01"
     },
     {
@@ -19365,7 +20169,7 @@
         "path": "sub-843001/sub-843001_ses-multiplane-ophys-843001-2026-03-19-13-01-20_ophys.nwb",
         "size": 4632200849
       },
-      "source_row": 85,
+      "source_row": 86,
       "source_session_id": "multiplane-ophys_843001_2026-03-19_13-01-20"
     },
     {
@@ -19457,8 +20261,100 @@
         "path": "sub-843001/sub-843001_ses-multiplane-ophys-843001-2026-03-21-11-43-22_ophys.nwb",
         "size": 4533000773
       },
-      "source_row": 86,
+      "source_row": 87,
       "source_session_id": "multiplane-ophys_843001_2026-03-21_11-43-22"
+    },
+    {
+      "analysis_bins": 87153,
+      "block_mean_forward_speed_cm_s": {
+        "context": 0.4359,
+        "jitter": 0.8765,
+        "movie": 0.3021,
+        "open_loop": 0.2766,
+        "rf": 0.3293,
+        "sequence": 0.0425,
+        "standard": 1.5265,
+        "standard_repeat": 0.5093
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 411.88327,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 31.43721
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2005.03021,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 412.21694
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2386.15252,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2005.36385
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2684.60492,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2386.15252
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3069.48028,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2685.50563
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3463.95563,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3069.48028
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4063.92113,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3463.95563
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4387.71156,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4063.93812
+        }
+      ],
+      "context": "standard",
+      "context_analysis_bins": 31857,
+      "context_label": "Standard",
+      "context_mean_forward_speed_cm_s": 0.4359,
+      "control_analysis_bins": 36763,
+      "control_mean_forward_speed_cm_s": 0.6708,
+      "date": "2026-03-25",
+      "duration_seconds": 4357.65,
+      "mean_forward_speed_cm_s": 0.5084,
+      "modality": "mesoscope",
+      "mouse_id": "843001",
+      "running_fraction": 0.07932,
+      "source": {
+        "asset_id": "568daf63-3dcb-4c03-bb24-d827210a32e7",
+        "download_url": "https://api.dandiarchive.org/api/assets/568daf63-3dcb-4c03-bb24-d827210a32e7/download/",
+        "modified": "2026-08-08T03:20:38.411045Z",
+        "path": "sub-843001/sub-843001_ses-multiplane-ophys-843001-2026-03-25-12-01-30_ophys.nwb",
+        "size": 5029622350
+      },
+      "source_row": 91,
+      "source_session_id": "multiplane-ophys_843001_2026-03-25_12-01-30"
     },
     {
       "analysis_bins": 88553,
@@ -19549,7 +20445,7 @@
         "path": "sub-843001/sub-843001_ses-multiplane-ophys-843001-2026-04-01-11-53-58_ophys.nwb",
         "size": 4050568027
       },
-      "source_row": 91,
+      "source_row": 92,
       "source_session_id": "multiplane-ophys_843001_2026-04-01_11-53-58"
     },
     {
@@ -19641,7 +20537,7 @@
         "path": "sub-843001/sub-843001_ses-multiplane-ophys-843001-2026-04-02-12-08-20_ophys.nwb",
         "size": 4460339677
       },
-      "source_row": 87,
+      "source_row": 88,
       "source_session_id": "multiplane-ophys_843001_2026-04-02_12-08-20"
     },
     {
@@ -19733,7 +20629,7 @@
         "path": "sub-843001/sub-843001_ses-multiplane-ophys-843001-2026-04-03-11-46-14_ophys.nwb",
         "size": 4665443102
       },
-      "source_row": 88,
+      "source_row": 89,
       "source_session_id": "multiplane-ophys_843001_2026-04-03_11-46-14"
     },
     {
@@ -19825,7 +20721,7 @@
         "path": "sub-843001/sub-843001_ses-multiplane-ophys-843001-2026-04-09-12-14-56_ophys.nwb",
         "size": 4448563215
       },
-      "source_row": 92,
+      "source_row": 93,
       "source_session_id": "multiplane-ophys_843001_2026-04-09_12-14-56"
     },
     {
@@ -19917,7 +20813,7 @@
         "path": "sub-843001/sub-843001_ses-multiplane-ophys-843001-2026-04-11-13-05-48_ophys.nwb",
         "size": 4527370588
       },
-      "source_row": 93,
+      "source_row": 94,
       "source_session_id": "multiplane-ophys_843001_2026-04-11_13-05-48"
     },
     {
@@ -20009,7 +20905,7 @@
         "path": "sub-843001/sub-843001_ses-multiplane-ophys-843001-2026-04-16-09-36-51_ophys.nwb",
         "size": 4707437910
       },
-      "source_row": 94,
+      "source_row": 95,
       "source_session_id": "multiplane-ophys_843001_2026-04-16_09-36-51"
     },
     {
@@ -20101,7 +20997,7 @@
         "path": "sub-845342/sub-845342_ses-multiplane-ophys-845342-2026-03-25-14-20-33_ophys.nwb",
         "size": 3718646236
       },
-      "source_row": 74,
+      "source_row": 76,
       "source_session_id": "multiplane-ophys_845342_2026-03-25_14-20-33"
     },
     {
@@ -20193,7 +21089,7 @@
         "path": "sub-845342/sub-845342_ses-multiplane-ophys-845342-2026-03-26-13-33-27_ophys.nwb",
         "size": 3726208100
       },
-      "source_row": 75,
+      "source_row": 77,
       "source_session_id": "multiplane-ophys_845342_2026-03-26_13-33-27"
     },
     {
@@ -20285,7 +21181,7 @@
         "path": "sub-845342/sub-845342_ses-multiplane-ophys-845342-2026-03-27-14-07-55_ophys.nwb",
         "size": 4114886178
       },
-      "source_row": 76,
+      "source_row": 78,
       "source_session_id": "multiplane-ophys_845342_2026-03-27_14-07-55"
     },
     {
@@ -20377,7 +21273,7 @@
         "path": "sub-845342/sub-845342_ses-multiplane-ophys-845342-2026-03-30-09-58-06_ophys.nwb",
         "size": 3787002183
       },
-      "source_row": 77,
+      "source_row": 79,
       "source_session_id": "multiplane-ophys_845342_2026-03-30_09-58-06"
     },
     {
@@ -20469,7 +21365,7 @@
         "path": "sub-845342/sub-845342_ses-multiplane-ophys-845342-2026-03-31-11-44-28_ophys.nwb",
         "size": 3652259287
       },
-      "source_row": 78,
+      "source_row": 80,
       "source_session_id": "multiplane-ophys_845342_2026-03-31_11-44-28"
     },
     {
@@ -20561,8 +21457,100 @@
         "path": "sub-845342/sub-845342_ses-multiplane-ophys-845342-2026-04-01-14-12-13_ophys.nwb",
         "size": 3653956122
       },
-      "source_row": 79,
+      "source_row": 81,
       "source_session_id": "multiplane-ophys_845342_2026-04-01_14-12-13"
+    },
+    {
+      "analysis_bins": 87592,
+      "block_mean_forward_speed_cm_s": {
+        "context": 25.877,
+        "jitter": 24.7754,
+        "movie": 27.8485,
+        "open_loop": 27.3273,
+        "rf": 18.5785,
+        "sequence": 26.2597,
+        "standard": 28.9505,
+        "standard_repeat": 28.2162
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 408.88466,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 28.44516
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2023.59977,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 409.21833
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2404.72194,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2023.93346
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2703.19095,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2404.72194
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3088.04962,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2704.09173
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3482.52185,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3088.04962
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4082.49033,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3482.52185
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4406.31417,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4082.50806
+        }
+      ],
+      "context": "duration",
+      "context_analysis_bins": 32288,
+      "context_label": "Duration",
+      "context_mean_forward_speed_cm_s": 25.877,
+      "control_analysis_bins": 36762,
+      "control_mean_forward_speed_cm_s": 27.141,
+      "date": "2026-04-02",
+      "duration_seconds": 4379.6,
+      "mean_forward_speed_cm_s": 26.151,
+      "modality": "mesoscope",
+      "mouse_id": "845342",
+      "running_fraction": 0.591435,
+      "source": {
+        "asset_id": "71b7a482-cc9f-4d4c-a5c8-77a0eab2cf25",
+        "download_url": "https://api.dandiarchive.org/api/assets/71b7a482-cc9f-4d4c-a5c8-77a0eab2cf25/download/",
+        "modified": "2026-08-13T00:33:28.451776Z",
+        "path": "sub-845342/sub-845342_ses-multiplane-ophys-845342-2026-04-02-15-08-49_ophys.nwb",
+        "size": 4200207789
+      },
+      "source_row": 82,
+      "source_session_id": "multiplane-ophys_845342_2026-04-02_15-08-49"
     },
     {
       "analysis_bins": 87592,
@@ -20653,7 +21641,7 @@
         "path": "sub-845342/sub-845342_ses-multiplane-ophys-845342-2026-04-03-13-57-42_ophys.nwb",
         "size": 3607403383
       },
-      "source_row": 81,
+      "source_row": 83,
       "source_session_id": "multiplane-ophys_845342_2026-04-03_13-57-42"
     },
     {
@@ -20745,7 +21733,7 @@
         "path": "sub-846289/sub-846289_ses-multiplane-ophys-846289-2026-04-10-14-12-11_ophys.nwb",
         "size": 4247386971
       },
-      "source_row": 66,
+      "source_row": 68,
       "source_session_id": "multiplane-ophys_846289_2026-04-10_14-12-11"
     },
     {
@@ -20837,7 +21825,7 @@
         "path": "sub-846289/sub-846289_ses-multiplane-ophys-846289-2026-04-13-11-49-19_ophys.nwb",
         "size": 4382192102
       },
-      "source_row": 67,
+      "source_row": 69,
       "source_session_id": "multiplane-ophys_846289_2026-04-13_11-49-19"
     },
     {
@@ -20929,7 +21917,7 @@
         "path": "sub-846289/sub-846289_ses-multiplane-ophys-846289-2026-04-15-13-55-19_ophys.nwb",
         "size": 4401705852
       },
-      "source_row": 68,
+      "source_row": 70,
       "source_session_id": "multiplane-ophys_846289_2026-04-15_13-55-19"
     },
     {
@@ -21021,7 +22009,7 @@
         "path": "sub-846289/sub-846289_ses-multiplane-ophys-846289-2026-04-16-13-56-40_ophys.nwb",
         "size": 4291076055
       },
-      "source_row": 69,
+      "source_row": 71,
       "source_session_id": "multiplane-ophys_846289_2026-04-16_13-56-40"
     },
     {
@@ -21113,7 +22101,7 @@
         "path": "sub-846289/sub-846289_ses-multiplane-ophys-846289-2026-04-20-11-49-37_ophys.nwb",
         "size": 4141253928
       },
-      "source_row": 70,
+      "source_row": 72,
       "source_session_id": "multiplane-ophys_846289_2026-04-20_11-49-37"
     },
     {
@@ -21205,7 +22193,7 @@
         "path": "sub-846289/sub-846289_ses-multiplane-ophys-846289-2026-04-21-10-51-37_ophys.nwb",
         "size": 4046694298
       },
-      "source_row": 71,
+      "source_row": 73,
       "source_session_id": "multiplane-ophys_846289_2026-04-21_10-51-37"
     },
     {
@@ -21297,7 +22285,7 @@
         "path": "sub-846289/sub-846289_ses-multiplane-ophys-846289-2026-04-23-14-15-03_ophys.nwb",
         "size": 4219092155
       },
-      "source_row": 72,
+      "source_row": 74,
       "source_session_id": "multiplane-ophys_846289_2026-04-23_14-15-03"
     },
     {
@@ -21389,8 +22377,1388 @@
         "path": "sub-846289/sub-846289_ses-multiplane-ophys-846289-2026-04-27-09-47-06_ophys.nwb",
         "size": 4169433960
       },
-      "source_row": 73,
+      "source_row": 75,
       "source_session_id": "multiplane-ophys_846289_2026-04-27_09-47-06"
+    },
+    {
+      "analysis_bins": 88552,
+      "block_mean_forward_speed_cm_s": {
+        "context": 0.2657,
+        "jitter": 0.2563,
+        "movie": 2.3878,
+        "open_loop": 0.4952,
+        "rf": 0.9616,
+        "sequence": 0.1926,
+        "standard": 0.2791,
+        "standard_repeat": 0.4455
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 410.75638,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 30.31402
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2073.51174,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 410.75638
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2454.63395,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2073.84546
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2753.13625,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2454.63395
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3138.045,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2754.03694
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3532.52336,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3138.045
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4132.46889,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3532.52336
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4456.2759,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4132.50254
+        }
+      ],
+      "context": "sequence",
+      "context_analysis_bins": 33255,
+      "context_label": "Sequence",
+      "context_mean_forward_speed_cm_s": 0.2657,
+      "control_analysis_bins": 36764,
+      "control_mean_forward_speed_cm_s": 0.3412,
+      "date": "2026-05-20",
+      "duration_seconds": 4427.6,
+      "mean_forward_speed_cm_s": 0.6353,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "running_fraction": 0.064335,
+      "source": {
+        "asset_id": "e83e9190-ddb5-4816-b35d-420f9d588f67",
+        "download_url": "https://api.dandiarchive.org/api/assets/e83e9190-ddb5-4816-b35d-420f9d588f67/download/",
+        "modified": "2026-08-08T03:02:14.290898Z",
+        "path": "sub-850399/sub-850399_ses-multiplane-ophys-850399-2026-05-21-09-39-31_ophys.nwb",
+        "size": 4794151548
+      },
+      "source_row": 51,
+      "source_session_id": "multiplane-ophys_850399_2026-05-21_09-39-31"
+    },
+    {
+      "analysis_bins": 88554,
+      "block_mean_forward_speed_cm_s": {
+        "context": 0.1354,
+        "jitter": 0.2363,
+        "movie": 0.4112,
+        "open_loop": 0.0524,
+        "rf": 0.022,
+        "sequence": 0.5163,
+        "standard": 0.1756,
+        "standard_repeat": 0.1286
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 410.34896,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 29.90356
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2073.02116,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 410.34896
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2454.14354,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2073.35485
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2752.57907,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2454.14354
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3137.4044,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2753.47984
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3531.87866,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3137.4044
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4131.84512,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3531.87866
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4455.65225,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4131.86203
+        }
+      ],
+      "context": "sequence",
+      "context_analysis_bins": 33253,
+      "context_label": "Sequence",
+      "context_mean_forward_speed_cm_s": 0.1354,
+      "control_analysis_bins": 36762,
+      "control_mean_forward_speed_cm_s": 0.2074,
+      "date": "2026-05-21",
+      "duration_seconds": 4427.7,
+      "mean_forward_speed_cm_s": 0.1943,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "running_fraction": 0.024064,
+      "source": {
+        "asset_id": "7e90535e-a354-4ac6-8b0d-784be0cefdc1",
+        "download_url": "https://api.dandiarchive.org/api/assets/7e90535e-a354-4ac6-8b0d-784be0cefdc1/download/",
+        "modified": "2026-08-08T03:24:30.734374Z",
+        "path": "sub-850399/sub-850399_ses-multiplane-ophys-850399-2026-05-20-09-37-10_ophys.nwb",
+        "size": 4675559841
+      },
+      "source_row": 52,
+      "source_session_id": "multiplane-ophys_850399_2026-05-20_09-37-10"
+    },
+    {
+      "analysis_bins": 87592,
+      "block_mean_forward_speed_cm_s": {
+        "context": 1.2817,
+        "jitter": 0.4819,
+        "movie": 2.1454,
+        "open_loop": 1.633,
+        "rf": 0.0193,
+        "sequence": 0.0501,
+        "standard": 4.6514,
+        "standard_repeat": 0.3932
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 412.74597,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 32.29885
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2027.47759,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 413.07952
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2408.59985,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2027.81128
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2707.08546,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2408.59985
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3092.01089,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2707.98623
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3486.48701,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3092.01089
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4086.45161,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3486.48701
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4410.24193,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4086.47081
+        }
+      ],
+      "context": "duration",
+      "context_analysis_bins": 32288,
+      "context_label": "Duration",
+      "context_mean_forward_speed_cm_s": 1.2817,
+      "control_analysis_bins": 36765,
+      "control_mean_forward_speed_cm_s": 1.5034,
+      "date": "2026-05-27",
+      "duration_seconds": 4379.6,
+      "mean_forward_speed_cm_s": 1.3988,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "running_fraction": 0.160289,
+      "source": {
+        "asset_id": "deea371c-75a0-4361-aaa7-dedd864900f5",
+        "download_url": "https://api.dandiarchive.org/api/assets/deea371c-75a0-4361-aaa7-dedd864900f5/download/",
+        "modified": "2026-08-11T03:46:38.749849Z",
+        "path": "sub-850399/sub-850399_ses-multiplane-ophys-850399-2026-05-27-13-34-48_ophys.nwb",
+        "size": 5031001035
+      },
+      "source_row": 54,
+      "source_session_id": "multiplane-ophys_850399_2026-05-27_13-34-48"
+    },
+    {
+      "analysis_bins": 87592,
+      "block_mean_forward_speed_cm_s": {
+        "context": 0.2294,
+        "jitter": 1.5382,
+        "movie": 1.0059,
+        "open_loop": 0.0894,
+        "rf": 1.1725,
+        "sequence": 0.0043,
+        "standard": 0.0836,
+        "standard_repeat": 0.7108
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 408.95344,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 28.518
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2023.60198,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 409.28707
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2404.72425,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2023.93563
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2703.14318,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2404.72425
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3087.9853,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2704.04406
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3482.46016,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3087.9853
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4082.42609,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3482.46016
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4406.2666,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4082.44295
+        }
+      ],
+      "context": "duration",
+      "context_analysis_bins": 32286,
+      "context_label": "Duration",
+      "context_mean_forward_speed_cm_s": 0.2294,
+      "control_analysis_bins": 36761,
+      "control_mean_forward_speed_cm_s": 0.5058,
+      "date": "2026-05-28",
+      "duration_seconds": 4379.6,
+      "mean_forward_speed_cm_s": 0.5221,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "running_fraction": 0.05843,
+      "source": {
+        "asset_id": "113ac593-070a-4703-87f8-4b3df8dff737",
+        "download_url": "https://api.dandiarchive.org/api/assets/113ac593-070a-4703-87f8-4b3df8dff737/download/",
+        "modified": "2026-08-08T03:26:08.423108Z",
+        "path": "sub-850399/sub-850399_ses-multiplane-ophys-850399-2026-05-28-09-55-47_ophys.nwb",
+        "size": 4513257705
+      },
+      "source_row": 53,
+      "source_session_id": "multiplane-ophys_850399_2026-05-28_09-55-47"
+    },
+    {
+      "analysis_bins": 87152,
+      "block_mean_forward_speed_cm_s": {
+        "context": 1.5786,
+        "jitter": 4.8729,
+        "movie": 8.7953,
+        "open_loop": 4.8465,
+        "rf": 4.9006,
+        "sequence": 2.4012,
+        "standard": 1.1975,
+        "standard_repeat": 2.8545
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 409.11183,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 28.67708
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2002.25875,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 409.44543
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2383.38102,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2002.59236
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2681.83331,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2383.38102
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3066.64193,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2682.73416
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3461.1162,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3066.64193
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4061.08265,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3461.1162
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4384.87303,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4061.10055
+        }
+      ],
+      "context": "standard",
+      "context_analysis_bins": 31856,
+      "context_label": "Standard",
+      "context_mean_forward_speed_cm_s": 1.5786,
+      "control_analysis_bins": 36760,
+      "control_mean_forward_speed_cm_s": 3.287,
+      "date": "2026-05-29",
+      "duration_seconds": 4357.6,
+      "mean_forward_speed_cm_s": 3.5386,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "running_fraction": 0.35679,
+      "source": {
+        "asset_id": "740b24eb-0fbc-4b17-ae9e-36d8c0a88d34",
+        "download_url": "https://api.dandiarchive.org/api/assets/740b24eb-0fbc-4b17-ae9e-36d8c0a88d34/download/",
+        "modified": "2026-08-08T03:16:48.426888Z",
+        "path": "sub-850399/sub-850399_ses-multiplane-ophys-850399-2026-05-29-10-06-36_ophys.nwb",
+        "size": 4525532274
+      },
+      "source_row": 56,
+      "source_session_id": "multiplane-ophys_850399_2026-05-29_10-06-36"
+    },
+    {
+      "analysis_bins": 86511,
+      "block_mean_forward_speed_cm_s": {
+        "context": 0.9535,
+        "jitter": 0.0573,
+        "movie": 1.9636,
+        "open_loop": 0.2059,
+        "rf": 0.0504,
+        "sequence": 0.0231,
+        "standard": 0.0556,
+        "standard_repeat": 0.0299
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 418.25662,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 37.81613
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 1979.27644,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 418.25662
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2360.39881,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 1979.61006
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2658.86771,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2360.39881
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3043.70981,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2659.76844
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3438.18337,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3043.70981
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4038.15046,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3438.18337
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4361.94097,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4038.16936
+        }
+      ],
+      "context": "sensorimotor",
+      "context_analysis_bins": 31221,
+      "context_label": "Sensorimotor",
+      "context_mean_forward_speed_cm_s": 0.9535,
+      "control_analysis_bins": 36763,
+      "control_mean_forward_speed_cm_s": 0.0776,
+      "date": "2026-06-02",
+      "duration_seconds": 4325.55,
+      "mean_forward_speed_cm_s": 0.6532,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "running_fraction": 0.091075,
+      "source": {
+        "asset_id": "eb99eca5-c1e4-44e1-ab01-830230894b8d",
+        "download_url": "https://api.dandiarchive.org/api/assets/eb99eca5-c1e4-44e1-ab01-830230894b8d/download/",
+        "modified": "2026-08-08T04:51:20.527563Z",
+        "path": "sub-850399/sub-850399_ses-multiplane-ophys-850399-2026-06-02-10-59-46_ophys.nwb",
+        "size": 5452537026
+      },
+      "source_row": 58,
+      "source_session_id": "multiplane-ophys_850399_2026-06-02_10-59-46"
+    },
+    {
+      "analysis_bins": 86511,
+      "block_mean_forward_speed_cm_s": {
+        "context": 0.0931,
+        "jitter": 0.0525,
+        "movie": 0.4194,
+        "open_loop": 0.0627,
+        "rf": 0.0228,
+        "sequence": 0.0166,
+        "standard": 0.9573,
+        "standard_repeat": 0.6398
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 417.65694,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 37.22287
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 1978.6767,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 417.65694
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2359.79899,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 1979.01042
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2658.25126,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2359.79899
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3043.17688,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2659.15205
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3437.65003,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3043.17688
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4037.61762,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3437.65003
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4361.4248,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4037.63518
+        }
+      ],
+      "context": "sensorimotor",
+      "context_analysis_bins": 31221,
+      "context_label": "Sensorimotor",
+      "context_mean_forward_speed_cm_s": 0.0931,
+      "control_analysis_bins": 36764,
+      "control_mean_forward_speed_cm_s": 0.3578,
+      "date": "2026-06-03",
+      "duration_seconds": 4325.55,
+      "mean_forward_speed_cm_s": 0.2456,
+      "modality": "mesoscope",
+      "mouse_id": "850399",
+      "running_fraction": 0.041128,
+      "source": {
+        "asset_id": "bab2a161-a97a-408a-be53-5bd28f3adfd3",
+        "download_url": "https://api.dandiarchive.org/api/assets/bab2a161-a97a-408a-be53-5bd28f3adfd3/download/",
+        "modified": "2026-08-08T05:13:09.033942Z",
+        "path": "sub-850399/sub-850399_ses-multiplane-ophys-850399-2026-06-03-09-59-04_ophys.nwb",
+        "size": 5358725844
+      },
+      "source_row": 57,
+      "source_session_id": "multiplane-ophys_850399_2026-06-03_09-59-04"
+    },
+    {
+      "analysis_bins": 87591,
+      "block_mean_forward_speed_cm_s": {
+        "context": 6.8478,
+        "jitter": 12.0176,
+        "movie": 13.5066,
+        "open_loop": 7.9105,
+        "rf": 2.9304,
+        "sequence": 9.6742,
+        "standard": 15.2216,
+        "standard_repeat": 2.277
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 408.10261,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 27.66221
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2022.67627,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 408.4362
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2403.79274,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2023.0099
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2702.27385,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2403.79274
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3087.16008,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2703.17458
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3481.62766,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3087.16008
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4081.5855,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3481.62766
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4405.3876,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4081.60251
+        }
+      ],
+      "context": "duration",
+      "context_analysis_bins": 32285,
+      "context_label": "Duration",
+      "context_mean_forward_speed_cm_s": 6.8478,
+      "control_analysis_bins": 36764,
+      "control_mean_forward_speed_cm_s": 9.4009,
+      "date": "2026-06-23",
+      "duration_seconds": 4379.55,
+      "mean_forward_speed_cm_s": 8.5388,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "running_fraction": 0.541334,
+      "source": {
+        "asset_id": "de2ce79b-1b8b-4f0a-a686-5ff534a695e7",
+        "download_url": "https://api.dandiarchive.org/api/assets/de2ce79b-1b8b-4f0a-a686-5ff534a695e7/download/",
+        "modified": "2026-08-08T03:16:35.795017Z",
+        "path": "sub-853137/sub-853137_ses-multiplane-ophys-853137-2026-06-23-09-56-28_ophys.nwb",
+        "size": 4403213852
+      },
+      "source_row": 192,
+      "source_session_id": "multiplane-ophys_853137_2026-06-23_09-56-28"
+    },
+    {
+      "analysis_bins": 87151,
+      "block_mean_forward_speed_cm_s": {
+        "context": 25.5337,
+        "jitter": 8.4454,
+        "movie": 8.588,
+        "open_loop": 7.8335,
+        "rf": 10.4324,
+        "sequence": 9.6973,
+        "standard": 26.4204,
+        "standard_repeat": 20.4522
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 406.62638,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 26.20428
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 1999.74888,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 406.96003
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2380.86522,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2000.08258
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2679.27976,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2380.86522
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3064.16568,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2680.18029
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3458.6334,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3064.16568
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4058.59141,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3458.6334
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4382.34343,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4058.61103
+        }
+      ],
+      "context": "standard",
+      "context_analysis_bins": 31856,
+      "context_label": "Standard",
+      "context_mean_forward_speed_cm_s": 25.5337,
+      "control_analysis_bins": 36762,
+      "control_mean_forward_speed_cm_s": 14.7249,
+      "date": "2026-06-24",
+      "duration_seconds": 4357.55,
+      "mean_forward_speed_cm_s": 17.5083,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "running_fraction": 0.773692,
+      "source": {
+        "asset_id": "931b2c27-cd9c-4022-a5a2-cd5e4fd3febb",
+        "download_url": "https://api.dandiarchive.org/api/assets/931b2c27-cd9c-4022-a5a2-cd5e4fd3febb/download/",
+        "modified": "2026-08-08T03:01:36.256164Z",
+        "path": "sub-853137/sub-853137_ses-multiplane-ophys-853137-2026-06-24-11-28-54_ophys.nwb",
+        "size": 4180471877
+      },
+      "source_row": 193,
+      "source_session_id": "multiplane-ophys_853137_2026-06-24_11-28-54"
+    },
+    {
+      "analysis_bins": 87151,
+      "block_mean_forward_speed_cm_s": {
+        "context": 26.4239,
+        "jitter": 14.9035,
+        "movie": 4.4614,
+        "open_loop": 8.2979,
+        "rf": 16.1221,
+        "sequence": 20.7508,
+        "standard": 31.3515,
+        "standard_repeat": 22.4619
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 407.92438,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 27.49163
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2001.04695,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 408.25803
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2382.16337,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2001.38059
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2680.69445,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2382.16337
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3065.56396,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2681.59522
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3460.031,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3065.56396
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4059.98933,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3460.031
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4383.54133,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4060.01
+        }
+      ],
+      "context": "standard",
+      "context_analysis_bins": 31856,
+      "context_label": "Standard",
+      "context_mean_forward_speed_cm_s": 26.4239,
+      "control_analysis_bins": 36763,
+      "control_mean_forward_speed_cm_s": 19.405,
+      "date": "2026-06-25",
+      "duration_seconds": 4357.55,
+      "mean_forward_speed_cm_s": 19.6696,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "running_fraction": 0.81602,
+      "source": {
+        "asset_id": "f95228c0-0be3-4c43-9a83-1df1310f8699",
+        "download_url": "https://api.dandiarchive.org/api/assets/f95228c0-0be3-4c43-9a83-1df1310f8699/download/",
+        "modified": "2026-08-11T03:47:10.668901Z",
+        "path": "sub-853137/sub-853137_ses-multiplane-ophys-853137-2026-06-25-13-03-30_ophys.nwb",
+        "size": 4370784340
+      },
+      "source_row": 194,
+      "source_session_id": "multiplane-ophys_853137_2026-06-25_13-03-30"
+    },
+    {
+      "analysis_bins": 86510,
+      "block_mean_forward_speed_cm_s": {
+        "context": 22.2351,
+        "jitter": 28.0917,
+        "movie": 6.1929,
+        "open_loop": 14.1639,
+        "rf": 11.7583,
+        "sequence": 12.0615,
+        "standard": 14.9888,
+        "standard_repeat": 26.1719
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 416.51805,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 36.07767
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 1977.51397,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 416.51805
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2358.63039,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 1977.84759
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2657.09479,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2358.63039
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3041.96433,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2657.99553
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3436.43482,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3041.96433
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4036.38966,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3436.43482
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4360.19181,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4036.40672
+        }
+      ],
+      "context": "sensorimotor",
+      "context_analysis_bins": 31220,
+      "context_label": "Sensorimotor",
+      "context_mean_forward_speed_cm_s": 22.2351,
+      "control_analysis_bins": 36762,
+      "control_mean_forward_speed_cm_s": 19.3902,
+      "date": "2026-06-26",
+      "duration_seconds": 4325.5,
+      "mean_forward_speed_cm_s": 18.0142,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "running_fraction": 0.770824,
+      "source": {
+        "asset_id": "81fba989-0b85-4648-b5fb-f8a24fa90984",
+        "download_url": "https://api.dandiarchive.org/api/assets/81fba989-0b85-4648-b5fb-f8a24fa90984/download/",
+        "modified": "2026-08-08T05:11:44.692522Z",
+        "path": "sub-853137/sub-853137_ses-multiplane-ophys-853137-2026-06-26-11-57-03_ophys.nwb",
+        "size": 4299990843
+      },
+      "source_row": 195,
+      "source_session_id": "multiplane-ophys_853137_2026-06-26_11-57-03"
+    },
+    {
+      "analysis_bins": 86510,
+      "block_mean_forward_speed_cm_s": {
+        "context": 19.4524,
+        "jitter": 19.7798,
+        "movie": 13.2979,
+        "open_loop": 16.1886,
+        "rf": 23.7895,
+        "sequence": 7.075,
+        "standard": 11.979,
+        "standard_repeat": 15.2189
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 414.87154,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 34.47461
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 1975.86743,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 414.87154
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2356.9838,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 1976.20107
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2655.44824,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2356.9838
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3040.25091,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2656.34895
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3434.71792,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3040.25091
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4034.67637,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3434.71792
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4358.46197,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4034.69339
+        }
+      ],
+      "context": "sensorimotor",
+      "context_analysis_bins": 31220,
+      "context_label": "Sensorimotor",
+      "context_mean_forward_speed_cm_s": 19.4524,
+      "control_analysis_bins": 36760,
+      "control_mean_forward_speed_cm_s": 14.3867,
+      "date": "2026-06-27",
+      "duration_seconds": 4325.5,
+      "mean_forward_speed_cm_s": 16.766,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "running_fraction": 0.890914,
+      "source": {
+        "asset_id": "951fdf52-8ef4-416d-aaa1-971063004a31",
+        "download_url": "https://api.dandiarchive.org/api/assets/951fdf52-8ef4-416d-aaa1-971063004a31/download/",
+        "modified": "2026-08-08T05:13:01.237600Z",
+        "path": "sub-853137/sub-853137_ses-multiplane-ophys-853137-2026-06-27-12-28-41_ophys.nwb",
+        "size": 4187477559
+      },
+      "source_row": 196,
+      "source_session_id": "multiplane-ophys_853137_2026-06-27_12-28-41"
+    },
+    {
+      "analysis_bins": 88551,
+      "block_mean_forward_speed_cm_s": {
+        "context": 16.1849,
+        "jitter": 23.8506,
+        "movie": 17.3299,
+        "open_loop": 12.0607,
+        "rf": 15.8113,
+        "sequence": 10.3145,
+        "standard": 16.4206,
+        "standard_repeat": 18.4802
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 407.98936,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 27.55958
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2070.80306,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 407.98936
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2451.91937,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2071.13665
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2750.41712,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2451.91937
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3135.3032,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2751.31788
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3529.77026,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3135.3032
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4129.72886,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3529.77026
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4453.51432,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4129.74953
+        }
+      ],
+      "context": "sequence",
+      "context_analysis_bins": 33256,
+      "context_label": "Sequence",
+      "context_mean_forward_speed_cm_s": 16.1849,
+      "control_analysis_bins": 36763,
+      "control_mean_forward_speed_cm_s": 16.4722,
+      "date": "2026-07-08",
+      "duration_seconds": 4427.55,
+      "mean_forward_speed_cm_s": 16.4263,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "running_fraction": 0.669795,
+      "source": {
+        "asset_id": "24d7609c-88c1-405c-90ca-aab36937599f",
+        "download_url": "https://api.dandiarchive.org/api/assets/24d7609c-88c1-405c-90ca-aab36937599f/download/",
+        "modified": "2026-08-08T03:33:10.235139Z",
+        "path": "sub-853137/sub-853137_ses-multiplane-ophys-853137-2026-07-08-12-09-27_ophys.nwb",
+        "size": 4394482596
+      },
+      "source_row": 197,
+      "source_session_id": "multiplane-ophys_853137_2026-07-08_12-09-27"
+    },
+    {
+      "analysis_bins": 87591,
+      "block_mean_forward_speed_cm_s": {
+        "context": 33.5705,
+        "jitter": 23.7043,
+        "movie": 22.5144,
+        "open_loop": 25.0764,
+        "rf": 31.3313,
+        "sequence": 22.6016,
+        "standard": 29.5856,
+        "standard_repeat": 18.9393
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 406.35868,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 25.92882
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2021.01559,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 406.69225
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2402.1319,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2021.34916
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2700.61293,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2402.1319
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3085.46584,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2701.51377
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3479.93264,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3085.46584
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4079.8913,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3479.93264
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4403.64347,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4079.90864
+        }
+      ],
+      "context": "duration",
+      "context_analysis_bins": 32286,
+      "context_label": "Duration",
+      "context_mean_forward_speed_cm_s": 33.5705,
+      "control_analysis_bins": 36762,
+      "control_mean_forward_speed_cm_s": 24.0497,
+      "date": "2026-07-10",
+      "duration_seconds": 4379.55,
+      "mean_forward_speed_cm_s": 27.8862,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "running_fraction": 0.90418,
+      "source": {
+        "asset_id": "a9a7fcfa-ed6d-4ab5-bc74-bac11efc7db0",
+        "download_url": "https://api.dandiarchive.org/api/assets/a9a7fcfa-ed6d-4ab5-bc74-bac11efc7db0/download/",
+        "modified": "2026-08-08T03:26:32.151141Z",
+        "path": "sub-853137/sub-853137_ses-multiplane-ophys-853137-2026-07-10-11-45-15_ophys.nwb",
+        "size": 4363322046
+      },
+      "source_row": 199,
+      "source_session_id": "multiplane-ophys_853137_2026-07-10_11-45-15"
+    },
+    {
+      "analysis_bins": 88552,
+      "block_mean_forward_speed_cm_s": {
+        "context": 46.0013,
+        "jitter": 36.1992,
+        "movie": 45.9307,
+        "open_loop": 41.4766,
+        "rf": 43.1189,
+        "sequence": 29.8892,
+        "standard": 31.1583,
+        "standard_repeat": 40.5939
+      },
+      "blocks": [
+        {
+          "category": "control",
+          "end_time_seconds": 407.16394,
+          "id": "standard",
+          "label": "Standard",
+          "start_time_seconds": 26.7415
+        },
+        {
+          "category": "context",
+          "end_time_seconds": 2069.96077,
+          "id": "context",
+          "label": "Context",
+          "start_time_seconds": 407.16394
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2451.07703,
+          "id": "standard_repeat",
+          "label": "Standard repeat",
+          "start_time_seconds": 2070.2943
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 2749.52469,
+          "id": "sequence",
+          "label": "Sequence",
+          "start_time_seconds": 2451.07703
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3134.31076,
+          "id": "jitter",
+          "label": "Jitter",
+          "start_time_seconds": 2750.4256
+        },
+        {
+          "category": "control",
+          "end_time_seconds": 3528.78048,
+          "id": "open_loop",
+          "label": "Open loop",
+          "start_time_seconds": 3134.31076
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4128.7362,
+          "id": "movie",
+          "label": "Natural movie",
+          "start_time_seconds": 3528.78048
+        },
+        {
+          "category": "other",
+          "end_time_seconds": 4452.5217,
+          "id": "rf",
+          "label": "RF mapping",
+          "start_time_seconds": 4128.75324
+        }
+      ],
+      "context": "sequence",
+      "context_analysis_bins": 33256,
+      "context_label": "Sequence",
+      "context_mean_forward_speed_cm_s": 46.0013,
+      "control_analysis_bins": 36759,
+      "control_mean_forward_speed_cm_s": 36.1747,
+      "date": "2026-07-14",
+      "duration_seconds": 4427.6,
+      "mean_forward_speed_cm_s": 41.7016,
+      "modality": "mesoscope",
+      "mouse_id": "853137",
+      "running_fraction": 0.954332,
+      "source": {
+        "asset_id": "3fec35a1-d37c-4ba9-a48f-a74d20c20f76",
+        "download_url": "https://api.dandiarchive.org/api/assets/3fec35a1-d37c-4ba9-a48f-a74d20c20f76/download/",
+        "modified": "2026-08-08T03:38:19.042748Z",
+        "path": "sub-853137/sub-853137_ses-multiplane-ophys-853137-2026-07-14-15-24-43_ophys.nwb",
+        "size": 4206775373
+      },
+      "source_row": 200,
+      "source_session_id": "multiplane-ophys_853137_2026-07-14_15-24-43"
     },
     {
       "analysis_bins": 86511,
@@ -21475,9 +23843,9 @@
       "mouse_id": "820454",
       "running_fraction": 0.174325,
       "source": {
-        "asset_id": "915bb67f-3d3e-45b1-86e5-a6fcf3bf8046",
-        "download_url": "https://api.dandiarchive.org/api/assets/915bb67f-3d3e-45b1-86e5-a6fcf3bf8046/download/",
-        "modified": "2026-07-29T13:28:33.578155Z",
+        "asset_id": "f8d9deb3-aea1-4dc7-a431-eaaf1234f41d",
+        "download_url": "https://api.dandiarchive.org/api/assets/f8d9deb3-aea1-4dc7-a431-eaaf1234f41d/download/",
+        "modified": "2026-08-07T06:20:50.129863Z",
         "path": "sub-820454/sub-820454_ses-ecephys-820454-2025-11-04-14-59-22_ecephys.nwb",
         "size": 14269876564
       },
@@ -21567,9 +23935,9 @@
       "mouse_id": "820454",
       "running_fraction": 0.120743,
       "source": {
-        "asset_id": "f7057120-fc07-447c-80ba-bbbc425072b0",
-        "download_url": "https://api.dandiarchive.org/api/assets/f7057120-fc07-447c-80ba-bbbc425072b0/download/",
-        "modified": "2026-07-29T13:29:58.845850Z",
+        "asset_id": "21988ae7-fce0-41f2-a2af-b6c2ddcd6e52",
+        "download_url": "https://api.dandiarchive.org/api/assets/21988ae7-fce0-41f2-a2af-b6c2ddcd6e52/download/",
+        "modified": "2026-08-07T12:39:43.916191Z",
         "path": "sub-820454/sub-820454_ses-ecephys-820454-2025-11-05-15-21-15_ecephys.nwb",
         "size": 14443031618
       },
@@ -21659,9 +24027,9 @@
       "mouse_id": "820454",
       "running_fraction": 0.176809,
       "source": {
-        "asset_id": "013eb796-bbe5-4d02-82dd-6e2e5ce7034f",
-        "download_url": "https://api.dandiarchive.org/api/assets/013eb796-bbe5-4d02-82dd-6e2e5ce7034f/download/",
-        "modified": "2026-07-29T12:53:45.905105Z",
+        "asset_id": "f5b3a6c5-6353-40bf-99bf-8654459e40d0",
+        "download_url": "https://api.dandiarchive.org/api/assets/f5b3a6c5-6353-40bf-99bf-8654459e40d0/download/",
+        "modified": "2026-08-07T12:32:21.592325Z",
         "path": "sub-820454/sub-820454_ses-ecephys-820454-2025-11-06-16-00-27_ecephys.nwb",
         "size": 14174058553
       },
@@ -21751,9 +24119,9 @@
       "mouse_id": "820454",
       "running_fraction": 0.160882,
       "source": {
-        "asset_id": "51c29ef1-339d-449e-b1e5-c0b59f4d272e",
-        "download_url": "https://api.dandiarchive.org/api/assets/51c29ef1-339d-449e-b1e5-c0b59f4d272e/download/",
-        "modified": "2026-07-29T13:25:17.982959Z",
+        "asset_id": "56125aec-75a4-4b31-a3bf-cbf5843f1513",
+        "download_url": "https://api.dandiarchive.org/api/assets/56125aec-75a4-4b31-a3bf-cbf5843f1513/download/",
+        "modified": "2026-08-07T12:32:19.704354Z",
         "path": "sub-820454/sub-820454_ses-ecephys-820454-2025-11-07-10-54-23_ecephys.nwb",
         "size": 13649729637
       },
@@ -21843,11 +24211,11 @@
       "mouse_id": "820459",
       "running_fraction": 0.078419,
       "source": {
-        "asset_id": "e3cbee16-232a-4874-8b7e-cfbaebdfeeaf",
-        "download_url": "https://api.dandiarchive.org/api/assets/e3cbee16-232a-4874-8b7e-cfbaebdfeeaf/download/",
-        "modified": "2026-06-26T13:58:11.601030Z",
+        "asset_id": "939c7b32-16fe-4eed-9daa-d5d068719d3f",
+        "download_url": "https://api.dandiarchive.org/api/assets/939c7b32-16fe-4eed-9daa-d5d068719d3f/download/",
+        "modified": "2026-08-07T06:13:02.911315Z",
         "path": "sub-820459/sub-820459_ses-ecephys-820459-2025-11-10-15-07-13_ecephys.nwb",
-        "size": 14550528501
+        "size": 14546728646
       },
       "source_row": 16,
       "source_session_id": "ecephys_820459_2025-11-10_15-07-13"
@@ -21935,11 +24303,11 @@
       "mouse_id": "820459",
       "running_fraction": 0.023195,
       "source": {
-        "asset_id": "cfe8eaaf-2f55-4147-aa82-1103ad09274c",
-        "download_url": "https://api.dandiarchive.org/api/assets/cfe8eaaf-2f55-4147-aa82-1103ad09274c/download/",
-        "modified": "2026-07-21T06:59:59.678573Z",
+        "asset_id": "8ebdc034-5acf-41cc-8a32-759faba6ab0e",
+        "download_url": "https://api.dandiarchive.org/api/assets/8ebdc034-5acf-41cc-8a32-759faba6ab0e/download/",
+        "modified": "2026-08-07T06:18:52.256295Z",
         "path": "sub-820459/sub-820459_ses-ecephys-820459-2025-11-12-14-34-33_ecephys.nwb",
-        "size": 11537718981
+        "size": 11537651205
       },
       "source_row": 17,
       "source_session_id": "ecephys_820459_2025-11-12_14-34-33"
@@ -22027,13 +24395,13 @@
       "mouse_id": "830794",
       "running_fraction": 0.877438,
       "source": {
-        "asset_id": "0c67a84f-7da3-44b2-b707-72ab376a9034",
-        "download_url": "https://api.dandiarchive.org/api/assets/0c67a84f-7da3-44b2-b707-72ab376a9034/download/",
-        "modified": "2026-06-30T15:30:32.455417Z",
+        "asset_id": "0766996b-2afa-4c6f-a381-134c9e380edc",
+        "download_url": "https://api.dandiarchive.org/api/assets/0766996b-2afa-4c6f-a381-134c9e380edc/download/",
+        "modified": "2026-08-07T06:21:55.983805Z",
         "path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys.nwb",
-        "size": 14217148003
+        "size": 14217076523
       },
-      "source_row": 18,
+      "source_row": 20,
       "source_session_id": "ecephys_830794_2026-01-26_12-02-05"
     },
     {
@@ -22119,13 +24487,13 @@
       "mouse_id": "830794",
       "running_fraction": 0.595282,
       "source": {
-        "asset_id": "a23eba88-5d08-4e4b-89e1-a2a10fd143b5",
-        "download_url": "https://api.dandiarchive.org/api/assets/a23eba88-5d08-4e4b-89e1-a2a10fd143b5/download/",
-        "modified": "2026-06-30T15:00:30.421584Z",
+        "asset_id": "50a50f11-dbf8-482f-bc8f-6629e91c2f06",
+        "download_url": "https://api.dandiarchive.org/api/assets/50a50f11-dbf8-482f-bc8f-6629e91c2f06/download/",
+        "modified": "2026-08-07T06:17:34.935499Z",
         "path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-27-11-25-31_ecephys.nwb",
-        "size": 11376999889
+        "size": 11376942209
       },
-      "source_row": 19,
+      "source_row": 21,
       "source_session_id": "ecephys_830794_2026-01-27_11-25-31"
     },
     {
@@ -22211,13 +24579,13 @@
       "mouse_id": "830794",
       "running_fraction": 0.761081,
       "source": {
-        "asset_id": "6068eec9-d614-471c-aa33-0ab27dc66475",
-        "download_url": "https://api.dandiarchive.org/api/assets/6068eec9-d614-471c-aa33-0ab27dc66475/download/",
-        "modified": "2026-06-30T12:20:30.440454Z",
+        "asset_id": "f30a96cf-3d66-4975-8d43-65138633fb93",
+        "download_url": "https://api.dandiarchive.org/api/assets/f30a96cf-3d66-4975-8d43-65138633fb93/download/",
+        "modified": "2026-08-08T07:21:12.261425Z",
         "path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-28-11-01-44_ecephys.nwb",
-        "size": 11342181128
+        "size": 11278525755
       },
-      "source_row": 20,
+      "source_row": 22,
       "source_session_id": "ecephys_830794_2026-01-28_11-01-44"
     },
     {
@@ -22303,13 +24671,13 @@
       "mouse_id": "830794",
       "running_fraction": 0.741161,
       "source": {
-        "asset_id": "b383b4ff-a2b9-4497-8c8f-9f77de89e1b0",
-        "download_url": "https://api.dandiarchive.org/api/assets/b383b4ff-a2b9-4497-8c8f-9f77de89e1b0/download/",
-        "modified": "2026-06-30T15:04:57.868765Z",
+        "asset_id": "d8a2fb8e-d542-4c9b-9c71-38942b2049f0",
+        "download_url": "https://api.dandiarchive.org/api/assets/d8a2fb8e-d542-4c9b-9c71-38942b2049f0/download/",
+        "modified": "2026-08-07T06:19:34.501679Z",
         "path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-29-11-12-57_ecephys.nwb",
-        "size": 12817804035
+        "size": 12762757920
       },
-      "source_row": 21,
+      "source_row": 23,
       "source_session_id": "ecephys_830794_2026-01-29_11-12-57"
     },
     {
@@ -22395,13 +24763,13 @@
       "mouse_id": "830795",
       "running_fraction": 0.076129,
       "source": {
-        "asset_id": "3f7f6abd-de5e-4e78-9473-efd672896ac4",
-        "download_url": "https://api.dandiarchive.org/api/assets/3f7f6abd-de5e-4e78-9473-efd672896ac4/download/",
-        "modified": "2026-07-21T07:16:04.069596Z",
+        "asset_id": "7cd06d90-c19f-46b9-b55c-1f00d504d465",
+        "download_url": "https://api.dandiarchive.org/api/assets/7cd06d90-c19f-46b9-b55c-1f00d504d465/download/",
+        "modified": "2026-08-07T06:21:14.290289Z",
         "path": "sub-830795/sub-830795_ses-ecephys-830795-2026-02-23-15-03-59_ecephys.nwb",
-        "size": 13368386539
+        "size": 13368334931
       },
-      "source_row": 22,
+      "source_row": 24,
       "source_session_id": "ecephys_830795_2026-02-23_15-03-59"
     },
     {
@@ -22487,13 +24855,13 @@
       "mouse_id": "830795",
       "running_fraction": 0.171805,
       "source": {
-        "asset_id": "1a3aac78-34f5-44c4-b644-7c16bc313ceb",
-        "download_url": "https://api.dandiarchive.org/api/assets/1a3aac78-34f5-44c4-b644-7c16bc313ceb/download/",
-        "modified": "2026-06-30T14:52:17.448592Z",
+        "asset_id": "bcd5353c-af8e-4a60-87b6-8b29568d84f5",
+        "download_url": "https://api.dandiarchive.org/api/assets/bcd5353c-af8e-4a60-87b6-8b29568d84f5/download/",
+        "modified": "2026-08-07T12:33:14.052423Z",
         "path": "sub-830795/sub-830795_ses-ecephys-830795-2026-02-24-15-08-59_ecephys.nwb",
-        "size": 12379456457
+        "size": 12379407293
       },
-      "source_row": 23,
+      "source_row": 25,
       "source_session_id": "ecephys_830795_2026-02-24_15-08-59"
     },
     {
@@ -22579,13 +24947,13 @@
       "mouse_id": "830795",
       "running_fraction": 0.184951,
       "source": {
-        "asset_id": "4095a089-8cb6-4101-821c-9d93e2c2dee7",
-        "download_url": "https://api.dandiarchive.org/api/assets/4095a089-8cb6-4101-821c-9d93e2c2dee7/download/",
-        "modified": "2026-06-30T15:34:01.941464Z",
+        "asset_id": "1811cdd7-c178-4882-b1eb-c9f1a74b1703",
+        "download_url": "https://api.dandiarchive.org/api/assets/1811cdd7-c178-4882-b1eb-c9f1a74b1703/download/",
+        "modified": "2026-08-07T15:50:46.370863Z",
         "path": "sub-830795/sub-830795_ses-ecephys-830795-2026-02-25-16-03-31_ecephys.nwb",
-        "size": 10345559405
+        "size": 10345501565
       },
-      "source_row": 24,
+      "source_row": 26,
       "source_session_id": "ecephys_830795_2026-02-25_16-03-31"
     },
     {
@@ -22671,13 +25039,13 @@
       "mouse_id": "830795",
       "running_fraction": 0.158896,
       "source": {
-        "asset_id": "c9024a36-e476-4ffc-9e12-666e6ed3aec7",
-        "download_url": "https://api.dandiarchive.org/api/assets/c9024a36-e476-4ffc-9e12-666e6ed3aec7/download/",
-        "modified": "2026-06-26T13:11:13.323616Z",
+        "asset_id": "f8d5d0b7-c168-4b94-a35e-6f31a3263037",
+        "download_url": "https://api.dandiarchive.org/api/assets/f8d5d0b7-c168-4b94-a35e-6f31a3263037/download/",
+        "modified": "2026-08-07T06:14:57.035880Z",
         "path": "sub-830795/sub-830795_ses-ecephys-830795-2026-02-26-16-01-33_ecephys.nwb",
-        "size": 10146379573
+        "size": 10130492844
       },
-      "source_row": 25,
+      "source_row": 27,
       "source_session_id": "ecephys_830795_2026-02-26_16-01-33"
     },
     {
@@ -22769,7 +25137,7 @@
         "path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-09-10-32-54_ecephys.nwb",
         "size": 13703955952
       },
-      "source_row": 26,
+      "source_row": 28,
       "source_session_id": "ecephys_830846_2026-03-09_10-32-54"
     },
     {
@@ -22861,7 +25229,7 @@
         "path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-11-10-19-32_ecephys.nwb",
         "size": 13095960631
       },
-      "source_row": 27,
+      "source_row": 29,
       "source_session_id": "ecephys_830846_2026-03-11_10-19-32"
     },
     {
@@ -22947,11 +25315,11 @@
       "mouse_id": "830846",
       "running_fraction": 0.246692,
       "source": {
-        "asset_id": "f2b15614-c07b-4187-9ace-f73b6e55005e",
-        "download_url": "https://api.dandiarchive.org/api/assets/f2b15614-c07b-4187-9ace-f73b6e55005e/download/",
-        "modified": "2026-06-30T12:30:21.949317Z",
+        "asset_id": "7b0e4734-f3e6-4733-8318-223a28687ec1",
+        "download_url": "https://api.dandiarchive.org/api/assets/7b0e4734-f3e6-4733-8318-223a28687ec1/download/",
+        "modified": "2026-08-06T07:36:26.662947Z",
         "path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-12-11-09-13_ecephys.nwb",
-        "size": 12570079783
+        "size": 12683310294
       },
       "source_row": 137,
       "source_session_id": "ecephys_830846_2026-03-12_11-09-13"
@@ -23045,7 +25413,7 @@
         "path": "sub-830847/sub-830847_ses-ecephys-830847-2026-03-10-16-32-25_ecephys.nwb",
         "size": 13522638965
       },
-      "source_row": 28,
+      "source_row": 30,
       "source_session_id": "ecephys_830847_2026-03-10_16-32-25"
     },
     {
@@ -23131,13 +25499,13 @@
       "mouse_id": "830847",
       "running_fraction": 0.111459,
       "source": {
-        "asset_id": "8606d35c-9c54-4b54-96ed-2252a9a54694",
-        "download_url": "https://api.dandiarchive.org/api/assets/8606d35c-9c54-4b54-96ed-2252a9a54694/download/",
-        "modified": "2026-06-30T15:27:29.532339Z",
+        "asset_id": "156b6e72-c822-471a-be9b-69297f4eda78",
+        "download_url": "https://api.dandiarchive.org/api/assets/156b6e72-c822-471a-be9b-69297f4eda78/download/",
+        "modified": "2026-08-06T04:24:54.415505Z",
         "path": "sub-830847/sub-830847_ses-ecephys-830847-2026-03-11-15-46-40_ecephys.nwb",
-        "size": 13322473672
+        "size": 13434010643
       },
-      "source_row": 29,
+      "source_row": 31,
       "source_session_id": "ecephys_830847_2026-03-11_15-46-40"
     },
     {
@@ -23223,13 +25591,13 @@
       "mouse_id": "830847",
       "running_fraction": 0.487658,
       "source": {
-        "asset_id": "59ce3a4d-f144-414f-9a78-8ee6a4ebbe56",
-        "download_url": "https://api.dandiarchive.org/api/assets/59ce3a4d-f144-414f-9a78-8ee6a4ebbe56/download/",
-        "modified": "2026-07-21T08:01:42.097602Z",
+        "asset_id": "84070a17-ae47-4b6d-a7d8-734d8d21dca3",
+        "download_url": "https://api.dandiarchive.org/api/assets/84070a17-ae47-4b6d-a7d8-734d8d21dca3/download/",
+        "modified": "2026-08-06T07:01:16.346333Z",
         "path": "sub-830847/sub-830847_ses-ecephys-830847-2026-03-12-17-14-42_ecephys.nwb",
-        "size": 12565511633
+        "size": 12676054519
       },
-      "source_row": 30,
+      "source_row": 32,
       "source_session_id": "ecephys_830847_2026-03-12_17-14-42"
     },
     {
@@ -23315,13 +25683,13 @@
       "mouse_id": "830848",
       "running_fraction": 0.032975,
       "source": {
-        "asset_id": "84b56f6e-7ade-4790-96e1-9bbc82cd5688",
-        "download_url": "https://api.dandiarchive.org/api/assets/84b56f6e-7ade-4790-96e1-9bbc82cd5688/download/",
-        "modified": "2026-06-30T15:03:13.548527Z",
+        "asset_id": "236c72ab-7254-4887-ad31-f53d7d58178e",
+        "download_url": "https://api.dandiarchive.org/api/assets/236c72ab-7254-4887-ad31-f53d7d58178e/download/",
+        "modified": "2026-08-07T11:43:18.124971Z",
         "path": "sub-830848/sub-830848_ses-ecephys-830848-2026-03-02-15-05-26_ecephys.nwb",
-        "size": 13813312847
+        "size": 13813254379
       },
-      "source_row": 31,
+      "source_row": 33,
       "source_session_id": "ecephys_830848_2026-03-02_15-05-26"
     },
     {
@@ -23407,13 +25775,13 @@
       "mouse_id": "830848",
       "running_fraction": 0.020344,
       "source": {
-        "asset_id": "cc3b7c7b-d489-460c-b575-40b9edf59e2c",
-        "download_url": "https://api.dandiarchive.org/api/assets/cc3b7c7b-d489-460c-b575-40b9edf59e2c/download/",
-        "modified": "2026-06-30T15:05:58.389237Z",
+        "asset_id": "888b9f69-91b1-4f61-8086-f8e8bd8d9dfb",
+        "download_url": "https://api.dandiarchive.org/api/assets/888b9f69-91b1-4f61-8086-f8e8bd8d9dfb/download/",
+        "modified": "2026-08-07T11:43:17.925233Z",
         "path": "sub-830848/sub-830848_ses-ecephys-830848-2026-03-03-14-02-09_ecephys.nwb",
-        "size": 13346597324
+        "size": 13346537888
       },
-      "source_row": 32,
+      "source_row": 34,
       "source_session_id": "ecephys_830848_2026-03-03_14-02-09"
     },
     {
@@ -23499,13 +25867,13 @@
       "mouse_id": "830848",
       "running_fraction": 0.0323,
       "source": {
-        "asset_id": "228c2c2e-1daf-4bf6-9f66-eb6b2bce5ba5",
-        "download_url": "https://api.dandiarchive.org/api/assets/228c2c2e-1daf-4bf6-9f66-eb6b2bce5ba5/download/",
-        "modified": "2026-06-30T12:29:01.208406Z",
+        "asset_id": "e597fc7d-a8e5-4a1f-833e-4eee1c139e35",
+        "download_url": "https://api.dandiarchive.org/api/assets/e597fc7d-a8e5-4a1f-833e-4eee1c139e35/download/",
+        "modified": "2026-08-07T12:25:32.636816Z",
         "path": "sub-830848/sub-830848_ses-ecephys-830848-2026-03-04-15-34-54_ecephys.nwb",
-        "size": 12829723345
+        "size": 12852157417
       },
-      "source_row": 33,
+      "source_row": 35,
       "source_session_id": "ecephys_830848_2026-03-04_15-34-54"
     },
     {
@@ -23591,13 +25959,13 @@
       "mouse_id": "830848",
       "running_fraction": 0.490631,
       "source": {
-        "asset_id": "c53ec231-46f7-42d6-b89a-19e260b8eaa9",
-        "download_url": "https://api.dandiarchive.org/api/assets/c53ec231-46f7-42d6-b89a-19e260b8eaa9/download/",
-        "modified": "2026-06-30T12:28:56.622515Z",
+        "asset_id": "2ed970d7-bd28-4329-bb84-b117f34666e1",
+        "download_url": "https://api.dandiarchive.org/api/assets/2ed970d7-bd28-4329-bb84-b117f34666e1/download/",
+        "modified": "2026-08-08T03:55:33.633210Z",
         "path": "sub-830848/sub-830848_ses-ecephys-830848-2026-03-05-16-07-50_ecephys.nwb",
-        "size": 12026786954
+        "size": 12103183340
       },
-      "source_row": 34,
+      "source_row": 36,
       "source_session_id": "ecephys_830848_2026-03-05_16-07-50"
     },
     {
@@ -23689,7 +26057,7 @@
         "path": "sub-830849/sub-830849_ses-ecephys-830849-2026-03-04-10-14-36_ecephys.nwb",
         "size": 10537232843
       },
-      "source_row": 35,
+      "source_row": 37,
       "source_session_id": "ecephys_830849_2026-03-04_10-14-36"
     },
     {
@@ -23775,13 +26143,13 @@
       "mouse_id": "830849",
       "running_fraction": 0.463519,
       "source": {
-        "asset_id": "cdf63e04-05d0-457a-af66-2de1014eb1d4",
-        "download_url": "https://api.dandiarchive.org/api/assets/cdf63e04-05d0-457a-af66-2de1014eb1d4/download/",
-        "modified": "2026-07-21T07:59:06.179211Z",
+        "asset_id": "2c0d0e6c-4ae7-4457-b5ae-95fd6bff6539",
+        "download_url": "https://api.dandiarchive.org/api/assets/2c0d0e6c-4ae7-4457-b5ae-95fd6bff6539/download/",
+        "modified": "2026-08-07T11:42:01.762382Z",
         "path": "sub-830849/sub-830849_ses-ecephys-830849-2026-03-05-10-41-20_ecephys.nwb",
-        "size": 10372061460
+        "size": 10371993988
       },
-      "source_row": 36,
+      "source_row": 38,
       "source_session_id": "ecephys_830849_2026-03-05_10-41-20"
     },
     {
@@ -23873,7 +26241,7 @@
         "path": "sub-830849/sub-830849_ses-ecephys-830849-2026-03-06-10-51-58_ecephys.nwb",
         "size": 12544938972
       },
-      "source_row": 37,
+      "source_row": 39,
       "source_session_id": "ecephys_830849_2026-03-06_10-51-58"
     },
     {
@@ -23965,7 +26333,7 @@
         "path": "sub-830849/sub-830849_ses-ecephys-830849-2026-03-07-09-48-16_ecephys.nwb",
         "size": 10330875850
       },
-      "source_row": 38,
+      "source_row": 40,
       "source_session_id": "ecephys_830849_2026-03-07_09-48-16"
     },
     {
@@ -24057,7 +26425,7 @@
         "path": "sub-830851/sub-830851_ses-ecephys-830851-2026-03-16-10-18-07_ecephys.nwb",
         "size": 13439021835
       },
-      "source_row": 39,
+      "source_row": 41,
       "source_session_id": "ecephys_830851_2026-03-16_10-18-07"
     },
     {
@@ -24241,7 +26609,7 @@
         "path": "sub-830851/sub-830851_ses-ecephys-830851-2026-03-18-10-24-59_ecephys.nwb",
         "size": 12943402571
       },
-      "source_row": 40,
+      "source_row": 42,
       "source_session_id": "ecephys_830851_2026-03-18_10-24-59"
     },
     {
@@ -24333,7 +26701,7 @@
         "path": "sub-830851/sub-830851_ses-ecephys-830851-2026-03-19-10-49-11_ecephys.nwb",
         "size": 12355834834
       },
-      "source_row": 41,
+      "source_row": 43,
       "source_session_id": "ecephys_830851_2026-03-19_10-49-11"
     },
     {
@@ -24419,13 +26787,13 @@
       "mouse_id": "830852",
       "running_fraction": 0.094773,
       "source": {
-        "asset_id": "e15084a4-6372-4a2a-90a7-64ef0e4450b0",
-        "download_url": "https://api.dandiarchive.org/api/assets/e15084a4-6372-4a2a-90a7-64ef0e4450b0/download/",
-        "modified": "2026-06-30T12:24:53.450048Z",
+        "asset_id": "a2117740-4bb3-43ba-9f6a-f924e0fe730e",
+        "download_url": "https://api.dandiarchive.org/api/assets/a2117740-4bb3-43ba-9f6a-f924e0fe730e/download/",
+        "modified": "2026-08-08T03:44:55.412715Z",
         "path": "sub-830852/sub-830852_ses-ecephys-830852-2026-02-23-10-31-02_ecephys.nwb",
-        "size": 13564873685
+        "size": 13564802781
       },
-      "source_row": 42,
+      "source_row": 44,
       "source_session_id": "ecephys_830852_2026-02-23_10-31-02"
     },
     {
@@ -24511,13 +26879,13 @@
       "mouse_id": "830852",
       "running_fraction": 0.114536,
       "source": {
-        "asset_id": "b2f4bb1b-5092-4392-b4fa-b25802ea7769",
-        "download_url": "https://api.dandiarchive.org/api/assets/b2f4bb1b-5092-4392-b4fa-b25802ea7769/download/",
-        "modified": "2026-06-30T15:34:16.250655Z",
+        "asset_id": "92ea6e6a-7525-4589-bfd3-839a48d27b7c",
+        "download_url": "https://api.dandiarchive.org/api/assets/92ea6e6a-7525-4589-bfd3-839a48d27b7c/download/",
+        "modified": "2026-08-07T06:20:35.291965Z",
         "path": "sub-830852/sub-830852_ses-ecephys-830852-2026-02-24-10-20-58_ecephys.nwb",
-        "size": 12429025358
+        "size": 12490078288
       },
-      "source_row": 43,
+      "source_row": 45,
       "source_session_id": "ecephys_830852_2026-02-24_10-20-58"
     },
     {
@@ -24603,13 +26971,13 @@
       "mouse_id": "830852",
       "running_fraction": 0.168204,
       "source": {
-        "asset_id": "6f14398a-7abc-446c-a5ab-c008f52c7129",
-        "download_url": "https://api.dandiarchive.org/api/assets/6f14398a-7abc-446c-a5ab-c008f52c7129/download/",
-        "modified": "2026-06-30T15:07:40.349325Z",
+        "asset_id": "fd3752b1-4484-4911-a76f-9ff4117d0033",
+        "download_url": "https://api.dandiarchive.org/api/assets/fd3752b1-4484-4911-a76f-9ff4117d0033/download/",
+        "modified": "2026-08-07T06:17:37.710107Z",
         "path": "sub-830852/sub-830852_ses-ecephys-830852-2026-02-25-10-32-11_ecephys.nwb",
-        "size": 12418848471
+        "size": 12418794543
       },
-      "source_row": 44,
+      "source_row": 46,
       "source_session_id": "ecephys_830852_2026-02-25_10-32-11"
     },
     {
@@ -24695,13 +27063,13 @@
       "mouse_id": "830852",
       "running_fraction": 0.293828,
       "source": {
-        "asset_id": "3ffe2e3d-9c41-459f-819f-1b72ac5284a2",
-        "download_url": "https://api.dandiarchive.org/api/assets/3ffe2e3d-9c41-459f-819f-1b72ac5284a2/download/",
-        "modified": "2026-06-30T14:57:39.486703Z",
+        "asset_id": "1c0dcb79-5ee9-42d1-bed0-a63494f5fceb",
+        "download_url": "https://api.dandiarchive.org/api/assets/1c0dcb79-5ee9-42d1-bed0-a63494f5fceb/download/",
+        "modified": "2026-08-07T12:35:05.070912Z",
         "path": "sub-830852/sub-830852_ses-ecephys-830852-2026-02-26-10-49-56_ecephys.nwb",
-        "size": 12153681973
+        "size": 12237558197
       },
-      "source_row": 45,
+      "source_row": 47,
       "source_session_id": "ecephys_830852_2026-02-26_10-49-56"
     },
     {
@@ -24787,13 +27155,13 @@
       "mouse_id": "832691",
       "running_fraction": 0.387,
       "source": {
-        "asset_id": "ed0a9668-90f7-45bd-9b2f-c62905a24f07",
-        "download_url": "https://api.dandiarchive.org/api/assets/ed0a9668-90f7-45bd-9b2f-c62905a24f07/download/",
-        "modified": "2026-04-23T23:33:52.088846Z",
+        "asset_id": "db209ca2-bbed-48cb-a892-1f488b3fd9f5",
+        "download_url": "https://api.dandiarchive.org/api/assets/db209ca2-bbed-48cb-a892-1f488b3fd9f5/download/",
+        "modified": "2026-08-07T16:00:14.738709Z",
         "path": "sub-832691/sub-832691_ses-ecephys-832691-2026-03-23-11-28-47_ecephys.nwb",
-        "size": 13414407842
+        "size": 13383363061
       },
-      "source_row": 46,
+      "source_row": 48,
       "source_session_id": "ecephys_832691_2026-03-23_11-28-47"
     },
     {
@@ -24879,13 +27247,13 @@
       "mouse_id": "832691",
       "running_fraction": 0.537629,
       "source": {
-        "asset_id": "e8dc5ef4-720b-4fb4-a493-e8dc2ef2b8d6",
-        "download_url": "https://api.dandiarchive.org/api/assets/e8dc5ef4-720b-4fb4-a493-e8dc2ef2b8d6/download/",
-        "modified": "2026-07-21T07:28:01.646957Z",
+        "asset_id": "83f05015-64ee-4822-a968-ff89aa76d774",
+        "download_url": "https://api.dandiarchive.org/api/assets/83f05015-64ee-4822-a968-ff89aa76d774/download/",
+        "modified": "2026-08-07T12:52:11.649021Z",
         "path": "sub-832691/sub-832691_ses-ecephys-832691-2026-03-24-10-04-30_ecephys.nwb",
-        "size": 13235858372
+        "size": 13235798628
       },
-      "source_row": 47,
+      "source_row": 49,
       "source_session_id": "ecephys_832691_2026-03-24_10-04-30"
     },
     {
@@ -24971,11 +27339,11 @@
       "mouse_id": "832691",
       "running_fraction": 0.750422,
       "source": {
-        "asset_id": "2376172b-955a-4533-9342-fdb699cf92fc",
-        "download_url": "https://api.dandiarchive.org/api/assets/2376172b-955a-4533-9342-fdb699cf92fc/download/",
-        "modified": "2026-07-21T07:06:07.095707Z",
+        "asset_id": "09d6a6d5-bffc-4069-b966-164c5294e5be",
+        "download_url": "https://api.dandiarchive.org/api/assets/09d6a6d5-bffc-4069-b966-164c5294e5be/download/",
+        "modified": "2026-08-07T11:38:11.018982Z",
         "path": "sub-832691/sub-832691_ses-ecephys-832691-2026-03-25-10-22-33_ecephys.nwb",
-        "size": 12807365795
+        "size": 12807322159
       },
       "source_row": 141,
       "source_session_id": "ecephys_832691_2026-03-25_10-22-33"
@@ -25063,13 +27431,13 @@
       "mouse_id": "832691",
       "running_fraction": 0.659662,
       "source": {
-        "asset_id": "2255d7ed-7924-4b4f-9823-ac28d871463f",
-        "download_url": "https://api.dandiarchive.org/api/assets/2255d7ed-7924-4b4f-9823-ac28d871463f/download/",
-        "modified": "2026-07-21T07:07:12.446090Z",
+        "asset_id": "e9d251dc-a14c-4734-b477-7b34c722f9ec",
+        "download_url": "https://api.dandiarchive.org/api/assets/e9d251dc-a14c-4734-b477-7b34c722f9ec/download/",
+        "modified": "2026-08-07T12:34:57.757481Z",
         "path": "sub-832691/sub-832691_ses-ecephys-832691-2026-03-26-10-51-37_ecephys.nwb",
-        "size": 12127310124
+        "size": 12127260332
       },
-      "source_row": 48,
+      "source_row": 50,
       "source_session_id": "ecephys_832691_2026-03-26_10-51-37"
     },
     {
@@ -25155,13 +27523,13 @@
       "mouse_id": "834686",
       "running_fraction": 0.335712,
       "source": {
-        "asset_id": "4b1a34e9-8ddf-4b70-a19c-eb9941e57e19",
-        "download_url": "https://api.dandiarchive.org/api/assets/4b1a34e9-8ddf-4b70-a19c-eb9941e57e19/download/",
-        "modified": "2026-07-21T08:14:03.580643Z",
+        "asset_id": "0b7227e9-0c03-46ea-be70-618a73efb67d",
+        "download_url": "https://api.dandiarchive.org/api/assets/0b7227e9-0c03-46ea-be70-618a73efb67d/download/",
+        "modified": "2026-08-07T11:40:18.809094Z",
         "path": "sub-834686/sub-834686_ses-ecephys-834686-2026-03-23-17-08-31_ecephys.nwb",
-        "size": 13156903323
+        "size": 13156860075
       },
-      "source_row": 57,
+      "source_row": 59,
       "source_session_id": "ecephys_834686_2026-03-23_17-08-31"
     },
     {
@@ -25247,13 +27615,13 @@
       "mouse_id": "834686",
       "running_fraction": 0.529843,
       "source": {
-        "asset_id": "62264fed-94d4-4115-a875-88625ffd2686",
-        "download_url": "https://api.dandiarchive.org/api/assets/62264fed-94d4-4115-a875-88625ffd2686/download/",
-        "modified": "2026-07-21T07:09:37.793174Z",
+        "asset_id": "8dd6fc70-7e57-47b7-83db-948c13673f83",
+        "download_url": "https://api.dandiarchive.org/api/assets/8dd6fc70-7e57-47b7-83db-948c13673f83/download/",
+        "modified": "2026-08-07T06:17:36.194166Z",
         "path": "sub-834686/sub-834686_ses-ecephys-834686-2026-03-24-15-41-18_ecephys.nwb",
-        "size": 13878912418
+        "size": 13878852902
       },
-      "source_row": 58,
+      "source_row": 60,
       "source_session_id": "ecephys_834686_2026-03-24_15-41-18"
     },
     {
@@ -25339,13 +27707,13 @@
       "mouse_id": "834686",
       "running_fraction": 0.825546,
       "source": {
-        "asset_id": "8bafe4a5-40fc-42a4-a7c4-eea4acbc6fca",
-        "download_url": "https://api.dandiarchive.org/api/assets/8bafe4a5-40fc-42a4-a7c4-eea4acbc6fca/download/",
-        "modified": "2026-07-21T07:08:49.059183Z",
+        "asset_id": "edfcb46c-943c-4ba7-b47f-2d3f24e1cf59",
+        "download_url": "https://api.dandiarchive.org/api/assets/edfcb46c-943c-4ba7-b47f-2d3f24e1cf59/download/",
+        "modified": "2026-08-07T06:14:51.343737Z",
         "path": "sub-834686/sub-834686_ses-ecephys-834686-2026-03-25-15-47-48_ecephys.nwb",
-        "size": 12795067624
+        "size": 12754631214
       },
-      "source_row": 59,
+      "source_row": 61,
       "source_session_id": "ecephys_834686_2026-03-25_15-47-48"
     },
     {
@@ -25431,13 +27799,13 @@
       "mouse_id": "834686",
       "running_fraction": 0.446648,
       "source": {
-        "asset_id": "41767a03-31fc-4ceb-90eb-d31228f3c3cc",
-        "download_url": "https://api.dandiarchive.org/api/assets/41767a03-31fc-4ceb-90eb-d31228f3c3cc/download/",
-        "modified": "2026-07-21T07:10:24.583958Z",
+        "asset_id": "5def47b4-4462-4095-9499-4ba50743ee37",
+        "download_url": "https://api.dandiarchive.org/api/assets/5def47b4-4462-4095-9499-4ba50743ee37/download/",
+        "modified": "2026-08-07T12:29:25.904597Z",
         "path": "sub-834686/sub-834686_ses-ecephys-834686-2026-03-26-16-15-13_ecephys.nwb",
-        "size": 12866374674
+        "size": 12866315174
       },
-      "source_row": 60,
+      "source_row": 62,
       "source_session_id": "ecephys_834686_2026-03-26_16-15-13"
     },
     {
@@ -25523,11 +27891,11 @@
       "mouse_id": "834687",
       "running_fraction": 0.056871,
       "source": {
-        "asset_id": "7fbb5805-b423-4dba-b7d6-9a4af48a2023",
-        "download_url": "https://api.dandiarchive.org/api/assets/7fbb5805-b423-4dba-b7d6-9a4af48a2023/download/",
-        "modified": "2026-07-21T08:11:05.823696Z",
+        "asset_id": "517c02b2-1ebb-4960-85d8-5ae16294b8c2",
+        "download_url": "https://api.dandiarchive.org/api/assets/517c02b2-1ebb-4960-85d8-5ae16294b8c2/download/",
+        "modified": "2026-08-07T06:19:41.110412Z",
         "path": "sub-834687/sub-834687_ses-ecephys-834687-2026-03-16-16-33-30_ecephys.nwb",
-        "size": 13781027306
+        "size": 13765640246
       },
       "source_row": 139,
       "source_session_id": "ecephys_834687_2026-03-16_16-33-30"
@@ -25621,7 +27989,7 @@
         "path": "sub-834687/sub-834687_ses-ecephys-834687-2026-03-17-16-18-25_ecephys.nwb",
         "size": 13650559026
       },
-      "source_row": 61,
+      "source_row": 63,
       "source_session_id": "ecephys_834687_2026-03-17_16-18-25"
     },
     {
@@ -25707,13 +28075,13 @@
       "mouse_id": "834687",
       "running_fraction": 0.070084,
       "source": {
-        "asset_id": "ececeb0e-42cd-401f-9545-b666356e8b6d",
-        "download_url": "https://api.dandiarchive.org/api/assets/ececeb0e-42cd-401f-9545-b666356e8b6d/download/",
-        "modified": "2026-04-23T23:33:50.352093Z",
+        "asset_id": "a7f50043-8883-4c0e-a956-2ff3e0f1b0ef",
+        "download_url": "https://api.dandiarchive.org/api/assets/a7f50043-8883-4c0e-a956-2ff3e0f1b0ef/download/",
+        "modified": "2026-08-06T04:22:36.928920Z",
         "path": "sub-834687/sub-834687_ses-ecephys-834687-2026-03-18-15-50-10_ecephys.nwb",
-        "size": 12707766501
+        "size": 12819445281
       },
-      "source_row": 62,
+      "source_row": 64,
       "source_session_id": "ecephys_834687_2026-03-18_15-50-10"
     },
     {
@@ -25799,13 +28167,13 @@
       "mouse_id": "834687",
       "running_fraction": 0.032967,
       "source": {
-        "asset_id": "bf725c9c-38cd-4c41-b632-5347bcc18954",
-        "download_url": "https://api.dandiarchive.org/api/assets/bf725c9c-38cd-4c41-b632-5347bcc18954/download/",
-        "modified": "2026-04-24T06:00:44.044470Z",
+        "asset_id": "1383e4be-0adc-46ba-8277-b43a19940fbd",
+        "download_url": "https://api.dandiarchive.org/api/assets/1383e4be-0adc-46ba-8277-b43a19940fbd/download/",
+        "modified": "2026-08-07T06:17:20.256687Z",
         "path": "sub-834687/sub-834687_ses-ecephys-834687-2026-03-19-16-06-07_ecephys.nwb",
-        "size": 13158020066
+        "size": 13158022734
       },
-      "source_row": 63,
+      "source_row": 65,
       "source_session_id": "ecephys_834687_2026-03-19_16-06-07"
     },
     {
@@ -25891,13 +28259,13 @@
       "mouse_id": "834691",
       "running_fraction": 0.051543,
       "source": {
-        "asset_id": "0cc012fd-e92c-4087-95ef-150d00d59b42",
-        "download_url": "https://api.dandiarchive.org/api/assets/0cc012fd-e92c-4087-95ef-150d00d59b42/download/",
-        "modified": "2026-06-30T14:49:31.659418Z",
+        "asset_id": "a61fd29f-3ac8-423b-b337-42cb63b6a312",
+        "download_url": "https://api.dandiarchive.org/api/assets/a61fd29f-3ac8-423b-b337-42cb63b6a312/download/",
+        "modified": "2026-08-07T06:20:00.551008Z",
         "path": "sub-834691/sub-834691_ses-ecephys-834691-2026-02-16-11-02-15_ecephys.nwb",
-        "size": 14425058748
+        "size": 14425000556
       },
-      "source_row": 64,
+      "source_row": 66,
       "source_session_id": "ecephys_834691_2026-02-16_11-02-15"
     },
     {
@@ -25983,13 +28351,13 @@
       "mouse_id": "834691",
       "running_fraction": 0.087514,
       "source": {
-        "asset_id": "9a3f32bf-ee7f-4b36-ae05-6f8217d8a1f0",
-        "download_url": "https://api.dandiarchive.org/api/assets/9a3f32bf-ee7f-4b36-ae05-6f8217d8a1f0/download/",
-        "modified": "2026-06-30T14:52:02.745678Z",
+        "asset_id": "a909a36b-7f70-4e9f-b95e-7f913e5d724a",
+        "download_url": "https://api.dandiarchive.org/api/assets/a909a36b-7f70-4e9f-b95e-7f913e5d724a/download/",
+        "modified": "2026-08-07T06:18:55.505226Z",
         "path": "sub-834691/sub-834691_ses-ecephys-834691-2026-02-17-10-49-35_ecephys.nwb",
-        "size": 11205670188
+        "size": 11195891728
       },
-      "source_row": 65,
+      "source_row": 67,
       "source_session_id": "ecephys_834691_2026-02-17_10-49-35"
     },
     {
@@ -26075,11 +28443,11 @@
       "mouse_id": "848387",
       "running_fraction": 0.955324,
       "source": {
-        "asset_id": "641156f5-4e54-42b2-9017-1134cf3115ea",
-        "download_url": "https://api.dandiarchive.org/api/assets/641156f5-4e54-42b2-9017-1134cf3115ea/download/",
-        "modified": "2026-07-23T04:50:07.981509Z",
+        "asset_id": "47aabdea-219a-4b42-99d2-4b60b0b98d92",
+        "download_url": "https://api.dandiarchive.org/api/assets/47aabdea-219a-4b42-99d2-4b60b0b98d92/download/",
+        "modified": "2026-08-07T12:28:49.057038Z",
         "path": "sub-848387/sub-848387_ses-ecephys-848387-2026-05-04-16-19-01_ecephys.nwb",
-        "size": 13408394079
+        "size": 13374859802
       },
       "source_row": 169,
       "source_session_id": "ecephys_848387_2026-05-04_16-19-01"
@@ -26167,11 +28535,11 @@
       "mouse_id": "848387",
       "running_fraction": 0.927964,
       "source": {
-        "asset_id": "c7ec7bc4-3836-467a-af53-33a6605a1d61",
-        "download_url": "https://api.dandiarchive.org/api/assets/c7ec7bc4-3836-467a-af53-33a6605a1d61/download/",
-        "modified": "2026-07-21T07:13:44.041573Z",
+        "asset_id": "fedadbb4-0398-44bd-9678-f0bcc0e52fd3",
+        "download_url": "https://api.dandiarchive.org/api/assets/fedadbb4-0398-44bd-9678-f0bcc0e52fd3/download/",
+        "modified": "2026-08-07T06:20:18.205071Z",
         "path": "sub-848387/sub-848387_ses-ecephys-848387-2026-05-05-15-55-50_ecephys.nwb",
-        "size": 12856300533
+        "size": 12898130425
       },
       "source_row": 170,
       "source_session_id": "ecephys_848387_2026-05-05_15-55-50"
@@ -26351,11 +28719,11 @@
       "mouse_id": "848387",
       "running_fraction": 0.937803,
       "source": {
-        "asset_id": "27b29de0-84f2-4eb5-9998-c32065b528d3",
-        "download_url": "https://api.dandiarchive.org/api/assets/27b29de0-84f2-4eb5-9998-c32065b528d3/download/",
-        "modified": "2026-07-21T07:12:27.163717Z",
+        "asset_id": "d591f984-d9b1-4d13-ad4f-10880ef62aa8",
+        "download_url": "https://api.dandiarchive.org/api/assets/d591f984-d9b1-4d13-ad4f-10880ef62aa8/download/",
+        "modified": "2026-08-07T06:20:33.956404Z",
         "path": "sub-848387/sub-848387_ses-ecephys-848387-2026-05-07-15-46-10_ecephys.nwb",
-        "size": 13221494700
+        "size": 13221443848
       },
       "source_row": 172,
       "source_session_id": "ecephys_848387_2026-05-07_15-46-10"
@@ -26443,11 +28811,11 @@
       "mouse_id": "848390",
       "running_fraction": 0.084775,
       "source": {
-        "asset_id": "7692aa01-1c14-47ae-93aa-bca6d8f7b050",
-        "download_url": "https://api.dandiarchive.org/api/assets/7692aa01-1c14-47ae-93aa-bca6d8f7b050/download/",
-        "modified": "2026-07-23T05:55:35.503341Z",
+        "asset_id": "ca2adad7-2212-4915-a4d4-f3b869fa6da2",
+        "download_url": "https://api.dandiarchive.org/api/assets/ca2adad7-2212-4915-a4d4-f3b869fa6da2/download/",
+        "modified": "2026-08-07T02:53:06.389776Z",
         "path": "sub-848390/sub-848390_ses-ecephys-848390-2026-05-04-10-22-33_ecephys.nwb",
-        "size": 14445519310
+        "size": 14435558612
       },
       "source_row": 165,
       "source_session_id": "ecephys_848390_2026-05-04_10-22-33"
@@ -26535,11 +28903,11 @@
       "mouse_id": "848390",
       "running_fraction": 0.687818,
       "source": {
-        "asset_id": "755840d4-f9e5-4517-83ad-4273521e548c",
-        "download_url": "https://api.dandiarchive.org/api/assets/755840d4-f9e5-4517-83ad-4273521e548c/download/",
-        "modified": "2026-07-21T07:16:55.250309Z",
+        "asset_id": "81807807-957a-40bf-9b81-52a8d560c8e6",
+        "download_url": "https://api.dandiarchive.org/api/assets/81807807-957a-40bf-9b81-52a8d560c8e6/download/",
+        "modified": "2026-08-07T06:17:23.918498Z",
         "path": "sub-848390/sub-848390_ses-ecephys-848390-2026-05-05-10-08-25_ecephys.nwb",
-        "size": 13528632671
+        "size": 13493293847
       },
       "source_row": 166,
       "source_session_id": "ecephys_848390_2026-05-05_10-08-25"
@@ -26627,11 +28995,11 @@
       "mouse_id": "848390",
       "running_fraction": 0.720111,
       "source": {
-        "asset_id": "0e5b530a-e22d-4bf8-a5d7-5108229c899a",
-        "download_url": "https://api.dandiarchive.org/api/assets/0e5b530a-e22d-4bf8-a5d7-5108229c899a/download/",
-        "modified": "2026-07-21T07:14:32.659130Z",
+        "asset_id": "fbfc5171-af65-408e-bfec-d72d9f7f0c4a",
+        "download_url": "https://api.dandiarchive.org/api/assets/fbfc5171-af65-408e-bfec-d72d9f7f0c4a/download/",
+        "modified": "2026-08-07T06:15:52.920666Z",
         "path": "sub-848390/sub-848390_ses-ecephys-848390-2026-05-06-09-54-56_ecephys.nwb",
-        "size": 13311564531
+        "size": 13309249183
       },
       "source_row": 167,
       "source_session_id": "ecephys_848390_2026-05-06_09-54-56"
@@ -26719,11 +29087,11 @@
       "mouse_id": "848390",
       "running_fraction": 0.65321,
       "source": {
-        "asset_id": "2ee1451c-987e-4dfb-b2eb-be5cd3d52adc",
-        "download_url": "https://api.dandiarchive.org/api/assets/2ee1451c-987e-4dfb-b2eb-be5cd3d52adc/download/",
-        "modified": "2026-07-21T08:08:58.855158Z",
+        "asset_id": "d314e00a-b97a-48fc-98ee-81506fee0db8",
+        "download_url": "https://api.dandiarchive.org/api/assets/d314e00a-b97a-48fc-98ee-81506fee0db8/download/",
+        "modified": "2026-08-08T04:03:29.834242Z",
         "path": "sub-848390/sub-848390_ses-ecephys-848390-2026-05-07-10-22-45_ecephys.nwb",
-        "size": 12784255814
+        "size": 12792980877
       },
       "source_row": 168,
       "source_session_id": "ecephys_848390_2026-05-07_10-22-45"
@@ -26847,7 +29215,7 @@
           "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/828408_2025-11-13_10-30-53/behavior/stimuli/orientations_orientations0.csv"
         }
       },
-      "source_row": 109,
+      "source_row": 110,
       "source_session_id": "828408_2025-11-13_10-30-53"
     },
     {
@@ -26969,7 +29337,7 @@
           "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/828408_2025-11-18_14-44-48/behavior/stimuli/orientations_orientations0.csv"
         }
       },
-      "source_row": 110,
+      "source_row": 111,
       "source_session_id": "828408_2025-11-18_14-44-48"
     },
     {
@@ -27091,7 +29459,7 @@
           "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/828408_2025-11-19_14-19-09/behavior/stimuli/orientations_orientations0.csv"
         }
       },
-      "source_row": 111,
+      "source_row": 112,
       "source_session_id": "828408_2025-11-19_14-19-09"
     },
     {
@@ -27213,7 +29581,7 @@
           "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/828408_2025-11-20_14-35-49/behavior/stimuli/orientations_orientations0.csv"
         }
       },
-      "source_row": 113,
+      "source_row": 114,
       "source_session_id": "828408_2025-11-20_14-35-49"
     },
     {
@@ -27335,7 +29703,7 @@
           "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/828409_2025-11-11_14-41-13/behavior/stimuli/orientations_orientations0.csv"
         }
       },
-      "source_row": 107,
+      "source_row": 108,
       "source_session_id": "828409_2025-11-11_14-41-13"
     },
     {
@@ -27457,7 +29825,7 @@
           "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/828409_2025-11-19_10-17-45/behavior/stimuli/orientations_orientations0.csv"
         }
       },
-      "source_row": 112,
+      "source_row": 113,
       "source_session_id": "828409_2025-11-19_10-17-45"
     },
     {
@@ -27579,7 +29947,7 @@
           "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/828409_2025-11-20_10-01-34/behavior/stimuli/orientations_orientations0.csv"
         }
       },
-      "source_row": 114,
+      "source_row": 115,
       "source_session_id": "828409_2025-11-20_10-01-34"
     },
     {
@@ -27701,7 +30069,7 @@
           "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/828409_2025-11-21_11-14-03/behavior/stimuli/orientations_orientations0.csv"
         }
       },
-      "source_row": 115,
+      "source_row": 116,
       "source_session_id": "828409_2025-11-21_11-14-03"
     },
     {
@@ -27823,7 +30191,7 @@
           "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/829704_2025-12-10_13-47-47/behavior/stimuli/orientations_orientations0.csv"
         }
       },
-      "source_row": 116,
+      "source_row": 117,
       "source_session_id": "829704_2025-12-10_13-47-47"
     },
     {
@@ -27945,7 +30313,7 @@
           "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/829704_2025-12-11_12-57-26/behavior/stimuli/orientations_orientations0.csv"
         }
       },
-      "source_row": 117,
+      "source_row": 118,
       "source_session_id": "829704_2025-12-11_12-57-26"
     },
     {
@@ -28067,7 +30435,7 @@
           "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/829704_2025-12-16_11-03-04/behavior/stimuli/orientations_orientations0.csv"
         }
       },
-      "source_row": 118,
+      "source_row": 119,
       "source_session_id": "829704_2025-12-16_11-03-04"
     },
     {
@@ -28189,12 +30557,12 @@
           "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/829704_2025-12-18_10-57-36/behavior/stimuli/orientations_orientations0.csv"
         }
       },
-      "source_row": 119,
+      "source_row": 120,
       "source_session_id": "829704_2025-12-18_10-57-36"
     }
   ],
   "source_session_records": {
-    "sha256": "35400ba7c78ef3890f896ddaa722c202e37647d746b6de0269a6d170d60fc91c",
+    "sha256": "23c4c7893a8033c18c7d52ec36bbb88f9b1640acf7f7882c0e5b465dae26edd4",
     "source_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/edit?usp=sharing"
   },
   "threshold_cm_s": 1.0,
