@@ -6,7 +6,12 @@ from pathlib import Path
 import pytest
 
 from openscope_p3_publication.neural_response_figure import (
+    STATIC_AREA_GROUP_ORDER,
+    STATIC_AREA_MIN_QC_UNITS,
     load_neuropixels_event_responses,
+    response_matrix,
+    static_rate_axis,
+    uint16_base64_values,
     write_neuropixels_event_html,
     write_neuropixels_event_svg,
 )
@@ -18,6 +23,8 @@ from openscope_p3_publication.neural_responses import (
     context_event_definitions,
     event_indices,
     gaussian_kernel,
+    neural_baseline_windows,
+    neural_response_windows,
     qc_passes,
     relative_bin_centers,
     relative_bin_edges,
@@ -41,7 +48,7 @@ def test_neural_time_grid_uses_twenty_millisecond_bins() -> None:
     centers = relative_bin_centers()
     assert edges[0] == WINDOW_START_SECONDS
     assert edges[-1] == pytest.approx(WINDOW_END_SECONDS)
-    assert len(centers) == 150
+    assert len(centers) == 175
     assert centers[0] == pytest.approx(WINDOW_START_SECONDS + BIN_SECONDS / 2)
 
 
@@ -89,6 +96,48 @@ def test_manuscript_qc_thresholds_are_strict() -> None:
     )
 
 
+def test_context_specific_neural_baselines() -> None:
+    starts = [100.0, 100.7, 101.4, 102.1]
+    stops = [100.37, 101.07, 101.77, 102.47]
+    blocks = [2, 2, 2, 2]
+    assert neural_baseline_windows(
+        starts,
+        stops,
+        [2],
+        "standard",
+        blocks,
+    ) == [(101.07, 101.4)]
+    assert neural_baseline_windows(
+        starts,
+        stops,
+        [2],
+        "sequence",
+        blocks,
+    ) == [(100.7, 101.4)]
+    assert neural_baseline_windows(
+        starts,
+        stops,
+        [2],
+        "sensorimotor",
+        blocks,
+    )[0] == pytest.approx((101.057, 101.4))
+    assert neural_baseline_windows(
+        starts,
+        stops,
+        [2],
+        "duration",
+        blocks,
+    ) == [(100.37, 100.7)]
+
+
+def test_neural_response_uses_recorded_presentation_window() -> None:
+    assert neural_response_windows(
+        [100.0, 100.7],
+        [100.37, 101.07],
+        [1],
+    ) == [(100.7, 101.07)]
+
+
 def test_gaussian_smoothing_is_normalized_and_symmetric() -> None:
     kernel = gaussian_kernel()
     assert sum(kernel) == pytest.approx(1)
@@ -103,7 +152,7 @@ def test_gaussian_smoothing_is_normalized_and_symmetric() -> None:
 def test_neuropixels_event_snapshot_is_source_backed() -> None:
     payload = load_neuropixels_event_responses()
 
-    assert payload["version"] == 1
+    assert payload["version"] == 3
     assert payload["subject"] == "830846"
     assert payload["sessionOrder"] == [
         "standard",
@@ -124,9 +173,119 @@ def test_neuropixels_event_snapshot_is_source_backed() -> None:
     ) == 7266
     assert all(len(session["events"]) == 4 for session in payload["sessions"])
     assert all(
-        session["countAtlas"]["shape"] == [4, 2, session["unitCount"], 150]
+        session["countAtlas"]["shape"] == [4, 2, session["unitCount"], 175]
         for session in payload["sessions"]
     )
+    assert all(
+        session["countSquareAtlas"]["shape"]
+        == session["countAtlas"]["shape"]
+        for session in payload["sessions"]
+    )
+    assert all("waveformAtlas" not in session for session in payload["sessions"])
+    assert all(
+        math.isfinite(unit["firingRateHz"]) and unit["firingRateHz"] >= 0
+        for session in payload["sessions"]
+        for unit in session["units"]
+    )
+    assert {
+        unit["decoderLabel"]
+        for session in payload["sessions"]
+        for unit in session["units"]
+    } == {"mua", "noise", "sua"}
+    assert {
+        label: sum(
+            unit["decoderLabel"] == label
+            for session in payload["sessions"]
+            for unit in session["units"]
+        )
+        for label in ("mua", "noise", "sua")
+    } == {"mua": 4971, "noise": 4152, "sua": 4559}
+    groups = {
+        group
+        for session in payload["sessions"]
+        for unit in session["units"]
+        for group in unit["areaGroups"]
+    }
+    assert groups == {
+        "cortical",
+        "frontal",
+        "hippocampal",
+        "motor",
+        "thalamic",
+        "visual",
+    }
+    assert all(
+        ("motor" in unit["areaGroups"])
+        == unit["location"].startswith(("MOp", "MOs"))
+        for session in payload["sessions"]
+        for unit in session["units"]
+    )
+    for session in payload["sessions"]:
+        ranks = uint16_base64_values(session["rastermapRank"]["base64"])
+        assert session["rastermapRank"]["shape"] == [4, session["unitCount"]]
+        for event_index in range(4):
+            start = event_index * session["unitCount"]
+            assert sorted(ranks[start : start + session["unitCount"]]) == list(
+                range(session["unitCount"])
+            )
+
+
+def test_static_response_matrix_uses_anatomical_area_order() -> None:
+    payload = load_neuropixels_event_responses()
+    areas, columns = response_matrix(payload)
+    units = [unit for session in payload["sessions"] for unit in session["units"]]
+    area_counts = {
+        area: sum(unit["qcPass"] and unit["location"] == area for unit in units)
+        for area in areas
+    }
+    area_groups = {
+        unit["location"]: unit["areaGroups"]
+        for unit in units
+        if unit["location"] in areas
+    }
+
+    def sort_key(area: str) -> tuple[int, str]:
+        return (
+            next(
+                index
+                for index, group in enumerate(STATIC_AREA_GROUP_ORDER)
+                if group in area_groups[area]
+            ),
+            area,
+        )
+
+    assert len(areas) == 48
+    assert len(columns) == 16
+    assert areas == sorted(areas, key=sort_key)
+    categories = [
+        next(group for group in STATIC_AREA_GROUP_ORDER if group in area_groups[area])
+        for area in areas
+    ]
+    assert {
+        group: categories.count(group) for group in STATIC_AREA_GROUP_ORDER
+    } == {
+        "frontal": 21,
+        "visual": 13,
+        "hippocampal": 6,
+        "thalamic": 8,
+    }
+    assert all(count >= STATIC_AREA_MIN_QC_UNITS for count in area_counts.values())
+    assert all(
+        any(group in area_groups[area] for group in STATIC_AREA_GROUP_ORDER)
+        for area in areas
+    )
+
+
+def test_static_firing_rate_axes_include_zero_tick() -> None:
+    raw_lower, raw_upper, raw_ticks = static_rate_axis([2.5, 6.2], False)
+    delta_lower, delta_upper, delta_ticks = static_rate_axis([-2.1, 4.4], True)
+
+    assert raw_lower == 0
+    assert raw_upper > 6.2
+    assert 0 in raw_ticks
+    assert delta_lower < -2.1
+    assert delta_upper > 4.4
+    assert 0 in delta_ticks
 
 
 def test_neuropixels_event_outputs_are_deterministic_and_accessible(
@@ -153,13 +312,34 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert svg.count("<image ") == 4
     assert "./media/neuropixels-event-responses/" in html
     assert 'id="heatmap-canvas"' in html
+    assert 'data-metric="mismatch"' in html
+    assert 'data-metric="control"' in html
     assert 'data-metric="difference"' in html
-    assert 'data-metric="zscore"' in html
+    assert 'data-metric="mismatch-zscore"' in html
+    assert 'data-metric="control-zscore"' in html
     assert 'data-qc="qc"' in html
     assert 'data-qc="all"' in html
     assert 'data-scope="area"' in html
     assert 'data-scope="unit"' in html
     assert 'id="response-selection-label"' in html
     assert 'aria-label="Area for mean response"' in html
+    assert 'id="baseline-response-canvas"' in html
+    assert "waveform-canvas" not in html
+    assert "Time from mismatch stimulus (s)" in html
+    assert "Time to positive peak" in html
+    assert ">Rastermap<" in html
+    assert "All cortical areas" in html
+    assert "All thalamic areas" in html
+    assert "All motor areas" in html
+    assert 'data-decoder-label="mua"' in html
+    assert 'data-decoder-label="sua"' in html
+    assert 'id="minimum-firing-rate"' in html
+    assert 'id="unit-count"' not in html
+    assert "Δ firing rate" in html
+    assert "Δ firing rate" in svg
+    assert "zscoreLimit: 3" in html
+    assert 'colorLimit.max = "6"' in html
+    assert 'id="color-key-min"' in html
+    assert 'id="color-key-max"' in html
     assert "DecompressionStream" in html
     assert "__NEUROPIXELS_EVENT_" not in html

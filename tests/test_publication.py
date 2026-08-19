@@ -590,7 +590,10 @@ def test_supplementary_and_power_figures_are_current() -> None:
         "supplementary-neuropixels-event-responses.svg"
     ) in manuscript
     assert "units are distinct across sessions" in manuscript
-    assert "all 16 mismatch conditions" in manuscript
+    assert "all 16 conditions" in manuscript
+    assert "Z-score limits default to ±3" in manuscript
+    assert "Rastermap 1.0 ordering" in manuscript
+    assert "48 frontal, visual, hippocampal, or thalamic areas" in manuscript
     assert "13,682 sorted units" in manuscript
     assert "7,266 passed the manuscript QC thresholds" in manuscript
     for obsolete in (

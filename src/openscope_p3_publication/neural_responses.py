@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from .pupil_responses import EVENT_DEFINITIONS, EventDefinition, event_matches
 
-WINDOW_START_SECONDS = -1.0
+WINDOW_START_SECONDS = -1.5
 WINDOW_END_SECONDS = 2.0
 BIN_SECONDS = 0.02
 SMOOTHING_SIGMA_SECONDS = 0.04
@@ -14,6 +14,20 @@ QC_THRESHOLDS = {
     "amplitude_cutoff_max": 0.1,
     "isi_violations_ratio_max": 0.5,
     "presence_ratio_min": 0.8,
+}
+RASTERMAP_VERSION = "1.0"
+RASTERMAP_PARAMETERS = {
+    "grid_upsample": 10,
+    "locality": 0.0,
+    "mean_time": True,
+    "n_PCs": 200,
+    "n_clusters": 100,
+    "n_splits": 0,
+    "normalize": True,
+    "random_state": 0,
+    "run_scaled_kmeans": True,
+    "time_bin": 0,
+    "time_lag_window": 0,
 }
 
 
@@ -108,6 +122,82 @@ def event_indices(
             delay=float(delay),
         )
     ]
+
+
+def neural_baseline_windows(
+    start_times: Sequence[float],
+    stop_times: Sequence[float],
+    indices: Sequence[int],
+    context: str,
+    block_numbers: Sequence[float] | None = None,
+) -> list[tuple[float, float] | None]:
+    """Return neural baseline windows without using a duration mismatch delay."""
+    if len(start_times) != len(stop_times):
+        raise ValueError("start_times and stop_times must have the same length.")
+    if block_numbers is not None and len(block_numbers) != len(start_times):
+        raise ValueError("block_numbers must match the stimulus-table length.")
+    if context not in EVENT_DEFINITIONS:
+        raise ValueError(f"Unknown neural-response context: {context}")
+
+    windows = []
+    for index in indices:
+        event_start = float(start_times[index])
+        if context == "duration":
+            if index < 2 or (
+                block_numbers is not None
+                and (
+                    block_numbers[index - 2] != block_numbers[index]
+                    or block_numbers[index - 1] != block_numbers[index]
+                )
+            ):
+                windows.append(None)
+                continue
+            start = float(stop_times[index - 2])
+            stop = float(start_times[index - 1])
+        elif context == "standard":
+            if index == 0 or (
+                block_numbers is not None
+                and block_numbers[index - 1] != block_numbers[index]
+            ):
+                windows.append(None)
+                continue
+            start = float(stop_times[index - 1])
+            stop = event_start
+        elif context == "sequence":
+            if index == 0 or (
+                block_numbers is not None
+                and block_numbers[index - 1] != block_numbers[index]
+            ):
+                windows.append(None)
+                continue
+            start = float(start_times[index - 1])
+            stop = event_start
+        else:
+            start = event_start - 0.343
+            stop = event_start
+        if start >= stop:
+            raise ValueError(
+                f"{context} event has a nonpositive neural baseline: {start}, {stop}"
+            )
+        windows.append((start, stop))
+    return windows
+
+
+def neural_response_windows(
+    start_times: Sequence[float],
+    stop_times: Sequence[float],
+    indices: Sequence[int],
+) -> list[tuple[float, float]]:
+    if len(start_times) != len(stop_times):
+        raise ValueError("start_times and stop_times must have the same length.")
+    windows = []
+    for index in indices:
+        start = float(start_times[index])
+        stop = float(stop_times[index])
+        if start >= stop:
+            raise ValueError(f"Neural response window is nonpositive: {start}, {stop}")
+        windows.append((start, stop))
+    return windows
 
 
 def qc_passes(

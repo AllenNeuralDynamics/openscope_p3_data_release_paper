@@ -122,12 +122,16 @@ h2 {
 
 .control-grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.7fr 1.1fr 1.15fr minmax(210px, 1.25fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 9px;
   background: var(--wash);
+}
+
+#response-selection-control {
+  grid-column: span 2;
 }
 
 fieldset,
@@ -155,6 +159,41 @@ select {
   border-radius: 7px;
   background: var(--paper);
   font-size: var(--figure-type-control);
+}
+
+.checkbox-group {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 14px;
+}
+
+.checkbox-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink);
+  font-size: var(--figure-type-control);
+  font-weight: 650;
+}
+
+.checkbox-group input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.range-control input[type="range"] {
+  display: block;
+  width: 100%;
+  margin-top: 7px;
+}
+
+.range-control output {
+  color: var(--muted);
+  font-family: var(--figure-font-mono);
+  font-size: var(--figure-type-metadata);
 }
 
 .heatmap-toolbar {
@@ -201,6 +240,19 @@ select {
   background: linear-gradient(90deg, #3b4cc0, #f7f7f7, #b40426);
 }
 
+.color-key-wrap {
+  width: 190px;
+}
+
+.color-key-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
+  color: var(--muted);
+  font-family: var(--figure-font-mono);
+  font-size: var(--figure-type-metadata);
+}
+
 .canvas-shell {
   position: relative;
   overflow-x: auto;
@@ -244,37 +296,9 @@ canvas {
   display: none;
 }
 
-.detail-grid {
+.response-stack {
   display: grid;
-  grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.75fr);
-  gap: 12px;
-}
-
-.unit-metadata {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 7px;
-  margin: 8px 0 12px;
-}
-
-.unit-metadata div {
-  min-width: 0;
-  padding: 6px 8px;
-  border-radius: 6px;
-  background: var(--wash);
-}
-
-.unit-metadata dt {
-  color: var(--muted);
-  font-size: var(--figure-type-metadata);
-  font-weight: 700;
-}
-
-.unit-metadata dd {
-  margin: 2px 0 0;
-  overflow-wrap: anywhere;
-  font-family: var(--figure-font-mono);
-  font-size: var(--figure-type-metadata);
+  gap: 0;
 }
 
 .static-view {
@@ -292,10 +316,6 @@ canvas {
 @media (max-width: 850px) {
   .control-grid {
     grid-template-columns: 1fr 1fr 1fr;
-  }
-
-  .detail-grid {
-    grid-template-columns: 1fr;
   }
 }
 

@@ -15,15 +15,19 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import closing
 from dataclasses import asdict
+from importlib.metadata import version
 from pathlib import Path
 
 try:
     import h5py
     import numpy as np
     import remfile
+    from iblatlas.regions import BrainRegions
+    from rastermap import Rastermap
 except ImportError as exc:  # pragma: no cover - optional extraction environment
     raise SystemExit(
-        "Run with: uv run --with h5py --with numpy --with remfile "
+        "Run with: uv run --with h5py --with iblatlas --with numpy "
+        "--with rastermap==1.0 --with remfile "
         "python scripts/extract_neuropixels_event_responses.py"
     ) from exc
 
@@ -31,19 +35,19 @@ from openscope_p3_publication.neural_responses import (
     BIN_SECONDS,
     NEURAL_SESSIONS,
     QC_THRESHOLDS,
+    RASTERMAP_PARAMETERS,
+    RASTERMAP_VERSION,
     SMOOTHING_SIGMA_SECONDS,
     WINDOW_END_SECONDS,
     WINDOW_START_SECONDS,
     context_event_definitions,
     event_indices,
+    gaussian_kernel,
+    neural_baseline_windows,
+    neural_response_windows,
     qc_passes,
     relative_bin_centers,
     relative_bin_edges,
-)
-from openscope_p3_publication.pupil_responses import (
-    event_baseline_windows,
-    event_response_windows,
-    pupil_response_window_label,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -55,9 +59,12 @@ MEDIA_ASSET_ROOT = "media/neuropixels-event-responses"
 DANDI_API = "https://api.dandiarchive.org/api"
 DANDISET_ID = "001637"
 DANDI_VERSION = "draft"
-VERSION = 1
+VERSION = 3
 CONDITION_ORDER = ("context", "control")
 PROBE_ORDER = tuple(f"Probe{letter}" for letter in "ABCDEF")
+FRONTAL_PREFIXES = ("ACA", "ILA", "PL", "ORB", "MOp", "MOs")
+MOTOR_PREFIXES = ("MOp", "MOs")
+VISUAL_THALAMUS_PREFIXES = ("LGd", "LGv", "LP")
 
 
 def parse_args() -> argparse.Namespace:
@@ -115,8 +122,53 @@ def fetch_json(url: str) -> dict:
         return json.load(response)
 
 
+def area_classification(acronyms: list[str]) -> dict[str, dict]:
+    regions = BrainRegions()
+    classifications = {}
+    for acronym in sorted(set(acronyms)):
+        ids = np.atleast_1d(regions.acronym2id(acronym))
+        ancestors = (
+            list(regions.ancestors(int(ids[0])).acronym)
+            if len(ids) and int(ids[0]) != 0
+            else []
+        )
+        major_parent = next(
+            (
+                parent
+                for parent in reversed(ancestors)
+                if parent in {"Isocortex", "TH", "HPF"}
+            ),
+            "Other",
+        )
+        groups = []
+        if major_parent == "Isocortex":
+            groups.append("cortical")
+        if major_parent == "TH":
+            groups.append("thalamic")
+        if major_parent == "HPF":
+            groups.append("hippocampal")
+        if acronym.startswith("VIS") or acronym.startswith(
+            VISUAL_THALAMUS_PREFIXES
+        ):
+            groups.append("visual")
+        if acronym.startswith(FRONTAL_PREFIXES):
+            groups.append("frontal")
+        if acronym.startswith(MOTOR_PREFIXES):
+            groups.append("motor")
+        classifications[acronym] = {
+            "groups": groups,
+            "majorParent": major_parent,
+        }
+    return classifications
+
+
 def encode_float32(values: np.ndarray) -> str:
     array = np.ascontiguousarray(values, dtype="<f4")
+    return base64.b64encode(array.tobytes()).decode("ascii")
+
+
+def encode_uint16(values: np.ndarray) -> str:
+    array = np.ascontiguousarray(values, dtype="<u2")
     return base64.b64encode(array.tobytes()).decode("ascii")
 
 
@@ -171,39 +223,80 @@ def event_records(nwb: h5py.File, config) -> tuple[list[dict], list[dict]]:
                 )
             condition_indices[condition] = indices
             condition_onsets[condition] = arrays["start"][indices]
-        baseline_windows = event_baseline_windows(
-            context_arrays["start"],
-            context_arrays["stop"],
-            condition_indices["context"],
-            config.context,
-            context_arrays["block_number"],
-        )
-        baseline_windows = [window for window in baseline_windows if window is not None]
-        if not baseline_windows:
-            raise RuntimeError(f"{config.context} {definition.id} has no baseline windows.")
+        baseline_windows = {}
         response_windows = {}
         for condition, arrays in (
             ("context", context_arrays),
             ("control", control_arrays),
         ):
-            response_windows[condition] = event_response_windows(
+            baseline_windows[condition] = [
+                window
+                for window in neural_baseline_windows(
+                    arrays["start"],
+                    arrays["stop"],
+                    condition_indices[condition],
+                    config.context,
+                    arrays["block_number"],
+                )
+                if window is not None
+            ]
+            if not baseline_windows[condition]:
+                raise RuntimeError(
+                    f"{config.context} {definition.id} has no {condition} baselines."
+                )
+            response_windows[condition] = neural_response_windows(
                 arrays["start"],
                 arrays["stop"],
-                arrays["delay"],
                 condition_indices[condition],
-                config.context,
             )
+        timing = {}
+        for condition, arrays in (
+            ("context", context_arrays),
+            ("control", control_arrays),
+        ):
+            indices = condition_indices[condition]
+            timing[condition] = {
+                "presentationStartSeconds": 0.0,
+                "presentationStopSeconds": round(
+                    float(np.mean(arrays["stop"][indices] - arrays["start"][indices])),
+                    6,
+                ),
+            }
+            if config.context == "duration":
+                valid = indices[
+                    (indices > 0)
+                    & (
+                        arrays["block_number"][indices - 1]
+                        == arrays["block_number"][indices]
+                    )
+                ]
+                timing[condition].update(
+                    previousPresentationStartSeconds=round(
+                        float(
+                            np.mean(
+                                arrays["start"][valid - 1] - arrays["start"][valid]
+                            )
+                        ),
+                        6,
+                    ),
+                    previousPresentationStopSeconds=round(
+                        float(
+                            np.mean(
+                                arrays["stop"][valid - 1] - arrays["start"][valid]
+                            )
+                        ),
+                        6,
+                    ),
+                )
         records.append(
             {
                 "contextTrialCount": len(condition_indices["context"]),
                 "controlTrialCount": len(condition_indices["control"]),
                 "id": definition.id,
                 "label": definition.label,
-                "responseWindowLabel": pupil_response_window_label(
-                    config.context,
-                    definition.id,
-                ),
+                "responseWindowLabel": "NWB start_time–stop_time",
                 "staticGroup": definition.static_group or definition.id,
+                "timing": timing,
             }
         )
         extraction.append(
@@ -216,24 +309,31 @@ def event_records(nwb: h5py.File, config) -> tuple[list[dict], list[dict]]:
     return records, extraction
 
 
-def histogram_trial_sum(
+def histogram_trial_moments(
     spikes: np.ndarray,
     onsets: np.ndarray,
     relative_edges: np.ndarray,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     counts = np.zeros(len(relative_edges) - 1, dtype=np.uint32)
+    squared_counts = np.zeros(len(relative_edges) - 1, dtype=np.uint32)
     for onset in onsets:
         first = int(np.searchsorted(spikes, onset + relative_edges[0], side="left"))
         last = int(np.searchsorted(spikes, onset + relative_edges[-1], side="left"))
         if last <= first:
             continue
-        counts += np.histogram(
+        trial_counts = np.histogram(
             spikes[first:last] - onset,
             bins=relative_edges,
         )[0].astype(np.uint32)
-    if np.max(counts, initial=0) > np.iinfo(np.uint16).max:
-        raise RuntimeError("Aggregated PSTH count exceeds uint16 capacity.")
-    return counts.astype(np.uint16)
+        counts += trial_counts
+        squared_counts += trial_counts * trial_counts
+    maximum = np.iinfo(np.uint16).max
+    if (
+        np.max(counts, initial=0) > maximum
+        or np.max(squared_counts, initial=0) > maximum
+    ):
+        raise RuntimeError("Aggregated PSTH moments exceed uint16 capacity.")
+    return counts.astype(np.uint16), squared_counts.astype(np.uint16)
 
 
 def baseline_rate_stats(
@@ -273,17 +373,6 @@ def mean_rate_in_windows(
     return float(np.mean(rates))
 
 
-def waveform_scale_factor(unit: str) -> float:
-    normalized = unit.lower().replace("μ", "u").replace("µ", "u")
-    if normalized in {"v", "volt", "volts"}:
-        # The packaged values are already on the microvolt numerical scale, as in
-        # Figure 6, despite the inherited NWB attribute stating volts.
-        return 1
-    if normalized in {"uv", "microvolt", "microvolts"}:
-        return 1
-    raise RuntimeError(f"Unsupported waveform unit: {unit!r}")
-
-
 def source_asset(config) -> dict:
     detail = fetch_json(f"{DANDI_API}/assets/{config.asset_id}/")
     if detail["path"] != config.asset_path:
@@ -311,9 +400,8 @@ def analysis_signature(selected_probes: tuple[str, ...]) -> str:
         ),
         "probes": selected_probes,
         "qcThresholds": QC_THRESHOLDS,
-        "pupilModuleSha256": file_sha256(
-            REPO_ROOT / "src" / "openscope_p3_publication" / "pupil_responses.py"
-        ),
+        "rastermapParameters": RASTERMAP_PARAMETERS,
+        "rastermapVersion": RASTERMAP_VERSION,
         "scriptSha256": file_sha256(Path(__file__)),
         "smoothingSigmaSeconds": SMOOTHING_SIGMA_SECONDS,
         "window": [WINDOW_START_SECONDS, WINDOW_END_SECONDS],
@@ -321,6 +409,65 @@ def analysis_signature(selected_probes: tuple[str, ...]) -> str:
     return hashlib.sha256(
         json.dumps(content, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
+
+
+def rastermap_ranks(
+    counts: np.ndarray,
+    baseline_mean: np.ndarray,
+    baseline_std: np.ndarray,
+    events: list[dict],
+    decoder_labels: np.ndarray,
+    unit_ids: np.ndarray,
+    context: str,
+) -> np.ndarray:
+    bin_centers = np.asarray(relative_bin_centers(), dtype=float)
+    display_start = -1.5 if context == "duration" else -1.0
+    visible = bin_centers >= display_start
+    kernel = np.asarray(gaussian_kernel(), dtype=float)
+    edge_weights = np.convolve(np.ones(counts.shape[-1]), kernel, mode="same")
+    ranks = np.empty((len(events), counts.shape[2]), dtype=np.uint16)
+    label_eligible = np.isin(decoder_labels, ("mua", "sua"))
+
+    for event_index, event in enumerate(events):
+        rates = (
+            counts[event_index, 0].astype(np.float32)
+            / event["contextTrialCount"]
+            / BIN_SECONDS
+        )
+        smoothed = np.vstack(
+            [np.convolve(row, kernel, mode="same") / edge_weights for row in rates]
+        )
+        mean = baseline_mean[event_index, 0, :, np.newaxis]
+        std = baseline_std[event_index, 0, :, np.newaxis]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            z_scores = (smoothed - mean) / std
+        matrix = z_scores[:, visible].astype(np.float32)
+        centered_std = (matrix - matrix.mean(axis=1, keepdims=True)).std(axis=1)
+        eligible = (
+            label_eligible
+            & np.isfinite(std[:, 0])
+            & (std[:, 0] > 0)
+            & np.all(np.isfinite(matrix), axis=1)
+            & (centered_std > 0)
+        )
+        eligible_indices = np.flatnonzero(eligible)
+        if len(eligible_indices) < 2:
+            raise RuntimeError(
+                f"{context} event {event['id']} has too few Rastermap-eligible units."
+            )
+        model = Rastermap(
+            **RASTERMAP_PARAMETERS,
+            keep_norm_X=False,
+            verbose=False,
+        ).fit(matrix[eligible_indices], compute_X_embedding=False)
+        ordered = eligible_indices[np.asarray(model.isort, dtype=int)]
+        if len(ordered) != len(eligible_indices) or len(np.unique(ordered)) != len(ordered):
+            raise RuntimeError(f"{context} event {event['id']} Rastermap order is invalid.")
+        remaining = np.setdiff1d(np.arange(counts.shape[2]), ordered, assume_unique=True)
+        remaining = remaining[np.argsort(unit_ids[remaining], kind="stable")]
+        full_order = np.concatenate((ordered, remaining))
+        ranks[event_index, full_order] = np.arange(counts.shape[2], dtype=np.uint16)
+    return ranks
 
 
 def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -> dict:
@@ -338,13 +485,13 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
             "electrodes",
             "electrodes_index",
             "extremum_channel_index",
+            "firing_rate",
             "id",
             "isi_violations_ratio",
             "ks_unit_id",
             "presence_ratio",
             "spike_times",
             "spike_times_index",
-            "waveform_mean",
         }
         missing = sorted(required - set(units))
         if missing:
@@ -361,23 +508,23 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
             (event_count, len(CONDITION_ORDER), unit_count, bin_count),
             dtype=np.uint16,
         )
-        baseline_mean = np.full((event_count, unit_count), np.nan, dtype=np.float32)
-        baseline_std = np.full((event_count, unit_count), np.nan, dtype=np.float32)
+        squared_counts = np.zeros_like(counts)
+        baseline_mean = np.full(
+            (event_count, len(CONDITION_ORDER), unit_count),
+            np.nan,
+            dtype=np.float32,
+        )
+        baseline_std = np.full_like(baseline_mean, np.nan)
         response_rates = np.full(
             (event_count, len(CONDITION_ORDER), unit_count),
             np.nan,
             dtype=np.float32,
         )
-        waveform_samples = units["waveform_mean"].shape[1]
-        waveforms = np.zeros((unit_count, waveform_samples), dtype=np.int8)
-        waveform_scales = np.zeros(unit_count, dtype=np.float32)
-        waveform_unit = str(decode(units["waveform_mean"].attrs.get("unit", "")))
-        waveform_factor = waveform_scale_factor(waveform_unit)
-
         ids = np.asarray(units["id"][:], dtype=int)
         ks_ids = np.asarray(units["ks_unit_id"][:], dtype=int)
         decoder_labels = np.asarray(units["decoder_label"][:]).astype("U")
         depths = np.asarray(units["depth"][:], dtype=float)
+        firing_rates = np.asarray(units["firing_rate"][:], dtype=float)
         isi = np.asarray(units["isi_violations_ratio"][:], dtype=float)
         presence = np.asarray(units["presence_ratio"][:], dtype=float)
         amplitude = np.asarray(units["amplitude_cutoff"][:], dtype=float)
@@ -386,6 +533,10 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
             if "spread" in units
             else np.full(len(ids), np.nan)
         )
+        if np.any(~np.isfinite(firing_rates[selected_rows])) or np.any(
+            firing_rates[selected_rows] < 0
+        ):
+            raise RuntimeError(f"{config.session_id} has invalid unit firing rates.")
         spike_ends = np.asarray(units["spike_times_index"][:], dtype=int)
         electrode_ends = np.asarray(units["electrodes_index"][:], dtype=int)
         electrode_refs = np.asarray(units["electrodes"][:], dtype=int)
@@ -413,44 +564,36 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
             for event_index, event_extract in enumerate(extraction):
                 for condition_index, condition in enumerate(CONDITION_ORDER):
                     onsets = event_extract["condition_onsets"][condition]
-                    counts[event_index, condition_index, output_row] = (
-                        histogram_trial_sum(spikes, onsets, relative_edges)
+                    count_sum, count_square_sum = histogram_trial_moments(
+                        spikes,
+                        onsets,
+                        relative_edges,
                     )
+                    counts[event_index, condition_index, output_row] = count_sum
+                    squared_counts[
+                        event_index,
+                        condition_index,
+                        output_row,
+                    ] = count_square_sum
                     response_rates[event_index, condition_index, output_row] = (
                         mean_rate_in_windows(
                             spikes,
                             event_extract["response_windows"][condition],
                         )
                     )
-                mean, std = baseline_rate_stats(
-                    spikes,
-                    event_extract["baseline_windows"],
-                )
-                baseline_mean[event_index, output_row] = mean
-                baseline_std[event_index, output_row] = std
-
-            waveform_uv = (
-                np.asarray(
-                    units["waveform_mean"][row, :, peak_channel],
-                    dtype=float,
-                )
-                * waveform_factor
-            )
-            waveform_uv = np.where(np.isfinite(waveform_uv), waveform_uv, 0)
-            scale = float(np.max(np.abs(waveform_uv), initial=0))
-            waveform_scales[output_row] = scale
-            if scale > 0:
-                waveforms[output_row] = np.clip(
-                    np.rint(waveform_uv / scale * 127),
-                    -127,
-                    127,
-                ).astype(np.int8)
+                    mean, std = baseline_rate_stats(
+                        spikes,
+                        event_extract["baseline_windows"][condition],
+                    )
+                    baseline_mean[event_index, condition_index, output_row] = mean
+                    baseline_std[event_index, condition_index, output_row] = std
 
             unit_records.append(
                 {
                     "amplitudeCutoff": round(float(amplitude[row]), 6),
                     "decoderLabel": str(decoder_labels[row]),
                     "depthUm": round(float(depths[row]), 3),
+                    "firingRateHz": round(float(firing_rates[row]), 6),
                     "id": int(ids[row]),
                     "isiViolationsRatio": round(float(isi[row]), 6),
                     "ksUnitId": int(ks_ids[row]),
@@ -469,7 +612,6 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
                         else None
                     ),
                     "spikeCount": spike_stop - spike_start,
-                    "waveformScaleUv": round(scale, 6),
                 }
             )
             if (output_row + 1) % 250 == 0 or output_row + 1 == unit_count:
@@ -478,11 +620,31 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
                     flush=True,
                 )
 
+        classifications = area_classification(
+            [unit["location"] for unit in unit_records]
+        )
+        for unit in unit_records:
+            classification = classifications[unit["location"]]
+            unit["areaGroups"] = classification["groups"]
+            unit["majorParent"] = classification["majorParent"]
+        ranks = rastermap_ranks(
+            counts,
+            baseline_mean,
+            baseline_std,
+            events,
+            decoder_labels[selected_rows],
+            ids[selected_rows],
+            config.context,
+        )
+
     session_prefix = config.context.replace("sensorimotor", "motor")
     counts_path = media_dir / f"{session_prefix}-counts.u16.gz"
-    waveforms_path = media_dir / f"{session_prefix}-waveforms.i8.gz"
+    squared_counts_path = media_dir / f"{session_prefix}-count-squares.u16.gz"
     count_asset = write_gzip(counts_path, counts.astype("<u2").tobytes())
-    waveform_asset = write_gzip(waveforms_path, waveforms.tobytes())
+    squared_count_asset = write_gzip(
+        squared_counts_path,
+        squared_counts.astype("<u2").tobytes(),
+    )
     response_delta = response_rates[:, 0] - response_rates[:, 1]
     return {
         "asset": asset,
@@ -497,25 +659,24 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
             "dtype": "uint16 little-endian",
             "shape": list(counts.shape),
         },
+        "countSquareAtlas": {
+            **squared_count_asset,
+            "dtype": "uint16 little-endian",
+            "shape": list(squared_counts.shape),
+        },
         "events": events,
         "responseContextHzBase64": encode_float32(response_rates[:, 0]),
         "responseControlHzBase64": encode_float32(response_rates[:, 1]),
         "responseDeltaHzBase64": encode_float32(response_delta),
+        "rastermapRank": {
+            "base64": encode_uint16(ranks),
+            "dtype": "uint16 little-endian",
+            "shape": list(ranks.shape),
+        },
         "sessionId": config.session_id,
         "subject": "830846",
         "unitCount": unit_count,
         "units": unit_records,
-        "waveformAtlas": {
-            **waveform_asset,
-            "dtype": "int8",
-            "sampleRateHz": 30_000,
-            "shape": list(waveforms.shape),
-            "sourceUnitAttribute": waveform_unit,
-            "unit": (
-                "normalized; per-unit waveformScaleUv restores microvolts "
-                "(packaged numeric scale)"
-            ),
-        },
     }
 
 
@@ -533,12 +694,12 @@ def cached_session(
     if metadata_path.is_file():
         cached = json.loads(metadata_path.read_text(encoding="utf-8"))
         valid = True
-        for key in ("countAtlas", "waveformAtlas"):
+        for key in ("countAtlas", "countSquareAtlas"):
             source = session_cache / Path(cached[key]["path"]).name
             valid &= source.is_file() and file_sha256(source) == cached[key]["sha256"]
         if valid:
             media_dir.mkdir(parents=True, exist_ok=True)
-            for key in ("countAtlas", "waveformAtlas"):
+            for key in ("countAtlas", "countSquareAtlas"):
                 source = session_cache / Path(cached[key]["path"]).name
                 shutil.copy2(source, media_dir / source.name)
             return cached
@@ -546,7 +707,7 @@ def cached_session(
     cached_media = session_cache / "media"
     record = extract_session(config, cached_media, selected_probes)
     media_dir.mkdir(parents=True, exist_ok=True)
-    for key in ("countAtlas", "waveformAtlas"):
+    for key in ("countAtlas", "countSquareAtlas"):
         source = cached_media / Path(record[key]["path"]).name
         target = session_cache / source.name
         shutil.copy2(source, target)
@@ -589,6 +750,12 @@ def main() -> None:
     if args.max_workers < 1:
         raise SystemExit("--max-workers must be at least one.")
     dt.date.fromisoformat(args.retrieved_date)
+    installed_rastermap_version = version("rastermap")
+    if installed_rastermap_version != RASTERMAP_VERSION:
+        raise SystemExit(
+            f"Rastermap {RASTERMAP_VERSION} is required; found "
+            f"{installed_rastermap_version}."
+        )
     selected_sessions = set(args.session_id or ())
     configs = [
         config
@@ -626,15 +793,38 @@ def main() -> None:
     records.sort(key=lambda record: order[record["context"]])
     payload = {
         "analysisParameters": {
+            "baselineRules": {
+                "duration": "row i-2 stop_time through row i-1 start_time",
+                "sensorimotor": "343 ms immediately preceding event start_time",
+                "sequence": "previous row start_time through event start_time",
+                "standard": "previous row stop_time through event start_time",
+            },
             "binSeconds": BIN_SECONDS,
             "heatmapModes": [
+                "mismatch spikes/s",
+                "control spikes/s",
                 "mismatch-minus-control spikes/s",
-                "baseline-z-scored mismatch",
+                "mismatch baseline z score",
+                "control baseline z score",
             ],
+            "firingRateSource": "NWB Units firing_rate",
             "qcThresholds": QC_THRESHOLDS,
+            "rastermap": {
+                "input": (
+                    "smoothed mismatch baseline z score over the displayed "
+                    "peri-event window"
+                ),
+                "packageVersion": RASTERMAP_VERSION,
+                "parameters": RASTERMAP_PARAMETERS,
+            },
+            "responseWindow": "selected row NWB start_time through stop_time",
             "smoothingSigmaSeconds": SMOOTHING_SIGMA_SECONDS,
             "timeBinCentersSeconds": relative_bin_centers(),
-            "unitDefault": "manuscript QC passing",
+            "unitDefault": {
+                "decoderLabels": ["mua", "sua"],
+                "minimumFiringRateHz": 1.0,
+                "numericalQc": "manuscript QC passing",
+            },
             "windowSeconds": [WINDOW_START_SECONDS, WINDOW_END_SECONDS],
         },
         "sessionOrder": [record["context"] for record in records],
@@ -643,6 +833,14 @@ def main() -> None:
         "version": VERSION,
     }
     write_json(args.output, payload)
+    referenced_media = {
+        Path(record[key]["path"]).name
+        for record in records
+        for key in ("countAtlas", "countSquareAtlas")
+    }
+    for path in args.media_dir.glob("*.gz"):
+        if path.name not in referenced_media:
+            path.unlink()
     media = sorted(
         [
             {
@@ -666,11 +864,9 @@ def main() -> None:
         },
         "outputPath": display_path(args.output),
         "outputSha256": file_sha256(args.output),
-        "pupilEventModule": {
-            "path": "src/openscope_p3_publication/pupil_responses.py",
-            "sha256": file_sha256(
-                REPO_ROOT / "src" / "openscope_p3_publication" / "pupil_responses.py"
-            ),
+        "rastermap": {
+            "packageVersion": RASTERMAP_VERSION,
+            "parameters": RASTERMAP_PARAMETERS,
         },
         "retrievedDate": args.retrieved_date,
         "script": {

@@ -40,6 +40,25 @@ __NEUROPIXELS_EVENT_CSS__
               <button type="button" data-qc="all" aria-pressed="false">All sorted</button>
             </div>
           </fieldset>
+          <fieldset id="decoder-label-filter">
+           <legend>Decoder label</legend>
+           <div class="checkbox-group">
+             <label><input type="checkbox" data-decoder-label="mua" checked> MUA</label>
+             <label><input type="checkbox" data-decoder-label="sua" checked> SUA</label>
+           </div>
+          </fieldset>
+          <label class="range-control">
+           Minimum firing rate
+           <input
+             id="minimum-firing-rate"
+             type="range"
+             min="0"
+             max="10"
+             value="1"
+             step="0.1"
+           >
+           <output id="minimum-firing-rate-value" for="minimum-firing-rate">≥1.0 Hz</output>
+          </label>
           <fieldset>
             <legend>Response trace</legend>
             <div id="scope-tabs" class="button-group">
@@ -58,14 +77,19 @@ __NEUROPIXELS_EVENT_CSS__
           <fieldset>
             <legend>Heatmap value</legend>
             <div id="metric-tabs" class="button-group">
-              <button type="button" data-metric="difference" aria-pressed="true">Mismatch − control</button>
-              <button type="button" data-metric="zscore" aria-pressed="false">Mismatch z score</button>
+              <button type="button" data-metric="mismatch" aria-pressed="true">Mismatch firing rate</button>
+              <button type="button" data-metric="control" aria-pressed="false">Control firing rate</button>
+              <button type="button" data-metric="difference" aria-pressed="false">Mismatch − control</button>
+              <button type="button" data-metric="mismatch-zscore" aria-pressed="false">Mismatch z score</button>
+              <button type="button" data-metric="control-zscore" aria-pressed="false">Control z score</button>
             </div>
           </fieldset>
           <label>
             Sort rows
             <select id="sort-select">
               <option value="response">Response magnitude</option>
+              <option value="peak-time">Time to positive peak</option>
+              <option value="rastermap">Rastermap</option>
               <option value="depth">Probe depth</option>
               <option value="unit">Unit ID</option>
             </select>
@@ -75,7 +99,6 @@ __NEUROPIXELS_EVENT_CSS__
             <input id="color-limit" type="range" min="25" max="200" value="100" step="5">
             <output id="color-limit-value">100%</output>
           </label>
-          <output id="unit-count" aria-live="polite"></output>
         </div>
 
         <section class="heatmap-panel" aria-labelledby="heatmap-title">
@@ -84,7 +107,14 @@ __NEUROPIXELS_EVENT_CSS__
               <h2 id="heatmap-title">Unit response heatmap</h2>
               <p id="heatmap-detail"></p>
             </div>
-            <div id="color-key" class="color-key" aria-label="Heatmap color scale"></div>
+            <div class="color-key-wrap">
+              <div id="color-key" class="color-key" aria-label="Heatmap color scale"></div>
+              <div class="color-key-labels">
+                <span id="color-key-min"></span>
+                <span id="color-key-zero">0</span>
+                <span id="color-key-max"></span>
+              </div>
+            </div>
           </div>
           <div class="canvas-shell">
             <canvas
@@ -100,7 +130,7 @@ __NEUROPIXELS_EVENT_CSS__
           </div>
         </section>
 
-        <section class="detail-grid">
+        <section class="response-stack">
           <article class="response-panel">
             <h2 id="response-title">Area-mean PSTH</h2>
             <canvas
@@ -111,17 +141,16 @@ __NEUROPIXELS_EVENT_CSS__
               aria-label="Mismatch and matched-control peri-stimulus time histograms"
             ></canvas>
           </article>
-          <aside class="unit-panel">
-            <h2 id="unit-title">Unit diagnostics</h2>
-            <dl id="unit-metadata" class="unit-metadata"></dl>
+          <article class="response-panel">
+            <h2 id="baseline-response-title">Baseline-subtracted firing rate</h2>
             <canvas
-              id="waveform-canvas"
-              width="520"
-              height="240"
+              id="baseline-response-canvas"
+              width="1200"
+              height="360"
               role="img"
-              aria-label="Selected unit mean template waveform"
+              aria-label="Baseline-subtracted mismatch and matched-control firing rates"
             ></canvas>
-          </aside>
+          </article>
         </section>
         <p class="source-note" id="source-note"></p>
       </section>

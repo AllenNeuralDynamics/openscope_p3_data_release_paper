@@ -40,9 +40,9 @@ Its committed `figure_sources/data/pupil-event-responses.json` payload contains 
 
 The Neuropixels mismatch-response explorer combines Figure 6's unit-selection pattern with event-aligned spike responses:
 
-- `neuropixels-event-responses.html`: context, event, probe, area, unit-QC, heatmap, and response controls.
-- `neuropixels-event-responses.css`: responsive heatmap, PSTH, and unit-diagnostic layouts.
-- `neuropixels-event-responses.js`: same-origin gzip atlas loading, response heatmaps, area means, individual PSTHs, and waveform rendering.
+- `neuropixels-event-responses.html`: context, event, probe, area, unit-QC, decoder-label, firing-rate, heatmap, and response controls.
+- `neuropixels-event-responses.css`: responsive heatmap and paired PSTH layouts.
+- `neuropixels-event-responses.js`: same-origin gzip atlas loading, five response-heatmap modes, fixed mismatch-z and Rastermap row ordering, ontology area groups, unit filters, area means, individual PSTHs with trial SEM, and baseline subtraction.
 
 Its scientific data are committed under `figure_sources/data/neuropixels-event-responses.json` and `figure_sources/media/neuropixels-event-responses/`; the browser never opens an NWB.
 
