@@ -1565,7 +1565,6 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert '<div id="playback-view">' in html
     assert 'selectView("playback")' in html
     assert 'id="static-panel"' in html
-    assert "data:image/svg+xml;base64," in html
     assert "detailed context, control, receptive-field, and zebra-movie blocks" in html
     assert "selectView" in html
     assert 'id="stimulus-canvas"' in html
@@ -1859,7 +1858,14 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
     assert 'class="view-button active" data-view="interactive" aria-pressed="true"' in html
     assert '<div id="interactive-view">' in html
     assert 'selectView("interactive")' in html
-    assert "data:image/svg+xml;base64," in html
+    assert '<g class="session-target" data-session-id=' in html
+    assert "__SESSION_INVENTORY_SVG__" not in html
+    assert "focusDataAccess" in html
+    assert 'selectTable("dataAccess")' in html
+    assert "No Data Access record is available" in html
+    assert 'target.dataset.sessionId === "unknown session id"' in html
+    assert 'target.classList.add("is-clickable")' in html
+    assert 'row.classList.add("selected-session")' in html
     assert "selectView" in html
     assert 'document.querySelector("body > main")' in html
     assert 'classList.add("is-embedded")' in html
@@ -2043,9 +2049,15 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert svg.count(">Cell matching problems</text>") == 1
     assert svg.count('class="session-qc-outline"') == 18
     assert svg.count('class="session-qc-outline" data-qc-kind="session-fail"') == 18
+    assert svg.count('class="session-target" data-session-id=') > 0
+    assert svg.count('<title>') == svg.count('class="session-target" data-session-id=')
+    assert '<title>unknown session id</title>' in svg
+    assert '<title id="title">Recording sessions' not in svg
+    assert 'aria-label="Recording sessions per mouse across three modalities"' in svg
+    assert 'pointer-events="none"' in svg
     failed_blocks = re.findall(
         r'<rect class="session-block"[^>]+fill="none" '
-        r'stroke="(#[0-9A-F]{6})" stroke-width="2"/>',
+        r'stroke="(#[0-9A-F]{6})" stroke-width="2" pointer-events="all"/>',
         svg,
     )
     assert len(failed_blocks) == 18

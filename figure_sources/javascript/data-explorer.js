@@ -114,12 +114,16 @@
     elements.status.value = `${state.visibleRows.length} of ${table.rows.length}`;
     elements.status.textContent = elements.status.value;
     elements.empty.hidden = state.visibleRows.length !== 0;
+    elements.empty.textContent = "No matching rows.";
     updateDownloadLink();
   }
 
   function renderRow(row, table, columns) {
     const tableRow = document.createElement("tr");
     tableRow.className = `modality-${row.modality}`;
+    if (state.kind === "sessions" || state.kind === "dataAccess") {
+      tableRow.dataset.sessionId = row.values[0];
+    }
     columns.forEach(({ header, index }) => {
       const value = row.values[index];
       const cell = document.createElement("td");
@@ -214,12 +218,49 @@
     return `"${String(value).replaceAll('"', '""')}"`;
   }
 
+  function focusDataAccess(sessionId, modality) {
+    selectView("interactive");
+    selectTable("dataAccess");
+    elements.modality.value = modality;
+    elements.search.value = sessionId;
+    renderTable();
+    const row = Array.from(elements.body.querySelectorAll("tr")).find(
+      (candidate) => candidate.dataset.sessionId === sessionId,
+    );
+    if (!row) {
+      elements.empty.textContent = `No Data Access record is available for ${sessionId}.`;
+      return;
+    }
+    row.classList.add("selected-session");
+    row.tabIndex = -1;
+    row.focus({ preventScroll: true });
+    row.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+
+  function activateStaticSession(event) {
+    const target = event.target.closest(".session-target.is-clickable");
+    if (!target || (event.type === "keydown" && !["Enter", " "].includes(event.key))) {
+      return;
+    }
+    event.preventDefault();
+    focusDataAccess(target.dataset.sessionId, target.dataset.modality);
+  }
+
   elements.search.addEventListener("input", renderTable);
   elements.modality.addEventListener("change", renderTable);
   elements.context.addEventListener("change", renderTable);
   elements.viewButtons.forEach((button) => {
     button.addEventListener("click", () => selectView(button.dataset.view));
   });
+  elements.staticView.querySelectorAll(".session-target[data-session-id]").forEach((target) => {
+    if (target.dataset.sessionId === "unknown session id") return;
+    target.classList.add("is-clickable");
+    target.setAttribute("role", "link");
+    target.setAttribute("tabindex", "0");
+    target.setAttribute("aria-label", `Open data access for session ${target.dataset.sessionId}`);
+  });
+  elements.staticView.addEventListener("click", activateStaticSession);
+  elements.staticView.addEventListener("keydown", activateStaticSession);
   buildTabs();
   selectTable("animals");
   selectView("interactive");

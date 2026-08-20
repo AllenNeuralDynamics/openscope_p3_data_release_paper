@@ -74,11 +74,38 @@ html.is-embedded .explorer { min-height: 0; }
   background: #fff;
 }
 
-.static-shell img {
+.static-shell svg {
   width: 100%;
   min-width: 900px;
   height: auto;
   display: block;
+}
+
+.static-shell .session-qc-outline,
+.static-shell .session-qc-tags {
+  pointer-events: none;
+}
+
+.static-shell .session-target {
+  cursor: help;
+}
+
+.static-shell .session-target.is-clickable {
+  cursor: pointer;
+}
+
+.static-shell .session-target:hover .session-block,
+.static-shell .session-target:focus .session-block {
+  filter: brightness(0.88);
+}
+
+.static-shell .session-target:hover .session-block[fill="none"],
+.static-shell .session-target:focus .session-block[fill="none"] {
+  fill: #e8eceb;
+}
+
+.static-shell .session-target.is-clickable:focus {
+  outline: none;
 }
 
 #interactive-view[hidden],
@@ -254,6 +281,10 @@ tbody tr:nth-child(even) td {
 
 tbody tr:hover td {
   background: #ecefee;
+}
+
+tbody tr.selected-session td {
+  background: #dfeaed;
 }
 
 tbody td:first-child {

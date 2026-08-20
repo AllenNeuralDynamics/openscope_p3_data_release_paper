@@ -1362,13 +1362,13 @@ def write_data_explorer_html(
     payload = load_publication_table_data()
     if refresh_static:
         write_session_inventory_svg(static_output)
-    static_data = base64.b64encode(normalized_text_bytes(static_output)).decode()
+    static_svg = normalized_text_bytes(static_output).decode("utf-8")
     template = (JAVASCRIPT_DIR / "data-explorer.html").read_text(encoding="utf-8")
     stylesheet = load_figure_stylesheet("data-explorer.css")
     javascript = (JAVASCRIPT_DIR / "data-explorer.js").read_text(encoding="utf-8")
     html = (
         template.replace("__DATA_EXPLORER_CSS__", stylesheet)
-        .replace("__SESSION_INVENTORY_IMAGE__", f"data:image/svg+xml;base64,{static_data}")
+        .replace("__SESSION_INVENTORY_SVG__", static_svg)
         .replace(
             "__DATA_EXPLORER_DATA__",
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
@@ -5179,12 +5179,21 @@ def append_session_block(
     height: float,
     context: str,
     qc_kind: str,
+    session_id: str | None = None,
+    modality: str | None = None,
     qc_tag_numbers: list[int] | None = None,
     element_class: str | None = None,
     overlays: list[str] | None = None,
 ) -> None:
     color = SESSION_CONTEXT_COLORS[context]
     class_attribute = f' class="{element_class}"' if element_class else ""
+    session_attribute = (
+        f' data-session-id="{escape(session_id, quote=True)}"' if session_id else ""
+    )
+    modality_attribute = (
+        f' data-modality="{escape(modality, quote=True)}"' if modality else ""
+    )
+    title = f"<title>{escape(session_id)}</title>" if session_id else ""
     block_inset = 1.5
     block_x = x + block_inset
     block_y = y + block_inset
@@ -5192,16 +5201,17 @@ def append_session_block(
     block_height = height - 2 * block_inset
     if qc_kind == "session-fail":
         svg.append(
+            f'<g class="session-target"{session_attribute}{modality_attribute}>{title}'
             f'<rect{class_attribute} x="{block_x:.2f}" y="{block_y:.2f}" '
             f'width="{block_width:.2f}" height="{block_height:.2f}" fill="none" '
-            f'stroke="{color}" stroke-width="2"/>'
+            f'stroke="{color}" stroke-width="2" pointer-events="all"/></g>'
         )
         overlay_target = overlays if overlays is not None else svg
         overlay_target.append(
             f'<rect class="session-qc-outline" data-qc-kind="{qc_kind}" '
             f'x="{block_x:.2f}" y="{block_y:.2f}" '
             f'width="{block_width:.2f}" height="{block_height:.2f}" '
-            f'fill="none" stroke="{color}" stroke-width="2"/>'
+            f'fill="none" stroke="{color}" stroke-width="2" pointer-events="none"/>'
         )
     elif qc_kind == "missing":
         svg.append(
@@ -5211,9 +5221,10 @@ def append_session_block(
         )
     else:
         svg.append(
+            f'<g class="session-target"{session_attribute}{modality_attribute}>{title}'
             f'<rect{class_attribute} x="{block_x:.2f}" y="{block_y:.2f}" '
             f'width="{block_width:.2f}" height="{block_height:.2f}" '
-            f'fill="{color}" stroke="{color}" stroke-width="2"/>'
+            f'fill="{color}" stroke="{color}" stroke-width="2"/></g>'
         )
     if qc_tag_numbers:
         overlay_target = overlays if overlays is not None else svg
@@ -5231,7 +5242,7 @@ def append_session_block(
             second_line = ",".join(str(number) for number in qc_tag_numbers[3:])
             overlay_target.append(
                 f'<text class="session-qc-tags" data-qc-tags="{label}" '
-                f'font-size="{FIGURE_TYPE_SMALL}" {text_style}>'
+                f'font-size="{FIGURE_TYPE_SMALL}" pointer-events="none" {text_style}>'
                 f'<tspan x="{center_x:.2f}" y="{y + height / 2 - 1.25:.2f}">'
                 f'{first_line}</tspan>'
                 f'<tspan x="{center_x:.2f}" y="{y + height / 2 + 7.25:.2f}">'
@@ -5241,7 +5252,8 @@ def append_session_block(
             overlay_target.append(
                 f'<text class="session-qc-tags" data-qc-tags="{label}" '
                 f'x="{center_x:.2f}" y="{y + height / 2 + 3.6:.2f}" '
-                f'font-size="{FIGURE_TYPE_SMALL}" {text_style}>{label}</text>'
+                f'font-size="{FIGURE_TYPE_SMALL}" pointer-events="none" '
+                f'{text_style}>{label}</text>'
             )
 
 
@@ -5318,8 +5330,9 @@ def write_session_inventory_svg(
 
     svg = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
-        f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
-        '<title id="title">Recording sessions per mouse across three modalities</title>',
+        f'viewBox="0 0 {width} {height}" role="img" '
+        'aria-label="Recording sessions per mouse across three modalities" '
+        'aria-describedby="description">',
         '<desc id="description">Three panels show context-colored sessions for Neuropixels, '
         'mesoscope, and SLAP2 mice, grouped by predictive-processing cohort and annotated '
         'with session quality-control status.</desc>',
@@ -5391,6 +5404,15 @@ def write_session_inventory_svg(
                     height=bar_height,
                     context=session["context"],
                     qc_kind=session_qc_kind(record, modality),
+                    session_id=(
+                        record["source_session_id"]
+                        if record is not None
+                        and record["source_session_id"] not in {"", "aborted"}
+                        else "unknown session id"
+                        if record is not None
+                        else None
+                    ),
+                    modality=modality,
                     qc_tag_numbers=session_qc_tag_numbers(
                         record, displayed_qc_tag_numbers
                     ),
