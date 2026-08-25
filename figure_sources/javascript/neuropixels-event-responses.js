@@ -4,8 +4,7 @@
   const data = JSON.parse(
     document.getElementById("neuropixels-event-data").textContent,
   );
-  const time = data.analysisParameters.timeBinCentersSeconds;
-  const binSeconds = data.analysisParameters.binSeconds;
+  let time = [];
   const contextOrder = ["standard", "sensorimotor", "sequence", "duration"];
   const contextLabels = {
     standard: "Standard oddball",
@@ -29,6 +28,8 @@
     qc: "qc",
     decoderLabels: new Set(["mua", "sua"]),
     minimumFiringRateHz: 1,
+    neuronTypes: new Set(["RS", "FS", "SST"]),
+    baselineSubtracted: true,
     scope: "area",
     selectedUnit: null,
     sort: "response",
@@ -37,6 +38,7 @@
     sortedUnits: [],
   };
   const atlasCache = new Map();
+  let renderSequence = 0;
 
   const contextTabs = document.getElementById("context-tabs");
   const eventSelect = document.getElementById("event-select");
@@ -44,6 +46,10 @@
   const areaSelect = document.getElementById("area-select");
   const qcTabs = document.getElementById("qc-tabs");
   const decoderLabelFilter = document.getElementById("decoder-label-filter");
+  const neuronTypeFilter = document.getElementById("neuron-type-filter");
+  const baselineSubtractedControl = document.getElementById(
+    "baseline-subtracted",
+  );
   const minimumFiringRate = document.getElementById("minimum-firing-rate");
   const minimumFiringRateValue = document.getElementById(
     "minimum-firing-rate-value",
@@ -66,12 +72,7 @@
   const loadingMessage = document.getElementById("loading-message");
   const responseCanvas = document.getElementById("response-canvas");
   const responseTitle = document.getElementById("response-title");
-  const baselineResponseCanvas = document.getElementById(
-    "baseline-response-canvas",
-  );
-  const baselineResponseTitle = document.getElementById(
-    "baseline-response-title",
-  );
+  const responseNote = document.getElementById("response-note");
   const sourceNote = document.getElementById("source-note");
   const interactiveView = document.getElementById("interactive-view");
   const staticView = document.getElementById("static-view");
@@ -126,17 +127,16 @@
     if (!atlasCache.has(session.context)) {
       atlasCache.set(
         session.context,
-        Promise.all([
-          fetchGzip(session.countAtlas.path),
-          fetchGzip(session.countSquareAtlas.path),
-        ]).then(([countBuffer, countSquareBuffer]) => ({
+        fetchGzip(session.sdfMeanAtlas.path).then((sdfMeanBuffer) => ({
           baselineMean: decodeFloat32Base64(session.baselineMeanHzBase64),
           baselineStd: decodeFloat32Base64(session.baselineStdHzBase64),
-          counts: new Uint16Array(countBuffer),
-          countSquares: new Uint16Array(countSquareBuffer),
+          quantizationScale: session.sdfMeanAtlas.quantizationScalePerHz,
+          sdfMean: new Uint16Array(sdfMeanBuffer),
           responseDelta: decodeFloat32Base64(session.responseDeltaHzBase64),
           responseContext: decodeFloat32Base64(session.responseContextHzBase64),
           responseControl: decodeFloat32Base64(session.responseControlHzBase64),
+          traceEventIndex: -1,
+          traces: [[], []],
         })),
       );
     }
@@ -160,6 +160,7 @@
         contextLabels[context],
         context === state.context,
         () => {
+          atlasCache.clear();
           state.context = context;
           state.eventIndex = 0;
           state.area = "all";
@@ -214,6 +215,7 @@
       (state.probe === "all" || unit.probe === state.probe) &&
       (state.qc === "all" || unit.qcPass) &&
       state.decoderLabels.has(unit.decoderLabel) &&
+      state.neuronTypes.has(unit.neuronType) &&
       unit.firingRateHz >= state.minimumFiringRateHz
     );
   }
@@ -353,13 +355,15 @@
       option.value = String(unitIndex);
       option.textContent = `Unit ${unit.id} · ${unit.probe} · ${
         unit.location
-      } · ${unit.decoderLabel.toUpperCase()} · ${unit.firingRateHz.toFixed(1)} Hz`;
+      } · ${unit.neuronType} · ${
+        unit.decoderLabel.toUpperCase()
+      } · ${unit.firingRateHz.toFixed(1)} Hz`;
       unitSelect.append(option);
     }
     unitSelect.value = state.selectedUnit === null ? "" : String(state.selectedUnit);
   }
 
-  function countIndex(eventIndex, conditionIndex, unitIndex, binIndex) {
+  function atlasIndex(eventIndex, conditionIndex, unitIndex, binIndex) {
     const session = currentSession();
     const binCount = time.length;
     return (
@@ -369,84 +373,30 @@
     );
   }
 
-  function gaussianKernel() {
-    const sigmaBins =
-      data.analysisParameters.smoothingSigmaSeconds /
-      data.analysisParameters.binSeconds;
-    const radius = Math.ceil(sigmaBins * 3);
-    const weights = [];
-    for (let offset = -radius; offset <= radius; offset += 1) {
-      weights.push(Math.exp(-0.5 * (offset / sigmaBins) ** 2));
-    }
-    const total = weights.reduce((sum, value) => sum + value, 0);
-    return weights.map((value) => value / total);
-  }
-
-  const smoothingKernel = gaussianKernel();
-
-  function smooth(values) {
-    const radius = Math.floor(smoothingKernel.length / 2);
-    return values.map((_, index) => {
-      let sum = 0;
-      let weightSum = 0;
-      smoothingKernel.forEach((weight, kernelIndex) => {
-        const source = index + kernelIndex - radius;
-        if (source >= 0 && source < values.length) {
-          sum += values[source] * weight;
-          weightSum += weight;
-        }
-      });
-      return sum / weightSum;
-    });
-  }
-
-  function smoothStandardErrors(meanVariances) {
-    const radius = Math.floor(smoothingKernel.length / 2);
-    return meanVariances.map((_, index) => {
-      let variance = 0;
-      let weightSum = 0;
-      smoothingKernel.forEach((weight, kernelIndex) => {
-        const source = index + kernelIndex - radius;
-        if (source >= 0 && source < meanVariances.length) {
-          variance += meanVariances[source] * weight * weight;
-          weightSum += weight;
-        }
-      });
-      return Math.sqrt(variance) / weightSum;
-    });
-  }
-
   function unitRateStats(atlas, unitIndex, conditionIndex) {
-    const event = currentSession().events[state.eventIndex];
-    const trials =
-      conditionIndex === 0 ? event.contextTrialCount : event.controlTrialCount;
-    const means = [];
-    const meanVariances = [];
-    time.forEach((_, binIndex) => {
-      const index = countIndex(
-        state.eventIndex,
-        conditionIndex,
-        unitIndex,
-        binIndex,
-      );
-      const sum = atlas.counts[index];
-      const squareSum = atlas.countSquares[index];
-      const mean = sum / trials;
-      const variance =
-        trials > 1
-          ? Math.max(0, (squareSum - (sum * sum) / trials) / (trials - 1))
-          : 0;
-      means.push(mean / binSeconds);
-      meanVariances.push(variance / trials / binSeconds ** 2);
-    });
     return {
-      mean: smooth(means),
-      sem: smoothStandardErrors(meanVariances),
+      mean: unitRateTrace(atlas, unitIndex, conditionIndex),
+      sem: null,
     };
   }
 
   function unitRateTrace(atlas, unitIndex, conditionIndex) {
-    return unitRateStats(atlas, unitIndex, conditionIndex).mean;
+    if (atlas.traceEventIndex !== state.eventIndex) {
+      atlas.traceEventIndex = state.eventIndex;
+      atlas.traces = [[], []];
+    }
+    if (!atlas.traces[conditionIndex][unitIndex]) {
+      atlas.traces[conditionIndex][unitIndex] = time.map((_, binIndex) => {
+        const index = atlasIndex(
+          state.eventIndex,
+          conditionIndex,
+          unitIndex,
+          binIndex,
+        );
+        return atlas.sdfMean[index] / atlas.quantizationScale;
+      });
+    }
+    return atlas.traces[conditionIndex][unitIndex];
   }
 
   function unitHeatmapTrace(atlas, unitIndex) {
@@ -509,7 +459,26 @@
   }
 
   function displayStart() {
-    return state.context === "duration" ? -1.5 : -1;
+    return currentSession().windowSeconds[0];
+  }
+
+  function displayEnd() {
+    return currentSession().windowSeconds[1];
+  }
+
+  function presentationTimingValues(timing) {
+    const start = timing.presentationStartSeconds;
+    const stop = timing.presentationStopSeconds;
+    if (
+      !Number.isFinite(start) ||
+      !Number.isFinite(stop) ||
+      start >= stop ||
+      start < displayStart() ||
+      stop > displayEnd()
+    ) {
+      throw new Error("Mismatch presentation timing is invalid for display.");
+    }
+    return [start, stop];
   }
 
   function peakTime(atlas, unitIndex) {
@@ -533,9 +502,9 @@
 
   function metricLabel() {
     return {
-      mismatch: "mismatch firing rate",
-      control: "control firing rate",
-      difference: "mismatch − control spikes/s",
+      mismatch: "mismatch SDF",
+      control: "control SDF",
+      difference: "mismatch − control SDF",
       "mismatch-zscore": "mismatch baseline z score",
       "control-zscore": "control baseline z score",
     }[state.metric];
@@ -645,11 +614,13 @@
       plot.bottom - plot.top,
     );
     const ticks =
-      state.context === "duration" ? [-1.5, -1, 0, 1, 2] : [-1, 0, 1, 2];
+      state.context === "duration"
+        ? [-1.5, -1, 0, 1, 1.5]
+        : [-0.75, -0.5, 0, 0.5, 0.75];
     for (const tick of ticks) {
       const x =
         plot.left +
-        ((tick - displayStart()) / (time.at(-1) - displayStart())) *
+        ((tick - displayStart()) / (displayEnd() - displayStart())) *
           (plot.right - plot.left);
       context.strokeStyle = tick === 0 ? "#303536" : "#d0d4d2";
       context.setLineDash(tick === 0 ? [6, 5] : []);
@@ -669,21 +640,11 @@
       plot.bottom + 59,
     );
     const timing = session.events[state.eventIndex].timing.context;
-    const timingValues = [
-      timing.previousPresentationStartSeconds,
-      timing.previousPresentationStopSeconds,
-      timing.presentationStartSeconds,
-      timing.presentationStopSeconds,
-    ].filter(
-      (value) =>
-        Number.isFinite(value) &&
-        value >= displayStart() &&
-        value <= time.at(-1),
-    );
+    const timingValues = presentationTimingValues(timing);
     for (const value of [...new Set(timingValues)]) {
       const x =
         plot.left +
-        ((value - displayStart()) / (time.at(-1) - displayStart())) *
+        ((value - displayStart()) / (displayEnd() - displayStart())) *
           (plot.right - plot.left);
       context.strokeStyle = Math.abs(value) < 1e-9 ? "#303536" : "#59605e";
       context.setLineDash([6, 5]);
@@ -720,7 +681,7 @@
     );
   }
 
-  function meanAndSd(traces) {
+  function meanAndSem(traces) {
     const mean = [];
     const sem = [];
     for (let bin = 0; bin < time.length; bin += 1) {
@@ -732,10 +693,12 @@
       }
       const average = values.reduce((sum, value) => sum + value, 0) / values.length;
       const variance =
-        values.reduce((sum, value) => sum + (value - average) ** 2, 0) /
-        values.length;
+        values.length > 1
+          ? values.reduce((sum, value) => sum + (value - average) ** 2, 0) /
+            (values.length - 1)
+          : 0;
       mean.push(average);
-      sem.push(Math.sqrt(variance));
+      sem.push(Math.sqrt(variance / values.length));
     }
     return { mean, sem };
   }
@@ -752,10 +715,10 @@
       };
     }
     const indices = filteredUnitIndices();
-    const context = meanAndSd(
+    const context = meanAndSem(
       indices.map((index) => unitRateTrace(atlas, index, 0)),
     );
-    const control = meanAndSd(
+    const control = meanAndSem(
       indices.map((index) => unitRateTrace(atlas, index, 1)),
     );
     return {
@@ -790,7 +753,7 @@
       };
     }
     const indices = filteredUnitIndices();
-    const context = meanAndSd(
+    const context = meanAndSem(
       indices.map((unitIndex) => {
         const baseline = atlas.baselineMean[baselineOffset(unitIndex, 0)];
         return unitRateTrace(atlas, unitIndex, 0).map(
@@ -798,7 +761,7 @@
         );
       }),
     );
-    const control = meanAndSd(
+    const control = meanAndSem(
       indices.map((unitIndex) => {
         const baseline = atlas.baselineMean[baselineOffset(unitIndex, 1)];
         return unitRateTrace(atlas, unitIndex, 1).map(
@@ -888,7 +851,7 @@
   function responseX(index, plot) {
     return (
       plot.left +
-      ((time[index] - displayStart()) / (time.at(-1) - displayStart())) *
+      ((time[index] - displayStart()) / (displayEnd() - displayStart())) *
         (plot.right - plot.left)
     );
   }
@@ -902,6 +865,10 @@
     let drawing = false;
     values.forEach((value, index) => {
       if (time[index] < displayStart()) return;
+      if (value === null || !Number.isFinite(value)) {
+        drawing = false;
+        return;
+      }
       const x = responseX(index, plot);
       const y =
         plot.bottom -
@@ -923,7 +890,18 @@
     context.beginPath();
     const visible = values
       .map((_, index) => index)
-      .filter((index) => time[index] >= displayStart());
+      .filter(
+        (index) =>
+          time[index] >= displayStart() &&
+          values[index] !== null &&
+          Number.isFinite(values[index]) &&
+          sem[index] !== null &&
+          Number.isFinite(sem[index]),
+      );
+    if (!visible.length) {
+      context.restore();
+      return;
+    }
     visible.forEach((index, position) => {
       const value = values[index];
       const x = responseX(index, plot);
@@ -960,12 +938,12 @@
       const startX =
         plot.left +
         ((timing.presentationStartSeconds - displayStart()) /
-          (time.at(-1) - displayStart())) *
+          (displayEnd() - displayStart())) *
           (plot.right - plot.left);
       const stopX =
         plot.left +
         ((timing.presentationStopSeconds - displayStart()) /
-          (time.at(-1) - displayStart())) *
+          (displayEnd() - displayStart())) *
           (plot.right - plot.left);
       context.fillStyle = "rgba(90, 99, 96, 0.09)";
       context.fillRect(startX, plot.top, stopX - startX, plot.bottom - plot.top);
@@ -987,11 +965,13 @@
       context.fillText(formatRateTick(value), plot.left - 10, y + 6);
     }
     const ticks =
-      state.context === "duration" ? [-1.5, -1, 0, 1, 2] : [-1, 0, 1, 2];
+      state.context === "duration"
+        ? [-1.5, -1, 0, 1, 1.5]
+        : [-0.75, -0.5, 0, 0.5, 0.75];
     for (const tick of ticks) {
       const x =
         plot.left +
-        ((tick - displayStart()) / (time.at(-1) - displayStart())) *
+        ((tick - displayStart()) / (displayEnd() - displayStart())) *
           (plot.right - plot.left);
       context.strokeStyle = tick === 0 ? "#303536" : "#d5d9d7";
       context.setLineDash(tick === 0 ? [6, 5] : []);
@@ -1003,21 +983,11 @@
       context.textAlign = "center";
       context.fillText(String(tick), x, plot.bottom + 27);
     }
-    const timingValues = [
-      timing.previousPresentationStartSeconds,
-      timing.previousPresentationStopSeconds,
-      timing.presentationStartSeconds,
-      timing.presentationStopSeconds,
-    ].filter(
-      (value) =>
-        Number.isFinite(value) &&
-        value >= displayStart() &&
-        value <= time.at(-1),
-    );
+    const timingValues = presentationTimingValues(timing);
     for (const value of [...new Set(timingValues)]) {
       const x =
         plot.left +
-        ((value - displayStart()) / (time.at(-1) - displayStart())) *
+        ((value - displayStart()) / (displayEnd() - displayStart())) *
           (plot.right - plot.left);
       context.strokeStyle = Math.abs(value) < 1e-9 ? "#303536" : "#59605e";
       context.setLineDash([6, 5]);
@@ -1072,47 +1042,55 @@
       "aria-label",
       `${state.scope === "unit" ? "Individual-unit" : "Area-mean"} ${
         baselineSubtracted ? "baseline-subtracted " : ""
-      }mismatch and control firing-rate traces.`,
+      }mismatch and control spike-density functions.`,
     );
   }
 
   async function render() {
+    const sequence = ++renderSequence;
     const session = currentSession();
     loadingMessage.hidden = false;
     try {
       const atlas = await loadAtlas(session);
+      if (sequence !== renderSequence) return;
       drawHeatmap(atlas);
       if (state.selectedUnit !== null) {
-        const raw = responseTraces(atlas);
-        const baseline = baselineSubtractedTraces(atlas);
-        drawResponsePanel(responseCanvas, raw, false);
-        drawResponsePanel(baselineResponseCanvas, baseline, true);
+        const traces = state.baselineSubtracted
+          ? baselineSubtractedTraces(atlas)
+          : responseTraces(atlas);
+        drawResponsePanel(responseCanvas, traces, state.baselineSubtracted);
         const selection =
           state.scope === "area"
             ? state.area === "all"
               ? "Selected units"
               : selectedAreaLabel()
             : `Unit ${session.units[state.selectedUnit].id}`;
-        responseTitle.textContent = `${selection} raw firing rate`;
-        baselineResponseTitle.textContent = `${selection} baseline-subtracted firing rate`;
+        responseTitle.textContent = `${selection} ${
+          state.baselineSubtracted ? "baseline-subtracted " : ""
+        }spike-density function`;
+        responseNote.textContent = `${
+          state.scope === "unit"
+            ? "Individual-unit traces are shown without an uncertainty band"
+            : "Shading shows ±1 SEM across units"
+        }; dashed guides mark mismatch onset and offset.`;
       } else {
-        for (const canvas of [responseCanvas, baselineResponseCanvas]) {
-          const context = canvasContext(canvas);
-          context.fillStyle = "#68706d";
-          context.textAlign = "center";
-          context.font = '22px "Myriad Pro", Arial, sans-serif';
-          context.fillText(
-            "No units match the current filters.",
-            canvas.width / 2,
-            canvas.height / 2,
-          );
-        }
-        responseTitle.textContent = "Raw firing rate";
-        baselineResponseTitle.textContent = "Baseline-subtracted firing rate";
+        const context = canvasContext(responseCanvas);
+        context.fillStyle = "#68706d";
+        context.textAlign = "center";
+        context.font = '22px "Myriad Pro", Arial, sans-serif';
+        context.fillText(
+          "No units match the current filters.",
+          responseCanvas.width / 2,
+          responseCanvas.height / 2,
+        );
+        responseTitle.textContent = "Spike-density function";
+        responseNote.textContent =
+          "Dashed guides mark mismatch onset and offset.";
       }
       sourceNote.textContent = `${session.sessionId} · mouse ${session.subject} · DANDI:${session.asset.dandisetId} · ${session.unitCount.toLocaleString()} sorted units`;
       loadingMessage.hidden = true;
     } catch (error) {
+      if (sequence !== renderSequence) return;
       loadingMessage.textContent = error.message;
       throw error;
     }
@@ -1125,6 +1103,7 @@
   }
 
   function configureSession() {
+    time = currentSession().timeBinCentersSeconds;
     document.documentElement.style.setProperty(
       "--accent",
       contextColors[state.context],
@@ -1159,6 +1138,20 @@
         render();
       });
     });
+  neuronTypeFilter.querySelectorAll("[data-neuron-type]").forEach((element) => {
+    element.addEventListener("change", () => {
+      const neuronType = element.dataset.neuronType;
+      if (element.checked) state.neuronTypes.add(neuronType);
+      else state.neuronTypes.delete(neuronType);
+      renderAreaSelect();
+      state.selectedUnit = null;
+      render();
+    });
+  });
+  baselineSubtractedControl.addEventListener("change", () => {
+    state.baselineSubtracted = baselineSubtractedControl.checked;
+    render();
+  });
   minimumFiringRate.addEventListener("input", () => {
     state.minimumFiringRateHz = Number(minimumFiringRate.value);
     minimumFiringRateValue.textContent = `≥${state.minimumFiringRateHz.toFixed(1)} Hz`;
@@ -1249,11 +1242,13 @@
       ),
     );
     const unitIndex = state.sortedUnits[row];
+    const capturedContext = state.context;
+    const capturedEventIndex = state.eventIndex;
     const unit = currentSession().units[unitIndex];
     const relativeTime =
       displayStart() +
       ((x - plot.left) / (plot.right - plot.left)) *
-        (time.at(-1) - displayStart());
+        (displayEnd() - displayStart());
     const binIndex = time.reduce(
       (best, value, index) =>
         Math.abs(value - relativeTime) < Math.abs(time[best] - relativeTime)
@@ -1262,6 +1257,14 @@
       0,
     );
     const atlas = await loadAtlas(currentSession());
+    if (
+      state.context !== capturedContext ||
+      state.eventIndex !== capturedEventIndex ||
+      !state.sortedUnits.includes(unitIndex)
+    ) {
+      heatmapTooltip.hidden = true;
+      return;
+    }
     const value = unitHeatmapTrace(atlas, unitIndex)[binIndex];
     const unitLabel = state.metric.endsWith("zscore") ? "z" : "spikes/s";
     heatmapTooltip.textContent = `Unit ${unit.id} · ${unit.probe} · ${
@@ -1270,7 +1273,8 @@
       value === null || !Number.isFinite(value)
         ? "n/a"
         : `${value.toFixed(2)} ${unitLabel}`
-    } · ${unit.decoderLabel.toUpperCase()} · ${unit.firingRateHz.toFixed(
+    } · ${unit.neuronType} · ${unit.decoderLabel.toUpperCase()} · ${
+      unit.firingRateHz.toFixed(
       1,
     )} Hz · ${unit.qcPass ? "QC pass" : "QC fail"}`;
     heatmapTooltip.style.left = `${event.clientX + 12}px`;

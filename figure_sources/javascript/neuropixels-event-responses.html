@@ -41,10 +41,18 @@ __NEUROPIXELS_EVENT_CSS__
             </div>
           </fieldset>
           <fieldset id="decoder-label-filter">
-           <legend>Decoder label</legend>
+           <legend>Sorter label</legend>
            <div class="checkbox-group">
              <label><input type="checkbox" data-decoder-label="mua" checked> MUA</label>
              <label><input type="checkbox" data-decoder-label="sua" checked> SUA</label>
+           </div>
+          </fieldset>
+          <fieldset id="neuron-type-filter">
+           <legend>Neuron type</legend>
+           <div class="checkbox-group">
+             <label><input type="checkbox" data-neuron-type="RS" checked> RS</label>
+             <label><input type="checkbox" data-neuron-type="FS" checked> FS</label>
+             <label><input type="checkbox" data-neuron-type="SST" checked> SST</label>
            </div>
           </fieldset>
           <label class="range-control">
@@ -66,6 +74,13 @@ __NEUROPIXELS_EVENT_CSS__
               <button type="button" data-scope="unit" aria-pressed="false">Individual unit</button>
             </div>
           </fieldset>
+          <label class="checkbox-control">
+            Response value
+            <span>
+              <input id="baseline-subtracted" type="checkbox" checked>
+              Subtract baseline
+            </span>
+          </label>
           <label id="response-selection-control">
             <span id="response-selection-label">Area</span>
             <select id="area-select" aria-label="Area for mean response"></select>
@@ -130,28 +145,19 @@ __NEUROPIXELS_EVENT_CSS__
           </div>
         </section>
 
-        <section class="response-stack">
-          <article class="response-panel">
-            <h2 id="response-title">Area-mean PSTH</h2>
-            <canvas
-              id="response-canvas"
-              width="1200"
-              height="360"
-              role="img"
-              aria-label="Mismatch and matched-control peri-stimulus time histograms"
-            ></canvas>
-          </article>
-          <article class="response-panel">
-            <h2 id="baseline-response-title">Baseline-subtracted firing rate</h2>
-            <canvas
-              id="baseline-response-canvas"
-              width="1200"
-              height="360"
-              role="img"
-              aria-label="Baseline-subtracted mismatch and matched-control firing rates"
-            ></canvas>
-          </article>
-        </section>
+        <article class="response-panel">
+          <h2 id="response-title">Area-mean spike-density function</h2>
+          <p id="response-note" class="response-note">
+            Shading shows ±1 SEM across units; dashed guides mark mismatch onset and offset.
+          </p>
+          <canvas
+            id="response-canvas"
+            width="1200"
+            height="360"
+            role="img"
+            aria-label="Mismatch and matched-control spike-density functions"
+          ></canvas>
+        </article>
         <p class="source-note" id="source-note"></p>
       </section>
 

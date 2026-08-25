@@ -1,5 +1,5 @@
 {
-  "analysisSignature": "830d9e13228ade60d57a8abaa397da17b2e83795c2a8b80f5a75767a3f39dddb",
+  "analysisSignature": "e9dc1d94d8c167a11804591ae506bcc79c4dfcb722370b017ef21e84b979ea06",
   "configuredSessions": [
     {
       "asset_id": "03973a42-cf55-476f-80d7-85bc402fa57b",
@@ -36,52 +36,32 @@
   ],
   "media": [
     {
-      "path": "figure_sources/media/neuropixels-event-responses/duration-count-squares.u16.gz",
-      "sha256": "732664aa3254c87311c10b2cebfcc7f34a0b2735833a597256a152cef82c7395",
-      "size": 2442090
+      "path": "figure_sources/media/neuropixels-event-responses/duration-sdf-mean.u16.gz",
+      "sha256": "7b63ec610b5b320306a82c98726585657e5a30189de7eff1472ce81b155bbed3",
+      "size": 25303746
     },
     {
-      "path": "figure_sources/media/neuropixels-event-responses/duration-counts.u16.gz",
-      "sha256": "8b9c30790c067f2b517f6d2ce66de799fd629b0a34ee2d01ea2b9d72e672415f",
-      "size": 2210027
+      "path": "figure_sources/media/neuropixels-event-responses/motor-sdf-mean.u16.gz",
+      "sha256": "7e9b6aecbdcc1b2b15f90adf3f0430334b23d98785699e0f59f351e5ccef7423",
+      "size": 6615242
     },
     {
-      "path": "figure_sources/media/neuropixels-event-responses/motor-count-squares.u16.gz",
-      "sha256": "5190aff0a2854b4272bfd3efefba80716e90aa25908f5a67b3639c6d373d9628",
-      "size": 1355925
+      "path": "figure_sources/media/neuropixels-event-responses/sequence-sdf-mean.u16.gz",
+      "sha256": "981c420f46ddf5f6de3f105400875d53559e1ad58c764ef82f653747095bd061",
+      "size": 14241871
     },
     {
-      "path": "figure_sources/media/neuropixels-event-responses/motor-counts.u16.gz",
-      "sha256": "fd86d86c855016cd357f4c8dfe67f24ca39cebdad22115cfc62b6761b0a47ef2",
-      "size": 1214231
-    },
-    {
-      "path": "figure_sources/media/neuropixels-event-responses/sequence-count-squares.u16.gz",
-      "sha256": "b18cc6f97d314bbfe28f996d2474734bcb12ab1c3d671b875a6ac2a1658dea1b",
-      "size": 2545623
-    },
-    {
-      "path": "figure_sources/media/neuropixels-event-responses/sequence-counts.u16.gz",
-      "sha256": "e883fd2f179398b5cfb2159bcc7780920b9b5cc6fb4393222101d89d8a88af7b",
-      "size": 2309419
-    },
-    {
-      "path": "figure_sources/media/neuropixels-event-responses/standard-count-squares.u16.gz",
-      "sha256": "a6cdb047421d970ff435bb1a59491cc74c82778ea4b69f83e12644c72d31ee5c",
-      "size": 2301838
-    },
-    {
-      "path": "figure_sources/media/neuropixels-event-responses/standard-counts.u16.gz",
-      "sha256": "d9fb79082800b2da9ed4643f6f45f0fc7b97e375a1f83f7aa928c52bdb81804a",
-      "size": 2091922
+      "path": "figure_sources/media/neuropixels-event-responses/standard-sdf-mean.u16.gz",
+      "sha256": "02c4353a82a5eeb96b0e89ce0d443c2f2b53f3798d7b81af66570d3f91445c12",
+      "size": 12153970
     }
   ],
   "module": {
     "path": "src/openscope_p3_publication/neural_responses.py",
-    "sha256": "d3ee66fc874575a84e95e204a0c8aa083edb55ee08d94310bce8d24c8080e804"
+    "sha256": "c6bfa6fb77fdd8abb2dde1c56da7db7c0ab23b6dccb54775b057c2d2621bf20f"
   },
   "outputPath": "figure_sources/data/neuropixels-event-responses.json",
-  "outputSha256": "dde381826891b3ac0d8f1aae3bc34fafdbec15af795654f05f2b93cb58efd147",
+  "outputSha256": "fd170e902837f06db310a7d845c29440539a858ee78f32bf4f1bfe9327ad3664",
   "rastermap": {
     "packageVersion": "1.0",
     "parameters": {
@@ -98,13 +78,13 @@
       "time_lag_window": 0
     }
   },
-  "retrievedDate": "2026-08-19",
+  "retrievedDate": "2026-08-24",
   "script": {
     "path": "scripts/extract_neuropixels_event_responses.py",
-    "sha256": "7be70764e86dab16e9abcba6d41e23acbc0bb61de622dd055cec51e720a6cb96"
+    "sha256": "d413845a4a9557596d287e8c357cd38103944261f8e17b55e70f12c0991aae5f"
   },
   "sessionCount": 4,
   "totalQcUnits": 7266,
   "totalUnits": 13682,
-  "version": 3
+  "version": 7
 }

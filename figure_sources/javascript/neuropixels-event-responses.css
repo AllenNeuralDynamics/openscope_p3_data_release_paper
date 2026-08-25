@@ -184,6 +184,23 @@ select {
   accent-color: var(--accent);
 }
 
+.checkbox-control > span {
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink);
+  font-size: var(--figure-type-control);
+  font-weight: 650;
+}
+
+.checkbox-control input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
 .range-control input[type="range"] {
   display: block;
   width: 100%;
@@ -226,10 +243,15 @@ select {
 }
 
 .panel-heading p,
+.response-note,
 .source-note {
   margin-bottom: 0;
   color: var(--muted);
   font-size: var(--figure-type-body);
+}
+
+.response-note {
+  margin-bottom: 4px;
 }
 
 .color-key {
@@ -294,11 +316,6 @@ canvas {
 
 .loading-message[hidden] {
   display: none;
-}
-
-.response-stack {
-  display: grid;
-  gap: 0;
 }
 
 .static-view {

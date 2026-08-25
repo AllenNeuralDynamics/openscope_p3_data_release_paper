@@ -593,6 +593,16 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "all 16 conditions" in manuscript
     assert "Z-score limits default to ±3" in manuscript
     assert "Rastermap 1.0 ordering" in manuscript
+    assert "causal exponential spike-density kernel" in manuscript
+    assert "standard-oddball, sensorimotor, and sequence windows span −0.75 to 0.75 s" in manuscript
+    assert "duration windows span −1.5 to 1.5 s" in manuscript
+    assert "10τ (50 ms) support" in manuscript
+    assert "native 1 ms SDF is retained" in manuscript
+    assert "without an uncertainty band" in manuscript
+    assert "Dashed guides mark only the selected mismatch presentation" in manuscript
+    assert "SST units have a positive 5 Hz optotagging response" in manuscript
+    assert "±1 SEM across neurons" in manuscript
+    assert "**Subtract baseline** control" in manuscript
     assert "48 frontal, visual, hippocampal, or thalamic areas" in manuscript
     assert "13,682 sorted units" in manuscript
     assert "7,266 passed the manuscript QC thresholds" in manuscript

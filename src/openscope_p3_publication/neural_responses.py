@@ -6,10 +6,18 @@ from dataclasses import dataclass
 
 from .pupil_responses import EVENT_DEFINITIONS, EventDefinition, event_matches
 
-WINDOW_START_SECONDS = -1.5
-WINDOW_END_SECONDS = 2.0
-BIN_SECONDS = 0.02
-SMOOTHING_SIGMA_SECONDS = 0.04
+CONTEXT_WINDOWS_SECONDS = {
+    "standard": (-0.75, 0.75),
+    "sensorimotor": (-0.75, 0.75),
+    "sequence": (-0.75, 0.75),
+    "duration": (-1.5, 1.5),
+}
+BIN_SECONDS = 0.001
+BASELINE_BIN_SECONDS = 0.02
+SDF_SOURCE_BIN_SECONDS = 0.001
+SDF_TAU_SECONDS = 0.005
+SDF_KERNEL_DURATION_TAU = 10
+SDF_QUANTIZATION_SCALE = 20
 QC_THRESHOLDS = {
     "amplitude_cutoff_max": 0.1,
     "isi_violations_ratio_max": 0.5,
@@ -89,13 +97,21 @@ NEURAL_SESSIONS = (
 )
 
 
-def relative_bin_edges() -> list[float]:
-    count = round((WINDOW_END_SECONDS - WINDOW_START_SECONDS) / BIN_SECONDS)
-    return [WINDOW_START_SECONDS + index * BIN_SECONDS for index in range(count + 1)]
+def context_window_seconds(context: str) -> tuple[float, float]:
+    try:
+        return CONTEXT_WINDOWS_SECONDS[context]
+    except KeyError as exc:
+        raise ValueError(f"Unknown neural-response context: {context}") from exc
 
 
-def relative_bin_centers() -> list[float]:
-    edges = relative_bin_edges()
+def relative_bin_edges(context: str) -> list[float]:
+    start, stop = context_window_seconds(context)
+    count = round((stop - start) / BIN_SECONDS)
+    return [start + index * BIN_SECONDS for index in range(count + 1)]
+
+
+def relative_bin_centers(context: str) -> list[float]:
+    edges = relative_bin_edges(context)
     return [(left + right) / 2 for left, right in zip(edges[:-1], edges[1:], strict=True)]
 
 
@@ -216,19 +232,34 @@ def qc_passes(
     )
 
 
-def gaussian_kernel(
+def classify_neuron_type(
     *,
-    bin_seconds: float = BIN_SECONDS,
-    sigma_seconds: float = SMOOTHING_SIGMA_SECONDS,
-    radius_sigma: float = 3,
+    peak_to_valley_ms: float,
+    major_parent: str,
+    sst_optotagged: bool,
+) -> str:
+    if sst_optotagged:
+        return "SST"
+    if not math.isfinite(peak_to_valley_ms) or peak_to_valley_ms < 0:
+        raise ValueError("Peak-to-valley duration must be finite and nonnegative.")
+    if major_parent == "STR":
+        return "RS"
+    fast_spiking_limit_ms = 0.28 if major_parent == "TH" else 0.4
+    return "FS" if peak_to_valley_ms <= fast_spiking_limit_ms else "RS"
+
+
+def sdf_kernel(
+    *,
+    bin_seconds: float = SDF_SOURCE_BIN_SECONDS,
+    tau_seconds: float = SDF_TAU_SECONDS,
+    duration_tau: int = SDF_KERNEL_DURATION_TAU,
 ) -> list[float]:
-    if bin_seconds <= 0 or sigma_seconds <= 0 or radius_sigma <= 0:
-        raise ValueError("Gaussian-kernel parameters must be positive.")
-    sigma_bins = sigma_seconds / bin_seconds
-    radius = max(1, math.ceil(radius_sigma * sigma_bins))
+    if bin_seconds <= 0 or tau_seconds <= 0 or duration_tau < 1:
+        raise ValueError("Spike-density kernel parameters must be positive.")
+    sample_count = max(1, int(duration_tau * tau_seconds / bin_seconds))
     weights = [
-        math.exp(-0.5 * (offset / sigma_bins) ** 2)
-        for offset in range(-radius, radius + 1)
+        math.exp(-(index * bin_seconds) / tau_seconds)
+        for index in range(sample_count)
     ]
     total = sum(weights)
     return [weight / total for weight in weights]
@@ -238,20 +269,17 @@ def smooth_trace(
     values: Sequence[float],
     kernel: Sequence[float] | None = None,
 ) -> list[float]:
-    kernel = gaussian_kernel() if kernel is None else list(kernel)
-    if not kernel or len(kernel) % 2 != 1:
-        raise ValueError("Smoothing kernel must have positive odd length.")
-    radius = len(kernel) // 2
+    kernel = sdf_kernel() if kernel is None else list(kernel)
+    if not kernel:
+        raise ValueError("Smoothing kernel must not be empty.")
     smoothed = []
     for index in range(len(values)):
         weighted = 0.0
-        weight_sum = 0.0
-        for kernel_index, weight in enumerate(kernel):
-            source_index = index + kernel_index - radius
-            if 0 <= source_index < len(values):
+        for lag, weight in enumerate(kernel):
+            source_index = index - lag
+            if source_index >= 0:
                 weighted += float(values[source_index]) * weight
-                weight_sum += weight
-        smoothed.append(weighted / weight_sum)
+        smoothed.append(weighted)
     return smoothed
 
 

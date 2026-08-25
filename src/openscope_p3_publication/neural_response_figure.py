@@ -25,15 +25,20 @@ from .figures import (
     write_svg_output,
 )
 from .neural_responses import (
+    BASELINE_BIN_SECONDS,
     BIN_SECONDS,
+    CONTEXT_WINDOWS_SECONDS,
     NEURAL_SESSIONS,
     QC_THRESHOLDS,
     RASTERMAP_PARAMETERS,
     RASTERMAP_VERSION,
-    SMOOTHING_SIGMA_SECONDS,
-    WINDOW_END_SECONDS,
-    WINDOW_START_SECONDS,
-    smooth_trace,
+    SDF_KERNEL_DURATION_TAU,
+    SDF_QUANTIZATION_SCALE,
+    SDF_SOURCE_BIN_SECONDS,
+    SDF_TAU_SECONDS,
+    classify_neuron_type,
+    context_window_seconds,
+    relative_bin_centers,
 )
 
 DATA_PATH = REPO_ROOT / "figure_sources" / "data" / "neuropixels-event-responses.json"
@@ -110,7 +115,7 @@ def load_neuropixels_event_responses(
 ) -> dict:
     payload = json.loads(data_path.read_text(encoding="utf-8"))
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    if payload.get("version") != 3 or provenance.get("version") != 3:
+    if payload.get("version") != 7 or provenance.get("version") != 7:
         raise RuntimeError("Neuropixels event-response snapshot version is unsupported.")
     if provenance.get("rastermap") != {
         "packageVersion": RASTERMAP_VERSION,
@@ -126,27 +131,51 @@ def load_neuropixels_event_responses(
     parameters = payload.get("analysisParameters", {})
     if (
         parameters.get("binSeconds") != BIN_SECONDS
-        or parameters.get("windowSeconds")
-        != [WINDOW_START_SECONDS, WINDOW_END_SECONDS]
-        or parameters.get("smoothingSigmaSeconds") != SMOOTHING_SIGMA_SECONDS
+        or parameters.get("baselineBinSeconds") != BASELINE_BIN_SECONDS
+        or parameters.get("contextWindowsSeconds")
+        != {
+            context: list(window)
+            for context, window in CONTEXT_WINDOWS_SECONDS.items()
+        }
+        or parameters.get("sdf")
+        != {
+            "displayBinSeconds": BIN_SECONDS,
+            "kernel": "causal exponential",
+            "kernelDurationTau": SDF_KERNEL_DURATION_TAU,
+            "quantizationScalePerHz": SDF_QUANTIZATION_SCALE,
+            "sourceBinSeconds": SDF_SOURCE_BIN_SECONDS,
+            "tauSeconds": SDF_TAU_SECONDS,
+        }
+        or parameters.get("cellTypeClassification")
+        != {
+            "defaultFastSpikingMaximumMs": 0.4,
+            "striatum": "RS",
+            "sst": {
+                "condition": "5 hz pulse train_presentations",
+                "modulationIndexMinimum": 0.1,
+                "pValueMaximum": 0.05,
+            },
+            "sstOverridesWaveformClass": True,
+            "thalamicFastSpikingMaximumMs": 0.28,
+        }
         or parameters.get("qcThresholds") != QC_THRESHOLDS
         or parameters.get("firingRateSource") != "NWB Units firing_rate"
         or parameters.get("rastermap")
         != {
             "input": (
-                "smoothed mismatch baseline z score over the displayed "
-                "peri-event window"
+                "native 1 ms causal-exponential SDF mismatch baseline z score "
+                "over the displayed peri-event window"
             ),
             "packageVersion": RASTERMAP_VERSION,
             "parameters": RASTERMAP_PARAMETERS,
         }
-        or len(parameters.get("timeBinCentersSeconds", [])) != 175
         or parameters.get("responseWindow")
         != "selected row NWB start_time through stop_time"
         or parameters.get("unitDefault")
         != {
             "decoderLabels": ["mua", "sua"],
             "minimumFiringRateHz": 1.0,
+            "neuronTypes": ["RS", "FS", "SST"],
             "numericalQc": "manuscript QC passing",
         }
         or parameters.get("baselineRules")
@@ -178,6 +207,34 @@ def load_neuropixels_event_responses(
             raise RuntimeError("Neuropixels event-response unit inventory is invalid.")
         if len(session["events"]) != 4:
             raise RuntimeError("Neuropixels event-response event coverage is invalid.")
+        expected_window = list(context_window_seconds(session["context"]))
+        expected_time = relative_bin_centers(session["context"])
+        if (
+            session.get("windowSeconds") != expected_window
+            or session.get("timeBinCentersSeconds") != expected_time
+        ):
+            raise RuntimeError("Neuropixels session time grid is invalid.")
+        for event in session["events"]:
+            for condition in ("context", "control"):
+                windows = event["timing"][condition].get(
+                    "presentationWindows",
+                    [],
+                )
+                if (
+                    not windows
+                    or not any(window["rowOffset"] == 0 for window in windows)
+                    or any(
+                        window["startSeconds"] >= window["stopSeconds"]
+                        for window in windows
+                    )
+                    or (
+                        session["context"] == "sensorimotor"
+                        and len(windows) != 1
+                    )
+                ):
+                    raise RuntimeError(
+                        "Neuropixels neighboring presentation timing is invalid."
+                    )
         total_units += unit_count
         total_qc += sum(unit["qcPass"] for unit in session["units"])
         if any(
@@ -185,6 +242,24 @@ def load_neuropixels_event_responses(
             or "areaGroups" not in unit
             or not math.isfinite(unit.get("firingRateHz", math.nan))
             or unit["firingRateHz"] < 0
+            or not math.isfinite(unit.get("peakToValleyMs", math.nan))
+            or unit["peakToValleyMs"] < 0
+            or unit.get("neuronType") not in {"RS", "FS", "SST"}
+            or not isinstance(unit.get("sstOptotagged"), bool)
+            or (
+                unit.get("sstOptotaggingPValue") is not None
+                and not math.isfinite(unit["sstOptotaggingPValue"])
+            )
+            or (
+                unit.get("sstOptotaggingModulationIndex") is not None
+                and not math.isfinite(unit["sstOptotaggingModulationIndex"])
+            )
+            or unit["neuronType"]
+            != classify_neuron_type(
+                peak_to_valley_ms=unit["peakToValleyMs"],
+                major_parent=unit["majorParent"],
+                sst_optotagged=unit["sstOptotagged"],
+            )
             for unit in session["units"]
         ):
             raise RuntimeError("Neuropixels unit metadata are invalid.")
@@ -202,7 +277,7 @@ def load_neuropixels_event_responses(
             start = event_index * unit_count
             if sorted(rastermap_ranks[start : start + unit_count]) != expected_ranks:
                 raise RuntimeError("Neuropixels Rastermap ranks are not a permutation.")
-        for key in ("countAtlas", "countSquareAtlas"):
+        for key in ("sdfMeanAtlas",):
             descriptor = session[key]
             path = SOURCE_MEDIA_DIR / Path(descriptor["path"]).name
             if (
@@ -212,14 +287,21 @@ def load_neuropixels_event_responses(
             ):
                 raise RuntimeError(f"Neuropixels event-response {key} is invalid.")
             referenced_media.add(path.name)
-        count_shape = session["countAtlas"]["shape"]
-        square_shape = session["countSquareAtlas"]["shape"]
-        if count_shape != [4, 2, unit_count, 175]:
-            raise RuntimeError("Neuropixels count-atlas shape is invalid.")
-        if square_shape != count_shape:
-            raise RuntimeError("Neuropixels count-square atlas shape is invalid.")
+        mean_shape = session["sdfMeanAtlas"]["shape"]
+        if mean_shape != [4, 2, unit_count, len(expected_time)]:
+            raise RuntimeError("Neuropixels SDF-mean atlas shape is invalid.")
+        if any(
+            session[key].get("quantizationScalePerHz")
+            != SDF_QUANTIZATION_SCALE
+            for key in ("sdfMeanAtlas",)
+        ):
+            raise RuntimeError("Neuropixels SDF quantization is invalid.")
         for field in ("baselineMeanHzBase64", "baselineStdHzBase64"):
-            if len(float32_values(session[field])) != 4 * 2 * unit_count:
+            values = float32_values(session[field])
+            if (
+                len(values) != 4 * 2 * unit_count
+                or not all(math.isfinite(value) for value in values)
+            ):
                 raise RuntimeError(f"Neuropixels numeric field {field} is invalid.")
         for field in (
             "responseContextHzBase64",
@@ -241,7 +323,7 @@ def copy_neuropixels_event_media(payload: dict) -> None:
     INTERACTIVE_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
     expected = set()
     for session in payload["sessions"]:
-        for key in ("countAtlas", "countSquareAtlas"):
+        for key in ("sdfMeanAtlas",):
             name = Path(session[key]["path"]).name
             source = SOURCE_MEDIA_DIR / name
             target = INTERACTIVE_MEDIA_DIR / name
@@ -256,7 +338,7 @@ def presentation_payload(payload: dict) -> dict:
     copy_neuropixels_event_media(payload)
     result = json.loads(json.dumps(payload, allow_nan=False))
     for session in result["sessions"]:
-        for key in ("countAtlas", "countSquareAtlas"):
+        for key in ("sdfMeanAtlas",):
             name = Path(session[key]["path"]).name
             session[key]["path"] = f"./media/neuropixels-event-responses/{name}"
     return result
@@ -301,7 +383,7 @@ def write_neuropixels_event_html(
     return output
 
 
-def count_index(
+def atlas_index(
     event_index: int,
     condition_index: int,
     unit_index: int,
@@ -316,22 +398,16 @@ def count_index(
 
 
 def unit_rate_trace(
-    counts: array,
+    sdf_mean: array,
     session: dict,
     event_index: int,
     unit_index: int,
     condition_index: int,
 ) -> list[float]:
-    event = session["events"][event_index]
-    bin_count = session["countAtlas"]["shape"][-1]
-    trials = (
-        event["contextTrialCount"]
-        if condition_index == 0
-        else event["controlTrialCount"]
-    )
-    values = [
-        counts[
-            count_index(
+    bin_count = session["sdfMeanAtlas"]["shape"][-1]
+    return [
+        sdf_mean[
+            atlas_index(
                 event_index,
                 condition_index,
                 unit_index,
@@ -340,16 +416,14 @@ def unit_rate_trace(
                 bin_count,
             )
         ]
-        / trials
-        / BIN_SECONDS
+        / SDF_QUANTIZATION_SCALE
         for bin_index in range(bin_count)
     ]
-    return smooth_trace(values)
 
 
 def heatmap_png(
     session: dict,
-    counts: array,
+    sdf_mean: array,
     event_index: int,
     unit_indices: list[int],
     limit: float,
@@ -362,8 +436,8 @@ def heatmap_png(
     visible_bin_count = len(time) - first_visible
     pixels = bytearray()
     for unit_index in unit_indices:
-        context = unit_rate_trace(counts, session, event_index, unit_index, 0)
-        control = unit_rate_trace(counts, session, event_index, unit_index, 1)
+        context = unit_rate_trace(sdf_mean, session, event_index, unit_index, 0)
+        control = unit_rate_trace(sdf_mean, session, event_index, unit_index, 1)
         for context_value, control_value in zip(
             context[first_visible:],
             control[first_visible:],
@@ -491,6 +565,45 @@ def format_rate_tick(value: float) -> str:
     return "0" if abs(value) < 1e-9 else f"{value:g}"
 
 
+def presentation_timing_values(
+    timing: dict,
+    minimum: float,
+    maximum: float,
+) -> list[float]:
+    start = float(timing["presentationStartSeconds"])
+    stop = float(timing["presentationStopSeconds"])
+    if (
+        not math.isfinite(start)
+        or not math.isfinite(stop)
+        or start >= stop
+        or start < minimum
+        or stop > maximum
+    ):
+        raise RuntimeError("Mismatch presentation timing is invalid for display.")
+    return [start, stop]
+
+
+def mean_sem_traces(traces: list[list[float]]) -> tuple[list[float], list[float]]:
+    if not traces:
+        raise ValueError("At least one trace is required.")
+    bin_count = len(traces[0])
+    if any(len(trace) != bin_count for trace in traces):
+        raise ValueError("All traces must have the same length.")
+    means = []
+    sems = []
+    for bin_index in range(bin_count):
+        values = [trace[bin_index] for trace in traces]
+        mean = sum(values) / len(values)
+        variance = (
+            sum((value - mean) ** 2 for value in values) / (len(values) - 1)
+            if len(values) > 1
+            else 0
+        )
+        means.append(mean)
+        sems.append(math.sqrt(variance / len(values)))
+    return means, sems
+
+
 def append_static_rate_plot(
     svg: list[str],
     *,
@@ -500,24 +613,31 @@ def append_static_rate_plot(
     height: float,
     time: list[float],
     event_values: list[float],
+    event_sem: list[float],
     control_values: list[float],
+    control_sem: list[float],
     timing: dict,
     baseline_subtracted: bool,
     display_start: float,
+    display_end: float,
     unit_count: int,
 ) -> None:
     visible = [
         index for index, value in enumerate(time) if value >= display_start
     ]
     values = [
-        trace[index]
-        for trace in (event_values, control_values)
+        value
+        for trace, sem in (
+            (event_values, event_sem),
+            (control_values, control_sem),
+        )
         for index in visible
+        for value in (trace[index] - sem[index], trace[index] + sem[index])
     ]
     lower, upper, y_ticks = static_rate_axis(values, baseline_subtracted)
 
     def px(value: float) -> float:
-        return x + (value - display_start) / (time[-1] - display_start) * width
+        return x + (value - display_start) / (display_end - display_start) * width
 
     def py(value: float) -> float:
         return y + height - (value - lower) / (upper - lower) * height
@@ -546,21 +666,28 @@ def append_static_rate_plot(
                 ),
             ]
         )
-    timing_values = {
-        timing.get("previousPresentationStartSeconds"),
-        timing.get("previousPresentationStopSeconds"),
-        timing.get("presentationStartSeconds"),
-        timing.get("presentationStopSeconds"),
-    }
-    for value in sorted(
-        value
-        for value in timing_values
-        if value is not None and time[0] <= value <= time[-1]
-    ):
+    for value in presentation_timing_values(timing, display_start, display_end):
         svg.append(
             f'<line x1="{px(value):.2f}" y1="{y:.2f}" '
             f'x2="{px(value):.2f}" y2="{y + height:.2f}" '
             'stroke="#707674" stroke-width="1" stroke-dasharray="5 4"/>'
+        )
+    for values, sem, color in (
+        (control_values, control_sem, "#8A918E"),
+        (event_values, event_sem, "#315F73"),
+    ):
+        upper_path = [
+            f"{'L' if position else 'M'} {px(time[index]):.2f} "
+            f"{py(values[index] + sem[index]):.2f}"
+            for position, index in enumerate(visible)
+        ]
+        lower_path = [
+            f"L {px(time[index]):.2f} {py(values[index] - sem[index]):.2f}"
+            for index in reversed(visible)
+        ]
+        svg.append(
+            f'<path d="{" ".join([*upper_path, *lower_path, "Z"])}" '
+            f'fill="{color}" fill-opacity="0.14" stroke="none"/>'
         )
     for values, color, dash in (
         (control_values, "#8A918E", ' stroke-dasharray="8 6"'),
@@ -586,7 +713,11 @@ def append_static_rate_plot(
             ),
         ]
     )
-    ticks = (-1.5, -1, 0, 1, 2) if display_start == -1.5 else (-1, 0, 1, 2)
+    ticks = (
+        (-1.5, -1, 0, 1, 1.5)
+        if display_start == -1.5
+        else (-0.75, -0.5, 0, 0.5, 0.75)
+    )
     for tick in ticks:
         svg.append(
             svg_text(
@@ -615,10 +746,9 @@ def write_neuropixels_event_svg(
     column_width = (width - left - right) / len(columns)
     heatmap_top = matrix_top + matrix_height + 330
     heatmap_height = 260
-    raw_line_top = heatmap_top + heatmap_height + 100
+    line_top = heatmap_top + heatmap_height + 100
     line_height = 145
-    baseline_line_top = raw_line_top + line_height + 62
-    height = baseline_line_top + line_height + 120
+    height = line_top + line_height + 120
     svg = [
         (
             f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
@@ -631,8 +761,8 @@ def write_neuropixels_event_svg(
             f"control firing-rate effects across {len(areas)} frontal, visual, "
             "hippocampal, and "
             "thalamic areas for all events. Panel B shows representative unit heatmaps "
-            "plus raw and baseline-subtracted population PSTHs for one event per "
-            "context.</desc>"
+            "plus baseline-subtracted population spike-density functions for one event "
+            "per context.</desc>"
         ),
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         svg_text(36, 52, "A", size=FIGURE_TYPE_SCALE["panel"], weight=800),
@@ -774,10 +904,17 @@ def write_neuropixels_event_svg(
                 98,
                 heatmap_top - 57,
                 (
-                    "Top 150 QC-passing units by absolute response effect; heatmap "
-                    "color is mismatch minus control spikes/s"
+                    "Top 150 QC-passing MUA/SUA units ≥1 Hz by absolute response effect; "
+                    "heatmap color is mismatch minus control SDF spikes/s"
                 ),
                 size=FIGURE_TYPE_SCALE["label"],
+                fill="#646B68",
+            ),
+            svg_text(
+                98,
+                heatmap_top - 35,
+                "Lower traces show baseline-subtracted mean SDF ±1 SEM across units",
+                size=FIGURE_TYPE_SCALE["small"],
                 fill="#646B68",
             ),
         ]
@@ -785,20 +922,11 @@ def write_neuropixels_event_svg(
     sessions = {session["context"]: session for session in payload["sessions"]}
     panel_gap = 48
     panel_width = (width - left - right - 3 * panel_gap) / 4
-    time = payload["analysisParameters"]["timeBinCentersSeconds"]
     svg.extend(
         [
             svg_text(
                 left - 80,
-                raw_line_top + line_height / 2,
-                "Raw firing rate",
-                size=FIGURE_TYPE_SCALE["label"],
-                weight=700,
-                anchor="end",
-            ),
-            svg_text(
-                left - 80,
-                baseline_line_top + line_height / 2 - 10,
+                line_top + line_height / 2,
                 "Δ firing rate",
                 size=FIGURE_TYPE_SCALE["label"],
                 weight=700,
@@ -812,7 +940,8 @@ def write_neuropixels_event_svg(
         event_index = next(
             index for index, event in enumerate(session["events"]) if event["id"] == event_id
         )
-        display_start = -1.5 if context == "duration" else -1.0
+        time = session["timeBinCentersSeconds"]
+        display_start, display_end = session["windowSeconds"]
         first_visible = next(
             index for index, value in enumerate(time) if value >= display_start
         )
@@ -822,6 +951,8 @@ def write_neuropixels_event_svg(
             index
             for index, unit in enumerate(session["units"])
             if unit["qcPass"]
+            and unit["decoderLabel"] in {"mua", "sua"}
+            and unit["firingRateHz"] >= 1
         ]
         selected.sort(
             key=lambda index: abs(
@@ -830,12 +961,26 @@ def write_neuropixels_event_svg(
             reverse=True,
         )
         selected = selected[:150]
-        count_path = SOURCE_MEDIA_DIR / Path(session["countAtlas"]["path"]).name
-        counts = uint16_values(count_path)
+        sdf_mean_path = SOURCE_MEDIA_DIR / Path(
+            session["sdfMeanAtlas"]["path"]
+        ).name
+        sdf_mean = uint16_values(sdf_mean_path)
         heatmap_traces = []
         for unit_index in selected:
-            event_trace = unit_rate_trace(counts, session, event_index, unit_index, 0)
-            control_trace = unit_rate_trace(counts, session, event_index, unit_index, 1)
+            event_trace = unit_rate_trace(
+                sdf_mean,
+                session,
+                event_index,
+                unit_index,
+                0,
+            )
+            control_trace = unit_rate_trace(
+                sdf_mean,
+                session,
+                event_index,
+                unit_index,
+                1,
+            )
             heatmap_traces.extend(
                 event_value - control_value
                 for event_value, control_value in zip(
@@ -851,7 +996,7 @@ def write_neuropixels_event_svg(
         )
         png = heatmap_png(
             session,
-            counts,
+            sdf_mean,
             event_index,
             selected,
             heat_limit,
@@ -939,20 +1084,15 @@ def write_neuropixels_event_svg(
                 ),
             ]
         )
-        for value in sorted(
-            value
-            for value in {
-                timing.get("previousPresentationStartSeconds"),
-                timing.get("previousPresentationStopSeconds"),
-                timing.get("presentationStartSeconds"),
-                timing.get("presentationStopSeconds"),
-            }
-            if value is not None and display_start <= value <= time[-1]
+        for value in presentation_timing_values(
+            timing,
+            display_start,
+            display_end,
         ):
             guide_x = (
                 x
                 + (value - display_start)
-                / (time[-1] - display_start)
+                / (display_end - display_start)
                 * panel_width
             )
             svg.append(
@@ -960,90 +1100,60 @@ def write_neuropixels_event_svg(
                 f'x2="{guide_x:.2f}" y2="{heatmap_top + 28 + heatmap_height:.2f}" '
                 'stroke="#303536" stroke-width="1" stroke-dasharray="5 4"/>'
             )
-        event_means = []
-        control_means = []
-        bin_count = session["countAtlas"]["shape"][-1]
-        for bin_index in range(bin_count):
-            event_values = []
-            control_values = []
-            for unit_index in selected:
-                event_values.append(
-                    counts[
-                        count_index(
-                            event_index,
-                            0,
-                            unit_index,
-                            bin_index,
-                            session["unitCount"],
-                            bin_count,
-                        )
-                    ]
-                    / session["events"][event_index]["contextTrialCount"]
-                    / BIN_SECONDS
-                )
-                control_values.append(
-                    counts[
-                        count_index(
-                            event_index,
-                            1,
-                            unit_index,
-                            bin_index,
-                            session["unitCount"],
-                            bin_count,
-                        )
-                    ]
-                    / session["events"][event_index]["controlTrialCount"]
-                    / BIN_SECONDS
-                )
-            event_means.append(sum(event_values) / len(event_values))
-            control_means.append(sum(control_values) / len(control_values))
-        event_means = smooth_trace(event_means)
-        control_means = smooth_trace(control_means)
         baseline_means = float32_values(session["baselineMeanHzBase64"])
-        context_baseline = sum(
-            baseline_means[
-                (event_index * 2) * session["unitCount"] + unit_index
+        baseline_event_traces = [
+            [
+                value
+                - baseline_means[
+                    (event_index * 2) * session["unitCount"] + unit_index
+                ]
+                for value in unit_rate_trace(
+                    sdf_mean,
+                    session,
+                    event_index,
+                    unit_index,
+                    0,
+                )
             ]
             for unit_index in selected
-        ) / len(selected)
-        control_baseline = sum(
-            baseline_means[
-                (event_index * 2 + 1) * session["unitCount"] + unit_index
+        ]
+        baseline_control_traces = [
+            [
+                value
+                - baseline_means[
+                    (event_index * 2 + 1) * session["unitCount"] + unit_index
+                ]
+                for value in unit_rate_trace(
+                    sdf_mean,
+                    session,
+                    event_index,
+                    unit_index,
+                    1,
+                )
             ]
             for unit_index in selected
-        ) / len(selected)
-        baseline_event_means = [
-            value - context_baseline for value in event_means
         ]
-        baseline_control_means = [
-            value - control_baseline for value in control_means
-        ]
-        append_static_rate_plot(
-            svg,
-            x=x,
-            y=raw_line_top,
-            width=panel_width,
-            height=line_height,
-            time=time,
-            event_values=event_means,
-            control_values=control_means,
-            timing=timing,
-            baseline_subtracted=False,
-            display_start=display_start,
-            unit_count=len(selected),
+        baseline_event_means, baseline_event_sem = mean_sem_traces(
+            baseline_event_traces
+        )
+        baseline_control_means, baseline_control_sem = mean_sem_traces(
+            baseline_control_traces
         )
         append_static_rate_plot(
             svg,
             x=x,
-            y=baseline_line_top,
+            y=line_top,
             width=panel_width,
             height=line_height,
             time=time,
             event_values=baseline_event_means,
+            event_sem=baseline_event_sem,
             control_values=baseline_control_means,
+            control_sem=baseline_control_sem,
             timing=timing,
             baseline_subtracted=True,
             display_start=display_start,
+            display_end=display_end,
             unit_count=len(selected),
         )
     svg.append("</svg>")

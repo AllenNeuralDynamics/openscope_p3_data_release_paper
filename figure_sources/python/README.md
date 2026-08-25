@@ -30,6 +30,6 @@ The behavior viewer uses `images/figures/generated/synchronized-behavior.svg` as
 
 The supplementary pupil-response viewer uses `images/figures/generated/supplementary-pupil-event-responses.svg` as its static HTML view and PDF placeholder. Both outputs are generated offline from the checksum-verified `figure_sources/data/pupil-event-responses.json` snapshot.
 
-The supplementary Neuropixels mismatch-response explorer uses `images/figures/generated/supplementary-neuropixels-event-responses.svg` as its static HTML view and PDF placeholder. It reads checksum-verified unit metadata, firing rates, Rastermap ranks, and compressed count and squared-count atlases without network access.
+The supplementary Neuropixels mismatch-response explorer uses `images/figures/generated/supplementary-neuropixels-event-responses.svg` as its static HTML view and PDF placeholder. It reads checksum-verified unit metadata, RS/FS/SST classifications, firing rates, Rastermap ranks, and offline-computed native 1 ms mean-SDF atlases without network access. The extractor performs the τ=5 ms, 10τ causal convolution and stores every quantized 1 ms sample used identically by static and browser renderers.
 
 Keep data-loading, transformation, and rendering logic in the package. Store small figure inputs under `figure_sources/data/`; large or externally archived inputs should be represented by a manifest containing their URL, version, and checksum.

@@ -8,7 +8,10 @@ import pytest
 from openscope_p3_publication.neural_response_figure import (
     STATIC_AREA_GROUP_ORDER,
     STATIC_AREA_MIN_QC_UNITS,
+    float32_values,
     load_neuropixels_event_responses,
+    mean_sem_traces,
+    presentation_timing_values,
     response_matrix,
     static_rate_axis,
     uint16_base64_values,
@@ -16,18 +19,24 @@ from openscope_p3_publication.neural_response_figure import (
     write_neuropixels_event_svg,
 )
 from openscope_p3_publication.neural_responses import (
+    BASELINE_BIN_SECONDS,
     BIN_SECONDS,
+    CONTEXT_WINDOWS_SECONDS,
     NEURAL_SESSIONS,
-    WINDOW_END_SECONDS,
-    WINDOW_START_SECONDS,
+    SDF_KERNEL_DURATION_TAU,
+    SDF_QUANTIZATION_SCALE,
+    SDF_SOURCE_BIN_SECONDS,
+    SDF_TAU_SECONDS,
+    classify_neuron_type,
     context_event_definitions,
+    context_window_seconds,
     event_indices,
-    gaussian_kernel,
     neural_baseline_windows,
     neural_response_windows,
     qc_passes,
     relative_bin_centers,
     relative_bin_edges,
+    sdf_kernel,
     smooth_trace,
 )
 
@@ -43,13 +52,29 @@ def test_neural_sessions_cover_four_contexts_for_one_mouse() -> None:
     assert len({session.asset_id for session in NEURAL_SESSIONS}) == 4
 
 
-def test_neural_time_grid_uses_twenty_millisecond_bins() -> None:
-    edges = relative_bin_edges()
-    centers = relative_bin_centers()
-    assert edges[0] == WINDOW_START_SECONDS
-    assert edges[-1] == pytest.approx(WINDOW_END_SECONDS)
-    assert len(centers) == 175
-    assert centers[0] == pytest.approx(WINDOW_START_SECONDS + BIN_SECONDS / 2)
+def test_neural_time_grid_uses_native_one_millisecond_bins() -> None:
+    assert BIN_SECONDS == 0.001
+    assert BASELINE_BIN_SECONDS == 0.02
+    assert SDF_SOURCE_BIN_SECONDS == 0.001
+    assert CONTEXT_WINDOWS_SECONDS == {
+        "standard": (-0.75, 0.75),
+        "sensorimotor": (-0.75, 0.75),
+        "sequence": (-0.75, 0.75),
+        "duration": (-1.5, 1.5),
+    }
+    for context, expected_count in (
+        ("standard", 1500),
+        ("sensorimotor", 1500),
+        ("sequence", 1500),
+        ("duration", 3000),
+    ):
+        edges = relative_bin_edges(context)
+        centers = relative_bin_centers(context)
+        start, stop = context_window_seconds(context)
+        assert edges[0] == start
+        assert edges[-1] == pytest.approx(stop)
+        assert len(centers) == expected_count
+        assert centers[0] == pytest.approx(start + BIN_SECONDS / 2)
 
 
 def test_neural_event_matching_reuses_physical_controls() -> None:
@@ -138,27 +163,72 @@ def test_neural_response_uses_recorded_presentation_window() -> None:
     ) == [(100.7, 101.07)]
 
 
-def test_gaussian_smoothing_is_normalized_and_symmetric() -> None:
-    kernel = gaussian_kernel()
+def test_sdf_smoothing_is_normalized_and_causal() -> None:
+    kernel = sdf_kernel()
+    assert SDF_TAU_SECONDS == 0.005
+    assert SDF_KERNEL_DURATION_TAU == 10
+    assert SDF_QUANTIZATION_SCALE == 20
     assert sum(kernel) == pytest.approx(1)
-    assert kernel == pytest.approx(kernel[::-1])
-    impulse = [0.0] * 21
+    assert len(kernel) == 50
+    assert kernel[1] / kernel[0] == pytest.approx(
+        math.exp(-SDF_SOURCE_BIN_SECONDS / SDF_TAU_SECONDS)
+    )
+    impulse = [0.0] * 70
     impulse[10] = 1.0
     smoothed = smooth_trace(impulse, kernel)
+    assert smoothed[9] == 0
     assert smoothed[10] == max(smoothed)
-    assert smoothed[9] == pytest.approx(smoothed[11])
+    assert smoothed[11] < smoothed[10]
+    assert smoothed[59] > 0
+    assert smoothed[60] == 0
+    constant = smooth_trace([10.0] * 60, kernel)
+    assert constant[0] == pytest.approx(10 * kernel[0])
+    assert constant[49] == pytest.approx(10)
+
+
+@pytest.mark.parametrize(
+    ("peak_to_valley_ms", "major_parent", "sst_optotagged", "expected"),
+    [
+        (0.2, "Isocortex", False, "FS"),
+        (0.5, "Isocortex", False, "RS"),
+        (0.3, "TH", False, "RS"),
+        (0.2, "TH", False, "FS"),
+        (0.2, "STR", False, "RS"),
+        (0.2, "Isocortex", True, "SST"),
+    ],
+)
+def test_neuron_type_classification(
+    peak_to_valley_ms: float,
+    major_parent: str,
+    sst_optotagged: bool,
+    expected: str,
+) -> None:
+    assert (
+        classify_neuron_type(
+            peak_to_valley_ms=peak_to_valley_ms,
+            major_parent=major_parent,
+            sst_optotagged=sst_optotagged,
+        )
+        == expected
+    )
 
 
 def test_neuropixels_event_snapshot_is_source_backed() -> None:
     payload = load_neuropixels_event_responses()
 
-    assert payload["version"] == 3
+    assert payload["version"] == 7
     assert payload["subject"] == "830846"
     assert payload["sessionOrder"] == [
         "standard",
         "sensorimotor",
         "sequence",
         "duration",
+    ]
+    assert [session["windowSeconds"] for session in payload["sessions"]] == [
+        [-0.75, 0.75],
+        [-0.75, 0.75],
+        [-0.75, 0.75],
+        [-1.5, 1.5],
     ]
     assert [session["unitCount"] for session in payload["sessions"]] == [
         3355,
@@ -172,18 +242,49 @@ def test_neuropixels_event_snapshot_is_source_backed() -> None:
         for unit in session["units"]
     ) == 7266
     assert all(len(session["events"]) == 4 for session in payload["sessions"])
-    assert all(
-        session["countAtlas"]["shape"] == [4, 2, session["unitCount"], 175]
+    assert [
+        len(session["events"][0]["timing"]["context"]["presentationWindows"])
         for session in payload["sessions"]
-    )
-    assert all(
-        session["countSquareAtlas"]["shape"]
-        == session["countAtlas"]["shape"]
+    ] == [3, 1, 6, 5]
+    assert [
+        session["sdfMeanAtlas"]["shape"][-1]
         for session in payload["sessions"]
-    )
+    ] == [1500, 1500, 1500, 3000]
     assert all("waveformAtlas" not in session for session in payload["sessions"])
     assert all(
         math.isfinite(unit["firingRateHz"]) and unit["firingRateHz"] >= 0
+        for session in payload["sessions"]
+        for unit in session["units"]
+    )
+    assert all(
+        math.isfinite(value)
+        for session in payload["sessions"]
+        for field in ("baselineMeanHzBase64", "baselineStdHzBase64")
+        for value in float32_values(session[field])
+    )
+    assert {
+        unit["neuronType"]
+        for session in payload["sessions"]
+        for unit in session["units"]
+    } == {"RS", "FS", "SST"}
+    assert [
+        {
+            neuron_type: sum(
+                unit["neuronType"] == neuron_type for unit in session["units"]
+            )
+            for neuron_type in ("RS", "FS", "SST")
+        }
+        for session in payload["sessions"]
+    ] == [
+        {"RS": 2324, "FS": 527, "SST": 504},
+        {"RS": 2166, "FS": 361, "SST": 416},
+        {"RS": 2636, "FS": 487, "SST": 427},
+        {"RS": 2747, "FS": 583, "SST": 504},
+    ]
+    assert all(
+        math.isfinite(unit["peakToValleyMs"])
+        and unit["peakToValleyMs"] >= 0
+        and (not unit["sstOptotagged"] or unit["neuronType"] == "SST")
         for session in payload["sessions"]
         for unit in session["units"]
     )
@@ -288,6 +389,27 @@ def test_static_firing_rate_axes_include_zero_tick() -> None:
     assert 0 in delta_ticks
 
 
+def test_static_trace_summary_is_sem_across_units() -> None:
+    mean, sem = mean_sem_traces([[1, 2], [3, 4], [5, 6]])
+
+    assert mean == pytest.approx([3, 4])
+    assert sem == pytest.approx([2 / math.sqrt(3), 2 / math.sqrt(3)])
+
+
+def test_presentation_timing_values_use_only_selected_mismatch() -> None:
+    timing = {
+        "presentationStartSeconds": 0,
+        "presentationStopSeconds": 0.3,
+        "presentationWindows": [
+            {"rowOffset": -1, "startSeconds": -0.7, "stopSeconds": -0.3},
+            {"rowOffset": 0, "startSeconds": 0, "stopSeconds": 0.3},
+            {"rowOffset": 1, "startSeconds": 0.7, "stopSeconds": 1.1},
+        ],
+    }
+
+    assert presentation_timing_values(timing, -1, 1) == [0.0, 0.3]
+
+
 def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     tmp_path: Path,
 ) -> None:
@@ -323,7 +445,11 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert 'data-scope="unit"' in html
     assert 'id="response-selection-label"' in html
     assert 'aria-label="Area for mean response"' in html
-    assert 'id="baseline-response-canvas"' in html
+    assert html.count('id="response-canvas"') == 1
+    assert 'id="baseline-response-canvas"' not in html
+    assert 'id="baseline-subtracted"' in html
+    assert 'id="response-note"' in html
+    assert "dashed guides mark mismatch onset and offset" in html
     assert "waveform-canvas" not in html
     assert "Time from mismatch stimulus (s)" in html
     assert "Time to positive peak" in html
@@ -333,13 +459,23 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert "All motor areas" in html
     assert 'data-decoder-label="mua"' in html
     assert 'data-decoder-label="sua"' in html
+    assert 'data-neuron-type="RS"' in html
+    assert 'data-neuron-type="FS"' in html
+    assert 'data-neuron-type="SST"' in html
     assert 'id="minimum-firing-rate"' in html
     assert 'id="unit-count"' not in html
     assert "Δ firing rate" in html
     assert "Δ firing rate" in svg
+    assert "spike-density function" in html
+    assert "spike-density functions" in svg
+    assert "±1 SEM across units" in svg
+    assert 'fill-opacity="0.14"' in svg
     assert "zscoreLimit: 3" in html
     assert 'colorLimit.max = "6"' in html
     assert 'id="color-key-min"' in html
     assert 'id="color-key-max"' in html
     assert "DecompressionStream" in html
+    assert "sdfMeanAtlas" in html
+    assert "sdfSemAtlas" not in html
+    assert "function sdfKernel" not in html
     assert "__NEUROPIXELS_EVENT_" not in html
