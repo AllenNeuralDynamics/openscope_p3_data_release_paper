@@ -52,10 +52,10 @@ def test_neural_sessions_cover_four_contexts_for_one_mouse() -> None:
     assert len({session.asset_id for session in NEURAL_SESSIONS}) == 4
 
 
-def test_neural_time_grid_uses_native_one_millisecond_bins() -> None:
-    assert BIN_SECONDS == 0.001
+def test_neural_time_grid_uses_two_point_five_millisecond_bins() -> None:
+    assert BIN_SECONDS == 0.0025
     assert BASELINE_BIN_SECONDS == 0.02
-    assert SDF_SOURCE_BIN_SECONDS == 0.001
+    assert SDF_SOURCE_BIN_SECONDS == 0.0025
     assert CONTEXT_WINDOWS_SECONDS == {
         "standard": (-0.75, 0.75),
         "sensorimotor": (-0.75, 0.75),
@@ -63,10 +63,10 @@ def test_neural_time_grid_uses_native_one_millisecond_bins() -> None:
         "duration": (-1.5, 1.5),
     }
     for context, expected_count in (
-        ("standard", 1500),
-        ("sensorimotor", 1500),
-        ("sequence", 1500),
-        ("duration", 3000),
+        ("standard", 600),
+        ("sensorimotor", 600),
+        ("sequence", 600),
+        ("duration", 1200),
     ):
         edges = relative_bin_edges(context)
         centers = relative_bin_centers(context)
@@ -165,25 +165,25 @@ def test_neural_response_uses_recorded_presentation_window() -> None:
 
 def test_sdf_smoothing_is_normalized_and_causal() -> None:
     kernel = sdf_kernel()
-    assert SDF_TAU_SECONDS == 0.005
+    assert SDF_TAU_SECONDS == 0.01
     assert SDF_KERNEL_DURATION_TAU == 10
     assert SDF_QUANTIZATION_SCALE == 20
     assert sum(kernel) == pytest.approx(1)
-    assert len(kernel) == 50
+    assert len(kernel) == 40
     assert kernel[1] / kernel[0] == pytest.approx(
         math.exp(-SDF_SOURCE_BIN_SECONDS / SDF_TAU_SECONDS)
     )
-    impulse = [0.0] * 70
+    impulse = [0.0] * 60
     impulse[10] = 1.0
     smoothed = smooth_trace(impulse, kernel)
     assert smoothed[9] == 0
     assert smoothed[10] == max(smoothed)
     assert smoothed[11] < smoothed[10]
-    assert smoothed[59] > 0
-    assert smoothed[60] == 0
-    constant = smooth_trace([10.0] * 60, kernel)
+    assert smoothed[49] > 0
+    assert smoothed[50] == 0
+    constant = smooth_trace([10.0] * 50, kernel)
     assert constant[0] == pytest.approx(10 * kernel[0])
-    assert constant[49] == pytest.approx(10)
+    assert constant[39] == pytest.approx(10)
 
 
 @pytest.mark.parametrize(
@@ -216,7 +216,7 @@ def test_neuron_type_classification(
 def test_neuropixels_event_snapshot_is_source_backed() -> None:
     payload = load_neuropixels_event_responses()
 
-    assert payload["version"] == 7
+    assert payload["version"] == 8
     assert payload["subject"] == "830846"
     assert payload["sessionOrder"] == [
         "standard",
@@ -249,7 +249,7 @@ def test_neuropixels_event_snapshot_is_source_backed() -> None:
     assert [
         session["sdfMeanAtlas"]["shape"][-1]
         for session in payload["sessions"]
-    ] == [1500, 1500, 1500, 3000]
+    ] == [600, 600, 600, 1200]
     assert all("waveformAtlas" not in session for session in payload["sessions"])
     assert all(
         math.isfinite(unit["firingRateHz"]) and unit["firingRateHz"] >= 0

@@ -42,7 +42,7 @@ The Neuropixels mismatch-response explorer combines Figure 6's unit-selection pa
 
 - `neuropixels-event-responses.html`: context, event, probe, area, unit-QC, sorter-label, firing-rate, RS/FS/SST, heatmap, baseline, and response controls.
 - `neuropixels-event-responses.css`: responsive heatmap and single switchable SDF layout.
-- `neuropixels-event-responses.js`: same-origin loading of offline-computed native 1 ms causal mean-SDF atlases, inactive-session cache eviction, mismatch onset/offset guides, five response-heatmap modes, fixed mismatch-z and Rastermap row ordering, ontology area groups, unit and neuron-type filters, area means with across-neuron SEM, individual SDFs without uncertainty bands, and switchable baseline subtraction.
+- `neuropixels-event-responses.js`: same-origin loading of offline-computed native 2.5 ms, τ=10 ms causal mean-SDF atlases, inactive-session cache eviction, mismatch onset/offset guides, five response-heatmap modes, fixed mismatch-z and Rastermap row ordering, ontology area groups, unit and neuron-type filters, area means with across-neuron SEM, individual SDFs without uncertainty bands, and switchable baseline subtraction.
 
 Its scientific data are committed under `figure_sources/data/neuropixels-event-responses.json` and `figure_sources/media/neuropixels-event-responses/`; the browser never opens an NWB.
 

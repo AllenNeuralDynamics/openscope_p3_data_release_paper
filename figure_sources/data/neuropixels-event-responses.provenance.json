@@ -1,5 +1,5 @@
 {
-  "analysisSignature": "e9dc1d94d8c167a11804591ae506bcc79c4dfcb722370b017ef21e84b979ea06",
+  "analysisSignature": "ffdafa7a1121a37592dcd233749734e9f0fa0939c8b5bdbb5aa4655a57e8ea5d",
   "configuredSessions": [
     {
       "asset_id": "03973a42-cf55-476f-80d7-85bc402fa57b",
@@ -37,31 +37,31 @@
   "media": [
     {
       "path": "figure_sources/media/neuropixels-event-responses/duration-sdf-mean.u16.gz",
-      "sha256": "7b63ec610b5b320306a82c98726585657e5a30189de7eff1472ce81b155bbed3",
-      "size": 25303746
+      "sha256": "1ec88acaeb9ec174dc0624243295ed42625ba13b21e29035b5dfa8776d945c21",
+      "size": 13989217
     },
     {
       "path": "figure_sources/media/neuropixels-event-responses/motor-sdf-mean.u16.gz",
-      "sha256": "7e9b6aecbdcc1b2b15f90adf3f0430334b23d98785699e0f59f351e5ccef7423",
-      "size": 6615242
+      "sha256": "45d6f272e4f9492ed03fbae3a136a7516f743013b7bc360e8445d506b0cbfbe9",
+      "size": 3824591
     },
     {
       "path": "figure_sources/media/neuropixels-event-responses/sequence-sdf-mean.u16.gz",
-      "sha256": "981c420f46ddf5f6de3f105400875d53559e1ad58c764ef82f653747095bd061",
-      "size": 14241871
+      "sha256": "e10a4ac6fa533c3475ff974ed491f5b967ef7a4f451711aa3549c1792b6f1b96",
+      "size": 7590617
     },
     {
       "path": "figure_sources/media/neuropixels-event-responses/standard-sdf-mean.u16.gz",
-      "sha256": "02c4353a82a5eeb96b0e89ce0d443c2f2b53f3798d7b81af66570d3f91445c12",
-      "size": 12153970
+      "sha256": "676941aa4bdd18e6e070950db296f697d898bf3a2ab894c6af4103e15b13bd85",
+      "size": 6638162
     }
   ],
   "module": {
     "path": "src/openscope_p3_publication/neural_responses.py",
-    "sha256": "c6bfa6fb77fdd8abb2dde1c56da7db7c0ab23b6dccb54775b057c2d2621bf20f"
+    "sha256": "726d46534ce056953502bf72ad37caed2126461e1b7bcd06bcc29f10554271a3"
   },
   "outputPath": "figure_sources/data/neuropixels-event-responses.json",
-  "outputSha256": "fd170e902837f06db310a7d845c29440539a858ee78f32bf4f1bfe9327ad3664",
+  "outputSha256": "b134c02daf0a74efc33854b25c0ca546363f692551b02ad652c89e3632ff5998",
   "rastermap": {
     "packageVersion": "1.0",
     "parameters": {
@@ -81,10 +81,10 @@
   "retrievedDate": "2026-08-24",
   "script": {
     "path": "scripts/extract_neuropixels_event_responses.py",
-    "sha256": "d413845a4a9557596d287e8c357cd38103944261f8e17b55e70f12c0991aae5f"
+    "sha256": "ba37b22627cb54d516136b961f40f201795cb820f3d70cbde7e7f443aa0d1f50"
   },
   "sessionCount": 4,
   "totalQcUnits": 7266,
   "totalUnits": 13682,
-  "version": 7
+  "version": 8
 }

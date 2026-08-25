@@ -596,8 +596,9 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "causal exponential spike-density kernel" in manuscript
     assert "standard-oddball, sensorimotor, and sequence windows span −0.75 to 0.75 s" in manuscript
     assert "duration windows span −1.5 to 1.5 s" in manuscript
-    assert "10τ (50 ms) support" in manuscript
-    assert "native 1 ms SDF is retained" in manuscript
+    assert "10τ (100 ms) support" in manuscript
+    assert "native 2.5 ms SDF is retained" in manuscript
+    assert "hidden 97.5 ms pre-window" in manuscript
     assert "without an uncertainty band" in manuscript
     assert "Dashed guides mark only the selected mismatch presentation" in manuscript
     assert "SST units have a positive 5 Hz optotagging response" in manuscript

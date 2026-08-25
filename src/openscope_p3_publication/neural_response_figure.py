@@ -39,6 +39,7 @@ from .neural_responses import (
     classify_neuron_type,
     context_window_seconds,
     relative_bin_centers,
+    sdf_kernel,
 )
 
 DATA_PATH = REPO_ROOT / "figure_sources" / "data" / "neuropixels-event-responses.json"
@@ -115,7 +116,7 @@ def load_neuropixels_event_responses(
 ) -> dict:
     payload = json.loads(data_path.read_text(encoding="utf-8"))
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    if payload.get("version") != 7 or provenance.get("version") != 7:
+    if payload.get("version") != 8 or provenance.get("version") != 8:
         raise RuntimeError("Neuropixels event-response snapshot version is unsupported.")
     if provenance.get("rastermap") != {
         "packageVersion": RASTERMAP_VERSION,
@@ -139,9 +140,13 @@ def load_neuropixels_event_responses(
         }
         or parameters.get("sdf")
         != {
+            "causalPrepaddingSeconds": (
+                (len(sdf_kernel()) - 1) * SDF_SOURCE_BIN_SECONDS
+            ),
             "displayBinSeconds": BIN_SECONDS,
             "kernel": "causal exponential",
             "kernelDurationTau": SDF_KERNEL_DURATION_TAU,
+            "kernelSamples": len(sdf_kernel()),
             "quantizationScalePerHz": SDF_QUANTIZATION_SCALE,
             "sourceBinSeconds": SDF_SOURCE_BIN_SECONDS,
             "tauSeconds": SDF_TAU_SECONDS,

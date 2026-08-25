@@ -71,7 +71,7 @@ MEDIA_ASSET_ROOT = "media/neuropixels-event-responses"
 DANDI_API = "https://api.dandiarchive.org/api"
 DANDISET_ID = "001637"
 DANDI_VERSION = "draft"
-VERSION = 7
+VERSION = 8
 CONDITION_ORDER = ("context", "control")
 PROBE_ORDER = tuple(f"Probe{letter}" for letter in "ABCDEF")
 FRONTAL_PREFIXES = ("ACA", "ILA", "PL", "ORB", "MOp", "MOs")
@@ -394,6 +394,8 @@ def histogram_trial_counts(
 def sdf_trial_mean(
     count_sum: np.ndarray,
     trial_count: int,
+    output_start_index: int,
+    output_count: int,
 ) -> np.ndarray:
     if trial_count < 1:
         raise ValueError("SDF calculation requires at least one trial.")
@@ -402,12 +404,17 @@ def sdf_trial_mean(
         / trial_count
         / SDF_SOURCE_BIN_SECONDS
     )
-    mean_hz = np.convolve(
+    padded_mean_hz = np.convolve(
         source_mean_hz,
         np.asarray(sdf_kernel(), dtype=float),
         mode="full",
     )[: len(source_mean_hz)]
-    return mean_hz.astype(np.float32)
+    output_stop_index = output_start_index + output_count
+    if output_start_index < 0 or output_stop_index > len(padded_mean_hz):
+        raise ValueError("SDF output slice is outside the padded source window.")
+    return padded_mean_hz[output_start_index:output_stop_index].astype(
+        np.float32
+    )
 
 
 def quantize_sdf(values: np.ndarray) -> np.ndarray:
@@ -605,12 +612,18 @@ def rastermap_ranks(
 def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -> dict:
     asset = source_asset(config)
     window_start, window_stop = context_window_seconds(config.context)
-    source_bin_count = round(
+    output_bin_count = round(
         (window_stop - window_start)
         / SDF_SOURCE_BIN_SECONDS
     )
-    source_edges = (
+    causal_padding_bins = len(sdf_kernel()) - 1
+    source_bin_count = output_bin_count + causal_padding_bins
+    source_start = (
         window_start
+        - causal_padding_bins * SDF_SOURCE_BIN_SECONDS
+    )
+    source_edges = (
+        source_start
         + np.arange(source_bin_count + 1, dtype=float)
         * SDF_SOURCE_BIN_SECONDS
     )
@@ -646,6 +659,8 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
             raise RuntimeError(f"{config.session_id} has no selected probes.")
         unit_count = len(selected_rows)
         bin_count = len(relative_bin_centers(config.context))
+        if bin_count != output_bin_count:
+            raise RuntimeError("SDF source and output bin counts are inconsistent.")
         event_count = len(events)
         sdf_mean = np.zeros(
             (event_count, len(CONDITION_ORDER), unit_count, bin_count),
@@ -726,6 +741,8 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
                     mean_hz = sdf_trial_mean(
                         count_sum,
                         len(onsets),
+                        causal_padding_bins,
+                        bin_count,
                     )
                     sdf_mean[
                         event_index,
@@ -1000,9 +1017,14 @@ def main() -> None:
             },
             "responseWindow": "selected row NWB start_time through stop_time",
             "sdf": {
+                "causalPrepaddingSeconds": (
+                    (len(sdf_kernel()) - 1)
+                    * SDF_SOURCE_BIN_SECONDS
+                ),
                 "displayBinSeconds": BIN_SECONDS,
                 "kernel": "causal exponential",
                 "kernelDurationTau": SDF_KERNEL_DURATION_TAU,
+                "kernelSamples": len(sdf_kernel()),
                 "quantizationScalePerHz": SDF_QUANTIZATION_SCALE,
                 "sourceBinSeconds": SDF_SOURCE_BIN_SECONDS,
                 "tauSeconds": SDF_TAU_SECONDS,
