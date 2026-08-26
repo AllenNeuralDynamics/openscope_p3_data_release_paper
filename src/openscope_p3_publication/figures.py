@@ -124,7 +124,7 @@ BASIC_STIMULI_PLAN_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "figure-08-basic-stimuli-plan.svg"
 )
 STANDARD_ODDBALL_PLAN_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-10-standard-oddball-plan.svg"
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-11-standard-oddball-plan.svg"
 )
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"

@@ -309,7 +309,7 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     assert "./images/figures/generated/figure-06-segmentation-viewers.svg" in manuscript
     assert "./images/figures/generated/figure-07-unit-extraction-plan.svg" in manuscript
     assert "./images/figures/generated/figure-08-basic-stimuli-plan.svg" in manuscript
-    assert "./images/figures/generated/figure-10-standard-oddball-plan.svg" in manuscript
+    assert "./images/figures/generated/figure-11-standard-oddball-plan.svg" in manuscript
     assert "nine native-resolution images" in manuscript
     hardware_start = manuscript.index("## Multimodal recording hardware")
     methods_start = manuscript.index("# Methods")
@@ -515,7 +515,7 @@ def test_supplementary_studies_table_is_complete() -> None:
 def test_supplementary_and_power_figures_are_current() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
-    for number in range(1, 8):
+    for number in range(1, 7):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
     assert manuscript.count(":enumerated: false\n:width: 100%") >= 3
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
@@ -582,12 +582,13 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "60 Neuropixels sessions from 16 mice" in manuscript
     assert "./interactive/neuropixels-event-responses.html" in manuscript
     assert (
-        ":label: fig-supp-neuropixels-event-responses\n:enumerated: false"
+        ":label: fig-neuropixels-event-responses\n:width: 100%"
         in manuscript
     )
+    assert ":label: fig-neuropixels-event-responses\n:enumerated: false" not in manuscript
     assert (
         ":placeholder: ./images/figures/generated/"
-        "supplementary-neuropixels-event-responses.svg"
+        "figure-10-neuropixels-event-responses.svg"
     ) in manuscript
     assert "units are distinct across sessions" in manuscript
     assert "all 16 conditions" in manuscript
@@ -702,6 +703,12 @@ def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     assert "DANDI:001424" in importer["SLAP2_RAW_SOURCE"]
     assert importer["SEGMENTATION_VIEWER_BLOCK"].count(":::{iframe}") == 1
     assert ":label: fig-segmentation-viewers" in importer["SEGMENTATION_VIEWER_BLOCK"]
+    behavior_and_neural = importer["render_figure"]("image6.png")
+    assert ":label: fig-behavior-tracking" in behavior_and_neural
+    assert ":label: fig-neuropixels-event-responses" in behavior_and_neural
+    assert behavior_and_neural.index(":label: fig-behavior-tracking") < (
+        behavior_and_neural.index(":label: fig-neuropixels-event-responses")
+    )
 
 
 def test_imported_data_tables_have_body_cells() -> None:
@@ -796,7 +803,7 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "[Figure 6](#fig-segmentation-viewers)" in manuscript
     assert "[Figure 7](#fig-unit-extraction-plan) and the modality subsections below" in manuscript
     assert "This analysis and [Figure 8](#fig-basic-stimuli-plan)" in manuscript
-    assert "[Figure 10](#fig-standard-oddball-plan) are planning placeholders" in manuscript
+    assert "[Figure 11](#fig-standard-oddball-plan) are planning placeholders" in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert ":placeholder: ./images/figures/generated/synchronized-behavior.svg" in manuscript
     assert "Synchronized behavior and running across recording modalities" in manuscript
@@ -819,6 +826,12 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "continuous raw\nbehavioral videos" in manuscript
     assert "[Figure 9](#fig-behavior-tracking) show these streams" in manuscript
     assert "[](#fig-behavior-tracking)" not in manuscript
+    assert (
+        manuscript.index(":label: fig-behavior-tracking")
+        < manuscript.index(":label: fig-neuropixels-event-responses")
+        < manuscript.index("### Eye tracking across modalities")
+        < manuscript.index(":label: fig-standard-oddball-plan")
+    )
     for number, label in (
         (1, "fig-graphical-abstract"),
         (2, "fig-interactive-experimental-design"),
@@ -829,7 +842,8 @@ def test_figure_captions_and_interactive_placement() -> None:
         (7, "fig-unit-extraction-plan"),
         (8, "fig-basic-stimuli-plan"),
         (9, "fig-behavior-tracking"),
-        (10, "fig-standard-oddball-plan"),
+        (10, "fig-neuropixels-event-responses"),
+        (11, "fig-standard-oddball-plan"),
     ):
         assert f"[Figure {number}](#{label})" in manuscript
     assert re.search(r"\[\]\(#fig-", manuscript) is None
@@ -872,6 +886,8 @@ def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:
     assert ".hover-card-content:has(.table-hover-source) .hover-document" in stylesheet
     assert "max-height: min(460px, calc(100vh - 2rem))" in stylesheet
     assert "#fig-behavior-tracking" in stylesheet
+    assert "#fig-neuropixels-event-responses" in stylesheet
+    assert "#fig-supp-neuropixels-event-responses" not in stylesheet
     assert "container-type: inline-size" in stylesheet
     assert "max-width: 900px" not in stylesheet
     assert "@container (max-width: 560px)" in stylesheet

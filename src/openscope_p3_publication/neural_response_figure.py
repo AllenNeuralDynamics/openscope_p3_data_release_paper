@@ -56,7 +56,7 @@ STATIC_OUTPUT = (
     / "images"
     / "figures"
     / "generated"
-    / "supplementary-neuropixels-event-responses.svg"
+    / "figure-10-neuropixels-event-responses.svg"
 )
 CONTEXT_ORDER = ("standard", "sensorimotor", "sequence", "duration")
 CONTEXT_LABELS = {
