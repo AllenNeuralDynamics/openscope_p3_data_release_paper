@@ -572,14 +572,18 @@ def test_supplementary_and_power_figures_are_current() -> None:
         "supplementary-pupil-event-responses.svg"
     ) in manuscript
     assert "display-synchronized `start_time`" in manuscript
-    assert "complete recorded interstimulus interval" in manuscript
+    assert "row i−2 `stop_time` to row i−1 `start_time`" in manuscript
     assert "both repeats of standard control C1" in manuscript
     assert "Duration responses use the following commanded interstimulus interval" in manuscript
     assert "display-recorded stimulus interval" in manuscript
-    assert "switches between the population event and matched-control means" in manuscript
-    assert "shaded bands show ±1 SD across valid trials" in manuscript
-    assert "SLAP2 duration responses are marked unavailable" in manuscript
+    assert "vertically aligned pupil and running panels" in manuscript
+    assert "without any temporal filtering" in manuscript
+    assert "Individual traces show means ±1 SEM across valid trials" in manuscript
+    assert "Population trace bands show ±1 SEM across mice" in manuscript
+    assert "SLAP2 duration pupil responses are marked unavailable" in manuscript
+    assert "Mouse 830846's duration running panel is explicitly unavailable" in manuscript
     assert "60 Neuropixels sessions from 16 mice" in manuscript
+    assert "86 mesoscope sessions from 10 mice" in manuscript
     assert "./interactive/neuropixels-event-responses.html" in manuscript
     assert (
         ":label: fig-neuropixels-event-responses\n:width: 100%"

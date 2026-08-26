@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract mouse-ready peri-event pupil responses from public P3 NWBs."""
+"""Extract mouse-ready peri-event pupil and running responses from public P3 NWBs."""
 
 from __future__ import annotations
 
@@ -93,8 +93,11 @@ TABLE_CANDIDATES = {
     },
 }
 
-EXTRACTION_VERSION = 1
-CACHE_VERSION = 2
+EXTRACTION_VERSION = 2
+CACHE_VERSION = 3
+COMPATIBLE_CACHE_SIGNATURES = {
+    "5f3b9b7207d80be291515967adf2562c486fccedc083162d2c7bf588e5f36072",
+}
 TRACE_RATE_HZ = 20
 WINDOW_START_SECONDS = -2.0
 WINDOW_END_SECONDS = 4.0
@@ -108,12 +111,14 @@ TIME_GRID = np.round(
 )
 BLINK_PADDING_SECONDS = 0.1
 MAX_INTERPOLATION_GAP_SECONDS = 0.2
+MAX_NONINCREASING_SAMPLE_FRACTION = 0.001
 OUTLIER_WINDOW_SECONDS = 3.0
 OUTLIER_ZSCORE_THRESHOLD = 3.0
 MAX_ISOLATED_OUTLIER_SAMPLES = 3
 PUPIL_QUANTILES = (0.01, 0.99)
 MINIMUM_BASELINE_FRACTION = 0.8
 MINIMUM_PUPIL_WINDOW_FRACTION = 0.75
+MINIMUM_RUNNING_WINDOW_FRACTION = 0.75
 BOOTSTRAP_RESAMPLES = 2_000
 
 
@@ -165,6 +170,19 @@ def file_sha256(path: Path) -> str:
 
 def normalized_session_id(value: str) -> str:
     return value.removeprefix("SLAP2_")
+
+
+def session_date_from_id(value: str) -> str:
+    candidates = []
+    for part in normalized_session_id(value).split("_"):
+        try:
+            dt.date.fromisoformat(part)
+        except ValueError:
+            continue
+        candidates.append(part)
+    if len(candidates) != 1:
+        raise RuntimeError(f"Session ID does not contain one ISO date: {value}")
+    return candidates[0]
 
 
 def decode(value):
@@ -252,8 +270,11 @@ def load_session_configs() -> tuple[list[dict], dict]:
             )
         if source_row["mouse_id"] != row["Mouse ID"]:
             raise RuntimeError(f"Mouse mismatch for data-access session {row['Session ID']}.")
-        if source_row["date"] != row["Date"]:
-            raise RuntimeError(f"Date mismatch for data-access session {row['Session ID']}.")
+        session_date = session_date_from_id(session_id)
+        if row["Date"] != session_date:
+            raise RuntimeError(
+                f"Data-access date does not match session ID: {row['Session ID']}."
+            )
         configs.append(
             {
                 "cohort": (
@@ -265,7 +286,7 @@ def load_session_configs() -> tuple[list[dict], dict]:
                 "dandi_path": row["DANDI path"],
                 "dandi_url": row["DANDI link"],
                 "dandiset_id": row["Dandiset ID"],
-                "date": row["Date"],
+                "date": session_date,
                 "modality": modality,
                 "mouse_id": row["Mouse ID"],
                 "qc": source_row["qc"],
@@ -352,7 +373,9 @@ def analysis_parameters(bootstrap_resamples: int) -> dict:
             "session_trials": "unweighted mean across valid trials",
         },
         "baseline": {
-            "duration": "recorded previous stop_time to current start_time",
+            "duration": (
+                "unmanipulated interval from row i-2 stop_time to row i-1 start_time"
+            ),
             "sensorimotor": "343 ms immediately preceding current start_time",
             "sequence": "recorded previous start_time to current start_time",
             "standard": "recorded previous stop_time to current start_time",
@@ -396,6 +419,29 @@ def analysis_parameters(bootstrap_resamples: int) -> dict:
                 "sequence": "NWB start_time through stop_time",
                 "standard": "NWB start_time through stop_time",
             },
+        },
+        "running": {
+            "direction": "forward speed; negative source velocities set to zero",
+            "maximum_interpolation_gap_seconds": MAX_INTERPOLATION_GAP_SECONDS,
+            "minimum_baseline_fraction": MINIMUM_BASELINE_FRACTION,
+            "minimum_window_fraction": MINIMUM_RUNNING_WINDOW_FRACTION,
+            "normalization": "subtract each trial's mean baseline speed",
+            "response_window": {
+                "duration": (
+                    "start_time + 0.343 s through start_time + 0.343 s + row Delay"
+                ),
+                "sensorimotor": "NWB start_time through stop_time",
+                "sequence": "NWB start_time through stop_time",
+                "standard": "NWB start_time through stop_time",
+            },
+            "timestamp_cleanup": (
+                "discard non-increasing samples only when at most 0.1% of the series"
+            ),
+            "unit": "cm/s",
+        },
+        "trace_sampling": {
+            "filter": "none",
+            "method": "linear interpolation at the common time-grid timestamps",
         },
         "time_grid_seconds": TIME_GRID.tolist(),
         "trace_rate_hz": TRACE_RATE_HZ,
@@ -479,6 +525,24 @@ def interpolate_with_gap_limit(
     return result
 
 
+def signal_window_values(
+    signal: dict,
+    start: float,
+    end: float,
+    *,
+    include_end: bool = False,
+) -> np.ndarray:
+    left = int(np.searchsorted(signal["timestamps"], start, side="left"))
+    right = int(
+        np.searchsorted(
+            signal["timestamps"],
+            end,
+            side="right" if include_end else "left",
+        )
+    )
+    return signal["values"][left:right]
+
+
 def prepare_pupil(nwb: h5py.File) -> dict:
     path = "processing/eye_tracking"
     if path not in nwb:
@@ -537,7 +601,6 @@ def prepare_pupil(nwb: h5py.File) -> dict:
     low, high = np.quantile(area[preliminary], PUPIL_QUANTILES)
     valid = preliminary & (area >= low) & (area <= high)
     return {
-        "area": area[valid],
         "blink_fraction": float(np.mean(blinks)),
         "interpolated_outlier_count": len(outlier_indices),
         "sample_rate_hz": sample_rate_hz,
@@ -545,6 +608,61 @@ def prepare_pupil(nwb: h5py.File) -> dict:
         "total_samples": len(timestamps),
         "valid_fraction": float(np.mean(valid)),
         "valid_range_px2": [float(low), float(high)],
+        "values": area[valid],
+    }
+
+
+def prepare_running(nwb: h5py.File) -> dict:
+    path = "processing/running/running_speed"
+    if path not in nwb:
+        raise SignalUnavailableError("processed running-speed series unavailable")
+    series = nwb[path]
+    if "data" not in series or "timestamps" not in series:
+        raise SignalUnavailableError("running-speed series lacks data or timestamps")
+    data = series["data"]
+    timestamps = np.asarray(series["timestamps"][:], dtype=float)
+    velocity = np.asarray(data[:], dtype=float)
+    if timestamps.ndim != 1 or velocity.ndim != 1 or len(timestamps) != len(velocity):
+        raise SignalUnavailableError("running-speed arrays are not paired vectors")
+    if len(timestamps) < 2:
+        raise SignalUnavailableError("running-speed series has fewer than two samples")
+    conversion = float(data.attrs.get("conversion", 1.0))
+    offset = float(data.attrs.get("offset", 0.0))
+    velocity = velocity * conversion + offset
+    unit = str(decode(data.attrs.get("unit", series.attrs.get("unit", ""))))
+    if unit.lower().replace(" ", "") not in {"cm/s", "cmps"}:
+        raise SignalUnavailableError(f"unsupported running-speed unit {unit!r}")
+    finite = np.isfinite(timestamps) & np.isfinite(velocity)
+    timestamps = timestamps[finite]
+    velocity = velocity[finite]
+    if len(timestamps) < 2:
+        raise SignalUnavailableError(
+            "running-speed series has fewer than two finite samples"
+        )
+    previous_maximum = np.concatenate(
+        ([-np.inf], np.maximum.accumulate(timestamps[:-1]))
+    )
+    increasing = timestamps > previous_maximum
+    discarded = int(np.count_nonzero(~increasing))
+    if discarded > max(
+        3,
+        round(len(timestamps) * MAX_NONINCREASING_SAMPLE_FRACTION),
+    ):
+        raise SignalUnavailableError(
+            f"discarding {discarded} non-increasing running timestamps would exceed 0.1%"
+        )
+    timestamps = timestamps[increasing]
+    velocity = velocity[increasing]
+    sample_rate_hz = float(1 / np.median(np.diff(timestamps)))
+    return {
+        "discarded_nonincreasing_sample_count": discarded,
+        "negative_sample_fraction": float(np.mean(velocity < 0)),
+        "sample_rate_hz": sample_rate_hz,
+        "timestamps": timestamps,
+        "total_samples": len(finite),
+        "unit": "cm/s",
+        "valid_fraction": float(np.mean(finite)),
+        "values": np.maximum(velocity, 0),
     }
 
 
@@ -595,6 +713,41 @@ def rounded_optional_trace(values: np.ndarray) -> list[float | None]:
     ]
 
 
+def averaged_trace(traces: list[np.ndarray]) -> list[float | None]:
+    matrix = np.vstack(traces)
+    finite_counts = np.sum(np.isfinite(matrix), axis=0)
+    averaged = np.divide(
+        np.nansum(matrix, axis=0),
+        finite_counts,
+        out=np.full(matrix.shape[1], np.nan),
+        where=finite_counts > 0,
+    )
+    return rounded_optional_trace(averaged)
+
+
+def standard_deviation_trace(traces: list[np.ndarray]) -> list[float | None]:
+    matrix = np.vstack(traces)
+    finite_counts = np.sum(np.isfinite(matrix), axis=0)
+    means = np.divide(
+        np.nansum(matrix, axis=0),
+        finite_counts,
+        out=np.full(matrix.shape[1], np.nan),
+        where=finite_counts > 0,
+    )
+    squared_deviations = np.where(
+        np.isfinite(matrix),
+        (matrix - means) ** 2,
+        0,
+    )
+    variances = np.divide(
+        np.sum(squared_deviations, axis=0),
+        finite_counts,
+        out=np.full(matrix.shape[1], np.nan),
+        where=finite_counts > 0,
+    )
+    return rounded_optional_trace(np.sqrt(variances))
+
+
 def summarize_trial_traces(
     raw_traces: list[np.ndarray],
     percent_change_traces: list[np.ndarray],
@@ -622,41 +775,6 @@ def summarize_trial_traces(
             "response_end_mean_seconds": None,
             "valid_trials": 0,
         }
-
-    def averaged_trace(traces: list[np.ndarray]) -> list[float | None]:
-        matrix = np.vstack(traces)
-        finite_counts = np.sum(np.isfinite(matrix), axis=0)
-        averaged = np.divide(
-            np.nansum(matrix, axis=0),
-            finite_counts,
-            out=np.full(matrix.shape[1], np.nan),
-            where=finite_counts > 0,
-        )
-        return rounded_optional_trace(averaged)
-
-    def standard_deviation_trace(
-        traces: list[np.ndarray],
-    ) -> list[float | None]:
-        matrix = np.vstack(traces)
-        finite_counts = np.sum(np.isfinite(matrix), axis=0)
-        means = np.divide(
-            np.nansum(matrix, axis=0),
-            finite_counts,
-            out=np.full(matrix.shape[1], np.nan),
-            where=finite_counts > 0,
-        )
-        squared_deviations = np.where(
-            np.isfinite(matrix),
-            (matrix - means) ** 2,
-            0,
-        )
-        variances = np.divide(
-            np.sum(squared_deviations, axis=0),
-            finite_counts,
-            out=np.full(matrix.shape[1], np.nan),
-            where=finite_counts > 0,
-        )
-        return rounded_optional_trace(np.sqrt(variances))
 
     return {
         "available_trials": available_trials,
@@ -713,14 +831,15 @@ def pupil_event_summary(
         baseline_start, baseline_end = baseline_window
         trace = interpolate_with_gap_limit(
             signal["timestamps"],
-            signal["area"],
+            signal["values"],
             onset + TIME_GRID,
         )
         baseline_duration = baseline_end - baseline_start
-        baseline_mask = (signal["timestamps"] >= baseline_start) & (
-            signal["timestamps"] < baseline_end
+        baseline_values = signal_window_values(
+            signal,
+            baseline_start,
+            baseline_end,
         )
-        baseline_values = signal["area"][baseline_mask]
         expected_baseline_samples = baseline_duration * signal["sample_rate_hz"]
         minimum_baseline_samples = max(
             2,
@@ -738,10 +857,12 @@ def pupil_event_summary(
             continue
         normalized = (trace / baseline - 1) * 100
         response_start, response_end = response_window
-        response_mask = (signal["timestamps"] >= response_start) & (
-            signal["timestamps"] <= response_end
+        response_values = signal_window_values(
+            signal,
+            response_start,
+            response_end,
+            include_end=True,
         )
-        response_values = signal["area"][response_mask]
         response_duration = response_end - response_start
         minimum_response_samples = max(
             2,
@@ -775,14 +896,161 @@ def pupil_event_summary(
     )
 
 
+def summarize_running_trial_traces(
+    raw_traces: list[np.ndarray],
+    baseline_change_traces: list[np.ndarray],
+    baselines: list[float],
+    baseline_durations: list[float],
+    response_starts: list[float],
+    response_ends: list[float],
+    response_speeds: list[float],
+    response_changes: list[float],
+    available_trials: int,
+    rejections: Counter,
+) -> dict:
+    if not raw_traces:
+        return {
+            "available_trials": available_trials,
+            "baseline_change_mean_trace": None,
+            "baseline_change_std_trace": None,
+            "baseline_duration_mean_seconds": None,
+            "baseline_mean_cm_s": None,
+            "raw_mean_trace": None,
+            "raw_std_trace": None,
+            "rejections": dict(sorted(rejections.items())),
+            "response_change_mean_cm_s": None,
+            "response_change_std_cm_s": None,
+            "response_end_mean_seconds": None,
+            "response_mean_cm_s": None,
+            "response_start_mean_seconds": None,
+            "response_std_cm_s": None,
+            "valid_trials": 0,
+        }
+    return {
+        "available_trials": available_trials,
+        "baseline_change_mean_trace": averaged_trace(baseline_change_traces),
+        "baseline_change_std_trace": standard_deviation_trace(
+            baseline_change_traces
+        ),
+        "baseline_duration_mean_seconds": round(
+            float(np.mean(baseline_durations)),
+            6,
+        ),
+        "baseline_mean_cm_s": round(float(np.mean(baselines)), 5),
+        "raw_mean_trace": averaged_trace(raw_traces),
+        "raw_std_trace": standard_deviation_trace(raw_traces),
+        "rejections": dict(sorted(rejections.items())),
+        "response_change_mean_cm_s": round(float(np.mean(response_changes)), 5),
+        "response_change_std_cm_s": round(float(np.std(response_changes)), 5),
+        "response_end_mean_seconds": round(float(np.mean(response_ends)), 6),
+        "response_mean_cm_s": round(float(np.mean(response_speeds)), 5),
+        "response_start_mean_seconds": round(float(np.mean(response_starts)), 6),
+        "response_std_cm_s": round(float(np.std(response_speeds)), 5),
+        "valid_trials": len(raw_traces),
+    }
+
+
+def running_event_summary(
+    signal: dict,
+    onsets: np.ndarray,
+    baseline_windows: list[tuple[float, float] | None],
+    response_windows: list[tuple[float, float]],
+) -> dict:
+    raw_traces = []
+    baseline_change_traces = []
+    baselines = []
+    baseline_durations = []
+    response_starts = []
+    response_ends = []
+    response_speeds = []
+    response_changes = []
+    rejections = Counter()
+    minimum_window = math.ceil(len(TIME_GRID) * MINIMUM_RUNNING_WINDOW_FRACTION)
+    for onset, baseline_window, response_window in zip(
+        onsets,
+        baseline_windows,
+        response_windows,
+        strict=True,
+    ):
+        if baseline_window is None:
+            rejections["no preceding within-block baseline"] += 1
+            continue
+        baseline_start, baseline_end = baseline_window
+        baseline_duration = baseline_end - baseline_start
+        baseline_values = signal_window_values(
+            signal,
+            baseline_start,
+            baseline_end,
+        )
+        expected_baseline_samples = baseline_duration * signal["sample_rate_hz"]
+        minimum_baseline_samples = max(
+            2,
+            math.ceil(expected_baseline_samples * MINIMUM_BASELINE_FRACTION),
+        )
+        if len(baseline_values) < minimum_baseline_samples:
+            rejections["incomplete baseline"] += 1
+            continue
+        trace = interpolate_with_gap_limit(
+            signal["timestamps"],
+            signal["values"],
+            onset + TIME_GRID,
+        )
+        if np.count_nonzero(np.isfinite(trace)) < minimum_window:
+            rejections["incomplete event window"] += 1
+            continue
+        response_start, response_end = response_window
+        response_values = signal_window_values(
+            signal,
+            response_start,
+            response_end,
+            include_end=True,
+        )
+        response_duration = response_end - response_start
+        minimum_response_samples = max(
+            2,
+            math.ceil(
+                response_duration
+                * signal["sample_rate_hz"]
+                * MINIMUM_RUNNING_WINDOW_FRACTION
+            ),
+        )
+        if len(response_values) < minimum_response_samples:
+            rejections["incomplete response window"] += 1
+            continue
+        baseline = float(np.mean(baseline_values))
+        response_speed = float(np.mean(response_values))
+        raw_traces.append(trace)
+        baseline_change_traces.append(trace - baseline)
+        baselines.append(baseline)
+        baseline_durations.append(baseline_duration)
+        response_starts.append(response_start - onset)
+        response_ends.append(response_end - onset)
+        response_speeds.append(response_speed)
+        response_changes.append(response_speed - baseline)
+    return summarize_running_trial_traces(
+        raw_traces,
+        baseline_change_traces,
+        baselines,
+        baseline_durations,
+        response_starts,
+        response_ends,
+        response_speeds,
+        response_changes,
+        len(onsets),
+        rejections,
+    )
+
+
 def extract_event(
     definition: EventDefinition,
     context: str,
     context_arrays: dict,
     control_arrays: dict,
     pupil: dict,
+    running: dict | None,
 ) -> dict:
     conditions = {}
+    running_conditions = {}
     for condition, arrays, control in (
         ("event", context_arrays, False),
         ("control", control_arrays, True),
@@ -816,6 +1084,13 @@ def extract_event(
             baseline_windows,
             response_windows,
         )
+        if running is not None:
+            running_conditions[condition] = running_event_summary(
+                running,
+                onsets,
+                baseline_windows,
+                response_windows,
+            )
     return {
         "alignment": "start_time",
         "conditions": conditions,
@@ -826,11 +1101,12 @@ def extract_event(
             definition.id,
         ),
         "static_group": definition.static_group or definition.id,
+        "running": running_conditions or None,
     }
 
 
-def pupil_metadata(signal: dict) -> dict:
-    hidden = {"timestamps", "area"}
+def signal_metadata(signal: dict) -> dict:
+    hidden = {"timestamps", "values"}
     return {
         **{
             key: (
@@ -868,6 +1144,12 @@ def extract_session(config: dict, asset: dict) -> dict:
                 raise SessionUnavailableError(
                     f"processed pupil area unavailable ({exc})"
                 ) from exc
+            try:
+                running = prepare_running(nwb)
+                running_unavailable_reason = None
+            except SignalUnavailableError as exc:
+                running = None
+                running_unavailable_reason = str(exc)
 
             events = [
                 extract_event(
@@ -876,6 +1158,7 @@ def extract_session(config: dict, asset: dict) -> dict:
                     context_arrays,
                     control_arrays,
                     pupil,
+                    running,
                 )
                 for definition in EVENT_DEFINITIONS[config["context"]]
             ]
@@ -890,7 +1173,9 @@ def extract_session(config: dict, asset: dict) -> dict:
         "mouse_id": config["mouse_id"],
         "qc": config["qc"],
         "session_id": config["session_id"],
-        "pupil": pupil_metadata(pupil),
+        "pupil": signal_metadata(pupil),
+        "running": signal_metadata(running) if running is not None else None,
+        "running_unavailable_reason": running_unavailable_reason,
         "source": source,
         "source_row": config["source_row"],
     }
@@ -912,9 +1197,31 @@ def cached_session(
         if (
             cached.get("cache_version") == CACHE_VERSION
             and cached.get("asset_modified") == asset["modified"]
-            and cached.get("analysis_signature") == signature
+            and (
+                cached.get("analysis_signature") == signature
+                or cached.get("analysis_signature") in COMPATIBLE_CACHE_SIGNATURES
+            )
         ):
-            return cached["session"]
+            session = cached["session"]
+            needs_running_retry = (
+                session.get("running_unavailable_reason")
+                == "finite running-speed timestamps are not strictly increasing"
+            )
+            if cached.get("analysis_signature") != signature and not needs_running_retry:
+                if session.get("running") is not None:
+                    session["running"].setdefault(
+                        "discarded_nonincreasing_sample_count",
+                        0,
+                    )
+                cached["analysis_signature"] = signature
+                cache_path.write_text(
+                    json.dumps(cached, ensure_ascii=True, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                    newline="\n",
+                )
+                return session
+            if not needs_running_retry:
+                return session
     session = extract_session(config, asset)
     if cache_path is not None:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -994,6 +1301,62 @@ def averaged_pupil(records: list[dict], condition: str) -> dict | None:
     }
 
 
+def averaged_running(records: list[dict], condition: str) -> dict | None:
+    values = [
+        record["running"][condition]
+        for record in records
+        if record["running"] is not None
+        and record["running"][condition]["valid_trials"] > 0
+    ]
+    if not values:
+        return None
+    baseline_change_mean, baseline_change_std = combine_mean_and_std_traces(
+        [record["baseline_change_mean_trace"] for record in values],
+        [record["baseline_change_std_trace"] for record in values],
+    )
+    raw_mean, raw_std = combine_mean_and_std_traces(
+        [record["raw_mean_trace"] for record in values],
+        [record["raw_std_trace"] for record in values],
+    )
+    response_mean, response_std = combine_mean_and_std_traces(
+        [[record["response_mean_cm_s"]] for record in values],
+        [[record["response_std_cm_s"]] for record in values],
+    )
+    response_change_mean, response_change_std = combine_mean_and_std_traces(
+        [[record["response_change_mean_cm_s"]] for record in values],
+        [[record["response_change_std_cm_s"]] for record in values],
+    )
+    rejections = Counter()
+    for record in values:
+        rejections.update(record["rejections"])
+    return {
+        "available_trials": sum(record["available_trials"] for record in values),
+        "baseline_change_mean_trace": baseline_change_mean,
+        "baseline_change_std_trace": baseline_change_std,
+        "baseline_duration_mean_seconds": average_numbers(
+            [record["baseline_duration_mean_seconds"] for record in values]
+        ),
+        "baseline_mean_cm_s": average_numbers(
+            [record["baseline_mean_cm_s"] for record in values]
+        ),
+        "raw_mean_trace": raw_mean,
+        "raw_std_trace": raw_std,
+        "rejections": dict(sorted(rejections.items())),
+        "response_change_mean_cm_s": response_change_mean[0],
+        "response_change_std_cm_s": response_change_std[0],
+        "response_end_mean_seconds": average_numbers(
+            [record["response_end_mean_seconds"] for record in values]
+        ),
+        "response_mean_cm_s": response_mean[0],
+        "response_start_mean_seconds": average_numbers(
+            [record["response_start_mean_seconds"] for record in values]
+        ),
+        "response_std_cm_s": response_std[0],
+        "session_count": len(values),
+        "valid_trials": sum(record["valid_trials"] for record in values),
+    }
+
+
 def build_mouse_records(sessions: list[dict]) -> list[dict]:
     grouped = defaultdict(list)
     for session in sessions:
@@ -1047,6 +1410,33 @@ def build_mouse_records(sessions: list[dict]) -> list[dict]:
                         + float(control_pupil["response_percent_change_std"]) ** 2
                     ),
                 }
+            paired_running_events = [
+                event
+                for event in session_events
+                if event["running"] is not None
+                and event["running"]["event"]["valid_trials"] > 0
+                and event["running"]["control"]["valid_trials"] > 0
+            ]
+            event_running = averaged_running(paired_running_events, "event")
+            control_running = averaged_running(paired_running_events, "control")
+            running = None
+            if event_running is not None and control_running is not None:
+                running = {
+                    "baseline_change_difference_trace": subtract_traces(
+                        event_running["baseline_change_mean_trace"],
+                        control_running["baseline_change_mean_trace"],
+                    ),
+                    "control": control_running,
+                    "event": event_running,
+                    "response_change_difference_cm_s": (
+                        float(event_running["response_change_mean_cm_s"])
+                        - float(control_running["response_change_mean_cm_s"])
+                    ),
+                    "response_change_difference_std_cm_s": math.sqrt(
+                        float(event_running["response_change_std_cm_s"]) ** 2
+                        + float(control_running["response_change_std_cm_s"]) ** 2
+                    ),
+                }
             events.append(
                 {
                     "id": definition.id,
@@ -1057,6 +1447,7 @@ def build_mouse_records(sessions: list[dict]) -> list[dict]:
                         definition.id,
                     ),
                     "static_group": definition.static_group or definition.id,
+                    "running": running,
                 }
             )
         mouse_records.append(
@@ -1066,6 +1457,9 @@ def build_mouse_records(sessions: list[dict]) -> list[dict]:
                 "events": events,
                 "modality": modality,
                 "mouse_id": mouse_id,
+                "running_source_session_count": sum(
+                    record["running"] is not None for record in records
+                ),
                 "session_count": len(records),
                 "source_session_ids": sorted(
                     record["session_id"] for record in records
@@ -1174,7 +1568,7 @@ def build_summaries(mouse_records: list[dict], resamples: int) -> list[dict]:
             for mouse, event in records
             if event["pupil"] is not None
         ]
-        key = f"{modality}:{cohort}:{context}:{event_id}:pupil"
+        pupil_key = f"{modality}:{cohort}:{context}:{event_id}:pupil"
         response_points = [
             {
                 "mouse_id": mouse["mouse_id"],
@@ -1193,7 +1587,7 @@ def build_summaries(mouse_records: list[dict], resamples: int) -> list[dict]:
                         pupil_record["control"]["percent_change_mean_trace"]
                         for _, pupil_record in valid
                     ],
-                    f"{key}:control",
+                    f"{pupil_key}:control",
                     resamples,
                 ),
                 "difference_percent_change_trace": bootstrap_trace(
@@ -1201,7 +1595,7 @@ def build_summaries(mouse_records: list[dict], resamples: int) -> list[dict]:
                         pupil_record["percent_change_difference_trace"]
                         for _, pupil_record in valid
                     ],
-                    f"{key}:difference",
+                    f"{pupil_key}:difference",
                     resamples,
                 ),
                 "event_percent_change_trace": bootstrap_trace(
@@ -1209,17 +1603,70 @@ def build_summaries(mouse_records: list[dict], resamples: int) -> list[dict]:
                         pupil_record["event"]["percent_change_mean_trace"]
                         for _, pupil_record in valid
                     ],
-                    f"{key}:event",
+                    f"{pupil_key}:event",
                     resamples,
                 ),
                 "mouse_count": len(valid),
                 "response_percent_change": {
                     **bootstrap_scalar(
                         [point["value"] for point in response_points],
-                        f"{key}:response",
+                        f"{pupil_key}:response",
                         resamples,
                     ),
                     "points": response_points,
+                },
+            }
+        valid_running = [
+            (mouse, event["running"])
+            for mouse, event in records
+            if event["running"] is not None
+        ]
+        running_key = f"{modality}:{cohort}:{context}:{event_id}:running"
+        running_response_points = [
+            {
+                "mouse_id": mouse["mouse_id"],
+                "value": round(
+                    float(running["response_change_difference_cm_s"]),
+                    5,
+                ),
+            }
+            for mouse, running in valid_running
+        ]
+        running = None
+        if valid_running:
+            running = {
+                "control_baseline_change_trace": bootstrap_trace(
+                    [
+                        running_record["control"]["baseline_change_mean_trace"]
+                        for _, running_record in valid_running
+                    ],
+                    f"{running_key}:control",
+                    resamples,
+                ),
+                "difference_baseline_change_trace": bootstrap_trace(
+                    [
+                        running_record["baseline_change_difference_trace"]
+                        for _, running_record in valid_running
+                    ],
+                    f"{running_key}:difference",
+                    resamples,
+                ),
+                "event_baseline_change_trace": bootstrap_trace(
+                    [
+                        running_record["event"]["baseline_change_mean_trace"]
+                        for _, running_record in valid_running
+                    ],
+                    f"{running_key}:event",
+                    resamples,
+                ),
+                "mouse_count": len(valid_running),
+                "response_change_cm_s": {
+                    **bootstrap_scalar(
+                        [point["value"] for point in running_response_points],
+                        f"{running_key}:response",
+                        resamples,
+                    ),
+                    "points": running_response_points,
                 },
             }
         summaries.append(
@@ -1235,6 +1682,7 @@ def build_summaries(mouse_records: list[dict], resamples: int) -> list[dict]:
                     event_id,
                 ),
                 "static_group": definition.static_group or definition.id,
+                "running": running,
             }
         )
     return summaries
@@ -1248,6 +1696,16 @@ def coverage_records(sessions: list[dict], exclusions: list[dict]) -> list[dict]
     excluded = Counter(
         (record["modality"], record["cohort"], record["context"])
         for record in exclusions
+    )
+    running_included = Counter(
+        (record["modality"], record["cohort"], record["context"])
+        for record in sessions
+        if record["running"] is not None
+    )
+    running_unavailable = Counter(
+        (record["modality"], record["cohort"], record["context"])
+        for record in sessions
+        if record["running"] is None
     )
     keys = sorted(
         set(included) | set(excluded),
@@ -1264,6 +1722,10 @@ def coverage_records(sessions: list[dict], exclusions: list[dict]) -> list[dict]
             "excluded_sessions": excluded[(modality, cohort, context)],
             "included_sessions": included[(modality, cohort, context)],
             "modality": modality,
+            "running_sessions": running_included[(modality, cohort, context)],
+            "running_unavailable_sessions": running_unavailable[
+                (modality, cohort, context)
+            ],
         }
         for modality, cohort, context in keys
     ]
@@ -1377,11 +1839,24 @@ def main() -> None:
     )
     mouse_records = build_mouse_records(sessions)
     summaries = build_summaries(mouse_records, args.bootstrap_resamples)
+    running_exclusions = [
+        {
+            "cohort": session["cohort"],
+            "context": session["context"],
+            "modality": session["modality"],
+            "mouse_id": session["mouse_id"],
+            "reason": session["running_unavailable_reason"],
+            "session_id": session["session_id"],
+        }
+        for session in sessions
+        if session["running"] is None
+    ]
     payload = {
         "analysis_parameters": analysis_parameters(args.bootstrap_resamples),
         "coverage": coverage_records(sessions, exclusions),
         "exclusions": exclusions,
         "mice": mouse_records,
+        "running_exclusions": running_exclusions,
         "sessions": sessions,
         "summaries": summaries,
         "version": EXTRACTION_VERSION,
@@ -1406,6 +1881,7 @@ def main() -> None:
         else str(args.output),
         "output_sha256": file_sha256(args.output),
         "retrieved_date": args.retrieved_date,
+        "running_exclusion_count": len(running_exclusions),
         "script": {
             "path": "scripts/extract_pupil_event_responses.py",
             "sha256": file_sha256(Path(__file__)),

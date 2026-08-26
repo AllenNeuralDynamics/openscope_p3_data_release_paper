@@ -2,16 +2,16 @@
   "export_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/export?format=xlsx",
   "modality_rows": {
     "mesoscope": 91,
-    "neuropixels": 62,
-    "slap2": 44
+    "neuropixels": 64,
+    "slap2": 43
   },
-  "notes": "Complete EPHYS, MESO, and SLAP2 worksheet rows in source order. Repeated and aborted records are retained to reproduce the supplied static plots; the interactive explorer remains a separate grouped-session inventory.",
-  "retrieved_date": "2026-08-03",
-  "rows": 197,
-  "source_rows": 197,
-  "source_sha256": "8acb9e11fe8b8ee184ba23aae86354e31476abc432423b0b0ccd20ad7e968f69",
+  "notes": "Complete EPHYS, MESO, and SLAP2 worksheet rows in source order. Repeated and aborted records are retained to reproduce the supplied static plots; the interactive explorer selects valid session IDs whose QC status is Pass.",
+  "retrieved_date": "2026-08-17",
+  "rows": 198,
+  "source_rows": 198,
+  "source_sha256": "3874d70c434074b8aac9e8bb3ec310abcff189c6506be405e4ba906b0b12cf7e",
   "source_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/edit?usp=sharing",
-  "vendored_sha256": "35400ba7c78ef3890f896ddaa722c202e37647d746b6de0269a6d170d60fc91c",
+  "vendored_sha256": "23c4c7893a8033c18c7d52ec36bbb88f9b1640acf7f7882c0e5b465dae26edd4",
   "version": 1,
   "worksheet_rows": 198
 }

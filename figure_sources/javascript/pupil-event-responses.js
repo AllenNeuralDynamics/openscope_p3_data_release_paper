@@ -23,13 +23,13 @@
     duration: "#ccaf2d",
   };
   const state = {
-    cohort: "motor",
+    cohort: "sequence",
     context: "standard",
     eventId: null,
     modality: "neuropixels",
-    mouseId: null,
+    mouseId: "830846",
     scale: "percent",
-    scope: "population",
+    scope: "mouse",
     view: "interactive",
   };
 
@@ -47,8 +47,14 @@
   const plotContent = document.getElementById("plot-content");
   const selectionTitle = document.getElementById("selection-title");
   const selectionDetail = document.getElementById("selection-detail");
-  const traceCanvas = document.getElementById("trace-canvas");
-  const effectCanvas = document.getElementById("effect-canvas");
+  const pupilTraceCanvas = document.getElementById("pupil-trace-canvas");
+  const runningTraceCanvas = document.getElementById("running-trace-canvas");
+  const pupilUnavailable = document.getElementById("pupil-unavailable");
+  const runningUnavailable = document.getElementById("running-unavailable");
+  const pupilEffectCanvas = document.getElementById("pupil-effect-canvas");
+  const runningEffectCanvas = document.getElementById("running-effect-canvas");
+  const pupilEffectWrapper = document.getElementById("pupil-effect-wrapper");
+  const runningEffectWrapper = document.getElementById("running-effect-wrapper");
   const effectPanel = document.getElementById("effect-panel");
   const metadata = document.getElementById("analysis-metadata");
 
@@ -84,7 +90,9 @@
 
   function currentMouseEvent() {
     return currentMouseRecord()?.events.find(
-      (event) => event.id === state.eventId && event.conditions,
+      (event) =>
+        event.id === state.eventId &&
+        (event.pupilConditions || event.runningConditions),
     );
   }
 
@@ -189,7 +197,11 @@
   function availableMice() {
     return miceForSelection()
       .filter((mouse) =>
-        mouse.events.some((event) => event.id === state.eventId && event.conditions),
+        mouse.events.some(
+          (event) =>
+            event.id === state.eventId &&
+            (event.pupilConditions || event.runningConditions),
+        ),
       )
       .map((mouse) => mouse.mouseId)
       .sort();
@@ -272,19 +284,13 @@
     context.fillStyle = "#59605e";
     context.lineWidth = 1;
     context.font = '19px "IBM Plex Mono", monospace';
-    const axisValues = [
-      yRange[0],
-      (yRange[0] + yRange[1]) / 2,
-      yRange[1],
-    ];
-    if (
-      yRange[0] < 0 &&
-      yRange[1] > 0 &&
-      !axisValues.some((value) => Math.abs(value) < 1e-9)
-    ) {
-      axisValues.push(0);
-      axisValues.sort((left, right) => left - right);
-    }
+    const axisValues = [yRange[0], yRange[1]];
+    axisValues.push(
+      yRange[0] < 0 && yRange[1] > 0
+        ? 0
+        : (yRange[0] + yRange[1]) / 2,
+    );
+    axisValues.sort((left, right) => left - right);
     for (const value of axisValues) {
       const fraction = (value - yRange[0]) / (yRange[1] - yRange[0]);
       const y = plot.bottom - fraction * (plot.bottom - plot.top);
@@ -334,7 +340,7 @@
     context.restore();
   }
 
-  function drawEffectAxes(context, plot, yRange, responseWindowLabel) {
+  function drawEffectAxes(context, plot, yRange, responseWindowLabel, yLabel) {
     context.save();
     context.strokeStyle = "#d5d9d7";
     context.fillStyle = "#59605e";
@@ -377,7 +383,7 @@
     context.save();
     context.translate(26, (plot.top + plot.bottom) / 2);
     context.rotate(-Math.PI / 2);
-    context.fillText("Event − control (%)", 0, 0);
+    context.fillText(yLabel, 0, 0);
     context.restore();
     context.restore();
   }
@@ -444,18 +450,13 @@
     context.restore();
   }
 
-  function mouseEventRecords() {
-    const event = currentMouseEvent();
-    return event ? [event] : [];
-  }
-
-  function variabilityBounds(mean, std) {
+  function uncertaintyBounds(mean, sem) {
     return {
       lower: mean.map((value, index) =>
-        value === null || std[index] === null ? null : value - std[index],
+        value === null || sem[index] === null ? null : value - sem[index],
       ),
       upper: mean.map((value, index) =>
-        value === null || std[index] === null ? null : value + std[index],
+        value === null || sem[index] === null ? null : value + sem[index],
       ),
     };
   }
@@ -471,36 +472,36 @@
       control.upper,
     ];
     const yRange = rangeForTraces(traces, true);
-    const context = canvasContext(traceCanvas);
+    const context = canvasContext(pupilTraceCanvas);
     const plot = { left: 105, right: 1170, top: 28, bottom: 340 };
     drawAxes(context, plot, yRange, "Pupil area (% baseline)");
     drawBand(context, control.lower, control.upper, plot, yRange, "#8a918e");
     drawBand(context, event.lower, event.upper, plot, yRange, contextColors[state.context]);
     drawLine(context, control.mean, plot, yRange, "#8a918e", true);
     drawLine(context, event.mean, plot, yRange, contextColors[state.context]);
-    traceCanvas.setAttribute(
+    pupilTraceCanvas.setAttribute(
       "aria-label",
-      `${summary.label} mean pupil percent-change traces for ${modalityLabels[state.modality]} ${state.cohort} cohort, with 95 percent mouse bootstrap intervals.`,
+      `${summary.label} mean pupil percent-change traces for ${modalityLabels[state.modality]} ${state.cohort} cohort, plus or minus one standard error across mice.`,
     );
   }
 
   function renderMousePercentTrace() {
-    const record = currentMouseEvent();
-    const event = record.conditions.event;
-    const control = record.conditions.control;
-    const eventBounds = variabilityBounds(
+    const conditions = currentMouseEvent().pupilConditions;
+    const event = conditions.event;
+    const control = conditions.control;
+    const eventBounds = uncertaintyBounds(
       event.percentChangeMeanTrace,
-      event.percentChangeStdTrace,
+      event.percentChangeSemTrace,
     );
-    const controlBounds = variabilityBounds(
+    const controlBounds = uncertaintyBounds(
       control.percentChangeMeanTrace,
-      control.percentChangeStdTrace,
+      control.percentChangeSemTrace,
     );
     const yRange = rangeForTraces(
       [eventBounds.lower, eventBounds.upper, controlBounds.lower, controlBounds.upper],
       true,
     );
-    const context = canvasContext(traceCanvas);
+    const context = canvasContext(pupilTraceCanvas);
     const plot = { left: 105, right: 1170, top: 28, bottom: 340 };
     drawAxes(context, plot, yRange, "Pupil area (% baseline)");
     drawBand(
@@ -527,23 +528,23 @@
       yRange,
       contextColors[state.context],
     );
-    traceCanvas.setAttribute(
+    pupilTraceCanvas.setAttribute(
       "aria-label",
-      `${summaryLabel()} mean pupil percent-change traces plus or minus one standard deviation for mouse ${state.mouseId}.`,
+      `${summaryLabel()} mean pupil percent-change traces plus or minus one standard error across valid trials for mouse ${state.mouseId}.`,
     );
   }
 
   function renderRawTrace() {
-    const record = currentMouseEvent();
-    const event = record.conditions.event;
-    const control = record.conditions.control;
-    const eventBounds = variabilityBounds(event.rawMeanTrace, event.rawStdTrace);
-    const controlBounds = variabilityBounds(control.rawMeanTrace, control.rawStdTrace);
+    const conditions = currentMouseEvent().pupilConditions;
+    const event = conditions.event;
+    const control = conditions.control;
+    const eventBounds = uncertaintyBounds(event.rawMeanTrace, event.rawSemTrace);
+    const controlBounds = uncertaintyBounds(control.rawMeanTrace, control.rawSemTrace);
     const yRange = rangeForTraces(
       [eventBounds.lower, eventBounds.upper, controlBounds.lower, controlBounds.upper],
       false,
     );
-    const context = canvasContext(traceCanvas);
+    const context = canvasContext(pupilTraceCanvas);
     const plot = { left: 125, right: 1170, top: 28, bottom: 340 };
     drawAxes(context, plot, yRange, "Pupil area (px²)");
     drawBand(
@@ -564,19 +565,83 @@
     );
     drawLine(context, control.rawMeanTrace, plot, yRange, "#8a918e", true);
     drawLine(context, event.rawMeanTrace, plot, yRange, contextColors[state.context]);
-    traceCanvas.setAttribute(
+    pupilTraceCanvas.setAttribute(
       "aria-label",
-      `${summaryLabel()} raw mean pupil-area traces plus or minus one standard deviation for mouse ${state.mouseId}.`,
+      `${summaryLabel()} raw mean pupil-area traces plus or minus one standard error across valid trials for mouse ${state.mouseId}.`,
     );
   }
 
-  function renderEffect(summary) {
-    const response = summary.pupil.responsePercentChange;
+  function renderPopulationRunning(summary) {
+    const running = summary.running;
+    const event = running.eventBaselineChangeTrace;
+    const control = running.controlBaselineChangeTrace;
+    const yRange = rangeForTraces(
+      [event.lower, event.upper, control.lower, control.upper],
+      true,
+    );
+    const context = canvasContext(runningTraceCanvas);
+    const plot = { left: 105, right: 1170, top: 28, bottom: 340 };
+    drawAxes(context, plot, yRange, "Δ forward speed (cm/s)");
+    drawBand(context, control.lower, control.upper, plot, yRange, "#8a918e");
+    drawBand(context, event.lower, event.upper, plot, yRange, contextColors[state.context]);
+    drawLine(context, control.mean, plot, yRange, "#8a918e", true);
+    drawLine(context, event.mean, plot, yRange, contextColors[state.context]);
+    runningTraceCanvas.setAttribute(
+      "aria-label",
+      `${summary.label} mean baseline-subtracted forward-running traces for ${modalityLabels[state.modality]} ${state.cohort} cohort, plus or minus one standard error across mice.`,
+    );
+  }
+
+  function renderMouseRunning(raw) {
+    const conditions = currentMouseEvent().runningConditions;
+    const event = conditions.event;
+    const control = conditions.control;
+    const meanField = raw ? "rawMeanTrace" : "baselineChangeMeanTrace";
+    const semField = raw ? "rawSemTrace" : "baselineChangeSemTrace";
+    const eventBounds = uncertaintyBounds(event[meanField], event[semField]);
+    const controlBounds = uncertaintyBounds(control[meanField], control[semField]);
+    const yRange = rangeForTraces(
+      [eventBounds.lower, eventBounds.upper, controlBounds.lower, controlBounds.upper],
+      !raw,
+    );
+    const context = canvasContext(runningTraceCanvas);
+    const plot = { left: 105, right: 1170, top: 28, bottom: 340 };
+    drawAxes(
+      context,
+      plot,
+      yRange,
+      raw ? "Forward speed (cm/s)" : "Δ forward speed (cm/s)",
+    );
+    drawBand(
+      context,
+      controlBounds.lower,
+      controlBounds.upper,
+      plot,
+      yRange,
+      "#8a918e",
+    );
+    drawBand(
+      context,
+      eventBounds.lower,
+      eventBounds.upper,
+      plot,
+      yRange,
+      contextColors[state.context],
+    );
+    drawLine(context, control[meanField], plot, yRange, "#8a918e", true);
+    drawLine(context, event[meanField], plot, yRange, contextColors[state.context]);
+    runningTraceCanvas.setAttribute(
+      "aria-label",
+      `${summaryLabel()} ${raw ? "raw" : "baseline-subtracted"} forward-running traces plus or minus one standard error across valid trials for mouse ${state.mouseId}.`,
+    );
+  }
+
+  function renderEffect(canvas, response, summary, yLabel, ariaUnit) {
     const values = response.points.map((point) => point.value);
     const yRange = rangeForTraces([values], true);
-    const context = canvasContext(effectCanvas);
+    const context = canvasContext(canvas);
     const plot = { left: 105, right: 1170, top: 25, bottom: 180 };
-    drawEffectAxes(context, plot, yRange, summary.responseWindowLabel);
+    drawEffectAxes(context, plot, yRange, summary.responseWindowLabel, yLabel);
     const center = (plot.left + plot.right) / 2;
     context.strokeStyle = "#303536";
     context.lineWidth = 5;
@@ -602,9 +667,9 @@
     context.arc(center, y(response.mean), 10, 0, Math.PI * 2);
     context.fill();
     context.stroke();
-    effectCanvas.setAttribute(
+    canvas.setAttribute(
       "aria-label",
-      `${response.points.length} mouse-level event-minus-control pupil effects with mean ${response.mean.toFixed(2)} percent.`,
+      `${response.points.length} mouse-level event-minus-control effects with mean ${response.mean.toFixed(2)} ${ariaUnit}.`,
     );
   }
 
@@ -625,55 +690,122 @@
     }
   }
 
+  function setPanelAvailability(canvas, message, available, reason) {
+    canvas.hidden = !available;
+    message.hidden = available;
+    message.textContent = available ? "" : reason;
+  }
+
   function render() {
     const summary = currentSummary();
     if (!summary) return;
-    const unavailable = !summary.availability.available;
+    const mouseEvent = currentMouseEvent();
+    const pupilAvailable =
+      state.scope === "population"
+        ? summary.pupilAvailability.available
+        : Boolean(mouseEvent?.pupilConditions);
+    const runningAvailable =
+      state.scope === "population"
+        ? summary.runningAvailability.available && Boolean(summary.running)
+        : Boolean(mouseEvent?.runningConditions);
+    const unavailable = !pupilAvailable && !runningAvailable;
     unavailableMessage.hidden = !unavailable;
     plotContent.hidden = unavailable;
     if (unavailable) {
-      unavailableMessage.textContent = summary.availability.reason;
+      unavailableMessage.textContent =
+        state.scope === "population"
+          ? "Neither pupil tracking nor running speed has sufficient source-backed coverage for this selection."
+          : `Neither pupil tracking nor running speed is available for mouse ${state.mouseId} in this selection.`;
       return;
     }
     mouseControl.hidden = state.scope !== "mouse";
     effectPanel.hidden = state.scope === "mouse";
+    setPanelAvailability(
+      pupilTraceCanvas,
+      pupilUnavailable,
+      pupilAvailable,
+      state.scope === "population"
+        ? summary.pupilAvailability.reason
+        : `Pupil tracking is unavailable after trial-level quality control for mouse ${state.mouseId}.`,
+    );
+    setPanelAvailability(
+      runningTraceCanvas,
+      runningUnavailable,
+      runningAvailable,
+      state.scope === "population"
+        ? summary.runningAvailability.reason
+        : `Processed running speed is unavailable for mouse ${state.mouseId} in this source session.`,
+    );
+    pupilEffectWrapper.hidden = !pupilAvailable;
+    runningEffectWrapper.hidden = !runningAvailable;
     selectionTitle.textContent = `${modalityLabels[state.modality]} · ${state.cohort === "motor" ? "Motor" : "Sequence"} cohort · ${contextLabels[state.context]}`;
     selectionDetail.textContent =
       state.scope === "mouse"
         ? `${summary.label} · mouse ${state.mouseId}`
         : summary.label;
-    if (state.scale === "percent" && state.scope === "population") {
-      renderPercentTrace(summary);
-      renderEffect(summary);
+    if (state.scope === "population") {
+      if (pupilAvailable) renderPercentTrace(summary);
+      if (runningAvailable) renderPopulationRunning(summary);
+      if (pupilAvailable) {
+        renderEffect(
+          pupilEffectCanvas,
+          summary.pupil.responsePercentChange,
+          summary,
+          "Event − control (%)",
+          "percent",
+        );
+      }
+      if (runningAvailable) {
+        renderEffect(
+          runningEffectCanvas,
+          summary.running.responseChangeCmS,
+          summary,
+          "Event − control (cm/s)",
+          "centimeters per second",
+        );
+      }
       metadataRows([
-        ["Mice", String(summary.pupil.mouseCount)],
+        [
+          "Mice",
+          `pupil ${summary.pupil?.mouseCount || 0}; running ${summary.running?.mouseCount || 0}`,
+        ],
         ["Response window", summary.responseWindowLabel],
-        ["Normalization", data.baselineDescriptions[state.context]],
+        ["Baseline", data.baselineDescriptions[state.context]],
         ["Alignment", "NWB start_time"],
+        ["Trace uncertainty", "mean ±1 SEM across mice"],
+        ["Scalar uncertainty", "95% mouse-bootstrap interval"],
+        ["Trace sampling", "20 Hz linear interpolation; no temporal filtering"],
       ]);
     } else {
-      if (state.scale === "percent") renderMousePercentTrace();
-      else renderRawTrace();
-      const records = mouseEventRecords();
+      if (pupilAvailable) {
+        if (state.scale === "percent") renderMousePercentTrace();
+        else renderRawTrace();
+      }
+      if (runningAvailable) renderMouseRunning(state.scale === "raw");
       const mouse = currentMouseRecord();
-      const eventTrials = records.reduce(
-        (sum, record) => sum + record.conditions.event.validTrials,
-        0,
-      );
-      const controlTrials = records.reduce(
-        (sum, record) => sum + record.conditions.control.validTrials,
-        0,
-      );
+      const pupilEventTrials = mouseEvent?.pupilConditions?.event.validTrials || 0;
+      const pupilControlTrials = mouseEvent?.pupilConditions?.control.validTrials || 0;
+      const runningEventTrials = mouseEvent?.runningConditions?.event.validTrials || 0;
+      const runningControlTrials =
+        mouseEvent?.runningConditions?.control.validTrials || 0;
       metadataRows([
         ["Mouse", state.mouseId],
         ["Sessions", String(mouse.sessionCount)],
-        ["Valid event trials", String(eventTrials)],
-        ["Valid control trials", String(controlTrials)],
+        ["Running source sessions", String(mouse.runningSourceSessionCount)],
+        [
+          "Valid event trials",
+          `pupil ${pupilEventTrials}; running ${runningEventTrials}`,
+        ],
+        [
+          "Valid control trials",
+          `pupil ${pupilControlTrials}; running ${runningControlTrials}`,
+        ],
         ["Response window", summary.responseWindowLabel],
         [
           "Trace summary",
-          "mean ±1 SD across valid trials, including repeated-session variation",
+          "mean ±1 SEM across valid trials; repeated sessions combined within mouse",
         ],
+        ["Trace sampling", "20 Hz linear interpolation; no temporal filtering"],
       ]);
     }
   }
@@ -729,6 +861,7 @@
   });
   eventSelect.addEventListener("change", () => {
     state.eventId = eventSelect.value;
+    renderMouseSelect();
     render();
   });
   mouseSelect.addEventListener("change", () => {

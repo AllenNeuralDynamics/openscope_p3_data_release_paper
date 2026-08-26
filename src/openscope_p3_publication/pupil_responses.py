@@ -132,7 +132,7 @@ def event_baseline_windows(
     context: str,
     block_numbers: Sequence[float] | None = None,
 ) -> list[tuple[float, float] | None]:
-    """Return the context-specific pre-event pupil baseline for each selected row."""
+    """Return the context-specific behavioral baseline for each selected row."""
     if len(start_times) != len(stop_times):
         raise ValueError("start_times and stop_times must have the same length.")
     if block_numbers is not None and len(block_numbers) != len(start_times):
@@ -142,8 +142,7 @@ def event_baseline_windows(
 
     windows = []
     for index in indices:
-        end = float(start_times[index])
-        if context in {"standard", "duration"}:
+        if context == "standard":
             if index == 0 or (
                 block_numbers is not None
                 and block_numbers[index - 1] != block_numbers[index]
@@ -151,6 +150,19 @@ def event_baseline_windows(
                 windows.append(None)
                 continue
             start = float(stop_times[index - 1])
+            end = float(start_times[index])
+        elif context == "duration":
+            if index < 2 or (
+                block_numbers is not None
+                and (
+                    block_numbers[index - 2] != block_numbers[index]
+                    or block_numbers[index - 1] != block_numbers[index]
+                )
+            ):
+                windows.append(None)
+                continue
+            start = float(stop_times[index - 2])
+            end = float(start_times[index - 1])
         elif context == "sequence":
             if index == 0 or (
                 block_numbers is not None
@@ -159,7 +171,9 @@ def event_baseline_windows(
                 windows.append(None)
                 continue
             start = float(start_times[index - 1])
+            end = float(start_times[index])
         else:
+            end = float(start_times[index])
             start = end - SENSORIMOTOR_BASELINE_SECONDS
         if start >= end:
             raise ValueError(

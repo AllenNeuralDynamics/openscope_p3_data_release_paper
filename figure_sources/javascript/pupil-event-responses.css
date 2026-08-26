@@ -82,6 +82,11 @@ h2 {
   font-size: var(--figure-type-section-title);
 }
 
+h3 {
+  margin: 0 0 6px;
+  font-size: var(--figure-type-body);
+}
+
 .view-switch,
 .button-group,
 .modality-tabs {
@@ -219,6 +224,27 @@ legend {
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 9px;
+}
+
+.effect-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.effect-grid section + section {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.panel-message {
+  margin: 8px 0 0;
+  padding: 16px;
+  border: 1px solid #c8a64b;
+  border-radius: 7px;
+  background: #fff8df;
+  color: #6f5a1d;
+  font-size: var(--figure-type-body);
 }
 
 canvas {
