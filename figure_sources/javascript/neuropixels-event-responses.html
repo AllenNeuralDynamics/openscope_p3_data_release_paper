@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Neuropixels mismatch-response explorer</title>
+    <style>
+__NEUROPIXELS_EVENT_CSS__
+    </style>
+  </head>
+  <body>
+    <main class="response-viewer">
+      <script id="neuropixels-event-data" type="application/json">__NEUROPIXELS_EVENT_DATA__</script>
+      <header class="viewer-header">
+        <div>
+          <p class="eyebrow">Neuropixels event-response analysis</p>
+          <h1>Mismatch-response explorer</h1>
+        </div>
+        <div class="view-switch" role="group" aria-label="Figure view">
+          <button type="button" data-view="interactive" aria-pressed="true">Interactive</button>
+          <button type="button" data-view="static" aria-pressed="false">Static</button>
+        </div>
+      </header>
+
+      <section id="interactive-view">
+        <nav id="context-tabs" class="context-tabs" aria-label="Predictive-processing context"></nav>
+        <div class="control-grid">
+          <label>
+            Event
+            <select id="event-select"></select>
+          </label>
+          <label>
+            Probe
+            <select id="probe-select"></select>
+          </label>
+          <fieldset>
+            <legend>Units</legend>
+            <div id="qc-tabs" class="button-group">
+              <button type="button" data-qc="qc" aria-pressed="true">QC passing</button>
+              <button type="button" data-qc="all" aria-pressed="false">All sorted</button>
+            </div>
+          </fieldset>
+          <fieldset id="decoder-label-filter">
+           <legend>Sorter label</legend>
+           <div class="checkbox-group">
+             <label><input type="checkbox" data-decoder-label="mua" checked> MUA</label>
+             <label><input type="checkbox" data-decoder-label="sua" checked> SUA</label>
+           </div>
+          </fieldset>
+          <fieldset id="neuron-type-filter">
+           <legend>Neuron type</legend>
+           <div class="checkbox-group">
+             <label><input type="checkbox" data-neuron-type="RS" checked> RS</label>
+             <label><input type="checkbox" data-neuron-type="FS" checked> FS</label>
+             <label><input type="checkbox" data-neuron-type="SST" checked> SST</label>
+           </div>
+          </fieldset>
+          <label class="range-control">
+           Minimum firing rate
+           <input
+             id="minimum-firing-rate"
+             type="range"
+             min="0"
+             max="10"
+             value="1"
+             step="0.1"
+           >
+           <output id="minimum-firing-rate-value" for="minimum-firing-rate">≥1.0 Hz</output>
+          </label>
+          <fieldset>
+            <legend>Response trace</legend>
+            <div id="scope-tabs" class="button-group">
+              <button type="button" data-scope="area" aria-pressed="true">Area mean</button>
+              <button type="button" data-scope="unit" aria-pressed="false">Individual unit</button>
+            </div>
+          </fieldset>
+          <label class="checkbox-control">
+            Response value
+            <span>
+              <input id="baseline-subtracted" type="checkbox" checked>
+              Subtract baseline
+            </span>
+          </label>
+          <label id="response-selection-control">
+            <span id="response-selection-label">Area</span>
+            <select id="area-select" aria-label="Area for mean response"></select>
+            <select id="unit-select" aria-label="Individual unit" hidden></select>
+          </label>
+        </div>
+
+        <div class="heatmap-toolbar">
+          <fieldset>
+            <legend>Heatmap value</legend>
+            <div id="metric-tabs" class="button-group">
+              <button type="button" data-metric="mismatch" aria-pressed="true">Mismatch firing rate</button>
+              <button type="button" data-metric="control" aria-pressed="false">Control firing rate</button>
+              <button type="button" data-metric="difference" aria-pressed="false">Mismatch − control</button>
+              <button type="button" data-metric="mismatch-zscore" aria-pressed="false">Mismatch z score</button>
+              <button type="button" data-metric="control-zscore" aria-pressed="false">Control z score</button>
+            </div>
+          </fieldset>
+          <label>
+            Sort rows
+            <select id="sort-select">
+              <option value="response">Response magnitude</option>
+              <option value="peak-time">Time to positive peak</option>
+              <option value="rastermap">Rastermap</option>
+              <option value="depth">Probe depth</option>
+              <option value="unit">Unit ID</option>
+            </select>
+          </label>
+          <label>
+            Color limit
+            <input id="color-limit" type="range" min="25" max="200" value="100" step="5">
+            <output id="color-limit-value">100%</output>
+          </label>
+        </div>
+
+        <section class="heatmap-panel" aria-labelledby="heatmap-title">
+          <div class="panel-heading">
+            <div>
+              <h2 id="heatmap-title">Unit response heatmap</h2>
+              <p id="heatmap-detail"></p>
+            </div>
+            <div class="color-key-wrap">
+              <div id="color-key" class="color-key" aria-label="Heatmap color scale"></div>
+              <div class="color-key-labels">
+                <span id="color-key-min"></span>
+                <span id="color-key-zero">0</span>
+                <span id="color-key-max"></span>
+              </div>
+            </div>
+          </div>
+          <div class="canvas-shell">
+            <canvas
+              id="heatmap-canvas"
+              width="1200"
+              height="650"
+              tabindex="0"
+              role="img"
+              aria-label="Unit-by-time mismatch-response heatmap"
+            ></canvas>
+            <div id="heatmap-tooltip" class="canvas-tooltip" hidden></div>
+            <div id="loading-message" class="loading-message" aria-live="polite">Loading response atlas…</div>
+          </div>
+        </section>
+
+        <article class="response-panel">
+          <h2 id="response-title">Area-mean spike-density function</h2>
+          <p id="response-note" class="response-note">
+            Shading shows ±1 SEM across units; dashed guides mark mismatch onset and offset.
+          </p>
+          <canvas
+            id="response-canvas"
+            width="1200"
+            height="360"
+            role="img"
+            aria-label="Mismatch and matched-control spike-density functions"
+          ></canvas>
+        </article>
+        <p class="source-note" id="source-note"></p>
+      </section>
+
+      <section id="static-view" class="static-view" hidden>
+        <img
+          src="__NEUROPIXELS_EVENT_STATIC_IMAGE__"
+          alt="Neuropixels mismatch-response heatmaps and brain-area-by-event response summary across four sessions from one mouse."
+        >
+      </section>
+    </main>
+    <script>
+__NEUROPIXELS_EVENT_JS__
+    </script>
+    <script>
+__EMBED_AUTO_HEIGHT_JS__
+    </script>
+  </body>
+</html>
