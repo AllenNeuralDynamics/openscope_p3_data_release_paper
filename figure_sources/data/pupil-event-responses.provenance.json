@@ -32,7 +32,7 @@
   "running_exclusion_count": 2,
   "script": {
     "path": "scripts/extract_pupil_event_responses.py",
-    "sha256": "45e036dcaa13ee7c2e571e5c502b003c18624a5bbbc35455dcc0d69c4f0c24ac"
+    "sha256": "447bff9f291c98f1440c225463fa8cac76c87b5405d27cb3c2b82d79a36d0e77"
   },
   "session_count": 154,
   "source_snapshots": {
