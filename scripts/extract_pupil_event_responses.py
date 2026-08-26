@@ -17,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import closing
 from dataclasses import asdict
 from pathlib import Path
+from types import ModuleType
 
 from openscope_p3_publication.figures import session_cohort
 from openscope_p3_publication.pupil_responses import (
@@ -42,7 +43,8 @@ try:
 except ImportError as exc:  # pragma: no cover - optional extraction environment
     raise SystemExit(EXTRACTION_ENVIRONMENT_HINT) from exc
 
-def import_optional_module(name: str):
+
+def import_optional_module(name: str) -> ModuleType | None:
     try:
         return importlib.import_module(name)
     except ImportError:
