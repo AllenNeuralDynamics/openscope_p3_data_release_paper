@@ -750,8 +750,9 @@ def write_neuropixels_event_svg(
     matrix_height = len(areas) * row_height
     column_width = (width - left - right) / len(columns)
     heatmap_top = matrix_top + matrix_height + 330
+    plot_top = heatmap_top + 28
     heatmap_height = 260
-    line_top = heatmap_top + heatmap_height + 100
+    line_top = plot_top + heatmap_height + 100
     line_height = 145
     height = line_top + line_height + 120
     svg = [
@@ -1014,7 +1015,7 @@ def write_neuropixels_event_svg(
             [
                 svg_text(
                     x + panel_width / 2,
-                    heatmap_top - 14,
+                    plot_top - 14,
                     CONTEXT_LABELS[context],
                     size=FIGURE_TYPE_SCALE["heading"],
                     weight=750,
@@ -1022,20 +1023,20 @@ def write_neuropixels_event_svg(
                 ),
                 svg_text(
                     x + panel_width / 2,
-                    heatmap_top + 12,
+                    plot_top + 12,
                     session["events"][event_index]["label"],
                     size=FIGURE_TYPE_SCALE["label"],
                     anchor="middle",
                     fill="#646B68",
                 ),
                 (
-                    f'<image x="{x:.2f}" y="{heatmap_top + 28:.2f}" '
+                    f'<image x="{x:.2f}" y="{plot_top + 28:.2f}" '
                     f'width="{panel_width:.2f}" height="{heatmap_height:.2f}" '
                     f'preserveAspectRatio="none" href="data:image/png;base64,{encoded}"/>'
                 ),
                 svg_text(
                     x - 7,
-                    heatmap_top + 34,
+                    plot_top + 34,
                     "0",
                     size=FIGURE_TYPE_SCALE["small"],
                     anchor="end",
@@ -1043,7 +1044,7 @@ def write_neuropixels_event_svg(
                 ),
                 svg_text(
                     x - 7,
-                    heatmap_top + 28 + heatmap_height,
+                    plot_top + 28 + heatmap_height,
                     str(len(selected)),
                     size=FIGURE_TYPE_SCALE["small"],
                     anchor="end",
@@ -1053,7 +1054,7 @@ def write_neuropixels_event_svg(
         )
         colorbar_width = min(190, panel_width * 0.62)
         colorbar_x = x + (panel_width - colorbar_width) / 2
-        colorbar_y = heatmap_top + heatmap_height + 36
+        colorbar_y = plot_top + heatmap_height + 36
         for step in range(round(colorbar_width)):
             value = -heat_limit + (step / (colorbar_width - 1)) * heat_limit * 2
             color = optotagging_heatmap_color(value, heat_limit)
@@ -1101,8 +1102,8 @@ def write_neuropixels_event_svg(
                 * panel_width
             )
             svg.append(
-                f'<line x1="{guide_x:.2f}" y1="{heatmap_top + 28:.2f}" '
-                f'x2="{guide_x:.2f}" y2="{heatmap_top + 28 + heatmap_height:.2f}" '
+                f'<line x1="{guide_x:.2f}" y1="{plot_top + 28:.2f}" '
+                f'x2="{guide_x:.2f}" y2="{plot_top + 28 + heatmap_height:.2f}" '
                 'stroke="#303536" stroke-width="1" stroke-dasharray="5 4"/>'
             )
         baseline_means = float32_values(session["baselineMeanHzBase64"])

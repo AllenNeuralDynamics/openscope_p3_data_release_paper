@@ -25,7 +25,6 @@
     streamStatus: document.getElementById("stream-status"),
     timeline: document.getElementById("timeline"),
     trace: document.getElementById("pupil-trace"),
-    traceFilterBadge: document.getElementById("trace-filter-badge"),
     traceHeading: document.getElementById("trace-heading"),
     traceValue: document.getElementById("trace-value"),
     trackingStatus: document.getElementById("tracking-status"),
@@ -187,7 +186,6 @@
     elements.cleaningBanner.hidden = !state.cleaningEnabled;
     elements.interpolatedKey.hidden = !state.cleaningEnabled;
     elements.processedFilterBadge.hidden = !state.cleaningEnabled;
-    elements.traceFilterBadge.hidden = !state.cleaningEnabled;
     elements.cleaningModeLabel.textContent = state.cleaningEnabled ? "FILTERED" : "RAW DATA";
     if (state.cleaningEnabled) {
       const cleaned = cleanedSession(currentSession());

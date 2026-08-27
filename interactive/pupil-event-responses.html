@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="interactive-mode">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -59,6 +59,11 @@ body {
   background: transparent;
   color: var(--ink);
   font-family: var(--figure-font-sans);
+}
+
+html.interactive-mode,
+html.interactive-mode body {
+  overflow: hidden;
 }
 
 button,
@@ -205,7 +210,7 @@ legend {
 }
 
 .context-tabs {
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 
 .selection-summary {
@@ -330,9 +335,10 @@ canvas {
 
 .static-view img {
   display: block;
-  width: 100%;
-  min-width: 900px;
+  width: 95%;
+  min-width: 855px;
   height: auto;
+  margin-inline: auto;
 }
 
 @media (max-width: 760px) {
@@ -1321,6 +1327,10 @@ canvas {
       });
       interactiveView.hidden = state.view !== "interactive";
       staticView.hidden = state.view !== "static";
+      document.documentElement.classList.toggle(
+        "interactive-mode",
+        state.view === "interactive",
+      );
     });
   });
 

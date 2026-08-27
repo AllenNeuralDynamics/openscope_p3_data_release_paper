@@ -226,43 +226,37 @@ html.is-embedded .viewer { min-height: 0; }
 .viewer.filtered-view { border-color: #b24a00; box-shadow: inset 0 0 0 2px #b24a00; }
 .viewer.filtered-view #cleaning-mode-label { border-color: #b24a00; background: #b24a00; color: #fff; }
 
-.session-header {
-  min-height: 64px;
-  padding: 12px 16px;
+.session-metadata {
+  min-height: 48px;
+  padding: 8px 14px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-}
-
-.session-metadata {
+  gap: 14px;
   border-top: 1px solid var(--line);
   background: var(--wash);
 }
 
-.session-metadata > summary {
-  min-height: 42px;
-  padding: 9px 14px;
-  display: flex;
-  align-items: center;
+.session-metadata-heading {
+  flex: 0 0 auto;
   color: var(--ink);
-  cursor: pointer;
   font-size: var(--figure-type-control);
   font-weight: 650;
 }
 
-.session-metadata > summary:hover { background: #edf0ef; }
-.session-metadata[open] > summary { border-bottom: 1px solid var(--line); }
-
-.session-header h1 {
+#session-title {
   margin: 0;
-  font-size: var(--figure-type-section-title);
-  font-weight: 650;
+  min-width: 0;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: var(--figure-type-metadata);
+  font-weight: 500;
   letter-spacing: 0;
-  line-height: 1.25;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .source-links {
+  margin-left: auto;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -525,6 +519,7 @@ html.is-embedded .viewer { min-height: 0; }
 }
 
 .trace-key > span { display: inline-flex; align-items: center; gap: 6px; }
+#interpolated-key[hidden] { display: none; }
 .key-swatch { width: 13px; height: 9px; display: inline-block; }
 .blink-key { background: #b9c1be; }
 .key-dot { width: 8px; height: 8px; display: inline-block; border-radius: 50%; }
@@ -533,7 +528,7 @@ html.is-embedded .viewer { min-height: 0; }
 .cursor-key { background: #202322; }
 
 @media (max-width: 760px) {
-  .session-header { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .session-metadata { align-items: flex-start; flex-wrap: wrap; }
   .source-links { justify-content: flex-start; }
   .stream-grid { grid-template-columns: 1fr; }
   .stream-panel { border-top: 1px solid var(--line); border-left: 0; }
@@ -547,7 +542,6 @@ html.is-embedded .viewer { min-height: 0; }
   .processing-control { align-items: flex-start; flex-direction: column; gap: 6px; }
   .cleaning-banner { width: 100%; justify-content: flex-start; }
   .cleaning-banner span { white-space: normal; }
-  .session-header { padding: 10px; }
   .transport { grid-template-columns: 34px minmax(0, 1fr); }
   #playback-time { grid-column: 1 / -1; min-width: 0; text-align: center; }
 }
@@ -562,17 +556,6 @@ html.is-embedded .viewer { min-height: 0; }
 
     <div id="interactive-view">
       <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
-      <div class="processing-control">
-        <label class="cleaning-toggle" for="cleaning-toggle">
-          <input id="cleaning-toggle" type="checkbox">
-          <span>Interpolate isolated outliers</span>
-          <strong id="cleaning-mode-label">RAW DATA</strong>
-        </label>
-        <div class="cleaning-banner" id="cleaning-banner" role="status" hidden>
-          <strong>FILTERED VIEW</strong>
-          <span id="cleaning-summary">Isolated 1–4 frame outliers are interpolated.</span>
-        </div>
-      </div>
 
     <section class="stream-grid" aria-label="Synchronized eye-tracking streams">
       <article class="stream-panel video-panel" aria-labelledby="video-heading">
@@ -615,12 +598,23 @@ html.is-embedded .viewer { min-height: 0; }
       <time id="playback-time">00:00.0 / 00:16.0</time>
     </section>
 
+    <div class="processing-control">
+      <label class="cleaning-toggle" for="cleaning-toggle">
+        <input id="cleaning-toggle" type="checkbox">
+        <span>Interpolate isolated outliers</span>
+        <strong id="cleaning-mode-label">RAW DATA</strong>
+      </label>
+      <div class="cleaning-banner" id="cleaning-banner" role="status" hidden>
+        <strong>FILTERED VIEW</strong>
+        <span id="cleaning-summary">Isolated 1–4 frame outliers are interpolated.</span>
+      </div>
+    </div>
+
     <section class="trace-panel" aria-labelledby="trace-heading">
       <div class="panel-heading trace-heading">
         <div>
           <h2 id="trace-heading">Fit areas</h2>
           <span>camera px²</span>
-          <strong class="inline-filter-badge" id="trace-filter-badge" hidden>FILTERED</strong>
         </div>
         <output id="trace-value" aria-live="off"></output>
       </div>
@@ -632,15 +626,11 @@ html.is-embedded .viewer { min-height: 0; }
       </div>
     </section>
 
-    <details class="session-metadata">
-      <summary>Session and sources</summary>
-      <div class="session-header">
-        <div>
-          <h1 id="session-title"></h1>
-        </div>
-        <div class="source-links" id="source-links" aria-label="Data sources"></div>
-      </div>
-    </details>
+    <section class="session-metadata" aria-labelledby="session-metadata-heading">
+      <div class="session-metadata-heading" id="session-metadata-heading">Session and sources</div>
+      <p id="session-title"></p>
+      <div class="source-links" id="source-links" aria-label="Data sources"></div>
+    </section>
     </div>
 
     <section class="static-view" id="static-view" aria-label="Static synchronized eye-tracking overview" hidden>
@@ -679,7 +669,6 @@ html.is-embedded .viewer { min-height: 0; }
     streamStatus: document.getElementById("stream-status"),
     timeline: document.getElementById("timeline"),
     trace: document.getElementById("pupil-trace"),
-    traceFilterBadge: document.getElementById("trace-filter-badge"),
     traceHeading: document.getElementById("trace-heading"),
     traceValue: document.getElementById("trace-value"),
     trackingStatus: document.getElementById("tracking-status"),
@@ -841,7 +830,6 @@ html.is-embedded .viewer { min-height: 0; }
     elements.cleaningBanner.hidden = !state.cleaningEnabled;
     elements.interpolatedKey.hidden = !state.cleaningEnabled;
     elements.processedFilterBadge.hidden = !state.cleaningEnabled;
-    elements.traceFilterBadge.hidden = !state.cleaningEnabled;
     elements.cleaningModeLabel.textContent = state.cleaningEnabled ? "FILTERED" : "RAW DATA";
     if (state.cleaningEnabled) {
       const cleaned = cleanedSession(currentSession());

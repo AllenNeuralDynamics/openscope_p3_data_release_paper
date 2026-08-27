@@ -18,17 +18,6 @@ __EYE_TRACKING_CSS__
 
     <div id="interactive-view">
       <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
-      <div class="processing-control">
-        <label class="cleaning-toggle" for="cleaning-toggle">
-          <input id="cleaning-toggle" type="checkbox">
-          <span>Interpolate isolated outliers</span>
-          <strong id="cleaning-mode-label">RAW DATA</strong>
-        </label>
-        <div class="cleaning-banner" id="cleaning-banner" role="status" hidden>
-          <strong>FILTERED VIEW</strong>
-          <span id="cleaning-summary">Isolated 1–4 frame outliers are interpolated.</span>
-        </div>
-      </div>
 
     <section class="stream-grid" aria-label="Synchronized eye-tracking streams">
       <article class="stream-panel video-panel" aria-labelledby="video-heading">
@@ -71,12 +60,23 @@ __EYE_TRACKING_CSS__
       <time id="playback-time">00:00.0 / 00:16.0</time>
     </section>
 
+    <div class="processing-control">
+      <label class="cleaning-toggle" for="cleaning-toggle">
+        <input id="cleaning-toggle" type="checkbox">
+        <span>Interpolate isolated outliers</span>
+        <strong id="cleaning-mode-label">RAW DATA</strong>
+      </label>
+      <div class="cleaning-banner" id="cleaning-banner" role="status" hidden>
+        <strong>FILTERED VIEW</strong>
+        <span id="cleaning-summary">Isolated 1–4 frame outliers are interpolated.</span>
+      </div>
+    </div>
+
     <section class="trace-panel" aria-labelledby="trace-heading">
       <div class="panel-heading trace-heading">
         <div>
           <h2 id="trace-heading">Fit areas</h2>
           <span>camera px²</span>
-          <strong class="inline-filter-badge" id="trace-filter-badge" hidden>FILTERED</strong>
         </div>
         <output id="trace-value" aria-live="off"></output>
       </div>
@@ -88,15 +88,11 @@ __EYE_TRACKING_CSS__
       </div>
     </section>
 
-    <details class="session-metadata">
-      <summary>Session and sources</summary>
-      <div class="session-header">
-        <div>
-          <h1 id="session-title"></h1>
-        </div>
-        <div class="source-links" id="source-links" aria-label="Data sources"></div>
-      </div>
-    </details>
+    <section class="session-metadata" aria-labelledby="session-metadata-heading">
+      <div class="session-metadata-heading" id="session-metadata-heading">Session and sources</div>
+      <p id="session-title"></p>
+      <div class="source-links" id="source-links" aria-label="Data sources"></div>
+    </section>
     </div>
 
     <section class="static-view" id="static-view" aria-label="Static synchronized eye-tracking overview" hidden>

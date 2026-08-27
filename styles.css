@@ -62,8 +62,8 @@ html[data-theme="dark"] .manuscript-wip-inline {
 }
 
 #fig-supp-eye-tracking .relative.inline-block {
-  height: 1163px;
-  min-height: 1163px;
+  height: 1036px;
+  min-height: 1036px;
 }
 
 article > figure:not(.table-hover-source) img {
@@ -260,7 +260,7 @@ article table.table-laser-power td:first-child {
 }
 
 #table-supplementary-oddball-studies .relative.inline-block {
-  height: 590px;
+  height: 602px;
   padding-bottom: 0 !important;
 }
 
@@ -274,13 +274,23 @@ article table.table-laser-power td:first-child {
   container-type: inline-size;
 }
 
+#fig-segmentation-viewers .relative.inline-block {
+  height: 840px;
+  padding-bottom: 0 !important;
+}
+
 #fig-supp-neuropixels-unit-yield .relative.inline-block {
-  height: 450px;
+  height: 473px;
   padding-bottom: 0 !important;
 }
 
 #fig-supp-neuropixels-recorded-trajectories .relative.inline-block {
   height: 910px;
+  padding-bottom: 0 !important;
+}
+
+#fig-supp-optotagging-heatmaps .relative.inline-block {
+  height: 1006px;
   padding-bottom: 0 !important;
 }
 
@@ -294,17 +304,17 @@ article table.table-laser-power td:first-child {
 }
 
 #fig-supp-eye-tracking .relative.inline-block {
-  height: 950px;
+  height: 846px;
   padding-bottom: 0 !important;
 }
 
 #fig-supp-pupil-event-responses .relative.inline-block {
-  height: 1250px;
+  height: 1288px;
   padding-bottom: 0 !important;
 }
 
 #fig-neuropixels-event-responses .relative.inline-block {
-  height: 1500px;
+  height: 1470px;
   padding-bottom: 0 !important;
 }
 
@@ -361,11 +371,11 @@ article table.table-laser-power td:first-child {
   }
 
   #table-supplementary-oddball-studies .relative.inline-block {
-    height: 700px;
+    height: 714px;
   }
 
   #fig-supp-neuropixels-unit-yield .relative.inline-block {
-    height: 540px;
+    height: 567px;
   }
 
 }
@@ -376,7 +386,7 @@ article table.table-laser-power td:first-child {
   }
 
   #fig-supp-eye-tracking .relative.inline-block {
-    height: 2050px;
+    height: 1826px;
   }
 }
 
@@ -386,11 +396,11 @@ article table.table-laser-power td:first-child {
   }
 
   #fig-supp-pupil-event-responses .relative.inline-block {
-    height: 1450px;
+    height: 1494px;
   }
 
   #fig-neuropixels-event-responses .relative.inline-block {
-    height: 1900px;
+    height: 1862px;
   }
 }
 
