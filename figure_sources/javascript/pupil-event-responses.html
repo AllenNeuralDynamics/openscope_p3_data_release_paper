@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Peri-event pupil and running responses</title>
+    <style>
+__PUPIL_EVENT_CSS__
+    </style>
+  </head>
+  <body>
+    <main class="pupil-viewer">
+      <script id="pupil-event-data" type="application/json">__PUPIL_EVENT_DATA__</script>
+
+      <header class="viewer-header">
+        <div>
+          <p class="eyebrow">Supplementary behavior analysis</p>
+          <h1>Peri-event pupil and running responses</h1>
+        </div>
+        <div class="view-switch" role="group" aria-label="Figure view">
+          <button type="button" data-view="interactive" aria-pressed="true">Interactive</button>
+          <button type="button" data-view="static" aria-pressed="false">Static</button>
+        </div>
+      </header>
+
+      <section id="interactive-view" aria-label="Interactive pupil and running response explorer">
+        <nav id="modality-tabs" class="modality-tabs" aria-label="Recording modality"></nav>
+        <div class="control-grid">
+          <fieldset>
+            <legend>Cohort</legend>
+            <div id="cohort-tabs" class="button-group"></div>
+          </fieldset>
+          <fieldset>
+            <legend>Context</legend>
+            <div id="context-tabs" class="button-group context-tabs"></div>
+          </fieldset>
+          <label>
+            Event
+            <select id="event-select" aria-label="Mismatch event"></select>
+          </label>
+          <fieldset>
+            <legend>Signal scale</legend>
+            <div id="scale-tabs" class="button-group">
+              <button type="button" data-scale="percent" aria-pressed="true">Baseline change</button>
+              <button type="button" data-scale="raw" aria-pressed="false">Raw signals</button>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Trace source</legend>
+            <div id="scope-tabs" class="button-group">
+              <button type="button" data-scope="population" aria-pressed="false">Average</button>
+              <button type="button" data-scope="mouse" aria-pressed="true">Individual</button>
+            </div>
+          </fieldset>
+          <label id="mouse-control" hidden>
+            Mouse
+            <select id="mouse-select" aria-label="Mouse for individual pupil traces"></select>
+          </label>
+        </div>
+
+        <section id="unavailable-message" class="unavailable-message" hidden aria-live="polite"></section>
+
+        <section id="plot-content">
+          <div class="selection-summary">
+            <div>
+              <p id="selection-title" class="selection-title"></p>
+              <p id="selection-detail" class="selection-detail"></p>
+            </div>
+            <div class="trace-legend" aria-label="Trace legend">
+              <span><i class="event-key"></i>Context event</span>
+              <span><i class="control-key"></i>Matched control</span>
+            </div>
+          </div>
+
+          <section class="trace-panel" aria-labelledby="pupil-trace-title">
+            <h2 id="pupil-trace-title">Pupil-area response</h2>
+            <p id="pupil-unavailable" class="panel-message" hidden></p>
+            <canvas
+              id="pupil-trace-canvas"
+              width="1200"
+              height="430"
+              role="img"
+              aria-label="Peri-event pupil response traces"
+            ></canvas>
+          </section>
+
+          <section class="trace-panel" aria-labelledby="running-trace-title">
+            <h2 id="running-trace-title">Running-speed response</h2>
+            <p id="running-unavailable" class="panel-message" hidden></p>
+            <canvas
+              id="running-trace-canvas"
+              width="1200"
+              height="430"
+              role="img"
+              aria-label="Peri-event running-speed response traces"
+            ></canvas>
+          </section>
+
+          <section id="effect-panel" class="effect-panel" aria-labelledby="effect-title">
+            <h2 id="effect-title">Mouse-level matched-control effects</h2>
+            <div class="effect-grid">
+              <section id="pupil-effect-wrapper">
+                <h3>Pupil area</h3>
+                <canvas
+                  id="pupil-effect-canvas"
+                  width="1200"
+                  height="250"
+                  role="img"
+                  aria-label="Mouse-level pupil response differences"
+                ></canvas>
+              </section>
+              <section id="running-effect-wrapper">
+                <h3>Running speed</h3>
+                <canvas
+                  id="running-effect-canvas"
+                  width="1200"
+                  height="250"
+                  role="img"
+                  aria-label="Mouse-level running-speed response differences"
+                ></canvas>
+              </section>
+            </div>
+          </section>
+
+          <dl id="analysis-metadata" class="analysis-metadata"></dl>
+        </section>
+      </section>
+
+      <section id="static-view" class="static-view" hidden>
+        <img
+          src="__PUPIL_EVENT_STATIC_IMAGE__"
+          alt="Population peri-event pupil-area and running-speed response differences and mouse-level response-window effects across modalities, cohorts, contexts, and mismatch events."
+        >
+      </section>
+    </main>
+    <script>
+__PUPIL_EVENT_JS__
+    </script>
+    <script>
+__EMBED_AUTO_HEIGHT_JS__
+    </script>
+  </body>
+</html>

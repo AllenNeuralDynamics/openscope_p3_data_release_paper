@@ -1824,7 +1824,7 @@ def test_placeholder_plans_mask_obsolete_figure_numbers(tmp_path: Path) -> None:
         ),
         (
             write_standard_oddball_plan_svg,
-            "figure-10-standard-oddball-plan.svg",
+            "figure-11-standard-oddball-plan.svg",
             "Responses to standard oddball stimuli",
             "Figure 7",
             2,
