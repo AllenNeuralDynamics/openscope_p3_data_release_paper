@@ -59,7 +59,7 @@ Existing studies of prediction errors typically employ only one class of mismatc
 
 ### Large-scale, multi-modal population recordings
 
-Previous datasets are typically limited to a single recording modality, preventing comparison of signals at different spatial and temporal scales. Our dataset combines Neuropixels electrophysiology (providing single-unit resolution across many brain regions simultaneously), two-photon mesoscope imaging (providing cell-type-specific calcium signals across VISp and VISlm, two visual areas in the mouse visual cortex), and SLAP2 imaging (providing subcellular dendritic recording in in the center of VISp). This multi-modal approach allows researchers to address questions about predictive processing at scales ranging from subcellular compartments to brain-wide networks.
+Previous datasets are typically limited to a single recording modality, preventing comparison of signals at different spatial and temporal scales. Our dataset combines Neuropixels electrophysiology (providing single-unit resolution across many brain regions simultaneously), mesoscope two-photon imaging (providing cell-type-specific calcium signals across VISp and VISlm, two visual areas in the mouse visual cortex), and SLAP2 imaging (providing subcellular dendritic recording in in the center of VISp). This multi-modal approach allows researchers to address questions about predictive processing at scales ranging from subcellular compartments to brain-wide networks.
 
 ## Experimental design
 
@@ -303,7 +303,7 @@ All drifting grating stimuli shared the following base parameters unless otherwi
 
 ## Neuronal recording modalities
 
-### Neuropixels extracellular electrophysiology.
+### Neuropixels extracellular electrophysiology
 
 #### Habituation to the Neuropixels rigs.
 
@@ -369,7 +369,7 @@ Agarose blocks containing cleared mouse brains were fixed to the sample arm of a
 
 Raw data was then packaged with relevant metadata, uploaded to cloud storage, and used to create derived data, including contiguous image volumes for each channel, transform fields mapping to/from the Allen CCFv3, and neuroglancer viewer links for visualizing results.
 
-### Two-photon mesoscope calcium imaging
+### Mesoscope two-photon calcium imaging
 
 Multi-plane calcium imaging was performed using a dual-beam mesoscope (Multiscope), enabling simultaneous imaging of two planes and effectively doubling imaging throughput (Orlova, Tsyboulski, Najafi et al., 2020). The system builds on the 2P-RAM platform (Sofroniew et al., 2016) with a compact optomechanical add-on that introduces a second excitation beam and simplifies alignment.
 
@@ -466,7 +466,7 @@ Quality control metrics were evaluated after each session. Sessions failing any 
 
 Metrics used for each criteria are available on the AWS S3 bucket in a qc.json file
 
-### SLAP2 dendritic imaging.
+### SLAP2 dendritic imaging
 
 Dual-color imaging of synaptic glutamate and somatic calcium in single neurons was performed using SLAP2. SLAP2 allows for simultaneous measurement of arbitrarily-shaped ROIs across two imaging planes. <span class="manuscript-wip-inline"><strong>Citation needed:</strong> add the SLAP2 methods paper when available.</span> We recorded from Layer 2/3 pyramidal neurons in the visual cortex. We imaged from soma and several peri-somatic dendritic segments in one plane, and imaged several apical dendritic segments on the second plane, typically achieving recordings of \>100 synapses at \>200 Hz each. Imaging was motion stabilized by using SLAP2’s image-based online motion correction.
 
@@ -480,7 +480,7 @@ The reference stacks were also used for online motion correction during function
 
 ## Data processing
 
-### Neuropixels extracellular electrophysiology.
+### Neuropixels extracellular electrophysiology
 
 Raw data was processed using the AIND ephys pipeline [@aind2026ephyspipeline] on the Code Ocean platform. In brief, the pipeline is implemented in Nextflow DSL2 and each probe was processed in parallel with the following steps:
 
@@ -502,7 +502,7 @@ After brains are processed in the imaging pipeline, neuroglancer ([https://neuro
 
 Electrophysiology features recorded from neural probes are aligned with anatomical landmarks based on the Allen Mouse Brain Common Coordinate Framework (CCFv3) [@wang2020ccf]. For this, we use the IBL ephys alignment GUI ([https://github.com/AllenNeuralDynamics/ibl-ephys-alignment-gui](https://github.com/AllenNeuralDynamics/ibl-ephys-alignment-gui)). Based on firing rate, LFP power, as well as spike and LFP cross correlograms, we place reference lines delineating borders of areas. Through this procedure, we consistently align the top of the cortex (Layers 2/3, where we expect spiking activity) using cross correlograms. Other alignment locations such as white matter tracks, thalamus, and subcortical regions are only made when there are clear electrophysiological landmarks (i.e. a stark increase in firing rate for thalamus, a stark decrease in activity in white matter, etc). If features such as these are not present, the GUI’s probe track interpolation is accepted. Notably, this interpolation is accepted for cortical layer assignments between Layers 2/3 and the bottom of cortex. We also ensure that the channel assignments on the probe track are within 10% of the expected scaling factor.
 
-### Two-photon mesoscope calcium imaging.
+### Mesoscope two-photon calcium imaging
 
 Raw two-photon calcium imaging data were processed using the AIND planar optical physiology pipeline (aind-pophys-pipeline v11 and v13; [https://github.com/AllenNeuralDynamics/aind-pophys-pipeline](https://github.com/AllenNeuralDynamics/aind-pophys-pipeline)) on the Code Ocean platform. The pipeline is implemented in Nextflow DSL2 and processes each imaging plane independently and in parallel through the following steps:
 
@@ -522,7 +522,7 @@ Raw two-photon calcium imaging data were processed using the AIND planar optical
 
 - Event detection: Deconvolved neural events were extracted from the ΔF/F traces using the OASIS algorithm [@friedrich2017fast]; ([https://github.com/j-friedrich/OASIS](https://github.com/j-friedrich/OASIS)), implemented in the aind-ophys-oasis-event-detection capsule ([https://github.com/AllenNeuralDynamics/aind-ophys-oasis-event-detection](https://github.com/AllenNeuralDynamics/aind-ophys-oasis-event-detection)). OASIS performs nonnegative deconvolution of calcium fluorescence traces to infer the underlying spike-related activity, modeling the calcium dynamics as an autoregressive process with an exponential decay kernel. The decay time constant, baseline, and sparsity penalty (Lagrange multiplier for the noise constraint) were automatically estimated from the data's autocovariance. The outputs include the inferred deconvolved activity (event rates), the denoised fluorescence trace, and the estimated model parameters for each ROI.
 
-### SLAP2 dendritic imaging.
+### SLAP2 glutamate imaging
 
 #### Post-hoc motion correction
 
@@ -532,11 +532,36 @@ Images were generated with an 80 Hz query timebase, and aligned using a custom a
 
 Source extraction was performed with a custom algorithm (SILo; [AllenNeuralDynamics/GIAnT-MATLAB (2026)](https://github.com/AllenNeuralDynamics/GIAnT-MATLAB)), implemented in MATLAB. This algorithm takes advantage of the fact that glutamate release events are spatiotemporally sparse. Specifically, we take inspiration from superresolution localization microscopy methods (Lelek et al., 2021; Chen et al., 2025) to precisely identify source locations despite the reduced effective resolution produced by the integration over pixels. We model a single event as having a spatiotemporal profile of a small Gaussian dot (standard deviation of $1.33$ pixels) modulated over time by a decaying exponential of a time constant matched to the glutamate indicator (for iGluSnFR4f we use a decay constant of $\tau = 20$ ms). We perform event detection by convolving this shape with the movie to identify local maxima in space and time (i.e., a 3D matched filter). These events are weighted by their intensity in the filtered movie and aggregated into a summary image, which we term the *activity image*. The activity image shows localized densities around active sources. We then identify the centroids of these densities by fitting each to a symmetric Gaussian to establish the location of each synapse. As a final step, we use the established source locations as the initialization for constrained non-negative matrix factorization to fine tune the spatial profiles and extract their corresponding time traces.
 
+### SLAP2 voltage
+
+:::{warning} Work in progress
+This section is under development.
+:::
+
 ### NWB data packaging
 
 #### Eye tracking
 
 At different points in each modality’s respective pipelines, eye tracking information is extracted from the raw behavior videos. A standardized capsule, aind-capsule-eye-tracking ([https://github.com/AllenNeuralDynamics/aind-capsule-eye-tracking](https://github.com/AllenNeuralDynamics/aind-capsule-eye-tracking)) was built for fitting ellipses to the pupil, eye (visible perimeter of the eyeball), and corneal reflection of the right eye, based on points tracked using the open source software DeepLabCut ([Mathis et al. 2018](https://www.nature.com/articles/s41593-018-0209-y)). DeepLabCut, which uses a pre-trained ResNet 50 deep residual network, was used to track (up to) 12 points along the perimeters of the eye, pupil, and corneal reflection. Ellipses were then fit to the tracking points and the ellipse fit parameters were saved to disk. Validation against hand-annotated ‘ground truth’ frames confirmed that a single ‘universal’ model, trained on a broad selection of data samples, robustly generalized on held-out data across different physiology rigs and individual animals
+
+The processed NWB outputs retain the center coordinates, semi-axis dimensions,
+rotation angle, raw and cleaned area, frame index, and timestamp for the pupil,
+corneal-reflection, and eye-perimeter fits, together with likely-blink flags.
+Neuropixels and mesoscope eye-camera frames are aligned to these outputs using
+camera-exposure edges from the session sync files. SLAP2 uses packaged camera-frame
+indices and aligned Harp timestamps. The synchronized source videos and fits are
+illustrated across modalities in [Supplementary Figure 4](#fig-supp-eye-tracking).
+
+The interactive visualization also provides an optional display-time cleanup for
+isolated fit artifacts; this does not alter the released NWB values. For each fit
+parameter, a sample is compared with the median and scaled median absolute deviation
+of up to the previous 50 processed samples. Isolated runs of one to four samples with
+an absolute robust z score greater than 3 are replaced by linear interpolation, while
+likely-blink periods reset the baseline and are not interpolated across. SLAP2 eye
+tracking is substantially noisier than the other modalities, consistent with
+interference from illumination and whiskers in the eye-camera view. The SLAP2 values
+are released as processed in the public NWBs, with acquisition and processing
+improvements anticipated in future releases.
 
 #### Synchronized Stimulus Table Generation - Ephys
 
@@ -586,6 +611,8 @@ A secondary pipeline, also run in nextflow DSL2 on the CodeOcean platform ([http
 
 - The NWBs were then uploaded to their dandiset using the DANDI command line interface ([https://github.com/dandi/dandi-cli](https://github.com/dandi/dandi-cli))
 
+Completed mesoscope NWB files were deposited in [DANDI:001768](https://dandiarchive.org/dandiset/001768).
+
 #### Neuropixels Ephys NWB Packaging Pipeline
 
 The processed data were also packaged into an NWB file during their respective processing pipeline mentioned above. This pipeline included two capsules which were run in sequence, appending processed ecephys information to a base subject NWB. They were aind-ecephys-nwb ([https://github.com/AllenNeuralDynamics/aind-ecephys-nwb](https://github.com/AllenNeuralDynamics/aind-ecephys-nwb)), which packaged LFP, electrode information, and device metadata, followed by aind-units-nwb ([https://github.com/AllenNeuralDynamics/aind-units-nwb](https://github.com/AllenNeuralDynamics/aind-units-nwb)) which packaged the units table of the units outputted from kilosort and their associated processed and postprocessed metric into the NWB.
@@ -603,6 +630,8 @@ A secondary pipeline, also run on the CodeOcean platform, took the output spike 
 - Aligning the running speed traces to the recorded synchronized timing and packaging it into the NWB, using a capsule called aind-running-speed-nwb ([https://github.com/AllenNeuralDynamics/aind-running-speed-nwb](https://github.com/AllenNeuralDynamics/aind-running-speed-nwb))
 
 - The NWBs were then uploaded to their dandiset using the DANDI command line interface ([https://github.com/dandi/dandi-cli](https://github.com/dandi/dandi-cli))
+
+Completed Neuropixels NWB files were deposited in [DANDI:001637](https://dandiarchive.org/dandiset/001637).
 
 #### SLAP2 NWB Packaging Pipeline
 
@@ -916,7 +945,9 @@ current stimulus state. Existing NWB products provide wheel rotation and
 running speed, plus pupil, corneal-reflection, and eye-ellipse fits with
 likely-blink flags. The underlying videos remain available so investigators can
 derive additional behavioral measurements while preserving alignment to the
-stimulus and neural or imaging data.
+stimulus and neural or imaging data. Representative synchronized eye videos,
+processed fits, and area traces are shown in
+[Supplementary Figure 4](#fig-supp-eye-tracking).
 
 These synchronized videos are therefore open to more sophisticated reanalysis,
 including markerless pose and keypoint tracking with
@@ -981,19 +1012,6 @@ contexts are shown in [Figure 10](#fig-neuropixels-event-responses).
 
 Neuropixels mismatch responses by predictive-processing context, anatomical area, and sorted unit. Four public sessions from sequence-cohort mouse 830846 provide one sequence, duration, standard-oddball, and sensorimotor context. Because each recording used a new acute insertion, units are distinct across sessions and are not longitudinally matched neurons. Spike counts are aligned to each selected NWB interval row's display-synchronized `start_time`; standard-oddball, sensorimotor, and sequence windows span −0.75 to 0.75 s, while duration windows span −1.5 to 1.5 s. Counts are accumulated in 2.5 ms bins, converted to spikes/s, and convolved with a causal exponential spike-density kernel with a 10 ms time constant and 10τ (100 ms) support. A hidden 97.5 ms pre-window supplies the preceding 39 bins required for a fully supported causal estimate at the displayed left edge. The resulting native 2.5 ms SDF is retained for heatmaps, traces, and response-based sorting; response-window values are calculated separately from unsmoothed spike times. Standard-oddball events are matched to the same physical event in both standard-control C1 repeats, sequence events to sequential control C2, duration events to the same delay or omission in jitter control C3, and sensorimotor events to the same motor event in open-loop control C4. Every response-window value uses the selected mismatch or control row's recorded `start_time`–`stop_time`. Standard-event baselines use the preceding interstimulus interval, sequence baselines use the preceding sequence element, and sensorimotor baselines use the preceding 343 ms of visual flow. Duration baselines exclude the manipulated delay and instead use the standard interstimulus interval preceding the prior stimulus, from row *i−2* `stop_time` to row *i−1* `start_time`. The **Interactive** view selects context, event, probe, exact CCF area or Allen-ontology cortical, thalamic, hippocampal, visual, frontal, or motor grouping, unit set, sorter label, minimum firing rate, neuron type, and row order. MUA and SUA labels are included by default, sorter-noise labels are excluded, and the minimum whole-session firing rate from the NWB Units table defaults to 1 Hz. SST units have a positive 5 Hz optotagging response with Wilcoxon *p* < 0.05 and modulation index > 0.1. Remaining units are classified from peak-to-valley duration as fast-spiking (FS; ≤0.4 ms, or ≤0.28 ms in thalamus) or regular-spiking (RS), with striatal units assigned RS. Heatmaps show mismatch SDF, control SDF, mismatch-minus-control SDF, mismatch baseline z score, or control baseline z score, with labeled spikes/s or z-score color limits. Raw SDF heatmaps use a Greys scale. Z-score limits default to ±3 and are adjustable from ±1 to ±6. Baseline z scores standardize each condition against its own 20 ms trial-baseline bins. Response-magnitude and time-to-positive-peak ordering use the mismatch-z-score heatmap. Rastermap 1.0 ordering [@stringer2024rastermap] is precomputed separately for each event from the native mismatch-z-score SDFs. All three response-based orders remain fixed when the displayed heatmap value or unit filters change. Dashed guides mark only the selected mismatch presentation onset and offset. **Area mean** shows mismatch and matched-control SDFs averaged equally across selected units with ±1 SEM across neurons; choosing **Individual unit** shows that unit's trial-mean SDF without an uncertainty band. A checked **Subtract baseline** control displays Δ firing rate after subtracting the corresponding mismatch or control baseline; clearing it displays the raw SDF in the same plot. Manuscript QC requires ISI-violations ratio < 0.5, presence ratio > 0.8, and amplitude cutoff < 0.1; the **All sorted** option retains selected MUA and SUA units irrespective of those three numerical thresholds. In the **Static** view, **A,** the area-by-event matrix summarizes mean QC-unit mismatch-presentation firing-rate differences for all 16 conditions across the 48 frontal, visual, hippocampal, or thalamic areas containing at least 10 pooled QC-passing units. Areas are alphabetized within that anatomical group order. **B,** four representative mismatch-minus-control SDF heatmaps show the 150 default-filter units with the largest absolute effects, with explicit color scales and baseline-subtracted population SDFs with across-neuron SEM below. Across the four source sessions, 13,682 sorted units were available and 7,266 passed the manuscript QC thresholds. Data come from the public draft of [Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files).
 :::
-
-### Eye tracking across modalities
-
-Processed eye tracking provides a second synchronized view of behavior beyond
-locomotion. [Supplementary Figure 4](#fig-supp-eye-tracking) aligns the public eye-camera
-video, reconstructed visual stimulus, pupil-center position, pupil area, and
-likely-blink flags for representative standard-oddball Neuropixels, mesoscope,
-and SLAP2 sessions. The moving marker encodes pupil center in the full camera
-frame; its size and color encode pupil area relative to the 5th–95th percentile
-range from that complete session. A crosshair marks the robust full-session
-median pupil center. During likely blinks, the tracking field turns black and
-the corresponding samples are shaded in the pupil-area trace. A shared playback
-cursor makes the timing relationship between all three streams explicit.
 
 ## Stimulus-evoked responses: oddball across modalities
 

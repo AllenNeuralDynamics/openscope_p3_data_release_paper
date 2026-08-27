@@ -94,6 +94,16 @@ article > figure.table-hover-source {
   max-height: min(460px, calc(100vh - 2rem));
 }
 
+.hover-card-content .hover-document figure {
+  display: block !important;
+}
+
+.hover-card-content .hover-document figure > figcaption {
+  width: 100% !important;
+  max-width: none !important;
+  margin-top: 0.75rem !important;
+}
+
 .publication-data-source {
   display: none !important;
 }
