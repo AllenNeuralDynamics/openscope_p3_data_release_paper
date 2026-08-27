@@ -134,6 +134,21 @@ def test_pupil_extractor_retries_cached_timestamp_failure(tmp_path: Path) -> Non
     assert json.loads(cache_path.read_text(encoding="utf-8"))["session"] == session
 
 
+def test_pupil_extractor_requires_optional_deps_only_for_extraction() -> None:
+    extractor = runpy.run_path(
+        str(Path(__file__).parents[1] / "scripts" / "extract_pupil_event_responses.py")
+    )
+    extract_session = extractor["extract_session"]
+    extract_session.__globals__["source_asset_record"] = lambda _config, _asset: {
+        "download_url": "https://example.invalid/session.nwb"
+    }
+    extract_session.__globals__["h5py"] = None
+    extract_session.__globals__["remfile"] = None
+
+    with pytest.raises(SystemExit, match="Run with: uv run --with h5py"):
+        extract_session({}, {})
+
+
 def test_event_definitions_match_context_and_control_rows() -> None:
     orientation = event("standard", "orientation_45")
     assert event_matches(

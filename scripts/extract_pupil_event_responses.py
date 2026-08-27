@@ -7,6 +7,7 @@ import argparse
 import csv
 import datetime as dt
 import hashlib
+import importlib
 import json
 import math
 import urllib.error
@@ -16,16 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import closing
 from dataclasses import asdict
 from pathlib import Path
-
-try:
-    import h5py
-    import numpy as np
-    import remfile
-except ImportError as exc:  # pragma: no cover - optional extraction environment
-    raise SystemExit(
-        "Run with: uv run --with h5py --with numpy --with remfile "
-        "python scripts/extract_pupil_event_responses.py"
-    ) from exc
+from types import ModuleType
 
 from openscope_p3_publication.figures import session_cohort
 from openscope_p3_publication.pupil_responses import (
@@ -40,6 +32,27 @@ from openscope_p3_publication.pupil_responses import (
     remove_isolated_outliers_with_interpolation,
     subtract_traces,
 )
+
+EXTRACTION_ENVIRONMENT_HINT = (
+    "Run with: uv run --with h5py --with numpy --with remfile "
+    "python scripts/extract_pupil_event_responses.py"
+)
+
+try:
+    np = importlib.import_module("numpy")
+except ImportError as exc:  # pragma: no cover - optional extraction environment
+    raise SystemExit(EXTRACTION_ENVIRONMENT_HINT) from exc
+
+
+def import_optional_module(name: str) -> ModuleType | None:
+    try:
+        return importlib.import_module(name)
+    except ImportError:
+        return None
+
+
+h5py = import_optional_module("h5py")
+remfile = import_optional_module("remfile")
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = REPO_ROOT / "figure_sources" / "data"
@@ -128,6 +141,11 @@ class SessionUnavailableError(RuntimeError):
 
 class SignalUnavailableError(RuntimeError):
     """Raised when one behavioral signal is absent or structurally invalid."""
+
+
+def require_extraction_environment() -> None:
+    if h5py is None or remfile is None:
+        raise SystemExit(EXTRACTION_ENVIRONMENT_HINT)
 
 
 def parse_args() -> argparse.Namespace:
@@ -1121,6 +1139,7 @@ def signal_metadata(signal: dict) -> dict:
 
 
 def extract_session(config: dict, asset: dict) -> dict:
+    require_extraction_environment()
     source = source_asset_record(config, asset)
     with closing(remfile.File(source["download_url"])) as remote:
         with h5py.File(remote, "r") as nwb:
@@ -1747,6 +1766,7 @@ def main() -> None:
     if args.bootstrap_resamples < 100:
         raise SystemExit("--bootstrap-resamples must be at least 100.")
     dt.date.fromisoformat(args.retrieved_date)
+    require_extraction_environment()
 
     configs, source_snapshots = load_session_configs()
     selected_modalities = set(args.modality or ())
