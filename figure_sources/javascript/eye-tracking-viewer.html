@@ -18,7 +18,17 @@ __EYE_TRACKING_CSS__
 
     <div id="interactive-view">
       <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
-      <nav class="fit-tabs" id="fit-selector" aria-label="Eye-tracking fit source"></nav>
+      <div class="processing-control">
+        <label class="cleaning-toggle" for="cleaning-toggle">
+          <input id="cleaning-toggle" type="checkbox">
+          <span>Interpolate isolated outliers</span>
+          <strong id="cleaning-mode-label">RAW DATA</strong>
+        </label>
+        <div class="cleaning-banner" id="cleaning-banner" role="status" hidden>
+          <strong>FILTERED VIEW</strong>
+          <span id="cleaning-summary">Isolated 1–4 frame outliers are interpolated.</span>
+        </div>
+      </div>
 
     <section class="stream-grid" aria-label="Synchronized eye-tracking streams">
       <article class="stream-panel video-panel" aria-labelledby="video-heading">
@@ -30,42 +40,26 @@ __EYE_TRACKING_CSS__
           <video id="eye-video" muted playsinline preload="metadata" aria-label="Synchronized eye camera video"></video>
           <div class="video-unavailable" id="video-unavailable" hidden>
             <strong>Video stream unavailable</strong>
-            <span>Stimulus and processed eye tracking remain active.</span>
+            <span>Processed eye tracking remains active.</span>
           </div>
           <span class="blink-badge" id="video-blink-badge" hidden>Blink</span>
         </div>
       </article>
 
-      <article class="stream-panel" aria-labelledby="stimulus-heading">
+      <article class="stream-panel video-panel processed-panel" aria-labelledby="processed-heading">
         <div class="panel-heading">
-          <h2 id="stimulus-heading">Stimulus</h2>
-          <span id="trial-type"></span>
+          <h2 id="processed-heading">Processed eye tracking</h2>
+          <span id="tracking-status">All fits shown</span>
         </div>
-        <canvas id="stimulus-canvas" width="360" height="225" role="img" aria-label="Reconstructed visual stimulus at the current recording time"></canvas>
-        <dl class="detail-grid">
-          <div><dt>Trial</dt><dd id="trial-number">-</dd></div>
-          <div><dt>Orientation</dt><dd id="orientation-value">-</dd></div>
-          <div><dt>Spatial freq.</dt><dd id="spatial-frequency">-</dd></div>
-          <div><dt>Temporal freq.</dt><dd id="temporal-frequency">-</dd></div>
-        </dl>
-      </article>
-
-      <article class="stream-panel" aria-labelledby="field-heading">
-        <div class="panel-heading">
-          <h2 id="field-heading">Pupil center field</h2>
-          <span id="tracking-status">Tracked</span>
+        <div class="video-stage" id="processed-video-stage">
+          <video id="processed-eye-video" muted playsinline preload="metadata" aria-label="Synchronized eye camera video with processed eye-tracking overlays"></video>
+          <canvas id="eye-overlay" width="658" height="492" role="img" aria-label="Processed pupil, corneal reflection, and eye ellipse overlays"></canvas>
+          <span class="filter-badge" id="processed-filter-badge" hidden>FILTERED</span>
+          <span class="blink-badge" id="processed-blink-badge" hidden>Blink</span>
         </div>
-        <canvas id="pupil-field" width="360" height="225" role="img" aria-label="Pupil center and area at the current recording time"></canvas>
-        <div class="field-key">
-          <span><i class="median-cross" aria-hidden="true"></i>Full-session median</span>
-          <span id="field-bounds"></span>
-        </div>
-        <dl class="detail-grid">
-          <div><dt>X position</dt><dd id="x-value">-</dd></div>
-          <div><dt>Y position</dt><dd id="y-value">-</dd></div>
-          <div><dt id="area-label">Pupil area</dt><dd id="area-value">-</dd></div>
-          <div><dt>Ellipse</dt><dd id="ellipse-value">-</dd></div>
-        </dl>
+        <fieldset class="overlay-key" id="overlay-key" aria-label="Show processed fit overlays">
+          <legend>Processed fit overlays</legend>
+        </fieldset>
       </article>
     </section>
 
@@ -80,15 +74,16 @@ __EYE_TRACKING_CSS__
     <section class="trace-panel" aria-labelledby="trace-heading">
       <div class="panel-heading trace-heading">
         <div>
-          <h2 id="trace-heading">Pupil area</h2>
+          <h2 id="trace-heading">Fit areas</h2>
           <span>camera px²</span>
+          <strong class="inline-filter-badge" id="trace-filter-badge" hidden>FILTERED</strong>
         </div>
         <output id="trace-value" aria-live="off"></output>
       </div>
-      <canvas id="pupil-trace" width="1200" height="210" role="img" aria-label="Pupil area trace with blink intervals and synchronized playback cursor"></canvas>
+      <canvas id="pupil-trace" width="1200" height="210" role="img" aria-label="Selected eye-fit area traces with blink intervals and synchronized playback cursor"></canvas>
       <div class="trace-key">
         <span><i class="key-swatch blink-key" aria-hidden="true"></i>Likely blink</span>
-        <span><i class="key-line event-key" aria-hidden="true"></i><span id="event-label"></span></span>
+        <span id="interpolated-key" hidden><i class="key-dot interpolated-key" aria-hidden="true"></i>Interpolated sample</span>
         <span><i class="key-line cursor-key" aria-hidden="true"></i>Playback</span>
       </div>
     </section>
@@ -97,7 +92,6 @@ __EYE_TRACKING_CSS__
       <summary>Session and sources</summary>
       <div class="session-header">
         <div>
-          <p class="context-label" id="context-label"></p>
           <h1 id="session-title"></h1>
         </div>
         <div class="source-links" id="source-links" aria-label="Data sources"></div>
@@ -107,7 +101,7 @@ __EYE_TRACKING_CSS__
 
     <section class="static-view" id="static-view" aria-label="Static synchronized eye-tracking overview" hidden>
       <div class="static-shell">
-        <img src="__EYE_TRACKING_STATIC_IMAGE__" alt="Three modality rows with vertically aligned pupil x position, y position, and area traces on a shared time axis; orientation oddball and likely blink periods are highlighted.">
+        <img src="__EYE_TRACKING_STATIC_IMAGE__" alt="Three modality rows with vertically aligned pupil x position, y position, and area traces on a shared time axis; likely blink periods are highlighted.">
       </div>
     </section>
   </main>

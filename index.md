@@ -640,10 +640,20 @@ Animal and session coverage, recording context, and quality-control status are s
 
 Recording-session inventory and quality-control summary across modalities. The
 **Interactive** view provides searchable, filterable tables sourced from local
-CSV snapshots, with expandable animal metadata and CSV export. The Sessions
-table includes records with a valid session ID whose QC status is `Pass`. The
-**Static** view summarizes the complete worksheet inputs used by the supplied
-modality plots. Failed sessions are unfilled with borders colored by session
+CSV snapshots, with expandable animal metadata and CSV export. Its **Session
+Inventory** tab displays the session summary figure with clickable session
+blocks that open matching Data Access records. The Sessions
+table includes records with a valid session ID whose QC status is `Pass`. SLAP2
+sessions are separated into **SLAP2 Glutamate** and **SLAP2 Voltage** modalities
+from the public worksheet's intended green recording channel: GluSnFR values are
+classified as glutamate and ASAP values as voltage; blank channel values remain
+unclassified as SLAP2. The
+**Static** view provides the same session summary without clickable elements,
+showing the complete worksheet inputs as **A,** Neuropixels;
+**B,** mesoscope; and **C,** SLAP2. Panel C separates Glutamate and Voltage
+sessions into vertically stacked subgroups, each containing only mice with the
+corresponding intended green recording channel.
+Failed sessions are unfilled with borders colored by session
 type; numbered markers identify descriptive QC tags listed in the legend. Across panels,
 indigo, teal, brown, and gold
 denote sensorimotor, standard oddball, sequence, and duration sessions,
@@ -1355,7 +1365,7 @@ The conclusion has not yet been drafted.
 :width: 100%
 :title: Supplementary Figure 4. Synchronized eye tracking across recording modalities.
 
-**Supplementary Figure 4.** Synchronized eye tracking in representative standard-oddball Neuropixels, mesoscope, and SLAP2 sessions. The **Interactive** view shows the public eye-camera video, reconstructed visual stimulus, and processed eye fits on a common 16-second clock. Fit-source tabs switch the center field, geometric values, and area trace among the pupil, corneal reflection, and eye ellipse. Marker position gives the selected fit center within the complete camera frame; the dashed crosshair marks its median center across valid nonblink fits from that source session. Marker size and color vary with selected-fit area after scaling to that fit's session-wide 5th–95th percentile nonblink range. The tracking field turns black during likely-blink samples, which are also shown as shaded intervals in the area trace. The **Static** view vertically stacks the raw pupil x position, y position, and area for each modality on the same 0–16-second axis. Teal bands mark the complete 90-degree orientation-deviant presentation and gray bands mark likely-blink intervals; traces break at invalid fits rather than interpolating through them. Neuropixels and mesoscope eye-camera frames are aligned through 100-kHz exposure edges in the session sync file, with reported dropped frames removed before mapping to MP4 time. SLAP2 uses aligned Harp timestamps and packaged pupil-frame indices to map the processed fits to its 30 Hz EyeCamera MP4. Eye fits, blink flags, and stimulus rows come from each public NWB time base. Modality tabs switch among all three source-backed examples, and source links expose the corresponding DANDI and raw S3 records.
+**Supplementary Figure 4.** Synchronized eye tracking in selected Neuropixels (mouse 834687), mesoscope (mouse 839909), and SLAP2 (mouse 828409) sessions. The 16-second excerpts were selected to show a likely blink and a sustained change in pupil area. In the **Interactive** view, the raw eye-camera video (left) is shown beside the same video with the NWB-packaged pupil, corneal-reflection, and eye-ellipse fits overlaid (right). Colored outlines show each fitted ellipse using its center, semi-axis dimensions, and rotation; the corresponding checkboxes show or hide only these overlays. The three plots below show pupil area, corneal-reflection area, and eye-ellipse area on separate y-axes. Gray bands denote likely-blink samples, and the black vertical line follows video playback. The optional **Filtered** view applies the same causal cleanup to the plotted values and overlay geometry: each sample is compared with up to the previous 50 processed samples using a median and scaled median-absolute-deviation baseline, and isolated runs of one to four samples with an absolute robust z-score greater than 3 are linearly interpolated. Orange points mark interpolated area samples; likely-blink periods are not interpolated or crossed. SLAP2 eye tracking appears substantially noisier than the other modalities, consistent with interference from illumination and whiskers in the eye-camera view. These data are released as processed in the public NWBs, with recognition that acquisition and processing improvements will be incorporated in future releases. The **Static** view shows raw pupil x position, y position, and area for all three modalities on a common time axis. Neuropixels and mesoscope videos are aligned using eye-camera exposure edges from the session sync files, whereas SLAP2 uses packaged camera-frame indices and aligned Harp timestamps. All fit values and blink flags come from the displayed public NWBs; the expandable source section links to the corresponding DANDI and raw S3 records.
 :::
 
 :::{iframe} ./interactive/optotagging-heatmaps.html

@@ -69,6 +69,7 @@ from openscope_p3_publication.figures import (
     load_optotagging_static_summary,
     load_publication_table_data,
     load_running_statistics,
+    session_table_modality,
     load_segmentation_viewers,
     load_shared_stimulus_table_excerpts,
     load_stimulus_table_excerpts,
@@ -668,7 +669,7 @@ def test_optotagging_snapshot_is_source_backed(tmp_path: Path) -> None:
         provenance["manifest_sha256"],
     )
     assert payload["session_count"] == 3
-    assert payload["version"] == 2
+    assert payload["version"] == 3
     assert payload["total_unit_count"] == sum(
         session["unit_count"] for session in payload["sessions"]
     )
@@ -1923,6 +1924,21 @@ def test_data_access_table_uses_modality_specific_columns(tmp_path: Path) -> Non
     ]
 
 
+def test_slap2_table_modality_uses_intended_green_channel() -> None:
+    assert session_table_modality({
+        "modality": "slap2",
+        "intended_recording_green_channel": "iGluSnFR4f",
+    }) == "slap2-glutamate"
+    assert session_table_modality({
+        "modality": "slap2",
+        "intended_recording_green_channel": "ASAP7y",
+    }) == "slap2-voltage"
+    assert session_table_modality({
+        "modality": "slap2",
+        "intended_recording_green_channel": "",
+    }) == "slap2"
+
+
 def test_data_access_snapshot_is_source_backed() -> None:
     provenance = json.loads(DATA_ACCESS_PROVENANCE_PATH.read_text(encoding="utf-8"))
     assert hashlib.sha256(DATA_ACCESS_PATH.read_bytes()).hexdigest() == (
@@ -2374,6 +2390,9 @@ def test_eye_tracking_snapshot_is_source_backed() -> None:
             "ellipse",
         )] == ["Pupil", "Corneal reflection", "Eye ellipse"]
         for fit in session["fits"].values():
+            assert fit["sampleFields"] == [
+                "time", "x", "y", "width", "height", "area", "angle", "blink"
+            ]
             assert len(fit["samples"]) >= 450
             assert fit["samples"][0][0] <= 0.04
             assert fit["samples"][-1][0] >= 15.95
@@ -2403,7 +2422,8 @@ def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
 
     assert 'id="eye-tracking-viewer"' in html
     assert 'id="eye-video"' in html
-    assert 'id="stimulus-canvas"' in html
+    assert 'id="stimulus-canvas"' not in html
+    assert "drawStimulus" not in html
     assert 'id="pupil-field"' in html
     assert 'id="pupil-trace"' in html
     assert 'id="fit-selector"' in html

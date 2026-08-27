@@ -1368,7 +1368,11 @@ def write_data_explorer_html(
     javascript = (JAVASCRIPT_DIR / "data-explorer.js").read_text(encoding="utf-8")
     html = (
         template.replace("__DATA_EXPLORER_CSS__", stylesheet)
-        .replace("__SESSION_INVENTORY_SVG__", static_svg)
+        .replace("__SESSION_INVENTORY_INTERACTIVE_SVG__", static_svg)
+        .replace(
+            "__SESSION_INVENTORY_STATIC_IMAGE__",
+            f"media/data-explorer/{static_output.name}",
+        )
         .replace(
             "__DATA_EXPLORER_DATA__",
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
@@ -1377,6 +1381,9 @@ def write_data_explorer_html(
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
     )
     output.write_text(html, encoding="utf-8", newline="\n")
+    media_output = output.parent / "media" / "data-explorer"
+    media_output.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(static_output, media_output / static_output.name)
     return output
 
 
@@ -2234,16 +2241,22 @@ def load_behavior_excerpts(path: Path = BEHAVIOR_EXCERPTS_PATH) -> dict:
 
 def load_eye_tracking_excerpts(path: Path = EYE_TRACKING_EXCERPTS_PATH) -> dict:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if payload.get("version") != 2 or payload.get("durationSeconds") != 16.0:
+    if payload.get("version") != 3 or payload.get("durationSeconds") != 16.0:
         raise RuntimeError("Eye-tracking excerpt schema or duration is not supported.")
     sessions = payload.get("sessions", [])
-    if [session.get("id") for session in sessions] != [
-        "neuropixels",
-        "mesoscope",
-        "slap2",
-    ]:
-        raise RuntimeError("Eye-tracking excerpts must contain the supported modalities in order.")
-    expected_fields = ["time", "x", "y", "width", "height", "area", "blink"]
+    session_ids = [session.get("id") for session in sessions]
+    standard_ids = ["neuropixels", "mesoscope", "slap2"]
+    candidate_ids = [f"neuropixels-candidate-{index}" for index in range(1, 6)]
+    mesoscope_candidate_ids = [f"mesoscope-candidate-{index}" for index in range(1, 6)]
+    slap2_candidate_ids = [f"slap2-candidate-{index}" for index in range(1, 6)]
+    if session_ids not in (
+        standard_ids,
+        candidate_ids,
+        mesoscope_candidate_ids,
+        slap2_candidate_ids,
+    ):
+        raise RuntimeError("Eye-tracking excerpts must contain a supported session set.")
+    expected_fields = ["time", "x", "y", "width", "height", "area", "angle", "blink"]
     expected_fits = {"pupil", "corneal_reflection", "ellipse"}
     for session in sessions:
         fits = session.get("fits", {})
@@ -2288,12 +2301,13 @@ def load_eye_tracking_excerpts(path: Path = EYE_TRACKING_EXCERPTS_PATH) -> dict:
             )
         ):
             raise RuntimeError(f"Eye-camera frame map is invalid: {session['id']}")
-        event_time = session.get("event", {}).get("time")
-        if event_time != 5.0 or not any(
-            row["start"] <= event_time <= row["end"]
-            for row in session.get("stimulus", [])
-        ):
-            raise RuntimeError(f"Eye-tracking event lacks stimulus coverage: {session['id']}")
+        if session_ids == standard_ids and "event" in session:
+            event_time = session.get("event", {}).get("time")
+            if event_time != 5.0 or not any(
+                row["start"] <= event_time <= row["end"]
+                for row in session.get("stimulus", [])
+            ):
+                raise RuntimeError(f"Eye-tracking event lacks stimulus coverage: {session['id']}")
     return payload
 
 
@@ -2302,10 +2316,10 @@ def write_eye_tracking_static_svg(
 ) -> Path:
     payload = load_eye_tracking_excerpts()
     width = 1400
-    height = 1050
+    height = 135 + 305 * len(payload["sessions"])
     plot_left = 205
     plot_width = 1145
-    row_tops = (92, 397, 702)
+    row_tops = tuple(92 + 305 * index for index in range(len(payload["sessions"])))
     trace_height = 70
     trace_gap = 12
     duration = payload["durationSeconds"]
@@ -2336,7 +2350,7 @@ def write_eye_tracking_static_svg(
         points: list[str] = []
         for sample in samples:
             value = float(sample[field_index])
-            invalid = bool(sample[6]) or (field_index == 5 and value <= 0)
+            invalid = bool(sample[7]) or (field_index == 5 and value <= 0)
             if invalid or not math.isfinite(value) or value < low or value > high:
                 if len(points) > 1:
                     paths.append("M" + " L".join(points))
@@ -2352,10 +2366,10 @@ def write_eye_tracking_static_svg(
         intervals: list[tuple[float, float]] = []
         start: float | None = None
         for index, sample in enumerate(samples):
-            if sample[6] and start is None:
+            if sample[7] and start is None:
                 start = float(sample[0])
             if start is not None and (
-                not sample[6] or index == len(samples) - 1
+                not sample[7] or index == len(samples) - 1
             ):
                 intervals.append((start, float(sample[0])))
                 start = None
@@ -2366,15 +2380,12 @@ def write_eye_tracking_static_svg(
         f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
         '<title id="title">Synchronized eye-tracking signals across recording modalities</title>',
         '<desc id="description">Neuropixels, mesoscope, and SLAP2 eye-tracking excerpts '
-        'with vertically aligned pupil x position, y position, and area traces. The '
-        'orientation oddball period and likely blinks are highlighted.</desc>',
+        'with vertically aligned pupil x position, y position, and area traces. Likely '
+        'blinks are highlighted.</desc>',
         f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
         '<text x="35" y="42" font-family="Myriad Pro, Arial, sans-serif" '
         'font-size="28" font-weight="700" fill="#293133">'
-        'Eye tracking around a visual oddball</text>',
-        '<rect x="870" y="23" width="22" height="15" fill="#22BCAD" fill-opacity="0.22"/>',
-        '<text x="900" y="36" font-family="Myriad Pro, Arial, sans-serif" font-size="14" '
-        'fill="#59615F">90° orientation deviant</text>',
+        'Synchronized eye tracking across recording modalities</text>',
         '<rect x="1110" y="23" width="22" height="15" fill="#B9C1BE" fill-opacity="0.55"/>',
         '<text x="1140" y="36" font-family="Myriad Pro, Arial, sans-serif" font-size="14" '
         'fill="#59615F">Likely blink</text>',
@@ -2385,20 +2396,14 @@ def write_eye_tracking_static_svg(
     ):
         samples = session["fits"]["pupil"]["samples"]
         modality = session["id"]
-        accent = accents[modality]
-        event_row = next(
-            row
-            for row in session["stimulus"]
-            if row["start"] <= session["event"]["time"] <= row["end"]
-        )
+        accent = accents.get(modality, "#4B79C6")
         svg.extend(
             [
                 f'<text x="35" y="{row_top}" font-family="Myriad Pro, Arial, sans-serif" '
                 f'font-size="22" font-weight="700" fill="{accent}">'
                 f'{escape(session["label"])}</text>',
                 f'<text x="35" y="{row_top + 24}" font-family="IBM Plex Mono, monospace" '
-                f'font-size="13" fill="#59615F">mouse {escape(session["subject"])} · trial '
-                f'{session["event"]["trialNumber"]}</text>',
+                f'font-size="13" fill="#59615F">mouse {escape(session["subject"])}</text>',
             ]
         )
         for signal_index, (field_index, label, unit) in enumerate(signal_specs):
@@ -2406,20 +2411,15 @@ def write_eye_tracking_static_svg(
             valid_values = [
                 float(sample[field_index])
                 for sample in samples
-                if not sample[6]
+                if not sample[7]
                 and math.isfinite(float(sample[field_index]))
                 and (field_index != 5 or float(sample[field_index]) > 0)
             ]
             low, high = limits(valid_values)
-            event_left = x_position(event_row["start"])
-            event_width = x_position(event_row["end"]) - event_left
             svg.extend(
                 [
                     f'<rect x="{plot_left}" y="{top}" width="{plot_width}" height="{trace_height}" '
                     'fill="#FAFBFB" stroke="#D7DBD9"/>',
-                    f'<rect class="oddball-period" x="{event_left:.2f}" y="{top}" '
-                    f'width="{event_width:.2f}" height="{trace_height}" fill="#22BCAD" '
-                    'fill-opacity="0.22"/>',
                 ]
             )
             for blink in blink_intervals(samples):
@@ -4546,9 +4546,10 @@ def write_segmentation_viewers() -> Path:
 
 
 def load_publication_table_data() -> dict:
-    animal_table = load_individual_animal_table()
-    session_table = load_individual_session_table()
-    data_access_table = load_data_access_table()
+    session_payload = load_experimental_session_records()
+    animal_table = load_individual_animal_table(session_records=session_payload["records"])
+    session_table = load_individual_session_table(payload=session_payload)
+    data_access_table = load_data_access_table(session_records=session_payload["records"])
     return {
         "tables": {
             "animals": animal_table,
@@ -4562,6 +4563,7 @@ def load_publication_table_data() -> dict:
 def load_data_access_table(
     data_path: Path = DATA_ACCESS_PATH,
     provenance_path: Path = DATA_ACCESS_PROVENANCE_PATH,
+    session_records: list[dict] | None = None,
 ) -> dict:
     """Load the vendored Data Access Summary snapshot."""
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
@@ -4601,6 +4603,11 @@ def load_data_access_table(
         "Neuropixels": "neuropixels",
         "SLAP2": "slap2",
     }
+    session_modality_lookup = {
+        record["source_session_id"].strip(): session_table_modality(record)
+        for record in session_records or []
+        if record["source_session_id"].strip() not in {"", "aborted"}
+    }
     column_views = {
         "neuropixels": [
             "Session ID", "Mouse ID", "Date", "Context", "Dandiset ID",
@@ -4620,6 +4627,8 @@ def load_data_access_table(
             "Processed S3 asset", "NWB S3 asset",
         ],
     }
+    column_views["slap2-glutamate"] = column_views["slap2"]
+    column_views["slap2-voltage"] = column_views["slap2"]
     rows = []
     session_ids = set()
     for source in source_rows:
@@ -4631,6 +4640,9 @@ def load_data_access_table(
             raise RuntimeError(f"Duplicate Data Access session ID: {session_id}")
         session_ids.add(session_id)
         values = [source[header].strip() for header in expected_headers]
+        if modality == "slap2":
+            modality = session_modality_lookup.get(session_id, modality)
+            values[expected_headers.index("Modality")] = modality_display_label(modality)
         rows.append(
             {
                 "context": source["Context"].strip().lower(),
@@ -4678,12 +4690,17 @@ def text_sha256_matches(path: Path, expected: str) -> bool:
     return any(hashlib.sha256(candidate).hexdigest() == expected for candidate in candidates)
 
 
-def load_individual_animal_table() -> dict:
+def load_individual_animal_table(session_records: list[dict] | None = None) -> dict:
     modality_lookup = {
-        "MESO": ("mesoscope", "Two-photon mesoscope"),
+        "MESO": ("mesoscope", "Mesoscope"),
         "EPHYS": ("neuropixels", "Neuropixels"),
         "SLAP2": ("slap2", "SLAP2"),
     }
+    mouse_session_modalities = {}
+    for record in session_records or []:
+        modality = session_table_modality(record)
+        if modality in {"slap2-glutamate", "slap2-voltage"}:
+            mouse_session_modalities.setdefault(record["mouse_id"], set()).add(modality)
     provenance = json.loads(ANIMAL_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8"))
     if not text_sha256_matches(ANIMAL_RECORDS_PATH, provenance["vendored_sha256"]):
         raise RuntimeError("Animal worksheet checksum does not match its provenance record.")
@@ -4696,6 +4713,7 @@ def load_individual_animal_table() -> dict:
     for source in source_rows:
         mouse_id = source["Mouse id"].strip()
         modality, modality_label = modality_lookup[source["Modality"].strip()]
+        modalities = sorted(mouse_session_modalities.get(mouse_id, {modality}))
         qc_value = source["QC (true/false)"].strip() or "Not marked"
         sex = source["Sex"].strip()
         if not sex or sex == "?":
@@ -4709,21 +4727,29 @@ def load_individual_animal_table() -> dict:
         ]
         details = [detail for detail in details if detail["value"]]
         csv_values = [source[header] for header in source]
-        rows.append(
-            {
-                "context": "",
-                "csvValues": csv_values,
-                "details": details,
-                "modality": modality,
-                "qc": normalize_qc(qc_value),
-                "values": [mouse_id, modality_label, sex, qc_value, ""],
-            }
-        )
+        for table_modality in modalities:
+            table_modality_label = (
+                modality_display_label(table_modality)
+                if table_modality != modality
+                else modality_label
+            )
+            table_csv_values = list(csv_values)
+            table_csv_values[list(source).index("Modality")] = table_modality_label
+            rows.append(
+                {
+                    "context": "",
+                    "csvValues": table_csv_values,
+                    "details": details,
+                    "modality": table_modality,
+                    "qc": normalize_qc(qc_value),
+                    "values": [mouse_id, table_modality_label, sex, qc_value, ""],
+                }
+            )
 
     rows.sort(key=lambda row: int(row["values"][0]))
-    mouse_ids = [row["values"][0] for row in rows]
-    if len(mouse_ids) != len(set(mouse_ids)):
-        raise RuntimeError("Animal worksheet contains duplicate mouse IDs.")
+    mouse_modalities = [(row["values"][0], row["modality"]) for row in rows]
+    if len(mouse_modalities) != len(set(mouse_modalities)):
+        raise RuntimeError("Animal worksheet contains duplicate mouse-modality rows.")
     return {
         "csvHeaders": list(source_rows[0]),
         "detailsColumn": 4,
@@ -4898,19 +4924,22 @@ def load_neuropixels_trajectory_data(
 def load_individual_session_table(
     data_path: Path = SESSION_RECORDS_PATH,
     provenance_path: Path = SESSION_RECORDS_PROVENANCE_PATH,
+    payload: dict | None = None,
 ) -> dict:
-    payload = load_experimental_session_records(data_path, provenance_path)
+    payload = payload or load_experimental_session_records(data_path, provenance_path)
     modality_labels = {
-        "mesoscope": "Two-photon mesoscope",
+        "mesoscope": "Mesoscope",
         "neuropixels": "Neuropixels",
         "slap2": "SLAP2",
+        "slap2-glutamate": "SLAP2 Glutamate",
+        "slap2-voltage": "SLAP2 Voltage",
     }
     rows = []
     for record in payload["records"]:
         session_id = record["source_session_id"].strip()
         if record["qc"].strip().casefold() != "pass" or session_id in {"", "aborted"}:
             continue
-        modality = record["modality"]
+        modality = session_table_modality(record)
         context = session_context(record)
         values = [
             session_id,
@@ -4940,6 +4969,28 @@ def load_individual_session_table(
         "headers": headers,
         "rows": rows,
     }
+
+
+def session_table_modality(record: dict) -> str:
+    modality = record["modality"]
+    if modality != "slap2":
+        return modality
+    channel = record.get("intended_recording_green_channel", "").casefold()
+    if "asap" in channel:
+        return "slap2-voltage"
+    if "glusnfr" in channel:
+        return "slap2-glutamate"
+    return "slap2"
+
+
+def modality_display_label(modality: str) -> str:
+    return {
+        "mesoscope": "Mesoscope",
+        "neuropixels": "Neuropixels",
+        "slap2": "SLAP2",
+        "slap2-glutamate": "SLAP2 Glutamate",
+        "slap2-voltage": "SLAP2 Voltage",
+    }[modality]
 
 
 SESSION_CONTEXT_COLORS = {
@@ -4980,6 +5031,7 @@ SESSION_QC_TAG_ALIASES = {
     "cell matching failure": "cell matching",
     "motion correction": "motion correction failure",
     "mouse asleep": "mouse suspected asleep",
+    "> 4 planes with z-drift": "z-drift",
     "zdrift": "z-drift",
 }
 SESSION_ORDER = {
@@ -5112,8 +5164,13 @@ def session_cohort(records: list[dict], modality: str) -> int:
 
 
 def modality_session_records(records: list[dict], modality: str) -> list[dict]:
-    selected = [record for record in records if record["modality"] == modality]
-    if modality == "slap2":
+    if modality in {"slap2-glutamate", "slap2-voltage"}:
+        selected = [
+            record for record in records if session_table_modality(record) == modality
+        ]
+    else:
+        selected = [record for record in records if record["modality"] == modality]
+    if modality.startswith("slap2"):
         selected = [
             record
             for record in selected
@@ -5165,7 +5222,7 @@ def session_panel_rows(records: list[dict], modality: str) -> list[dict]:
             }
         )
     rows.sort(key=lambda row: (row["cohort"], int(row["mouseId"])))
-    if modality == "slap2":
+    if modality.startswith("slap2"):
         rows.reverse()
     return rows
 
@@ -5180,7 +5237,10 @@ def append_session_block(
     context: str,
     qc_kind: str,
     session_id: str | None = None,
+    mouse_id: str | None = None,
+    date: str | None = None,
     modality: str | None = None,
+    qc_tags: list[str] | None = None,
     qc_tag_numbers: list[int] | None = None,
     element_class: str | None = None,
     overlays: list[str] | None = None,
@@ -5193,7 +5253,20 @@ def append_session_block(
     modality_attribute = (
         f' data-modality="{escape(modality, quote=True)}"' if modality else ""
     )
-    title = f"<title>{escape(session_id)}</title>" if session_id else ""
+    mouse_attribute = (
+        f' data-mouse-id="{escape(mouse_id, quote=True)}"' if mouse_id else ""
+    )
+    date_attribute = f' data-date="{escape(date, quote=True)}"' if date else ""
+    context_attribute = f' data-session-type="{escape(SESSION_CONTEXT_LABELS[context], quote=True)}"'
+    qc_tags_attribute = (
+        f' data-qc-tag-labels="{escape("; ".join(qc_tags), quote=True)}"'
+        if qc_tags
+        else ' data-qc-tag-labels="None"'
+    )
+    metadata_attributes = (
+        f"{session_attribute}{mouse_attribute}{date_attribute}{modality_attribute}"
+        f"{context_attribute}{qc_tags_attribute}"
+    )
     block_inset = 1.5
     block_x = x + block_inset
     block_y = y + block_inset
@@ -5201,7 +5274,7 @@ def append_session_block(
     block_height = height - 2 * block_inset
     if qc_kind == "session-fail":
         svg.append(
-            f'<g class="session-target"{session_attribute}{modality_attribute}>{title}'
+            f'<g class="session-target"{metadata_attributes}>'
             f'<rect{class_attribute} x="{block_x:.2f}" y="{block_y:.2f}" '
             f'width="{block_width:.2f}" height="{block_height:.2f}" fill="none" '
             f'stroke="{color}" stroke-width="2" pointer-events="all"/></g>'
@@ -5221,7 +5294,7 @@ def append_session_block(
         )
     else:
         svg.append(
-            f'<g class="session-target"{session_attribute}{modality_attribute}>{title}'
+            f'<g class="session-target"{metadata_attributes}>'
             f'<rect{class_attribute} x="{block_x:.2f}" y="{block_y:.2f}" '
             f'width="{block_width:.2f}" height="{block_height:.2f}" '
             f'fill="{color}" stroke="{color}" stroke-width="2"/></g>'
@@ -5263,10 +5336,39 @@ def write_session_inventory_svg(
     payload = load_experimental_session_records()
     logo_paths = load_platform_logos()
     records = payload["records"]
+    with ANIMAL_RECORDS_PATH.open(newline="", encoding="utf-8") as stream:
+        animal_records = {
+            row["Mouse id"].strip(): row for row in csv.DictReader(stream)
+        }
+    slap2_row_step = 28
+    subgroup_text_baseline_offset = 6
+    glutamate_heading_row_center = 85
+    glutamate_heading_y = (
+        glutamate_heading_row_center + subgroup_text_baseline_offset
+    )
+    glutamate_chart_top = glutamate_heading_row_center + slap2_row_step
+    glutamate_row_count = 3
+    trailing_row_space = slap2_row_step
+    voltage_heading_row_center = (
+        glutamate_chart_top
+        + glutamate_row_count * slap2_row_step
+        + trailing_row_space
+    )
+    voltage_heading_y = (
+        voltage_heading_row_center + subgroup_text_baseline_offset
+    )
+    voltage_chart_top = voltage_heading_row_center + slap2_row_step
     panel_specs = (
-        ("A", "Neuropixels", "neuropixels", 28),
-        ("B", "Mesoscope", "mesoscope", 28),
-        ("C", "SLAP2", "slap2", 28),
+        ("A", "Neuropixels", "neuropixels", "neuropixels", 0, 34, 85, 28),
+        ("B", "Mesoscope", "mesoscope", "mesoscope", 1, 34, 85, 28),
+        (
+            "C", "SLAP2", "slap2-glutamate", "slap2", 2, 34,
+            glutamate_chart_top, slap2_row_step,
+        ),
+        (
+            "", "", "slap2-voltage", "slap2", 2, voltage_heading_y,
+            voltage_chart_top, slap2_row_step,
+        ),
     )
     width = 1150
     height = 680
@@ -5280,7 +5382,7 @@ def write_session_inventory_svg(
 
     panel_rows = {
         modality: session_panel_rows(records, modality)
-        for _, _, modality, _ in panel_specs
+        for _, _, modality, _, _, _, _, _ in panel_specs
     }
     active_qc_tags = {
         tag
@@ -5309,17 +5411,18 @@ def write_session_inventory_svg(
     slot_width = chart_width / (global_max_sessions + 0.5)
     panel_axis_maxima = {
         modality: max(len(row["sessions"]) for row in panel_rows[modality])
-        + (2 if modality == "slap2" else 0.5)
-        for _, _, modality, _ in panel_specs
+        + (2 if modality.startswith("slap2") else 0.5)
+        for _, _, modality, _, _, _, _, _ in panel_specs
     }
+    column_modalities = ("neuropixels", "mesoscope", "slap2-glutamate")
     relative_panel_lefts = [0.0]
-    for _, _, modality, _ in panel_specs[:-1]:
+    for modality in column_modalities[:-1]:
         relative_panel_lefts.append(
             relative_panel_lefts[-1]
             + panel_axis_maxima[modality] * slot_width
             + panel_gap
         )
-    final_modality = panel_specs[-1][2]
+    final_modality = column_modalities[-1]
     panel_group_width = (
         relative_panel_lefts[-1]
         + chart_offset
@@ -5334,14 +5437,23 @@ def write_session_inventory_svg(
         'aria-label="Recording sessions per mouse across three modalities" '
         'aria-describedby="description">',
         '<desc id="description">Three panels show context-colored sessions for Neuropixels, '
-        'mesoscope, and SLAP2 mice, grouped by predictive-processing cohort and annotated '
-        'with session quality-control status.</desc>',
+        'mesoscope, and SLAP2 mice. The SLAP2 panel separates Glutamate and Voltage sessions; '
+        'mice are grouped by predictive-processing cohort and sessions are annotated with '
+        'quality-control status.</desc>',
         f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
     ]
 
-    for (panel_letter, panel_title, modality, row_step), panel_left in zip(
-        panel_specs, panel_lefts, strict=True
-    ):
+    for (
+        panel_letter,
+        panel_title,
+        modality,
+        logo_modality,
+        column_index,
+        heading_y,
+        panel_chart_top,
+        row_step,
+    ) in panel_specs:
+        panel_left = panel_lefts[column_index]
         rows = panel_rows[modality]
         max_sessions = max(len(row["sessions"]) for row in rows)
         if modality == "neuropixels":
@@ -5353,25 +5465,40 @@ def write_session_inventory_svg(
         axis_max = panel_axis_maxima[modality]
         axis_width = slot_width * axis_max
         title_x = panel_left + chart_offset - heading_label_offset
-        logo_data = base64.b64encode(logo_paths[modality].read_bytes()).decode()
-        svg.extend(
-            [
+        logo_data = base64.b64encode(logo_paths[logo_modality].read_bytes()).decode()
+        if panel_letter:
+            svg.extend(
+                [
                 f'<g class="platform-heading" data-modality="{modality}">',
-                f'<text class="panel-title" x="{title_x:.2f}" y="34" '
+                f'<text class="panel-title" x="{title_x:.2f}" y="{heading_y}" '
                 'font-family="Source Sans 3, sans-serif" '
                 f'font-size="22" font-weight="700" fill="#293133">'
                 f"{panel_letter}</text>",
                 f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
-                f'x="{title_x + 24:.2f}" y="1" width="54" height="54" '
+                f'x="{title_x + 24:.2f}" y="{heading_y - 33}" width="54" height="54" '
                 'preserveAspectRatio="xMidYMid meet"/>',
                 f'<text class="platform-title modality-title" '
-                f'x="{title_x + 86:.2f}" y="47" '
+                f'x="{title_x + 86:.2f}" y="{heading_y + 13}" '
                 'font-family="Source Sans 3, sans-serif" '
                 f'font-size="{FIGURE_TYPE_SCALE["modality"]}" font-weight="700" '
                 f'fill="#293133">{panel_title}</text>',
                 "</g>",
-            ]
-        )
+                ]
+            )
+        if modality.startswith("slap2"):
+            subgroup = "Glutamate" if modality == "slap2-glutamate" else "Voltage"
+            subgroup_y = (
+                glutamate_heading_y
+                if modality == "slap2-glutamate"
+                else voltage_heading_y
+            )
+            svg.append(
+                f'<text class="slap2-subheading" data-modality="{modality}" '
+                f'x="{panel_left + chart_offset:.2f}" '
+                f'y="{subgroup_y}" '
+                'font-family="Source Sans 3, sans-serif" font-size="18" font-weight="700" '
+                f'text-anchor="start" fill="#4D5553">{subgroup}</text>'
+            )
         if modality == "neuropixels":
             svg.append(
                 f'<text id="mouse-id-axis-label" '
@@ -5381,17 +5508,39 @@ def write_session_inventory_svg(
             )
         y_positions = []
         previous_cohort = rows[0]["cohort"]
-        y = chart_top
+        y = panel_chart_top
         for row in rows:
             if row["cohort"] != previous_cohort:
                 y += row_step
                 previous_cohort = row["cohort"]
             y_positions.append(y)
-            svg.append(
-                f'<text class="mouse-id" data-modality="{modality}" '
-                f'x="{panel_left + chart_offset - 12}" y="{y + 4:.2f}" '
-                'font-family="IBM Plex Mono, monospace" font-size="12" '
-                f'text-anchor="end" fill="#4D5553">{escape(row["mouseId"])}</text>'
+            mouse_id = row["mouseId"]
+            animal = animal_records.get(mouse_id, {})
+            sex = animal.get("Sex", "").strip()
+            if not sex or sex == "?":
+                sex = "Unknown"
+            genotype = animal.get("Transgenic details", "").strip() or "Not available"
+            mouse_label_x = panel_left + chart_offset - 12
+            mouse_character_width = 7.2
+            mouse_text_width = len(mouse_id) * mouse_character_width
+            mouse_box_padding = mouse_character_width
+            mouse_box_x = mouse_label_x - mouse_text_width - mouse_box_padding
+            mouse_box_width = mouse_text_width + 2 * mouse_box_padding
+            svg.extend(
+                [
+                    f'<g class="mouse-target" data-mouse-id="{escape(mouse_id, quote=True)}" '
+                    f'data-modality="{escape(modality, quote=True)}" '
+                    f'data-sex="{escape(sex, quote=True)}" '
+                    f'data-genotype="{escape(genotype, quote=True)}">',
+                    f'<rect class="mouse-hitbox" x="{mouse_box_x:.2f}" '
+                    f'y="{y - 10:.2f}" width="{mouse_box_width:.2f}" height="20" rx="2" '
+                    'fill="transparent" pointer-events="all"/>',
+                    f'<text class="mouse-id" data-modality="{modality}" '
+                    f'x="{mouse_label_x}" y="{y + 4:.2f}" '
+                    'font-family="IBM Plex Mono, monospace" font-size="12" '
+                    f'text-anchor="end" fill="#4D5553" pointer-events="none">'
+                    f'{escape(mouse_id)}</text></g>',
+                ]
             )
             session_overlays = []
             for index, session in enumerate(row["sessions"]):
@@ -5412,7 +5561,17 @@ def write_session_inventory_svg(
                         if record is not None
                         else None
                     ),
+                    mouse_id=row["mouseId"],
+                    date=record["date"] if record is not None else None,
                     modality=modality,
+                    qc_tags=(
+                        [
+                            dict(SESSION_QC_TAGS)[tag]
+                            for tag in normalized_session_qc_tags(record)
+                        ]
+                        if record is not None
+                        else []
+                    ),
                     qc_tag_numbers=session_qc_tag_numbers(
                         record, displayed_qc_tag_numbers
                     ),

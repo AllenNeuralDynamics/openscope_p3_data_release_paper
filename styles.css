@@ -59,6 +59,11 @@ html[data-theme="dark"] .manuscript-wip-inline {
   grid-column: body-outset-start / body-outset-end;
 }
 
+#fig-supp-eye-tracking .relative.inline-block {
+  height: 1163px;
+  min-height: 1163px;
+}
+
 article > figure:not(.table-hover-source) img {
   display: block;
   max-width: min(100%, 1200px);
@@ -248,7 +253,7 @@ article table.table-laser-power td:first-child {
 }
 
 #fig-recording-session-inventory .relative.inline-block {
-  height: 650px;
+  height: 751px;
   padding-bottom: 0 !important;
 }
 
@@ -340,7 +345,7 @@ article table.table-laser-power td:first-child {
   }
 
   #fig-recording-session-inventory .relative.inline-block {
-    height: 830px;
+    height: 959px;
   }
 
   #table-supplementary-oddball-studies .relative.inline-block {

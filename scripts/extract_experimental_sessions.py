@@ -36,6 +36,7 @@ OUTPUT_FIELDS = (
     "date",
     "modality",
     "session_stimulus",
+    "intended_recording_green_channel",
     "qc",
     "qc_tags",
     "source_row",
@@ -100,6 +101,9 @@ def normalized_source_rows(
                 "date": normalize_date(date_value),
                 "modality": MODALITY_NAMES[source_modality],
                 "mouse_id": mouse_id,
+                "intended_recording_green_channel": clean_cell(
+                    row.get("Intended recording green channel"), pandas_module
+                ),
                 "qc": clean_cell(row.get("QC"), pandas_module),
                 "qc_tags": clean_cell(row.get("QC Tags"), pandas_module),
                 "session_stimulus": clean_cell(
@@ -143,8 +147,10 @@ def main() -> None:
         },
         "notes": (
             "Complete EPHYS, MESO, and SLAP2 worksheet rows in source order. Repeated "
-            "and aborted records are retained to reproduce the supplied static plots; "
-            "the interactive explorer selects valid session IDs whose QC status is Pass."
+            "and aborted records are retained to reproduce the supplied static plots; the "
+            "intended green recording channel is preserved to distinguish SLAP2 glutamate "
+            "and voltage sessions; the interactive explorer selects valid session IDs whose "
+            "QC status is Pass."
         ),
     }
     PROVENANCE_PATH.write_text(

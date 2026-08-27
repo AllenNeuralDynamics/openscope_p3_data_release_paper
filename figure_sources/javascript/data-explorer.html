@@ -23,7 +23,7 @@ __DATA_EXPLORER_CSS__
           DANDI is the final-release archive. Public S3 links provide source and
           intermediate products; INTERNAL products are not publicly browsable.
         </p>
-        <div class="table-tools" role="search">
+        <div class="table-tools" id="table-tools" role="search">
           <input id="table-search" type="search" placeholder="Search animals" aria-label="Search table">
           <select id="modality-filter" aria-label="Filter by recording modality"></select>
           <select id="context-filter" aria-label="Filter by secondary category"></select>
@@ -32,7 +32,13 @@ __DATA_EXPLORER_CSS__
         </div>
       </header>
 
-      <section class="table-shell" aria-live="polite">
+      <section class="inventory-view" id="inventory-view" aria-label="Interactive session inventory" hidden>
+        <div class="static-shell">
+__SESSION_INVENTORY_INTERACTIVE_SVG__
+        </div>
+      </section>
+
+      <section class="table-shell" id="table-view" aria-live="polite">
         <table id="explorer-table">
           <thead><tr id="table-headers"></tr></thead>
           <tbody id="table-body"></tbody>
@@ -43,9 +49,10 @@ __DATA_EXPLORER_CSS__
 
     <section class="static-view" id="static-view" aria-label="Static session inventory" hidden>
       <div class="static-shell">
-__SESSION_INVENTORY_SVG__
+        <img src="__SESSION_INVENTORY_STATIC_IMAGE__" alt="Recording sessions per mouse across Neuropixels, mesoscope, SLAP2 Glutamate, and SLAP2 Voltage groups.">
       </div>
     </section>
+    <aside class="session-tooltip" id="session-tooltip" role="tooltip" hidden></aside>
   </main>
 
   <script id="explorer-data" type="application/json">__DATA_EXPLORER_DATA__</script>

@@ -167,7 +167,9 @@ def update_sessions(source_bytes: bytes | None = None) -> Path:
             "notes": (
                 "Complete EPHYS, MESO, and SLAP2 worksheet rows in source order. Repeated "
                 "and aborted records are retained to reproduce the supplied static plots; "
-                "the interactive explorer selects valid session IDs whose QC status is Pass."
+                "the intended green recording channel is preserved to distinguish SLAP2 "
+                "glutamate and voltage sessions; the interactive explorer selects valid "
+                "session IDs whose QC status is Pass."
             ),
         },
     )
