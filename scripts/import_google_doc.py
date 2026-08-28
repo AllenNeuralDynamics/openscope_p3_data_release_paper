@@ -591,9 +591,10 @@ SLAP2_NWB_TAB = "\n".join(
         "| Question | NWB contents | Representative PyNWB entry point |",
         "| --- | --- | --- |",
         (
-            "| Where and how was each DMD path imaged? | `/general/optophysiology` "
-            "describes the DMD1 and DMD2 imaging planes, optical channels, device, "
-            "indicator, and field geometry. | `nwbfile.imaging_planes`, "
+            "| Where and how was each DMD path imaged? | `nwbfile.imaging_planes` "
+            "describes the DMD1 and DMD2 imaging planes, optical channels, indicator, "
+            "and field geometry. The SLAP2 microscope is registered in "
+            "`nwbfile.devices`. | `nwbfile.imaging_planes`, "
             "`nwbfile.devices` |"
         ),
         (

@@ -705,7 +705,7 @@ def test_nwb_file_contents_are_in_data_records() -> None:
     assert "Mesoscope NWB files" in records
     assert "SLAP2 NWB files" in records
     assert "DANDI:001424" in records
-    assert records.count(":::{tab-item}") == 4
+    assert records.count(":::{tab-item}") == 7
     assert records.count(
         "| Question | NWB contents | Representative PyNWB entry point |"
     ) == 4
@@ -713,6 +713,21 @@ def test_nwb_file_contents_are_in_data_records() -> None:
     assert 'nwbfile.processing[plane]["dff_timeseries"]' in records
     assert 'nwbfile.processing["ophys"]["ImageSegmentation"]' in records
     assert 'nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_dFF"]' in records
+    assert "### Explore representative NWB file structures" in records
+    assert records.count("./figure_sources/data/nwb-file-contents/") == 3
+
+
+def test_nwb_file_contents_explorer_uses_pinned_native_snapshots() -> None:
+    snapshot_dir = REPO_ROOT / "figure_sources" / "data" / "nwb-file-contents"
+    for modality in ("neuropixels", "mesoscope", "slap2"):
+        snapshot = snapshot_dir / f"{modality}.html"
+        assert snapshot.is_file()
+        with snapshot.open(encoding="utf-8") as stream:
+            prefix = stream.read(20_000)
+        assert "container-wrap" in prefix
+        assert "PyNWB 3." in prefix
+        assert "DANDI:001" in prefix
+        assert "<script>" not in prefix
 
 
 def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:

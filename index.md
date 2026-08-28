@@ -698,10 +698,15 @@ electrophysiology sessions are available at
 [DANDI:001637](https://dandiarchive.org/dandiset/001637), mesoscope two-photon
 imaging sessions at [DANDI:001768](https://dandiarchive.org/dandiset/001768),
 and SLAP2 dendritic-imaging sessions at
-[DANDI:001424](https://dandiarchive.org/dandiset/001424). Use the tabs below as
-a map from a scientific question to the corresponding NWB object and PyNWB
-entry point. Object names can differ slightly among sessions; the paths shown
-here reflect representative files in these Dandisets.
+[DANDI:001424](https://dandiarchive.org/dandiset/001424). NWB files can be
+streamed directly from DANDI without downloading the complete asset; see the
+[data access code example](#data-access-code-example) below. The
+[OpenScope Databook](https://alleninstitute.github.io/openscope_databook)
+provides companion analysis notebooks for selecting sessions and working with
+the electrophysiology, imaging, and behavioral objects introduced here. Use
+the tabs below as a map from a scientific question to the corresponding NWB
+object and PyNWB entry point. Object names can differ slightly among sessions;
+the paths shown here reflect representative files in these Dandisets.
 
 ::::{tab-set}
 :::{tab-item} Shared
@@ -729,7 +734,7 @@ metrics, and local field potentials.
 | --- | --- | --- |
 | Which units were isolated, and do they pass quality control? | `/units` contains firing rate, ISI violations, presence ratio, amplitude cutoff, SNR, d-prime, isolation distance, silhouette score, sliding refractory-period violations, and a default QC flag. | `nwbfile.units.to_dataframe()` |
 | When did a unit spike, and what was its waveform? | Ragged `spike_times` plus mean and standard-deviation waveforms are columns of `/units`. | `nwbfile.units["spike_times"][unit_row]` |
-| Where was each unit recorded? | Unit rows identify the probe and electrode and include estimated 3D coordinates. `/general/extracellular_ephys/electrodes` describes every channel, probe group, and shank-relative position. | `nwbfile.electrodes.to_dataframe()` |
+| Where was each unit recorded? | Unit rows identify the probe and electrode and include estimated 3D coordinates. `nwbfile.electrodes` describes every channel, probe group, and shank-relative position. | `nwbfile.electrodes.to_dataframe()` |
 | Which probes were used? | `/general/devices` registers up to six Neuropixels probes and their serial numbers. | `nwbfile.devices` |
 | What was the local population signal? | `/processing/ecephys/LFP` contains downsampled local field potential per probe (96 channels at approximately 2,500 Hz). | `nwbfile.processing["ecephys"]["LFP"]` |
 
@@ -742,7 +747,7 @@ summary images remain connected.
 
 | Question | NWB contents | Representative PyNWB entry point |
 | --- | --- | --- |
-| Where and how was each plane imaged? | `/general/optophysiology` describes eight simultaneous VISp and VISl planes, including excitation wavelength, imaging rate, grid spacing, indicator, cortical location, and field-of-view origin. The mesoscope is registered under `/general/devices`. | `nwbfile.imaging_planes`, `nwbfile.devices` |
+| Where and how was each plane imaged? | `nwbfile.imaging_planes` describes eight simultaneous VISp and VISl planes, including excitation wavelength, imaging rate, grid spacing, indicator, cortical location, and field-of-view origin. The mesoscope is registered in `nwbfile.devices`. | `nwbfile.imaging_planes`, `nwbfile.devices` |
 | Which pixels belong to each ROI? | `/processing/<plane>/image_segmentation` contains 512 × 512 px ROI masks with dendrite probability scores. | `nwbfile.processing[plane]["image_segmentation"]` |
 | How does fluorescence change over time? | Each plane contains raw, neuropil, neuropil-corrected, and ΔF/F time series. | `nwbfile.processing[plane]["dff_timeseries"]` |
 | Where are inferred neural events? | Each plane's `event_timeseries` stores deconvolved event traces. | `nwbfile.processing[plane]["event_timeseries"]` |
@@ -757,7 +762,7 @@ each DMD imaging path.
 
 | Question | NWB contents | Representative PyNWB entry point |
 | --- | --- | --- |
-| Where and how was each DMD path imaged? | `/general/optophysiology` describes the DMD1 and DMD2 imaging planes, optical channels, device, indicator, and field geometry. | `nwbfile.imaging_planes`, `nwbfile.devices` |
+| Where and how was each DMD path imaged? | `nwbfile.imaging_planes` describes the DMD1 and DMD2 imaging planes, optical channels, indicator, and field geometry. The SLAP2 microscope is registered in `nwbfile.devices`. | `nwbfile.imaging_planes`, `nwbfile.devices` |
 | Which pixels belong to each extracted source? | `/processing/ophys/ImageSegmentation/PlaneSegmentation_DMD*` stores one weighted `pixel_mask` per source. | `nwbfile.processing["ophys"]["ImageSegmentation"]` |
 | What source and structural images are available? | `/processing/ophys/DMD*_mean_image_channel*` stores mean channel images, and `DMD*_activity_image` stores the source-localization activity projection. | `nwbfile.processing["ophys"]["DMD1_activity_image"]` |
 | How does each source change over time? | `/processing/ophys/Fluorescence_DMD*/DMD*_dFF` stores source ΔF/F with timestamps; the corresponding `DMD*_F0` series stores baseline fluorescence. | `nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_dFF"]` |
@@ -765,11 +770,28 @@ each DMD imaging path.
 :::
 ::::
 
-NWB files can be streamed directly from DANDI without downloading the complete
-asset; see the [data access code example](#data-access-code-example) below. The
-[OpenScope Databook](https://alleninstitute.github.io/openscope_databook)
-provides companion analysis notebooks for selecting sessions and working with
-the electrophysiology, imaging, and behavioral objects introduced here.
+### Explore representative NWB file structures
+
+The explorer below shows the native collapsible HTML representation generated
+by PyNWB for one pinned public file from each recording modality. Open a field
+to inspect nested containers, tables, dataset shapes, and representative PyNWB
+access paths. The files are structural examples; exact object names can vary
+among sessions.
+
+:::::{tab-set}
+::::{tab-item} Neuropixels
+:::{include} ./figure_sources/data/nwb-file-contents/neuropixels.html
+:::
+::::
+::::{tab-item} Mesoscope
+:::{include} ./figure_sources/data/nwb-file-contents/mesoscope.html
+:::
+::::
+::::{tab-item} SLAP2
+:::{include} ./figure_sources/data/nwb-file-contents/slap2.html
+:::
+::::
+:::::
 
 # Data validation
 

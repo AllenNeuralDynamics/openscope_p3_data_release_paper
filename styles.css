@@ -108,6 +108,180 @@ article > figure.table-hover-source {
   display: none !important;
 }
 
+.nwb-file-resource {
+  max-height: 680px;
+  padding: 0.75rem;
+  overflow: auto;
+  border: 1px solid #d0d4d2;
+  border-radius: 5px;
+  background: #fff;
+  color: #303536;
+}
+
+.nwb-resource-header {
+  position: sticky;
+  z-index: 2;
+  top: -0.75rem;
+  margin: -0.75rem -0.75rem 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #d0d4d2;
+  background: rgb(255 255 255 / 96%);
+}
+
+.nwb-resource-source {
+  margin: 0.2rem 0 0;
+  color: #6e7472;
+  font-family: "IBM Plex Mono", Consolas, monospace;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.nwb-file-resource .container-header h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.nwb-file-resource .container-fields {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-family: "Open Sans", Arial, sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.nwb-file-resource .container-fields .field-value {
+  color: #00788e;
+}
+
+.nwb-file-resource details.myst-dropdown {
+  margin-block: 0 !important;
+  overflow: visible !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.nwb-file-resource details > summary.myst-dropdown-header {
+  position: relative;
+  min-height: 0 !important;
+  padding-block: 0.08rem !important;
+  padding-right: 0 !important;
+  padding-left: 1rem !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #303536 !important;
+  cursor: pointer;
+  font-size: 0.82rem !important;
+  font-weight: 400 !important;
+  line-height: 1.45 !important;
+}
+
+.nwb-file-resource details > summary.myst-dropdown-header::before {
+  position: absolute;
+  top: 0.38rem;
+  left: 0.18rem;
+  width: 0.38rem;
+  height: 0.38rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  content: "";
+  transform: rotate(-45deg);
+  transform-origin: center;
+}
+
+.nwb-file-resource details[open] > summary.myst-dropdown-header::before {
+  top: 0.3rem;
+  transform: rotate(45deg);
+}
+
+.nwb-file-resource details > summary.myst-dropdown-header:hover,
+.nwb-file-resource details > summary.myst-dropdown-header:hover * {
+  color: #0a6eaa !important;
+}
+
+.nwb-file-resource details > summary .myst-dropdown-header-title {
+  color: inherit !important;
+  font: inherit !important;
+}
+
+.nwb-file-resource details > summary .myst-dropdown-header-icon {
+  display: none !important;
+}
+
+.nwb-file-resource .myst-dropdown-body {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.nwb-file-resource .myst-dropdown-body > details {
+  margin-left: 20px !important;
+}
+
+.nwb-file-resource table.data-info,
+.nwb-file-resource .myst-dropdown-body > table {
+  width: auto;
+  max-width: 100%;
+  margin: 0.3rem 0 0.4rem;
+  border-radius: 0;
+  font-size: 0.74rem;
+  line-height: 1.3;
+}
+
+.nwb-file-resource table.data-info th,
+.nwb-file-resource table.data-info td,
+.nwb-file-resource .myst-dropdown-body > table th,
+.nwb-file-resource .myst-dropdown-body > table td {
+  padding: 0.25rem 0.4rem;
+}
+
+:is(html.dark, html[data-theme="dark"]) .nwb-file-resource {
+  border-color: #44403c;
+  background: #1c1917;
+  color: #e7e5e4;
+}
+
+:is(html.dark, html[data-theme="dark"]) .nwb-resource-header {
+  border-bottom-color: #44403c;
+  background: rgb(28 25 23 / 96%);
+}
+
+:is(html.dark, html[data-theme="dark"]) .nwb-resource-source {
+  color: #a8a29e;
+}
+
+:is(html.dark, html[data-theme="dark"])
+  .nwb-file-resource
+  details
+  > summary.myst-dropdown-header {
+  color: #e7e5e4 !important;
+}
+
+:is(html.dark, html[data-theme="dark"]) .nwb-file-resource .container-fields .field-value {
+  color: #67e8f9;
+}
+
+:is(html.dark, html[data-theme="dark"]) .nwb-file-resource table {
+  border-color: #57534e;
+  background: #1c1917;
+  color: #e7e5e4;
+}
+
+:is(html.dark, html[data-theme="dark"]) .nwb-file-resource table th {
+  background: #292524;
+  color: #fafaf9;
+}
+
+:is(html.dark, html[data-theme="dark"]) .nwb-file-resource table th,
+:is(html.dark, html[data-theme="dark"]) .nwb-file-resource table td {
+  border-color: #44403c;
+}
+
+:is(html.dark, html[data-theme="dark"]) .nwb-file-resource table td {
+  background: #1c1917;
+}
+
 @media (max-width: 640px) {
   #fig-interactive-experimental-design .relative.inline-block {
     height: 560px;
@@ -275,7 +449,7 @@ article table.table-laser-power td:first-child {
 }
 
 #fig-aligned-neural-signals .relative.inline-block {
-  height: 690px;
+  height: 759px;
   padding-bottom: 0 !important;
 }
 
@@ -305,7 +479,7 @@ article table.table-laser-power td:first-child {
 }
 
 #fig-behavior-tracking .relative.inline-block {
-  height: 1140px;
+  height: 1016px;
   padding-bottom: 0 !important;
 }
 
@@ -402,7 +576,7 @@ article table.table-laser-power td:first-child {
 
 @container (max-width: 560px) {
   #fig-behavior-tracking .relative.inline-block {
-    height: 1280px;
+    height: 1140px;
   }
 
   #fig-supp-pupil-event-responses .relative.inline-block {
@@ -416,18 +590,18 @@ article table.table-laser-power td:first-child {
 
 @container (max-width: 800px) {
   #fig-aligned-neural-signals .relative.inline-block {
-    height: 620px;
+    height: 682px;
   }
 }
 
 @container (max-width: 400px) {
   #fig-aligned-neural-signals .relative.inline-block {
-    height: 500px;
+    height: 550px;
   }
 }
 
 @container (max-width: 400px) {
   #fig-behavior-tracking .relative.inline-block {
-    height: 1200px;
+    height: 1069px;
   }
 }
