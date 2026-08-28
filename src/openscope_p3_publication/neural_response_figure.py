@@ -116,13 +116,21 @@ def load_neuropixels_event_responses(
 ) -> dict:
     payload = json.loads(data_path.read_text(encoding="utf-8"))
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    if payload.get("version") != 8 or provenance.get("version") != 8:
+    if payload.get("version") != 9 or provenance.get("version") != 9:
         raise RuntimeError("Neuropixels event-response snapshot version is unsupported.")
     if provenance.get("rastermap") != {
         "packageVersion": RASTERMAP_VERSION,
         "parameters": RASTERMAP_PARAMETERS,
     }:
         raise RuntimeError("Neuropixels Rastermap provenance is invalid.")
+    ontology_provenance = provenance.get("ontology", {})
+    if (
+        ontology_provenance.get("graphOrderField") != "BrainRegions.order"
+        or not ontology_provenance.get("packageVersion")
+        or ontology_provenance.get("sourceField")
+        != "Allen structure-tree graph_order"
+    ):
+        raise RuntimeError("Neuropixels ontology provenance is invalid.")
     if file_sha256(data_path) != provenance.get("outputSha256"):
         raise RuntimeError("Neuropixels event-response checksum does not match provenance.")
     for key in ("module", "script"):
@@ -165,6 +173,20 @@ def load_neuropixels_event_responses(
         }
         or parameters.get("qcThresholds") != QC_THRESHOLDS
         or parameters.get("firingRateSource") != "NWB Units firing_rate"
+        or parameters.get("ontology")
+        != {
+            "areaSource": (
+                "Allen CCF location of each unit's extremum-channel electrode"
+            ),
+            "graphOrderSource": (
+                "Allen structure-tree graph_order via iblatlas BrainRegions.order"
+            ),
+            "packageVersion": ontology_provenance["packageVersion"],
+            "parentAreaRule": (
+                "collapse Allen layer nodes and hyphenated subdivisions to the "
+                "nearest non-collapsible ancestor; retain an already canonical area"
+            ),
+        }
         or parameters.get("rastermap")
         != {
             "input": (
@@ -245,6 +267,29 @@ def load_neuropixels_event_responses(
         if any(
             "majorParent" not in unit
             or "areaGroups" not in unit
+            or not isinstance(unit.get("areaId"), int)
+            or unit["areaId"] < 0
+            or not isinstance(unit.get("areaGraphOrder"), int)
+            or unit["areaGraphOrder"] < 0
+            or not isinstance(unit.get("areaLevel"), int)
+            or unit["areaLevel"] < 0
+            or not isinstance(unit.get("parentArea"), str)
+            or not unit["parentArea"]
+            or not isinstance(unit.get("parentAreaId"), int)
+            or unit["parentAreaId"] < 0
+            or not isinstance(unit.get("parentAreaGraphOrder"), int)
+            or unit["parentAreaGraphOrder"] < 0
+            or not isinstance(unit.get("parentAreaLevel"), int)
+            or unit["parentAreaLevel"] < 0
+            or unit["parentAreaLevel"] > unit["areaLevel"]
+            or (
+                unit["location"] == unit["parentArea"]
+                and (
+                    unit["areaId"] != unit["parentAreaId"]
+                    or unit["areaGraphOrder"] != unit["parentAreaGraphOrder"]
+                    or unit["areaLevel"] != unit["parentAreaLevel"]
+                )
+            )
             or not math.isfinite(unit.get("firingRateHz", math.nan))
             or unit["firingRateHz"] < 0
             or not math.isfinite(unit.get("peakToValleyMs", math.nan))

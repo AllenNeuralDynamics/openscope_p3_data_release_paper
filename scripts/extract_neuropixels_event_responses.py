@@ -10,6 +10,7 @@ import gzip
 import hashlib
 import json
 import math
+import re
 import shutil
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -71,9 +72,12 @@ MEDIA_ASSET_ROOT = "media/neuropixels-event-responses"
 DANDI_API = "https://api.dandiarchive.org/api"
 DANDISET_ID = "001637"
 DANDI_VERSION = "draft"
-VERSION = 8
+VERSION = 9
 CONDITION_ORDER = ("context", "control")
 PROBE_ORDER = tuple(f"Probe{letter}" for letter in "ABCDEF")
+COMPATIBLE_METADATA_SIGNATURES = (
+    "ffdafa7a1121a37592dcd233749734e9f0fa0939c8b5bdbb5aa4655a57e8ea5d",
+)
 FRONTAL_PREFIXES = ("ACA", "ILA", "PL", "ORB", "MOp", "MOs")
 MOTOR_PREFIXES = ("MOp", "MOs")
 VISUAL_THALAMUS_PREFIXES = ("LGd", "LGv", "LP")
@@ -141,14 +145,68 @@ def fetch_json(url: str) -> dict:
         return json.load(response)
 
 
+def region_index(regions: BrainRegions, acronym: str) -> int:
+    indices = np.flatnonzero(
+        (regions.acronym == acronym) & (regions.id >= 0)
+    )
+    if len(indices) != 1:
+        raise RuntimeError(
+            f"Allen ontology acronym {acronym!r} matched {len(indices)} regions."
+        )
+    return int(indices[0])
+
+
+def canonical_parent_area_index(regions: BrainRegions, index: int) -> int:
+    current = index
+    while True:
+        parent_id = regions.parent[current]
+        if not math.isfinite(parent_id):
+            return current
+        parent_indices = np.flatnonzero(regions.id == int(parent_id))
+        if len(parent_indices) != 1:
+            raise RuntimeError(
+                f"Allen ontology parent {parent_id!r} matched {len(parent_indices)} regions."
+            )
+        parent = int(parent_indices[0])
+        acronym = str(regions.acronym[current])
+        parent_acronym = str(regions.acronym[parent])
+        name = str(regions.name[current]).lower()
+        ancestors = set(
+            regions.ancestors(int(regions.id[current])).acronym
+        )
+        cortical_layer = (
+            "Isocortex" in ancestors
+            and re.search(r"(?:1|2|2/3|3|4|5|6|6a|6b)$", acronym)
+            is not None
+        )
+        collapsible = (
+            "layer" in name
+            or acronym.startswith(f"{parent_acronym}-")
+            or cortical_layer
+        )
+        if not collapsible:
+            return current
+        current = parent
+
+
+def ontology_record(regions: BrainRegions, index: int) -> dict[str, int | str]:
+    return {
+        "acronym": str(regions.acronym[index]),
+        "graphOrder": int(regions.order[index]),
+        "id": int(regions.id[index]),
+        "level": int(regions.level[index]),
+    }
+
+
 def area_classification(acronyms: list[str]) -> dict[str, dict]:
     regions = BrainRegions()
     classifications = {}
     for acronym in sorted(set(acronyms)):
-        ids = np.atleast_1d(regions.acronym2id(acronym))
+        index = region_index(regions, acronym)
+        region_id = int(regions.id[index])
         ancestors = (
-            list(regions.ancestors(int(ids[0])).acronym)
-            if len(ids) and int(ids[0]) != 0
+            list(regions.ancestors(region_id).acronym)
+            if region_id != 0
             else []
         )
         major_parent = next(
@@ -174,11 +232,42 @@ def area_classification(acronyms: list[str]) -> dict[str, dict]:
             groups.append("frontal")
         if acronym.startswith(MOTOR_PREFIXES):
             groups.append("motor")
+        area = ontology_record(regions, index)
+        parent_area = ontology_record(
+            regions,
+            canonical_parent_area_index(regions, index),
+        )
         classifications[acronym] = {
+            "areaGraphOrder": area["graphOrder"],
             "groups": groups,
             "majorParent": major_parent,
+            "areaId": area["id"],
+            "areaLevel": area["level"],
+            "parentArea": parent_area["acronym"],
+            "parentAreaGraphOrder": parent_area["graphOrder"],
+            "parentAreaId": parent_area["id"],
+            "parentAreaLevel": parent_area["level"],
         }
     return classifications
+
+
+def annotate_unit_areas(unit_records: list[dict]) -> None:
+    classifications = area_classification(
+        [unit["location"] for unit in unit_records]
+    )
+    for unit in unit_records:
+        classification = classifications[unit["location"]]
+        unit["areaGraphOrder"] = classification["areaGraphOrder"]
+        unit["areaGroups"] = classification["groups"]
+        unit["areaId"] = classification["areaId"]
+        unit["areaLevel"] = classification["areaLevel"]
+        unit["majorParent"] = classification["majorParent"]
+        unit["parentArea"] = classification["parentArea"]
+        unit["parentAreaGraphOrder"] = classification[
+            "parentAreaGraphOrder"
+        ]
+        unit["parentAreaId"] = classification["parentAreaId"]
+        unit["parentAreaLevel"] = classification["parentAreaLevel"]
 
 
 def encode_float32(values: np.ndarray) -> str:
@@ -530,6 +619,7 @@ def analysis_signature(selected_probes: tuple[str, ...]) -> str:
         "moduleSha256": file_sha256(
             REPO_ROOT / "src" / "openscope_p3_publication" / "neural_responses.py"
         ),
+        "ontologyPackageVersion": version("iblatlas"),
         "probes": selected_probes,
         "qcThresholds": QC_THRESHOLDS,
         "rastermapParameters": RASTERMAP_PARAMETERS,
@@ -801,13 +891,8 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
                     flush=True,
                 )
 
-        classifications = area_classification(
-            [unit["location"] for unit in unit_records]
-        )
+        annotate_unit_areas(unit_records)
         for unit in unit_records:
-            classification = classifications[unit["location"]]
-            unit["areaGroups"] = classification["groups"]
-            unit["majorParent"] = classification["majorParent"]
             unit["neuronType"] = classify_neuron_type(
                 peak_to_valley_ms=unit["peakToValleyMs"],
                 major_parent=unit["majorParent"],
@@ -862,6 +947,39 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
     }
 
 
+def load_cached_session(session_cache: Path) -> dict | None:
+    metadata_path = session_cache / "session.json"
+    if metadata_path.is_file():
+        cached = json.loads(metadata_path.read_text(encoding="utf-8"))
+        valid = True
+        for key in ("sdfMeanAtlas",):
+            source = session_cache / Path(cached[key]["path"]).name
+            valid &= source.is_file() and file_sha256(source) == cached[key]["sha256"]
+        if valid:
+            return cached
+    return None
+
+
+def install_cached_session(
+    cached: dict,
+    source_cache: Path,
+    target_cache: Path,
+    media_dir: Path,
+) -> dict:
+    target_cache.mkdir(parents=True, exist_ok=True)
+    media_dir.mkdir(parents=True, exist_ok=True)
+    for key in ("sdfMeanAtlas",):
+        source = source_cache / Path(cached[key]["path"]).name
+        shutil.copy2(source, target_cache / source.name)
+        shutil.copy2(source, media_dir / source.name)
+    (target_cache / "session.json").write_text(
+        json.dumps(cached, ensure_ascii=True, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return cached
+
+
 def cached_session(
     config,
     media_dir: Path,
@@ -872,34 +990,37 @@ def cached_session(
     if cache_dir is None:
         return extract_session(config, media_dir, selected_probes)
     session_cache = cache_dir / f"{config.asset_id}-{signature[:16]}"
-    metadata_path = session_cache / "session.json"
-    if metadata_path.is_file():
-        cached = json.loads(metadata_path.read_text(encoding="utf-8"))
-        valid = True
+    cached = load_cached_session(session_cache)
+    if cached is not None:
+        media_dir.mkdir(parents=True, exist_ok=True)
         for key in ("sdfMeanAtlas",):
             source = session_cache / Path(cached[key]["path"]).name
-            valid &= source.is_file() and file_sha256(source) == cached[key]["sha256"]
-        if valid:
-            media_dir.mkdir(parents=True, exist_ok=True)
-            for key in ("sdfMeanAtlas",):
-                source = session_cache / Path(cached[key]["path"]).name
-                shutil.copy2(source, media_dir / source.name)
-            return cached
+            shutil.copy2(source, media_dir / source.name)
+        return cached
+    if selected_probes == PROBE_ORDER:
+        for compatible_signature in COMPATIBLE_METADATA_SIGNATURES:
+            compatible_cache = (
+                cache_dir / f"{config.asset_id}-{compatible_signature[:16]}"
+            )
+            cached = load_cached_session(compatible_cache)
+            if cached is None:
+                continue
+            annotate_unit_areas(cached["units"])
+            return install_cached_session(
+                cached,
+                compatible_cache,
+                session_cache,
+                media_dir,
+            )
     session_cache.mkdir(parents=True, exist_ok=True)
     cached_media = session_cache / "media"
     record = extract_session(config, cached_media, selected_probes)
-    media_dir.mkdir(parents=True, exist_ok=True)
-    for key in ("sdfMeanAtlas",):
-        source = cached_media / Path(record[key]["path"]).name
-        target = session_cache / source.name
-        shutil.copy2(source, target)
-        shutil.copy2(source, media_dir / source.name)
-    metadata_path.write_text(
-        json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n",
-        encoding="utf-8",
-        newline="\n",
+    return install_cached_session(
+        record,
+        cached_media,
+        session_cache,
+        media_dir,
     )
-    return record
 
 
 def write_json(path: Path, payload: dict) -> None:
@@ -1005,6 +1126,19 @@ def main() -> None:
                 "mismatch baseline z score",
                 "control baseline z score",
             ],
+            "ontology": {
+                "areaSource": (
+                    "Allen CCF location of each unit's extremum-channel electrode"
+                ),
+                "graphOrderSource": (
+                    "Allen structure-tree graph_order via iblatlas BrainRegions.order"
+                ),
+                "packageVersion": version("iblatlas"),
+                "parentAreaRule": (
+                    "collapse Allen layer nodes and hyphenated subdivisions to the "
+                    "nearest non-collapsible ancestor; retain an already canonical area"
+                ),
+            },
             "firingRateSource": "NWB Units firing_rate",
             "qcThresholds": QC_THRESHOLDS,
             "rastermap": {
@@ -1070,6 +1204,11 @@ def main() -> None:
             "sha256": file_sha256(
                 REPO_ROOT / "src" / "openscope_p3_publication" / "neural_responses.py"
             ),
+        },
+        "ontology": {
+            "graphOrderField": "BrainRegions.order",
+            "packageVersion": version("iblatlas"),
+            "sourceField": "Allen structure-tree graph_order",
         },
         "outputPath": display_path(args.output),
         "outputSha256": file_sha256(args.output),

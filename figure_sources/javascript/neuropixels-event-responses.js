@@ -24,7 +24,6 @@
     context: "standard",
     eventIndex: 0,
     metric: "mismatch",
-    probe: "all",
     qc: "qc",
     decoderLabels: new Set(["mua", "sua"]),
     minimumFiringRateHz: 1,
@@ -32,7 +31,7 @@
     baselineSubtracted: true,
     scope: "area",
     selectedUnit: null,
-    sort: "response",
+    sort: "area",
     view: "interactive",
     zscoreLimit: 3,
     sortedUnits: [],
@@ -42,7 +41,6 @@
 
   const contextTabs = document.getElementById("context-tabs");
   const eventSelect = document.getElementById("event-select");
-  const probeSelect = document.getElementById("probe-select");
   const areaSelect = document.getElementById("area-select");
   const qcTabs = document.getElementById("qc-tabs");
   const decoderLabelFilter = document.getElementById("decoder-label-filter");
@@ -55,8 +53,8 @@
     "minimum-firing-rate-value",
   );
   const scopeTabs = document.getElementById("scope-tabs");
-  const responseSelectionLabel = document.getElementById(
-    "response-selection-label",
+  const responseSelectionControl = document.getElementById(
+    "response-selection-control",
   );
   const unitSelect = document.getElementById("unit-select");
   const metricTabs = document.getElementById("metric-tabs");
@@ -67,13 +65,10 @@
   const colorKeyMax = document.getElementById("color-key-max");
   const heatmapCanvas = document.getElementById("heatmap-canvas");
   const heatmapTooltip = document.getElementById("heatmap-tooltip");
-  const heatmapDetail = document.getElementById("heatmap-detail");
   const colorKey = document.getElementById("color-key");
   const loadingMessage = document.getElementById("loading-message");
   const responseCanvas = document.getElementById("response-canvas");
   const responseTitle = document.getElementById("response-title");
-  const responseNote = document.getElementById("response-note");
-  const sourceNote = document.getElementById("source-note");
   const interactiveView = document.getElementById("interactive-view");
   const staticView = document.getElementById("static-view");
   const rastermapRankCache = new Map();
@@ -164,7 +159,6 @@
           state.context = context;
           state.eventIndex = 0;
           state.area = "all";
-          state.probe = "all";
           state.selectedUnit = null;
           configureSession();
         },
@@ -186,25 +180,6 @@
     eventSelect.value = String(state.eventIndex);
   }
 
-  function renderProbeSelect() {
-    const session = currentSession();
-    const probes = [...new Set(session.units.map((unit) => unit.probe))].sort();
-    probeSelect.replaceChildren();
-    for (const [value, label] of [
-      ["all", "All probes"],
-      ...probes.map((probe) => [probe, probe.replace("Probe", "Probe ")]),
-    ]) {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = label;
-      probeSelect.append(option);
-    }
-    if (![...probeSelect.options].some((option) => option.value === state.probe)) {
-      state.probe = "all";
-    }
-    probeSelect.value = state.probe;
-  }
-
   function areaSourceUnits() {
     const session = currentSession();
     return session.units.filter(unitMatchesBaseFilters);
@@ -212,7 +187,6 @@
 
   function unitMatchesBaseFilters(unit) {
     return (
-      (state.probe === "all" || unit.probe === state.probe) &&
       (state.qc === "all" || unit.qcPass) &&
       state.decoderLabels.has(unit.decoderLabel) &&
       state.neuronTypes.has(unit.neuronType) &&
@@ -265,9 +239,7 @@
 
   function renderResponseSelection() {
     const individual = state.scope === "unit";
-    responseSelectionLabel.textContent = individual ? "Unit" : "Area";
-    areaSelect.hidden = individual;
-    unitSelect.hidden = !individual;
+    responseSelectionControl.hidden = !individual;
   }
 
   function filteredUnitIndices() {
@@ -306,20 +278,48 @@
     return values.length ? Math.max(...values.map(Math.abs)) : Number.NEGATIVE_INFINITY;
   }
 
+  function areaOrderingMode() {
+    if (state.area === "all") return "parent";
+    if (state.area.startsWith("group:")) return "location";
+    return "depth";
+  }
+
+  function unitIdentityOrder(leftUnit, rightUnit) {
+    return (
+      leftUnit.probe.localeCompare(rightUnit.probe) ||
+      leftUnit.depthUm - rightUnit.depthUm ||
+      leftUnit.id - rightUnit.id
+    );
+  }
+
   function sortedUnitIndices(atlas) {
     const session = currentSession();
     const indices = filteredUnitIndices();
     return indices.sort((left, right) => {
-      if (state.sort === "depth") {
+      if (state.sort === "area") {
         const leftUnit = session.units[left];
         const rightUnit = session.units[right];
+        const mode = areaOrderingMode();
+        if (mode === "depth") {
+          return (
+            leftUnit.depthUm - rightUnit.depthUm ||
+            unitIdentityOrder(leftUnit, rightUnit)
+          );
+        }
+        if (mode === "parent") {
+          return (
+            leftUnit.parentAreaGraphOrder - rightUnit.parentAreaGraphOrder ||
+            leftUnit.parentArea.localeCompare(rightUnit.parentArea) ||
+            leftUnit.areaGraphOrder - rightUnit.areaGraphOrder ||
+            leftUnit.location.localeCompare(rightUnit.location) ||
+            unitIdentityOrder(leftUnit, rightUnit)
+          );
+        }
         return (
-          leftUnit.probe.localeCompare(rightUnit.probe) ||
-          leftUnit.depthUm - rightUnit.depthUm
+          leftUnit.areaGraphOrder - rightUnit.areaGraphOrder ||
+          leftUnit.location.localeCompare(rightUnit.location) ||
+          unitIdentityOrder(leftUnit, rightUnit)
         );
-      }
-      if (state.sort === "unit") {
-        return session.units[left].id - session.units[right].id;
       }
       if (state.sort === "peak-time") {
         const leftPeak = peakTime(atlas, left);
@@ -445,12 +445,25 @@
     );
   }
 
-  function automaticLimit(traces) {
+  function automaticLimit(atlas, unitIndices) {
     const sample = [];
-    const stride = Math.max(1, Math.floor(traces.length / 250));
-    for (let row = 0; row < traces.length; row += stride) {
-      for (const value of traces[row]) {
-        if (value !== null && Number.isFinite(value))         sample.push(metricIsSequential() ? Math.max(0, value) : Math.abs(value));
+    const stride = Math.max(1, Math.floor(unitIndices.length / 250));
+    for (let row = 0; row < unitIndices.length; row += stride) {
+      const unitIndex = unitIndices[row];
+      const traces = metricIsSequential()
+        ? [
+            unitRateTrace(atlas, unitIndex, 0),
+            unitRateTrace(atlas, unitIndex, 1),
+          ]
+        : [unitHeatmapTrace(atlas, unitIndex)];
+      for (const trace of traces) {
+        for (const value of trace) {
+          if (value !== null && Number.isFinite(value)) {
+            sample.push(
+              metricIsSequential() ? Math.max(0, value) : Math.abs(value),
+            );
+          }
+        }
       }
     }
     if (!sample.length) return 1;
@@ -505,8 +518,8 @@
       mismatch: "mismatch SDF",
       control: "control SDF",
       difference: "mismatch − control SDF",
-      "mismatch-zscore": "mismatch baseline z score",
-      "control-zscore": "control baseline z score",
+      "mismatch-zscore": "mismatch baseline z-score",
+      "control-zscore": "control baseline z-score",
     }[state.metric];
   }
 
@@ -533,14 +546,191 @@
     return context;
   }
 
+  function heatmapAreaGroups() {
+    if (state.sort !== "area" || areaOrderingMode() === "depth") return [];
+    const session = currentSession();
+    const field = areaOrderingMode() === "parent" ? "parentArea" : "location";
+    const groups = [];
+    state.sortedUnits.forEach((unitIndex, row) => {
+      const label = session.units[unitIndex][field];
+      const current = groups.at(-1);
+      if (current?.label === label) {
+        current.endRow = row + 1;
+      } else {
+        groups.push({ label, startRow: row, endRow: row + 1 });
+      }
+    });
+    return groups;
+  }
+
+  function configureHeatmapHeight(areaGroups) {
+    const labelHeight = areaGroups.length ? areaGroups.length * 18 + 100 : 650;
+    heatmapCanvas.height = Math.max(650, labelHeight);
+  }
+
+  function plotHorizontalBounds() {
+    return { left: 125, right: 1170 };
+  }
+
+  function heatmapPlot() {
+    return {
+      ...plotHorizontalBounds(),
+      top: 20,
+      bottom: heatmapCanvas.height - 80,
+    };
+  }
+
+  function heatmapRowY(row, plot) {
+    if (!state.sortedUnits.length) return plot.top;
+    return (
+      plot.top +
+      (row / state.sortedUnits.length) * (plot.bottom - plot.top)
+    );
+  }
+
+  function areaLabelPositions(groups, plot) {
+    if (!groups.length) return [];
+    const gap = 17;
+    const top = plot.top + 7;
+    const bottom = plot.bottom - 7;
+    const positions = groups.map((group) =>
+      heatmapRowY((group.startRow + group.endRow) / 2, plot),
+    );
+    positions[0] = Math.max(top, positions[0]);
+    for (let index = 1; index < positions.length; index += 1) {
+      positions[index] = Math.max(positions[index], positions[index - 1] + gap);
+    }
+    positions[positions.length - 1] = Math.min(
+      bottom,
+      positions[positions.length - 1],
+    );
+    for (let index = positions.length - 2; index >= 0; index -= 1) {
+      positions[index] = Math.min(positions[index], positions[index + 1] - gap);
+    }
+    return positions;
+  }
+
+  function heatmapYAxisMetadata(areaGroups) {
+    if (state.sort !== "area") {
+      return {
+        label: "Sorted unit ordering",
+        ticks: state.sortedUnits.length
+          ? [
+              "0",
+              String(Math.floor(state.sortedUnits.length / 2)),
+              String(state.sortedUnits.length),
+            ]
+          : ["0"],
+      };
+    }
+    const mode = areaOrderingMode();
+    if (mode === "depth") {
+      const session = currentSession();
+      const depths = state.sortedUnits.map(
+        (unitIndex) => session.units[unitIndex].depthUm,
+      );
+      return {
+        label: "Depth on probe",
+        ticks: depths.length
+          ? [
+              `${Math.round(depths[0])} µm`,
+              `${Math.round(depths.at(-1))} µm`,
+            ]
+          : [],
+      };
+    }
+    return {
+      label: mode === "parent" ? "Parent area" : "Area",
+      ticks: areaGroups.map((group) => group.label),
+    };
+  }
+
+  function drawHeatmapYAxis(context, plot, areaGroups) {
+    const axis = heatmapYAxisMetadata(areaGroups);
+    context.save();
+    context.font = '21px "Myriad Pro", Arial, sans-serif';
+    context.fillStyle = "#303536";
+    context.textAlign = "center";
+    context.translate(25, (plot.top + plot.bottom) / 2);
+    context.rotate(-Math.PI / 2);
+
+    if (state.sort !== "area") {
+      context.fillText(axis.label, 0, 0);
+      context.restore();
+      context.font = '18px "IBM Plex Mono", monospace';
+      context.fillStyle = "#59605e";
+      context.textAlign = "right";
+      const rowTicks = state.sortedUnits.length
+        ? [
+            [axis.ticks[0], plot.top + 6],
+            [
+              axis.ticks[1],
+              (plot.top + plot.bottom) / 2 + 6,
+            ],
+            [axis.ticks[2], plot.bottom + 6],
+          ]
+        : [[axis.ticks[0], plot.top + 6]];
+      for (const [label, y] of rowTicks) {
+        context.fillText(String(label), plot.left - 10, y);
+      }
+      return;
+    }
+
+    const mode = areaOrderingMode();
+    if (mode === "depth") {
+      context.fillText(axis.label, 0, 0);
+      context.restore();
+      context.font = '18px "IBM Plex Mono", monospace';
+      context.fillStyle = "#59605e";
+      context.textAlign = "right";
+      if (axis.ticks.length) {
+        context.fillText(axis.ticks[0], plot.left - 10, plot.top + 6);
+        context.fillText(axis.ticks[1], plot.left - 10, plot.bottom + 6);
+      }
+      return;
+    }
+
+    context.fillText(axis.label, 0, 0);
+    context.restore();
+    const labelPositions = areaLabelPositions(areaGroups, plot);
+    context.font = '16px "IBM Plex Mono", monospace';
+    context.fillStyle = "#59605e";
+    context.strokeStyle = "#8d9591";
+    context.lineWidth = 1;
+    context.textAlign = "right";
+    areaGroups.forEach((group, index) => {
+      const center = heatmapRowY((group.startRow + group.endRow) / 2, plot);
+      const labelY = labelPositions[index];
+      if (group.startRow > 0) {
+        const boundary = heatmapRowY(group.startRow, plot);
+        context.save();
+        context.globalAlpha = 0.58;
+        context.strokeStyle = "#ffffff";
+        context.beginPath();
+        context.moveTo(plot.left, boundary);
+        context.lineTo(plot.right, boundary);
+        context.stroke();
+        context.restore();
+      }
+      context.beginPath();
+      context.moveTo(plot.left - 3, center);
+      context.lineTo(plot.left - 9, center);
+      context.lineTo(plot.left - 14, labelY);
+      context.stroke();
+      context.fillText(group.label, plot.left - 18, labelY + 5);
+    });
+  }
+
   function drawHeatmap(atlas) {
     const session = currentSession();
     state.sortedUnits = sortedUnitIndices(atlas);
     renderUnitSelect();
+    const areaGroups = heatmapAreaGroups();
+    configureHeatmapHeight(areaGroups);
     const traces = state.sortedUnits.map((unitIndex) =>
       unitHeatmapTrace(atlas, unitIndex),
     );
-    const baseLimit = automaticLimit(traces);
+    const baseLimit = automaticLimit(atlas, filteredUnitIndices());
     const zscore = state.metric.endsWith("zscore");
     const limit = zscore
       ? state.zscoreLimit
@@ -566,7 +756,7 @@
       ? `White 0, black ${limit.toFixed(2)} ${unit}`
       : `Blue −${limit.toFixed(2)}, white 0, red +${limit.toFixed(2)} ${unit}`;
     const context = canvasContext(heatmapCanvas);
-    const plot = { left: 82, right: 1175, top: 20, bottom: 570 };
+    const plot = heatmapPlot();
     context.fillStyle = "#f7f8f8";
     context.fillRect(
       plot.left,
@@ -606,13 +796,6 @@
         plot.bottom - plot.top,
       );
     }
-    context.strokeStyle = "#d0d4d2";
-    context.strokeRect(
-      plot.left,
-      plot.top,
-      plot.right - plot.left,
-      plot.bottom - plot.top,
-    );
     const ticks =
       state.context === "duration"
         ? [-1.5, -1, 0, 1, 1.5]
@@ -622,13 +805,11 @@
         plot.left +
         ((tick - displayStart()) / (displayEnd() - displayStart())) *
           (plot.right - plot.left);
-      context.strokeStyle = tick === 0 ? "#303536" : "#d0d4d2";
-      context.setLineDash(tick === 0 ? [6, 5] : []);
+      context.strokeStyle = "#59605e";
       context.beginPath();
-      context.moveTo(x, plot.top);
-      context.lineTo(x, plot.bottom);
+      context.moveTo(x, plot.bottom);
+      context.lineTo(x, plot.bottom + 5);
       context.stroke();
-      context.setLineDash([]);
       context.fillStyle = "#59605e";
       context.textAlign = "center";
       context.fillText(String(tick), x, plot.bottom + 28);
@@ -654,30 +835,26 @@
       context.stroke();
       context.setLineDash([]);
     }
-    context.save();
-    context.translate(25, (plot.top + plot.bottom) / 2);
-    context.rotate(-Math.PI / 2);
-    context.fillText("Units", 0, 0);
-    context.restore();
-    context.font = '18px "IBM Plex Mono", monospace';
-    context.fillStyle = "#59605e";
-    context.textAlign = "right";
-    const rowTicks = state.sortedUnits.length
-      ? [
-          [0, plot.top + 6],
-          [Math.floor(state.sortedUnits.length / 2), (plot.top + plot.bottom) / 2 + 6],
-          [state.sortedUnits.length, plot.bottom + 6],
-        ]
-      : [[0, plot.top + 6]];
-    for (const [label, y] of rowTicks) {
-      context.fillText(String(label), plot.left - 10, y);
-    }
-    heatmapDetail.textContent = `${session.sessionId} · ${
+    drawHeatmapYAxis(context, plot, areaGroups);
+    const yAxis = heatmapYAxisMetadata(areaGroups);
+    heatmapCanvas.dataset.yAxisLabel = yAxis.label;
+    heatmapCanvas.dataset.yTickLabels = yAxis.ticks.join("|");
+    const heatmapDescription = `${session.sessionId} · ${
       session.events[state.eventIndex].label
-    } · ${metricLabel()}`;
+    } · ${metricLabel()} · ${state.sortedUnits.length.toLocaleString()} units`;
     heatmapCanvas.setAttribute(
       "aria-label",
-      `${state.sortedUnits.length} unit rows by ${time.length} time bins for ${heatmapDetail.textContent}.`,
+      `${state.sortedUnits.length} unit rows by ${time.length} time bins for ${
+        heatmapDescription
+      }, ordered by ${
+        state.sort === "area"
+          ? areaOrderingMode() === "depth"
+            ? "depth on probe"
+            : areaOrderingMode() === "parent"
+              ? "parent area in Allen graph order"
+              : "exact area in Allen graph order"
+          : sortSelect.selectedOptions[0]?.textContent
+      }. ${yAxis.label} labels: ${yAxis.ticks.join(", ")}.`,
     );
   }
 
@@ -929,7 +1106,7 @@
     const axis = responseAxis(traces, baselineSubtracted);
     const yRange = axis.range;
     const context = canvasContext(canvas);
-    const plot = { left: 86, right: 1170, top: 22, bottom: 280 };
+    const plot = { ...plotHorizontalBounds(), top: 22, bottom: 280 };
     const timing = currentSession().events[state.eventIndex].timing.context;
     if (
       Number.isFinite(timing.presentationStartSeconds) &&
@@ -956,10 +1133,10 @@
         plot.bottom -
         ((value - yRange[0]) / (yRange[1] - yRange[0])) *
           (plot.bottom - plot.top);
-      context.strokeStyle = Math.abs(value) < 1e-9 ? "#9ca29f" : "#d5d9d7";
+      context.strokeStyle = "#59605e";
       context.beginPath();
-      context.moveTo(plot.left, y);
-      context.lineTo(plot.right, y);
+      context.moveTo(plot.left - 5, y);
+      context.lineTo(plot.left, y);
       context.stroke();
       context.textAlign = "right";
       context.fillText(formatRateTick(value), plot.left - 10, y + 6);
@@ -973,13 +1150,11 @@
         plot.left +
         ((tick - displayStart()) / (displayEnd() - displayStart())) *
           (plot.right - plot.left);
-      context.strokeStyle = tick === 0 ? "#303536" : "#d5d9d7";
-      context.setLineDash(tick === 0 ? [6, 5] : []);
+      context.strokeStyle = "#59605e";
       context.beginPath();
-      context.moveTo(x, plot.top);
-      context.lineTo(x, plot.bottom);
+      context.moveTo(x, plot.bottom);
+      context.lineTo(x, plot.bottom + 5);
       context.stroke();
-      context.setLineDash([]);
       context.textAlign = "center";
       context.fillText(String(tick), x, plot.bottom + 27);
     }
@@ -996,6 +1171,24 @@
       context.lineTo(x, plot.bottom);
       context.stroke();
       context.setLineDash([]);
+    }
+    context.strokeStyle = "#8d9591";
+    context.beginPath();
+    context.moveTo(plot.left, plot.top);
+    context.lineTo(plot.left, plot.bottom);
+    context.lineTo(plot.right, plot.bottom);
+    context.stroke();
+    if (baselineSubtracted && yRange[0] <= 0 && yRange[1] >= 0) {
+      const zeroY =
+        plot.bottom -
+        ((0 - yRange[0]) / (yRange[1] - yRange[0])) *
+          (plot.bottom - plot.top);
+      context.strokeStyle = "#8d9591";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.moveTo(plot.left, zeroY);
+      context.lineTo(plot.right, zeroY);
+      context.stroke();
     }
     drawResponseBand(
       context,
@@ -1059,20 +1252,10 @@
           ? baselineSubtractedTraces(atlas)
           : responseTraces(atlas);
         drawResponsePanel(responseCanvas, traces, state.baselineSubtracted);
-        const selection =
+        responseTitle.textContent =
           state.scope === "area"
-            ? state.area === "all"
-              ? "Selected units"
-              : selectedAreaLabel()
-            : `Unit ${session.units[state.selectedUnit].id}`;
-        responseTitle.textContent = `${selection} ${
-          state.baselineSubtracted ? "baseline-subtracted " : ""
-        }spike-density function`;
-        responseNote.textContent = `${
-          state.scope === "unit"
-            ? "Individual-unit traces are shown without an uncertainty band"
-            : "Shading shows ±1 SEM across units"
-        }; dashed guides mark mismatch onset and offset.`;
+            ? `Mismatch response averaged over units in ${selectedAreaLabel()}`
+            : `Mismatch response for unit ${session.units[state.selectedUnit].id}`;
       } else {
         const context = canvasContext(responseCanvas);
         context.fillStyle = "#68706d";
@@ -1083,11 +1266,8 @@
           responseCanvas.width / 2,
           responseCanvas.height / 2,
         );
-        responseTitle.textContent = "Spike-density function";
-        responseNote.textContent =
-          "Dashed guides mark mismatch onset and offset.";
+        responseTitle.textContent = "Mismatch response";
       }
-      sourceNote.textContent = `${session.sessionId} · mouse ${session.subject} · DANDI:${session.asset.dandisetId} · ${session.unitCount.toLocaleString()} sorted units`;
       loadingMessage.hidden = true;
     } catch (error) {
       if (sequence !== renderSequence) return;
@@ -1110,7 +1290,6 @@
     );
     renderContextTabs();
     renderEventSelect();
-    renderProbeSelect();
     renderAreaSelect();
     renderResponseSelection();
     configureColorControl();
@@ -1162,10 +1341,6 @@
   scopeTabs.querySelectorAll("[data-scope]").forEach((element) => {
     element.addEventListener("click", () => {
       state.scope = element.dataset.scope;
-      if (state.scope === "unit") {
-        state.area = "all";
-        renderAreaSelect();
-      }
       renderResponseSelection();
       setPressed(scopeTabs, "scope", state.scope);
       render();
@@ -1181,13 +1356,6 @@
   });
   eventSelect.addEventListener("change", () => {
     state.eventIndex = Number(eventSelect.value);
-    render();
-  });
-  probeSelect.addEventListener("change", () => {
-    state.probe = probeSelect.value;
-    state.area = "all";
-    state.selectedUnit = null;
-    renderAreaSelect();
     render();
   });
   areaSelect.addEventListener("change", () => {
@@ -1230,7 +1398,7 @@
     const rect = heatmapCanvas.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * heatmapCanvas.width;
     const y = ((event.clientY - rect.top) / rect.height) * heatmapCanvas.height;
-    const plot = { left: 82, right: 1175, top: 20, bottom: 570 };
+    const plot = heatmapPlot();
     if (x < plot.left || x > plot.right || y < plot.top || y > plot.bottom) {
       heatmapTooltip.hidden = true;
       return;
@@ -1269,7 +1437,9 @@
     const unitLabel = state.metric.endsWith("zscore") ? "z" : "spikes/s";
     heatmapTooltip.textContent = `Unit ${unit.id} · ${unit.probe} · ${
       unit.location
-    } · t=${time[binIndex].toFixed(2)} s · ${
+    }${
+      unit.parentArea === unit.location ? "" : ` (${unit.parentArea})`
+    } · ${Math.round(unit.depthUm)} µm · t=${time[binIndex].toFixed(2)} s · ${
       value === null || !Number.isFinite(value)
         ? "n/a"
         : `${value.toFixed(2)} ${unitLabel}`
@@ -1288,7 +1458,7 @@
     if (!state.sortedUnits.length) return;
     const rect = heatmapCanvas.getBoundingClientRect();
     const y = ((event.clientY - rect.top) / rect.height) * heatmapCanvas.height;
-    const plot = { top: 20, bottom: 570 };
+    const plot = heatmapPlot();
     if (y < plot.top || y > plot.bottom) return;
     const row = Math.min(
       state.sortedUnits.length - 1,
@@ -1298,8 +1468,6 @@
     );
     state.selectedUnit = state.sortedUnits[row];
     state.scope = "unit";
-    state.area = "all";
-    renderAreaSelect();
     renderResponseSelection();
     setPressed(scopeTabs, "scope", state.scope);
     render();

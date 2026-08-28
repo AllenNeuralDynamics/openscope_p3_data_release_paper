@@ -661,6 +661,11 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "all 16 conditions" in manuscript
     assert "Z-score limits default to ±3" in manuscript
     assert "Rastermap 1.0 ordering" in manuscript
+    assert "**Area** is the default row order" in manuscript
+    assert "canonical parent area in Allen graph order" in manuscript
+    assert "group and label exact peak-channel CCF locations" in manuscript
+    assert "minimum and maximum depth" in manuscript
+    assert "shared Greys-scale limit computed from both conditions" in manuscript
     assert "causal exponential spike-density kernel" in manuscript
     assert "standard-oddball, sensorimotor, and sequence windows span −0.75 to 0.75 s" in manuscript
     assert "duration windows span −1.5 to 1.5 s" in manuscript

@@ -216,7 +216,7 @@ def test_neuron_type_classification(
 def test_neuropixels_event_snapshot_is_source_backed() -> None:
     payload = load_neuropixels_event_responses()
 
-    assert payload["version"] == 8
+    assert payload["version"] == 9
     assert payload["subject"] == "830846"
     assert payload["sessionOrder"] == [
         "standard",
@@ -321,6 +321,56 @@ def test_neuropixels_event_snapshot_is_source_backed() -> None:
         for session in payload["sessions"]
         for unit in session["units"]
     )
+    assert payload["analysisParameters"]["ontology"] == {
+        "areaSource": "Allen CCF location of each unit's extremum-channel electrode",
+        "graphOrderSource": (
+            "Allen structure-tree graph_order via iblatlas BrainRegions.order"
+        ),
+        "packageVersion": "1.2.0",
+        "parentAreaRule": (
+            "collapse Allen layer nodes and hyphenated subdivisions to the nearest "
+            "non-collapsible ancestor; retain an already canonical area"
+        ),
+    }
+    ontology_by_location = {
+        unit["location"]: {
+            key: unit[key]
+            for key in (
+                "areaGraphOrder",
+                "areaId",
+                "areaLevel",
+                "parentArea",
+                "parentAreaGraphOrder",
+                "parentAreaId",
+                "parentAreaLevel",
+            )
+        }
+        for session in payload["sessions"]
+        for unit in session["units"]
+    }
+    assert ontology_by_location["VISp2/3"] == {
+        "areaGraphOrder": 187,
+        "areaId": 821,
+        "areaLevel": 8,
+        "parentArea": "VISp",
+        "parentAreaGraphOrder": 185,
+        "parentAreaId": 385,
+        "parentAreaLevel": 7,
+    }
+    assert ontology_by_location["LGd-co"] == {
+        "areaGraphOrder": 664,
+        "areaId": 496345668,
+        "areaLevel": 8,
+        "parentArea": "LGd",
+        "parentAreaGraphOrder": 662,
+        "parentAreaId": 170,
+        "parentAreaLevel": 7,
+    }
+    assert ontology_by_location["CA1"]["parentArea"] == "CA1"
+    assert ontology_by_location["CA1"]["areaGraphOrder"] == 457
+    assert ontology_by_location["ACAv6a"]["parentArea"] == "ACAv"
+    assert ontology_by_location["ACAv6b"]["parentArea"] == "ACAv"
+    assert ontology_by_location["DG-sg"]["parentArea"] == "DG"
     for session in payload["sessions"]:
         ranks = uint16_base64_values(session["rastermapRank"]["base64"])
         assert session["rastermapRank"]["shape"] == [4, session["unitCount"]]
@@ -443,17 +493,37 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert 'data-qc="all"' in html
     assert 'data-scope="area"' in html
     assert 'data-scope="unit"' in html
-    assert 'id="response-selection-label"' in html
-    assert 'aria-label="Area for mean response"' in html
+    assert 'id="response-selection-label"' not in html
+    assert 'aria-label="Area for response filtering"' in html
+    assert 'id="probe-select"' not in html
     assert html.count('id="response-canvas"') == 1
     assert 'id="baseline-response-canvas"' not in html
     assert 'id="baseline-subtracted"' in html
-    assert 'id="response-note"' in html
-    assert "dashed guides mark mismatch onset and offset" in html
+    assert 'id="response-note"' not in html
+    assert 'id="heatmap-detail"' not in html
+    assert 'id="source-note"' not in html
+    assert "Response conditioning" in html
+    assert "Mismatch z-score" in html
+    assert "Control z-score" in html
+    assert "Mismatch response averaged over units in" in html
+    assert "Mismatch response for unit" in html
+    assert 'class="interactive-controls"' in html
+    assert "baselineSubtracted && yRange[0] <= 0" in html
+    assert "function plotHorizontalBounds()" in html
+    assert "const plot = { ...plotHorizontalBounds(), top: 22, bottom: 280 }" in html
     assert "waveform-canvas" not in html
     assert "Time from mismatch stimulus (s)" in html
+    assert '<option value="area">Area</option>' in html
     assert "Time to positive peak" in html
     assert ">Rastermap<" in html
+    assert '<option value="depth">' not in html
+    assert '<option value="unit">' not in html
+    assert 'sort: "area"' in html
+    assert "Sorted unit ordering" in html
+    assert "Depth on probe" in html
+    assert "Parent area" in html
+    assert "parentAreaGraphOrder" in html
+    assert "areaGraphOrder" in html
     assert "All cortical areas" in html
     assert "All thalamic areas" in html
     assert "All motor areas" in html
