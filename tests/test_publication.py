@@ -196,7 +196,7 @@ def test_manuscript_marks_unfinished_content() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
     assert ":::{note} Manuscript status" in manuscript
-    assert manuscript.count(":::{warning} Work in progress") == 8
+    assert manuscript.count(":::{warning} Work in progress") == 9
     assert manuscript.count('class="manuscript-wip-inline"') == 2
     for stale_marker in (
         "To be written",
@@ -600,14 +600,13 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "100-micrometer mesh derived from the Allen CCF 2017" in manuscript
     assert "**A,** an oblique projection" in manuscript
     assert "trajectories extend laterally toward the L direction marker" in manuscript
-    assert "### Eye tracking across modalities" in manuscript
-    assert manuscript.count("[Supplementary Figure 4](#fig-supp-eye-tracking)") == 1
+    assert manuscript.count("[Supplementary Figure 4](#fig-supp-eye-tracking)") == 2
     assert "./interactive/eye-tracking-viewer.html" in manuscript
     assert ":label: fig-supp-eye-tracking\n:enumerated: false" in manuscript
-    assert "Eye fits, blink flags, and stimulus rows" in manuscript
-    assert "Fit-source tabs switch the center field" in manuscript
-    assert "standard-oddball Neuropixels, mesoscope, and SLAP2 sessions" in manuscript
-    assert "5th–95th percentile nonblink range" in manuscript
+    assert "raw eye-camera video (left)" in manuscript
+    assert "same video with the NWB-packaged pupil" in manuscript
+    assert "The optional **Filtered** view" in manuscript
+    assert "isolated runs of one to four samples" in manuscript
     assert "**B,** a dorsal projection" in manuscript
     assert manuscript.count(
         "[Supplementary Figure 5](#fig-supp-optotagging-heatmaps)"
@@ -906,7 +905,6 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert (
         manuscript.index(":label: fig-behavior-tracking")
         < manuscript.index(":label: fig-neuropixels-event-responses")
-        < manuscript.index("### Eye tracking across modalities")
         < manuscript.index(":label: fig-standard-oddball-plan")
     )
     for number, label in (

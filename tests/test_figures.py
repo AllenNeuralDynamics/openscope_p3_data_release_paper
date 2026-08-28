@@ -69,13 +69,13 @@ from openscope_p3_publication.figures import (
     load_optotagging_static_summary,
     load_publication_table_data,
     load_running_statistics,
-    session_table_modality,
     load_segmentation_viewers,
     load_shared_stimulus_table_excerpts,
     load_stimulus_table_excerpts,
     load_unit_yield_data,
     modality_session_records,
     session_panel_rows,
+    session_table_modality,
     text_sha256_matches,
     total_duration_minutes,
     write_basic_stimuli_plan_svg,
@@ -1850,7 +1850,7 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
 
     assert 'id="data-explorer"' in html
     assert "Download visible rows as CSV" in html
-    assert "Two-photon mesoscope" in html
+    assert ">Mesoscope</text>" in html
     assert "832700_2026-01-30" in html
     assert "841193" in html
     assert 'data-view="interactive"' in html
@@ -1955,7 +1955,8 @@ def test_data_access_explorer_source_has_required_controls() -> None:
         Path(__file__).parents[1] / "figure_sources" / "javascript" / "data-explorer.js"
     ).read_text(encoding="utf-8")
 
-    assert '["animals", "sessions", "dataAccess"]' in javascript
+    assert '["inventory", "animals", "sessions", "dataAccess"]' in javascript
+    assert 'inventory: "Session Inventory"' in javascript
     assert 'dataAccess: "Data Access"' in javascript
     assert 'table.columnViews[elements.modality.value]' in javascript
     assert 'state.kind === "sessions" || state.kind === "dataAccess"' in javascript
@@ -2369,19 +2370,23 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
 def test_eye_tracking_snapshot_is_source_backed() -> None:
     payload = load_eye_tracking_excerpts()
 
-    assert payload["version"] == 2
+    assert payload["version"] == 3
     assert payload["durationSeconds"] == 16.0
     assert [session["id"] for session in payload["sessions"]] == [
         "neuropixels",
         "mesoscope",
         "slap2",
     ]
-    assert [session["event"]["trialNumber"] for session in payload["sessions"]] == [
-        863,
-        1535,
-        1354,
+    assert [session["subject"] for session in payload["sessions"]] == [
+        "834687",
+        "839909",
+        "828409",
     ]
-    assert payload["sessions"][2]["subject"] == "829704"
+    assert [session["context"] for session in payload["sessions"]] == [
+        "Neuropixels example",
+        "Mesoscope example",
+        "SLAP2 example",
+    ]
     for session in payload["sessions"]:
         assert set(session["fits"]) == {"pupil", "corneal_reflection", "ellipse"}
         assert [session["fits"][fit_id]["label"] for fit_id in (
@@ -2393,7 +2398,7 @@ def test_eye_tracking_snapshot_is_source_backed() -> None:
             assert fit["sampleFields"] == [
                 "time", "x", "y", "width", "height", "area", "angle", "blink"
             ]
-            assert len(fit["samples"]) >= 450
+            assert len(fit["samples"]) >= 390
             assert fit["samples"][0][0] <= 0.04
             assert fit["samples"][-1][0] >= 15.95
             assert any(sample[-1] for sample in fit["samples"])
@@ -2401,7 +2406,7 @@ def test_eye_tracking_snapshot_is_source_backed() -> None:
             assert 0 <= reference["medianX"] < reference["frameWidth"]
             assert 0 <= reference["medianY"] < reference["frameHeight"]
             assert reference["areaLow"] < reference["areaHigh"]
-            assert reference["validNonblinkSamples"] > 100_000
+            assert reference["validNonblinkSamples"] > 80_000
         assert session["camera"]["id"] == "eye"
         assert session["camera"]["timeMap"][0][0] <= 0
         assert session["camera"]["timeMap"][-1][0] >= payload["durationSeconds"]
@@ -2424,20 +2429,21 @@ def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
     assert 'id="eye-video"' in html
     assert 'id="stimulus-canvas"' not in html
     assert "drawStimulus" not in html
-    assert 'id="pupil-field"' in html
+    assert 'id="processed-eye-video"' in html
+    assert 'id="eye-overlay"' in html
     assert 'id="pupil-trace"' in html
-    assert 'id="fit-selector"' in html
+    assert 'id="overlay-key"' in html
+    assert 'id="cleaning-toggle"' in html
     assert "SLAP2" in html
     assert "Corneal reflection" in html
     assert "Eye ellipse" in html
-    assert "Full-session median" in html
     assert "fieldReference" in html
     assert "sampleBounds" not in html
-    assert "Pupil area trace with blink intervals" in html
+    assert "Selected eye-fit area traces with blink intervals" in html
     assert "Likely blink" in html
-    assert "drawField" in html
-    assert "currentFit" in html
-    assert "selectFit" in html
+    assert "drawOverlay" in html
+    assert "cleanedSession" in html
+    assert "updateCleaningMode" in html
     assert "blinkIntervals" in html
     assert 'data-view="static"' in html
     assert 'id="static-view"' in html
@@ -2447,8 +2453,7 @@ def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
     assert html.count('id="play-toggle"') == 1
     assert 'id="stage-play"' not in html
     assert "stagePlay" not in html
-    assert '<details class="session-metadata">' in html
-    assert '<details class="session-metadata" open>' not in html
+    assert '<section class="session-metadata"' in html
     assert html.index('id="pupil-trace"') < html.index('class="session-metadata"')
     assert html.index('class="session-metadata"') < html.index('id="source-links"')
     assert "aind-open-data.s3.us-west-2.amazonaws.com" in html
@@ -2468,18 +2473,18 @@ def test_eye_tracking_static_figure_is_source_backed(tmp_path: Path) -> None:
     svg = output.read_text(encoding="utf-8")
 
     assert "Synchronized eye-tracking signals across recording modalities" in svg
-    assert svg.count('class="oddball-period"') == 9
-    assert svg.count('class="blink-period"') >= 3
+    assert 'class="oddball-period"' not in svg
+    assert svg.count('class="blink-period"') == 84
     assert svg.count("X position") == 3
     assert svg.count("Y position") == 3
     assert svg.count("Pupil area") == 3
-    for label, subject, trial in (
-        ("Neuropixels", "820454", "863"),
-        ("Mesoscope", "832700", "1535"),
-        ("SLAP2", "829704", "1354"),
+    for label, subject in (
+        ("Neuropixels", "834687"),
+        ("Mesoscope", "839909"),
+        ("SLAP2", "828409"),
     ):
         assert label in svg
-        assert f"mouse {subject} · trial {trial}" in svg
+        assert f"mouse {subject}" in svg
 
     write_eye_tracking_static_svg(output)
     assert output.read_text(encoding="utf-8") == svg

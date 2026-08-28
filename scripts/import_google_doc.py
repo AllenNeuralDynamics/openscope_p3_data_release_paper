@@ -575,7 +575,13 @@ electrophysiology sessions are available at
 [DANDI:001637](https://dandiarchive.org/dandiset/001637), mesoscope two-photon
 imaging sessions at [DANDI:001768](https://dandiarchive.org/dandiset/001768),
 and SLAP2 dendritic-imaging sessions at
-[DANDI:001424](https://dandiarchive.org/dandiset/001424). Use the tabs below"""
+[DANDI:001424](https://dandiarchive.org/dandiset/001424). NWB files can be
+streamed directly from DANDI without downloading the complete asset; see the
+[data access code example](#data-access-code-example) below. The
+[OpenScope Databook](https://alleninstitute.github.io/openscope_databook)
+provides companion analysis notebooks for selecting sessions and working with
+the electrophysiology, imaging, and behavioral objects introduced here. Use
+the tabs below"""
 
 SLAP2_NWB_TAB = "\n".join(
     [
@@ -1392,7 +1398,7 @@ def add_slap2_nwb_contents(markdown: str) -> str:
     section = markdown[start:stop]
     intro_pattern = re.compile(
         r"All data from this project are packaged as Neurodata\s+Without Borders.*?"
-        r"Use the tabs below",
+        r"Use\s+the\s+tabs\s+below",
         re.DOTALL,
     )
     section, count = intro_pattern.subn(NWB_ACCESS_INTRO, section, count=1)
