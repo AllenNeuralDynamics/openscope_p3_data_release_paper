@@ -58,6 +58,7 @@ DATA_ACCESS_HEADERS = [
 SNAPSHOTS = ("experimental-animals", "experimental-sessions", "data-access")
 RUNNING_STATISTICS_PATH = DATA_DIR / "running-statistics.json"
 BEHAVIOR_STATIC_PROVENANCE_PATH = DATA_DIR / "behavior-static-frames.provenance.json"
+PUPIL_EVENT_PROVENANCE_PATH = DATA_DIR / "pupil-event-responses.provenance.json"
 
 
 def download(url: str, timeout: int = 180) -> bytes:
@@ -263,6 +264,19 @@ def refresh_session_snapshot_dependents(
     BEHAVIOR_STATIC_PROVENANCE_PATH.write_bytes(
         (
             json.dumps(behavior_provenance, indent=2, ensure_ascii=True, sort_keys=True)
+            + "\n"
+        ).encode()
+    )
+
+    pupil_provenance = json.loads(
+        PUPIL_EVENT_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    pupil_provenance["source_snapshots"]["experimental_sessions"]["sha256"] = (
+        hashlib.sha256(current_bytes).hexdigest()
+    )
+    PUPIL_EVENT_PROVENANCE_PATH.write_bytes(
+        (
+            json.dumps(pupil_provenance, indent=2, ensure_ascii=True, sort_keys=True)
             + "\n"
         ).encode()
     )

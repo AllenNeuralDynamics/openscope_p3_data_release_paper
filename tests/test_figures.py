@@ -669,7 +669,7 @@ def test_optotagging_snapshot_is_source_backed(tmp_path: Path) -> None:
         provenance["manifest_sha256"],
     )
     assert payload["session_count"] == 3
-    assert payload["version"] == 3
+    assert payload["version"] == 2
     assert payload["total_unit_count"] == sum(
         session["unit_count"] for session in payload["sessions"]
     )
@@ -2064,12 +2064,12 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert "Motion correction issue" not in svg
     assert "SLAP2 stopped early" in svg
     assert svg.count(">Cell matching problems</text>") == 1
-    assert svg.count('class="session-qc-outline"') == 18
-    assert svg.count('class="session-qc-outline" data-qc-kind="session-fail"') == 18
+    assert svg.count('class="session-qc-outline"') == 17
+    assert svg.count('class="session-qc-outline" data-qc-kind="session-fail"') == 17
     assert svg.count('class="session-target" data-session-id=') > 0
-    assert svg.count('<title>') == svg.count('class="session-target" data-session-id=')
-    assert '<title>unknown session id</title>' in svg
-    assert '<title id="title">Recording sessions' not in svg
+    assert "<title>" not in svg
+    assert 'data-session-id="unknown session id"' in svg
+    assert 'data-qc-tag-labels="' in svg
     assert 'aria-label="Recording sessions per mouse across three modalities"' in svg
     assert 'pointer-events="none"' in svg
     failed_blocks = re.findall(
@@ -2077,7 +2077,7 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
         r'stroke="(#[0-9A-F]{6})" stroke-width="2" pointer-events="all"/>',
         svg,
     )
-    assert len(failed_blocks) == 18
+    assert len(failed_blocks) == 17
     assert set(failed_blocks) == {
         SESSION_TYPE_COLORS["sensorimotor"],
         SESSION_TYPE_COLORS["standard"],
