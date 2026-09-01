@@ -704,7 +704,15 @@ def test_nwb_file_contents_are_in_data_records() -> None:
     assert "Mesoscope NWB files" in records
     assert "SLAP2 NWB files" in records
     assert "DANDI:001424" in records
-    assert records.count(":::{tab-item}") == 7
+    assert "./interactive/nwb-file-contents.html" in records
+    assert ":label: nwb-file-contents-viewer" in records
+    assert ":::::::{dropdown} Interactive" in records
+    assert ":::::::{dropdown} Static" in records
+    assert records.index(":::::::{dropdown} Interactive") < records.index(
+        ":::::::{dropdown} Static"
+    )
+    assert len(re.findall(r"^:::::\{dropdown\}", records, re.MULTILINE)) == 7
+    assert records.count(":open:") >= 2
     assert records.count(
         "| Question | NWB contents | Representative PyNWB entry point |"
     ) == 4
@@ -712,11 +720,26 @@ def test_nwb_file_contents_are_in_data_records() -> None:
     assert 'nwbfile.processing[plane]["dff_timeseries"]' in records
     assert 'nwbfile.processing["ophys"]["ImageSegmentation"]' in records
     assert 'nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_dFF"]' in records
-    assert "### Explore representative NWB file structures" in records
+    assert "native collapsible PyNWB structure" in records
     assert records.count("./figure_sources/data/nwb-file-contents/") == 3
 
 
 def test_nwb_file_contents_explorer_uses_pinned_native_snapshots() -> None:
+    viewer = (REPO_ROOT / "interactive" / "nwb-file-contents.html").read_text(
+        encoding="utf-8"
+    )
+    assert 'id="nwb-file-contents-viewer"' in viewer
+    assert 'data-view="interactive"' in viewer
+    assert 'data-view="static"' in viewer
+    assert viewer.count('data-view-panel="interactive"') == 3
+    assert viewer.count('data-view-panel="static"') == 4
+    assert 'data-tabs="interactive"' in viewer
+    assert 'data-tabs="static"' in viewer
+    assert "selectView" in viewer
+    assert "selectModality" in viewer
+    assert "__NWB_FILE_CONTENTS_" not in viewer
+    assert "__NEUROPIXELS_TREE__" not in viewer
+
     snapshot_dir = REPO_ROOT / "figure_sources" / "data" / "nwb-file-contents"
     for modality in ("neuropixels", "mesoscope", "slap2"):
         snapshot = snapshot_dir / f"{modality}.html"

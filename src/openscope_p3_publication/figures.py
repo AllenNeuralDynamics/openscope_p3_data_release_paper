@@ -82,6 +82,7 @@ DATA_ACCESS_PATH = DATA_DIR / "data-access.csv"
 DATA_ACCESS_PROVENANCE_PATH = DATA_ACCESS_PATH.with_suffix(".provenance.json")
 INTERACTIVE_OUTPUT = REPO_ROOT / "interactive" / "experimental-design.html"
 DATA_EXPLORER_OUTPUT = REPO_ROOT / "interactive" / "data-explorer.html"
+NWB_FILE_CONTENTS_OUTPUT = REPO_ROOT / "interactive" / "nwb-file-contents.html"
 SESSION_INVENTORY_STATIC_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "session-inventory.svg"
 )
@@ -1384,6 +1385,25 @@ def write_data_explorer_html(
     media_output = output.parent / "media" / "data-explorer"
     media_output.mkdir(parents=True, exist_ok=True)
     shutil.copy2(static_output, media_output / static_output.name)
+    return output
+
+
+def write_nwb_file_contents_html(
+    output: Path = NWB_FILE_CONTENTS_OUTPUT,
+) -> Path:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    template = (JAVASCRIPT_DIR / "nwb-file-contents.html").read_text(encoding="utf-8")
+    stylesheet = load_figure_stylesheet("nwb-file-contents.css")
+    javascript = (JAVASCRIPT_DIR / "nwb-file-contents.js").read_text(encoding="utf-8")
+    html = template.replace("__NWB_FILE_CONTENTS_CSS__", stylesheet).replace(
+        "__NWB_FILE_CONTENTS_JS__", javascript
+    )
+    for modality in ("neuropixels", "mesoscope", "slap2"):
+        tree = (DATA_DIR / "nwb-file-contents" / f"{modality}.html").read_text(
+            encoding="utf-8"
+        )
+        html = html.replace(f"__{modality.upper()}_TREE__", tree)
+    output.write_text(html, encoding="utf-8", newline="\n")
     return output
 
 
@@ -6308,6 +6328,7 @@ def main() -> None:
     standard_oddball_plan_path = write_standard_oddball_plan_svg()
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
+    nwb_file_contents_path = write_nwb_file_contents_html()
     literature_comparison_path = write_literature_comparison_html()
     behavior_viewer_path = write_behavior_viewer_html()
     eye_tracking_viewer_path = write_eye_tracking_viewer_html()
@@ -6337,6 +6358,7 @@ def main() -> None:
     print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {nwb_file_contents_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {SESSION_INVENTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {literature_comparison_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {behavior_viewer_path.relative_to(REPO_ROOT)}")

@@ -703,13 +703,44 @@ streamed directly from DANDI without downloading the complete asset; see the
 [data access code example](#data-access-code-example) below. The
 [OpenScope Databook](https://alleninstitute.github.io/openscope_databook)
 provides companion analysis notebooks for selecting sessions and working with
-the electrophysiology, imaging, and behavioral objects introduced here. Use
-the tabs below as a map from a scientific question to the corresponding NWB
-object and PyNWB entry point. Object names can differ slightly among sessions;
-the paths shown here reflect representative files in these Dandisets.
+the electrophysiology, imaging, and behavioral objects introduced here. The
+**Interactive** view presents the native collapsible PyNWB structure of one
+pinned public file per modality. The **Static** view maps scientific questions
+to corresponding NWB objects and PyNWB entry points. Object names can differ
+slightly among sessions; the paths shown here reflect representative files in
+these Dandisets.
 
-::::{tab-set}
-:::{tab-item} Shared
+:::{iframe} ./interactive/nwb-file-contents.html
+:label: nwb-file-contents-viewer
+:width: 100%
+:title: Interactive NWB structures and static question tables
+:::
+
+<!-- Retained temporarily as the source reference for the upcoming table redesign.
+:::::::{dropdown} Interactive
+:open:
+
+Open a field to inspect nested containers, tables, dataset shapes, and
+representative PyNWB access paths.
+
+:::::{dropdown} Neuropixels
+:open:
+:::{include} ./figure_sources/data/nwb-file-contents/neuropixels.html
+:::
+:::::
+:::::{dropdown} Mesoscope
+:::{include} ./figure_sources/data/nwb-file-contents/mesoscope.html
+:::
+:::::
+:::::{dropdown} SLAP2
+:::{include} ./figure_sources/data/nwb-file-contents/slap2.html
+:::
+:::::
+:::::::
+:::::::{dropdown} Static
+
+:::::{dropdown} Shared
+:open:
 
 **Shared across modalities:** session context, behavior, and stimulus timing
 use the same acquisition clock, making these objects the starting point for
@@ -723,8 +754,8 @@ aligned analyses.
 | Was the animal moving? | `/processing/running` contains synchronized wheel rotation and computed running speed. | `nwbfile.processing["running"]["running_speed"]` |
 | Was the animal looking at the display? | When available, `/processing/eye_tracking` contains pupil, corneal-reflection, and eye ellipse fits plus likely-blink intervals. | `nwbfile.processing["eye_tracking"]` |
 
-:::
-:::{tab-item} Neuropixels
+:::::
+:::::{dropdown} Neuropixels
 
 **Neuropixels NWB files ([DANDI:001637](https://dandiarchive.org/dandiset/001637)):**
 connect spike-sorted units to their probes, anatomical positions, quality
@@ -738,8 +769,8 @@ metrics, and local field potentials.
 | Which probes were used? | `/general/devices` registers up to six Neuropixels probes and their serial numbers. | `nwbfile.devices` |
 | What was the local population signal? | `/processing/ecephys/LFP` contains downsampled local field potential per probe (96 channels at approximately 2,500 Hz). | `nwbfile.processing["ecephys"]["LFP"]` |
 
-:::
-:::{tab-item} Mesoscope
+:::::
+:::::{dropdown} Mesoscope
 
 **Mesoscope NWB files ([DANDI:001768](https://dandiarchive.org/dandiset/001768)):**
 organize optical physiology by imaging plane so ROIs, traces, events, and
@@ -753,8 +784,8 @@ summary images remain connected.
 | Where are inferred neural events? | Each plane's `event_timeseries` stores deconvolved event traces. | `nwbfile.processing[plane]["event_timeseries"]` |
 | What does the field of view look like? | Each plane's `images` interface contains average projection, maximum projection, and segmentation-mask summary images. | `nwbfile.processing[plane]["images"]` |
 
-:::
-:::{tab-item} SLAP2
+:::::
+:::::{dropdown} SLAP2
 
 **SLAP2 NWB files ([DANDI:001424](https://dandiarchive.org/dandiset/001424)):**
 connect source masks, mean and activity images, and fluorescence traces within
@@ -767,31 +798,9 @@ each DMD imaging path.
 | What source and structural images are available? | `/processing/ophys/DMD*_mean_image_channel*` stores mean channel images, and `DMD*_activity_image` stores the source-localization activity projection. | `nwbfile.processing["ophys"]["DMD1_activity_image"]` |
 | How does each source change over time? | `/processing/ophys/Fluorescence_DMD*/DMD*_dFF` stores source ΔF/F with timestamps; the corresponding `DMD*_F0` series stores baseline fluorescence. | `nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_dFF"]` |
 
-:::
-::::
-
-### Explore representative NWB file structures
-
-The explorer below shows the native collapsible HTML representation generated
-by PyNWB for one pinned public file from each recording modality. Open a field
-to inspect nested containers, tables, dataset shapes, and representative PyNWB
-access paths. The files are structural examples; exact object names can vary
-among sessions.
-
-:::::{tab-set}
-::::{tab-item} Neuropixels
-:::{include} ./figure_sources/data/nwb-file-contents/neuropixels.html
-:::
-::::
-::::{tab-item} Mesoscope
-:::{include} ./figure_sources/data/nwb-file-contents/mesoscope.html
-:::
-::::
-::::{tab-item} SLAP2
-:::{include} ./figure_sources/data/nwb-file-contents/slap2.html
-:::
-::::
 :::::
+:::::::
+-->
 
 # Data validation
 

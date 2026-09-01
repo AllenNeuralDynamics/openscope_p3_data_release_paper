@@ -443,6 +443,11 @@ article table.table-laser-power td:first-child {
   padding-bottom: 0 !important;
 }
 
+#nwb-file-contents-viewer .relative.inline-block {
+  height: 780px;
+  padding-bottom: 0 !important;
+}
+
 #table-supplementary-oddball-studies .relative.inline-block {
   height: 602px;
   padding-bottom: 0 !important;
@@ -479,7 +484,7 @@ article table.table-laser-power td:first-child {
 }
 
 #fig-behavior-tracking .relative.inline-block {
-  height: 1016px;
+  height: 1026px;
   padding-bottom: 0 !important;
 }
 
@@ -576,7 +581,7 @@ article table.table-laser-power td:first-child {
 
 @container (max-width: 560px) {
   #fig-behavior-tracking .relative.inline-block {
-    height: 1140px;
+    height: 1152px;
   }
 
   #fig-supp-pupil-event-responses .relative.inline-block {
@@ -602,6 +607,6 @@ article table.table-laser-power td:first-child {
 
 @container (max-width: 400px) {
   #fig-behavior-tracking .relative.inline-block {
-    height: 1069px;
+    height: 1080px;
   }
 }
