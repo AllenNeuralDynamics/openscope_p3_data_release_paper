@@ -699,29 +699,12 @@ def test_nwb_file_contents_are_in_data_records() -> None:
     assert records_start < nwb_contents < validation_start < glossary_start
 
     records = manuscript[nwb_contents:validation_start]
-    assert "Shared across modalities:" in records
-    assert "Neuropixels NWB files" in records
-    assert "Mesoscope NWB files" in records
-    assert "SLAP2 NWB files" in records
     assert "DANDI:001424" in records
     assert "./interactive/nwb-file-contents.html" in records
     assert ":label: nwb-file-contents-viewer" in records
-    assert ":::::::{dropdown} Interactive" in records
-    assert ":::::::{dropdown} Static" in records
-    assert records.index(":::::::{dropdown} Interactive") < records.index(
-        ":::::::{dropdown} Static"
-    )
-    assert len(re.findall(r"^:::::\{dropdown\}", records, re.MULTILINE)) == 7
-    assert records.count(":open:") >= 2
-    assert records.count(
-        "| Question | NWB contents | Representative PyNWB entry point |"
-    ) == 4
-    assert "nwbfile.units.to_dataframe()" in records
-    assert 'nwbfile.processing[plane]["dff_timeseries"]' in records
-    assert 'nwbfile.processing["ophys"]["ImageSegmentation"]' in records
-    assert 'nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_dFF"]' in records
     assert "native collapsible PyNWB structure" in records
-    assert records.count("./figure_sources/data/nwb-file-contents/") == 3
+    assert "The **Static** view" in records
+    assert ":title: Interactive NWB structures and static question tables" in records
 
 
 def test_nwb_file_contents_explorer_uses_pinned_native_snapshots() -> None:
@@ -732,9 +715,15 @@ def test_nwb_file_contents_explorer_uses_pinned_native_snapshots() -> None:
     assert 'data-view="interactive"' in viewer
     assert 'data-view="static"' in viewer
     assert viewer.count('data-view-panel="interactive"') == 3
-    assert viewer.count('data-view-panel="static"') == 4
+    assert viewer.count('class="static-section"') == 4
+    assert viewer.count("<table>") == 4
+    assert viewer.count(
+        "<th>Name</th><th>Description</th><th>Format</th><th>NWB Path</th>"
+    ) == 4
+    assert "<th>Question</th>" not in viewer
+    assert "HDMF location" not in viewer
     assert 'data-tabs="interactive"' in viewer
-    assert 'data-tabs="static"' in viewer
+    assert 'data-tabs="static"' not in viewer
     assert "selectView" in viewer
     assert "selectModality" in viewer
     assert "__NWB_FILE_CONTENTS_" not in viewer

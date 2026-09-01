@@ -1396,6 +1396,8 @@ def add_slap2_nwb_contents(markdown: str) -> str:
     start = markdown.index(heading)
     stop = markdown.index(end_heading, start)
     section = markdown[start:stop]
+    if "./interactive/nwb-file-contents.html" in section:
+        return markdown
     intro_pattern = re.compile(
         r"All data from this project are packaged as Neurodata\s+Without Borders.*?"
         r"Use\s+the\s+tabs\s+below",
