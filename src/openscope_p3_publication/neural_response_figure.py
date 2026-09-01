@@ -324,19 +324,25 @@ def load_neuropixels_event_responses(
     return payload
 
 
-def copy_neuropixels_event_media(payload: dict) -> None:
-    INTERACTIVE_MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+def copy_neuropixels_event_media(
+    payload: dict,
+    output_dir: Path = INTERACTIVE_MEDIA_DIR,
+) -> list[Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
     expected = set()
+    outputs = []
     for session in payload["sessions"]:
         for key in ("sdfMeanAtlas",):
             name = Path(session[key]["path"]).name
             source = SOURCE_MEDIA_DIR / name
-            target = INTERACTIVE_MEDIA_DIR / name
+            target = output_dir / name
             shutil.copy2(source, target)
             expected.add(name)
-    for path in INTERACTIVE_MEDIA_DIR.glob("*"):
+            outputs.append(target)
+    for path in output_dir.glob("*"):
         if path.is_file() and path.name not in expected:
             path.unlink()
+    return outputs
 
 
 def presentation_payload(payload: dict) -> dict:

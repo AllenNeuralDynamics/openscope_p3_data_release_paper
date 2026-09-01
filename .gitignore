@@ -1,6 +1,12 @@
 # MyST build outputs
 _build/
 
+# Generated deployment copies of canonical figure data
+interactive/media/neuropixels-event-responses/
+
+# Operating-system metadata
+.DS_Store
+
 # Python environments and build artifacts
 .venv/
 .pytest_cache/
