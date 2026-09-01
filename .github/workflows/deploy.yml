@@ -104,6 +104,7 @@ jobs:
           test -f _build/html/interactive/behavior-viewer.html
           test -f _build/html/interactive/pupil-event-responses.html
           test -f _build/html/interactive/neuropixels-event-responses.html
+          test -f _build/html/interactive/media/neuropixels-event-responses/standard-sdf-mean.u16.gz
           test -f _build/html/interactive/segmentation-viewer.html
           test -f _build/html/interactive/optotagging-heatmaps.html
           test -f _build/html/interactive/media/optotagging/optotagging-heatmaps.svg

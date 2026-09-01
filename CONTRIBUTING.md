@@ -34,6 +34,32 @@ Every figure needs:
 
 Do not commit NWB files or other large primary datasets. Cite a versioned DANDI asset or project S3 asset and record its URL, path, version or DOI, retrieval date, and any required checksum.
 
+## Repository health and binary files
+
+This repository intentionally versions small binary sources needed to edit and reproduce the manuscript, including Illustrator, PowerPoint, Word, image, and short media files. Git history is effectively permanent: deleting a large file in a later commit does not recover the space, and each revision of a binary may add nearly the file's full size again.
+
+Use these limits for each new or replacement file:
+
+| File size | Policy |
+| --- | --- |
+| Less than 10 MiB | Regular Git is acceptable when the file is required for the manuscript, a figure source, or the published site. |
+| 10 MiB through 100 MiB | Get maintainer approval before committing. Explain why the file belongs in Git and why it cannot be reduced or stored externally. GitHub warns for files larger than 50 MiB. |
+| More than 100 MiB | Do not commit it to regular Git; GitHub rejects the file. Use a versioned external data store instead. |
+
+There is no project-specific total-size cap below GitHub's current repository limits. Maintainers should monitor growth and repository health as the manuscript evolves. A pull request that adds or replaces more than 25 MiB of binary content in total requires maintainer review, even when every individual file is below 10 MiB.
+
+Before committing a binary file:
+
+1. Confirm that it is needed to edit, reproduce, review, or publish the manuscript. Do not commit caches, temporary exports, autosaves, operating-system metadata, or local environments.
+2. Commit one canonical copy. If the build or deployment needs the file at another path, generate an ignored copy during the build instead of committing both paths.
+3. Prefer meaningful source revisions over repeated autosave or export commits. Compress images and media without compromising their scientific content.
+4. Keep primary datasets and analysis-scale derived datasets in DANDI or another stable, versioned store. Commit a URL or DOI, version identifier, checksum, and retrieval instructions instead. Compact display payloads for interactive figures may be committed when they follow the requirements below.
+5. Inspect staged changes with `git status --short` and `git diff --cached --stat`. If a large file was staged accidentally, remove it from the index before committing with `git restore --staged <path>`.
+
+Git LFS is not currently configured and is not recommended for this repository. It adds separate storage and bandwidth accounting, collaborator setup, and CI, Pages, and archival constraints. Store files above GitHub's regular Git limit in DANDI or another stable, versioned external store. Do not enable Git LFS without an explicit project-level decision.
+
+Maintainers should periodically run `git count-objects -vH` and inspect the repository with [git-sizer](https://github.com/github/git-sizer), especially before a release or after merging media-heavy work.
+
 ## Static and interactive figures with MyST
 
 Choose the simplest format that communicates the scientific result clearly. Use a static figure for a fixed result, comparison, schematic, or composition that must read completely in HTML, PDF, print, and archival exports. Use an interactive figure when selection, filtering, synchronized playback, 3D rotation, or access to many records materially improves interpretation. Interactivity should expose additional detail, not hide the primary conclusion.
@@ -114,6 +140,14 @@ For the behavior figure, the stages map to repository files as follows:
 - The routine command `uv run build-publication-figures` reads these committed intermediates and media files to produce both `interactive/behavior-viewer.html` and `images/figures/generated/synchronized-behavior.svg`. It does not recompute the many-NWB running analysis.
 
 Use the same architecture for future figures that aggregate units, receptive fields, anatomical coverage, response metrics, or other values across many NWB files: cloud extractor → committed checksummed intermediate → deterministic static and interactive renderers.
+
+### Derived binary data
+
+Compact display data for an interactive figure may be committed when it is reproducibly derived from versioned source data. Keep primary and analysis-scale data in their external archive.
+
+Use a browser-readable format appropriate to the payload. Existing figures use JSON or base64-encoded typed arrays for smaller data and separate gzip-compressed typed arrays for larger data. Include the metadata needed to interpret the payload and retain source and output checksums when the generator already produces them.
+
+Commit one canonical copy under `figure_sources/data/` or `figure_sources/media/<figure-name>/`. When an interactive page needs the data beside its generated HTML, `uv run build-publication-figures` creates an ignored deployment copy under `interactive/`, which MyST copies into the ignored `_build/` site output. Do not commit or edit the deployment copy. The binary file-size and maintainer-review rules above still apply.
 
 ## Using AI assistants effectively
 
