@@ -9,23 +9,30 @@
     empty: document.getElementById("empty-state"),
     headers: document.getElementById("table-headers"),
     interactiveView: document.getElementById("interactive-view"),
+    inventoryView: document.getElementById("inventory-view"),
     note: document.getElementById("data-access-note"),
     modality: document.getElementById("modality-filter"),
     search: document.getElementById("table-search"),
     status: document.getElementById("row-count"),
     staticView: document.getElementById("static-view"),
+    tooltip: document.getElementById("session-tooltip"),
     tabs: document.getElementById("dataset-tabs"),
+    tableTools: document.getElementById("table-tools"),
+    tableView: document.getElementById("table-view"),
     viewButtons: document.querySelectorAll(".view-button"),
   };
   const modalityLabels = {
-    mesoscope: "Two-photon",
+    mesoscope: "Mesoscope",
     neuropixels: "Neuropixels",
     slap2: "SLAP2",
+    "slap2-glutamate": "SLAP2 Glutamate",
+    "slap2-voltage": "SLAP2 Voltage",
   };
   const tableLabels = {
     animals: "Animals",
     sessions: "Sessions",
     dataAccess: "Data Access",
+    inventory: "Session Inventory",
   };
   const state = { kind: "animals", view: "static", visibleRows: [] };
 
@@ -41,13 +48,15 @@
   }
 
   function buildTabs() {
-    ["animals", "sessions", "dataAccess"].forEach((kind) => {
+    ["inventory", "animals", "sessions", "dataAccess"].forEach((kind) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "dataset-tab";
       button.dataset.kind = kind;
       const label = tableLabels[kind];
-      button.innerHTML = `${label}<span>${data.tables[kind].rows.length}</span>`;
+      button.innerHTML = kind === "inventory"
+        ? label
+        : `${label}<span>${data.tables[kind].rows.length}</span>`;
       button.addEventListener("click", () => selectTable(kind));
       elements.tabs.append(button);
     });
@@ -64,6 +73,14 @@
       button.classList.toggle("active", active);
       button.setAttribute("aria-pressed", String(active));
     });
+    const inventorySelected = kind === "inventory";
+    elements.inventoryView.hidden = !inventorySelected;
+    elements.tableTools.hidden = inventorySelected;
+    elements.tableView.hidden = inventorySelected;
+    if (inventorySelected) {
+      elements.note.hidden = true;
+      return;
+    }
     elements.note.hidden = kind !== "dataAccess";
     populateFilters();
     renderTable();
@@ -72,7 +89,12 @@
   function populateFilters() {
     const rows = data.tables[state.kind].rows;
     if (state.kind === "dataAccess") {
-      setOptions(elements.modality, null, ["neuropixels", "mesoscope", "slap2"], modalityLabels);
+      setOptions(
+        elements.modality,
+        null,
+        ["neuropixels", "mesoscope", "slap2-glutamate", "slap2-voltage"],
+        modalityLabels,
+      );
       elements.modality.value = "neuropixels";
     } else {
       setOptions(elements.modality, "All modalities", unique(rows, "modality"), modalityLabels);
@@ -114,12 +136,20 @@
     elements.status.value = `${state.visibleRows.length} of ${table.rows.length}`;
     elements.status.textContent = elements.status.value;
     elements.empty.hidden = state.visibleRows.length !== 0;
+    elements.empty.textContent = "No matching rows.";
     updateDownloadLink();
   }
 
   function renderRow(row, table, columns) {
     const tableRow = document.createElement("tr");
     tableRow.className = `modality-${row.modality}`;
+    if (state.kind === "animals") {
+      tableRow.dataset.mouseId = row.values[0];
+      tableRow.dataset.modality = row.modality;
+    }
+    if (state.kind === "sessions" || state.kind === "dataAccess") {
+      tableRow.dataset.sessionId = row.values[0];
+    }
     columns.forEach(({ header, index }) => {
       const value = row.values[index];
       const cell = document.createElement("td");
@@ -214,13 +244,171 @@
     return `"${String(value).replaceAll('"', '""')}"`;
   }
 
+  function focusDataAccess(sessionId, modality) {
+    selectView("interactive");
+    selectTable("dataAccess");
+    elements.modality.value = modality;
+    elements.search.value = sessionId;
+    renderTable();
+    const row = Array.from(elements.body.querySelectorAll("tr")).find(
+      (candidate) => candidate.dataset.sessionId === sessionId,
+    );
+    if (!row) {
+      elements.empty.hidden = false;
+      elements.empty.textContent = `No Data Access record is available for ${sessionId}.`;
+      return;
+    }
+    row.classList.add("selected-session");
+    row.tabIndex = -1;
+    row.focus({ preventScroll: true });
+    row.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+
+  function activateStaticSession(event) {
+    const target = event.target.closest(".session-target.is-clickable");
+    if (!target || (event.type === "keydown" && !["Enter", " "].includes(event.key))) {
+      return;
+    }
+    event.preventDefault();
+    focusDataAccess(target.dataset.sessionId, target.dataset.modality);
+  }
+
+  function focusAnimal(mouseId, modality) {
+    selectView("interactive");
+    selectTable("animals");
+    elements.modality.value = modality;
+    elements.search.value = mouseId;
+    renderTable();
+    const row = Array.from(elements.body.querySelectorAll("tr")).find(
+      (candidate) => candidate.dataset.mouseId === mouseId
+        && candidate.dataset.modality === modality,
+    );
+    if (!row) {
+      elements.empty.textContent = `No Animals record is available for mouse ${mouseId}.`;
+      return;
+    }
+    row.classList.add("selected-session");
+    row.tabIndex = -1;
+    row.focus({ preventScroll: true });
+    row.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+
+  function activateMouse(event) {
+    const target = event.target.closest(".mouse-target.is-clickable");
+    if (!target || (event.type === "keydown" && !["Enter", " "].includes(event.key))) {
+      return;
+    }
+    event.preventDefault();
+    focusAnimal(target.dataset.mouseId, target.dataset.modality);
+  }
+
+  function positionSessionTooltip(clientX, clientY) {
+    const offset = 12;
+    const margin = 8;
+    const bounds = elements.tooltip.getBoundingClientRect();
+    const left = Math.min(clientX + offset, window.innerWidth - bounds.width - margin);
+    const top = Math.min(clientY + offset, window.innerHeight - bounds.height - margin);
+    elements.tooltip.style.left = `${Math.max(margin, left)}px`;
+    elements.tooltip.style.top = `${Math.max(margin, top)}px`;
+  }
+
+  function showSessionTooltip(target, clientX, clientY) {
+    const title = document.createElement("strong");
+    title.textContent = target.dataset.sessionId;
+    const details = document.createElement("dl");
+    [
+      ["Mouse ID", target.dataset.mouseId],
+      ["Date", target.dataset.date],
+      ["Modality", modalityLabels[target.dataset.modality] ?? titleCase(target.dataset.modality)],
+      ["Session type", target.dataset.sessionType],
+      ["QC tags", target.dataset.qcTagLabels],
+    ].forEach(([label, value]) => {
+      const term = document.createElement("dt");
+      term.textContent = label;
+      const description = document.createElement("dd");
+      description.textContent = value || "Not available";
+      details.append(term, description);
+    });
+    elements.tooltip.replaceChildren(title, details);
+    elements.tooltip.hidden = false;
+    positionSessionTooltip(clientX, clientY);
+  }
+
+  function showMouseTooltip(target, clientX, clientY) {
+    const title = document.createElement("strong");
+    title.textContent = `Mouse ${target.dataset.mouseId}`;
+    const details = document.createElement("dl");
+    [
+      ["Mouse ID", target.dataset.mouseId],
+      ["Modality", modalityLabels[target.dataset.modality] ?? titleCase(target.dataset.modality)],
+      ["Sex", target.dataset.sex],
+      ["Genotype", target.dataset.genotype],
+    ].forEach(([label, value]) => {
+      const term = document.createElement("dt");
+      term.textContent = label;
+      const description = document.createElement("dd");
+      description.textContent = value || "Not available";
+      details.append(term, description);
+    });
+    elements.tooltip.replaceChildren(title, details);
+    elements.tooltip.hidden = false;
+    positionSessionTooltip(clientX, clientY);
+  }
+
+  function hideSessionTooltip() {
+    elements.tooltip.hidden = true;
+  }
+
   elements.search.addEventListener("input", renderTable);
   elements.modality.addEventListener("change", renderTable);
   elements.context.addEventListener("change", renderTable);
   elements.viewButtons.forEach((button) => {
     button.addEventListener("click", () => selectView(button.dataset.view));
   });
+  elements.inventoryView.querySelectorAll(".session-target[data-session-id]").forEach((target) => {
+    if (target.dataset.sessionId === "unknown session id") return;
+    target.classList.add("is-clickable");
+    target.setAttribute("role", "link");
+    target.setAttribute("tabindex", "0");
+    target.setAttribute("aria-label", `Open data access for session ${target.dataset.sessionId}`);
+    target.setAttribute("aria-describedby", "session-tooltip");
+    target.addEventListener("pointerenter", (event) => {
+      showSessionTooltip(target, event.clientX, event.clientY);
+    });
+    target.addEventListener("pointermove", (event) => {
+      positionSessionTooltip(event.clientX, event.clientY);
+    });
+    target.addEventListener("pointerleave", hideSessionTooltip);
+    target.addEventListener("focus", () => {
+      const bounds = target.getBoundingClientRect();
+      showSessionTooltip(target, bounds.right, bounds.top);
+    });
+    target.addEventListener("blur", hideSessionTooltip);
+  });
+  elements.inventoryView.querySelectorAll(".mouse-target[data-mouse-id]").forEach((target) => {
+    target.classList.add("is-clickable");
+    target.setAttribute("role", "link");
+    target.setAttribute("tabindex", "0");
+    target.setAttribute("aria-label", `Open Animals record for mouse ${target.dataset.mouseId}`);
+    target.setAttribute("aria-describedby", "session-tooltip");
+    target.addEventListener("pointerenter", (event) => {
+      showMouseTooltip(target, event.clientX, event.clientY);
+    });
+    target.addEventListener("pointermove", (event) => {
+      positionSessionTooltip(event.clientX, event.clientY);
+    });
+    target.addEventListener("pointerleave", hideSessionTooltip);
+    target.addEventListener("focus", () => {
+      const bounds = target.getBoundingClientRect();
+      showMouseTooltip(target, bounds.right, bounds.top);
+    });
+    target.addEventListener("blur", hideSessionTooltip);
+  });
+  elements.inventoryView.addEventListener("click", activateStaticSession);
+  elements.inventoryView.addEventListener("keydown", activateStaticSession);
+  elements.inventoryView.addEventListener("click", activateMouse);
+  elements.inventoryView.addEventListener("keydown", activateMouse);
   buildTabs();
-  selectTable("animals");
+  selectTable("inventory");
   selectView("interactive");
 })();

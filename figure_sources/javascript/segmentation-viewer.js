@@ -20,6 +20,7 @@
     canvas: document.getElementById("source-canvas"),
     commonModeControl: document.getElementById("common-mode-control"),
     commonModeToggle: document.getElementById("common-mode-toggle"),
+    filterLabel: document.getElementById("filter-label"),
     filterMetadata: document.getElementById("filter-metadata"),
     filterSelect: document.getElementById("filter-select"),
     loading: document.getElementById("loading-status"),
@@ -28,6 +29,7 @@
     nextFilter: document.getElementById("next-filter"),
     previousFilter: document.getElementById("previous-filter"),
     selectionSwatch: document.getElementById("selection-swatch"),
+    selectionKicker: document.getElementById("selection-kicker"),
     selectionTitle: document.getElementById("selection-title"),
     staticView: document.getElementById("static-view"),
     sourceLabel: document.getElementById("source-label"),
@@ -635,6 +637,9 @@
   function updateViewerChrome() {
     elements.viewer.dataset.modality = modality.id;
     elements.viewerTitle.textContent = viewerTitles[modality.id];
+    const selectionLabel = modality.id === "neuropixels" ? "Selected unit" : "Selected ROI";
+    elements.filterLabel.textContent = selectionLabel;
+    elements.selectionKicker.textContent = selectionLabel;
     elements.sourceLabel.textContent = modality.sourceLabel;
     elements.sourceLink.href = viewer.asset.dandiset_url;
     elements.canvas.setAttribute("aria-label", `${viewerTitles[modality.id]} filter map`);

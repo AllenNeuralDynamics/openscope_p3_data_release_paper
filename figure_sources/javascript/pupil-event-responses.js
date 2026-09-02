@@ -821,6 +821,10 @@
       });
       interactiveView.hidden = state.view !== "interactive";
       staticView.hidden = state.view !== "static";
+      document.documentElement.classList.toggle(
+        "interactive-mode",
+        state.view === "interactive",
+      );
     });
   });
 

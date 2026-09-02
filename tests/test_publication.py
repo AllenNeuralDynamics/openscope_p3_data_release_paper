@@ -105,6 +105,7 @@ def test_session_snapshot_refresh_repins_derived_provenance(tmp_path: Path) -> N
     session_path = tmp_path / "experimental-sessions.csv"
     running_path = tmp_path / "running-statistics.json"
     behavior_path = tmp_path / "behavior-static-frames.provenance.json"
+    pupil_path = tmp_path / "pupil-event-responses.provenance.json"
     previous = (
         b"source_session_id,mouse_id,date,modality,session_stimulus,qc,qc_tags,source_row\n"
         b"session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,,8\n"
@@ -133,10 +134,17 @@ def test_session_snapshot_refresh_repins_derived_provenance(tmp_path: Path) -> N
     behavior_path.write_text(
         json.dumps({"running_statistics_sha256": "old"}), encoding="utf-8"
     )
+    pupil_path.write_text(
+        json.dumps(
+            {"source_snapshots": {"experimental_sessions": {"sha256": "old"}}}
+        ),
+        encoding="utf-8",
+    )
     updater["refresh_session_snapshot_dependents"].__globals__.update(
         {
             "RUNNING_STATISTICS_PATH": running_path,
             "BEHAVIOR_STATIC_PROVENANCE_PATH": behavior_path,
+            "PUPIL_EVENT_PROVENANCE_PATH": pupil_path,
         }
     )
 
@@ -144,9 +152,13 @@ def test_session_snapshot_refresh_repins_derived_provenance(tmp_path: Path) -> N
 
     running = json.loads(running_path.read_text(encoding="utf-8"))
     behavior = json.loads(behavior_path.read_text(encoding="utf-8"))
+    pupil = json.loads(pupil_path.read_text(encoding="utf-8"))
     assert running["source_session_records"]["sha256"] == file_sha256(session_path)
     assert running["sessions"][0]["source_row"] == 8
     assert behavior["running_statistics_sha256"] == file_sha256(running_path)
+    assert pupil["source_snapshots"]["experimental_sessions"]["sha256"] == (
+        file_sha256(session_path)
+    )
 
 
 def test_session_snapshot_refresh_rejects_semantic_changes(tmp_path: Path) -> None:
@@ -196,7 +208,7 @@ def test_manuscript_marks_unfinished_content() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
     assert ":::{note} Manuscript status" in manuscript
-    assert manuscript.count(":::{warning} Work in progress") == 8
+    assert manuscript.count(":::{warning} Work in progress") == 9
     assert manuscript.count('class="manuscript-wip-inline"') == 2
     for stale_marker in (
         "To be written",
@@ -600,14 +612,13 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "100-micrometer mesh derived from the Allen CCF 2017" in manuscript
     assert "**A,** an oblique projection" in manuscript
     assert "trajectories extend laterally toward the L direction marker" in manuscript
-    assert "### Eye tracking across modalities" in manuscript
-    assert manuscript.count("[Supplementary Figure 4](#fig-supp-eye-tracking)") == 1
+    assert manuscript.count("[Supplementary Figure 4](#fig-supp-eye-tracking)") == 2
     assert "./interactive/eye-tracking-viewer.html" in manuscript
     assert ":label: fig-supp-eye-tracking\n:enumerated: false" in manuscript
-    assert "Eye fits, blink flags, and stimulus rows" in manuscript
-    assert "Fit-source tabs switch the center field" in manuscript
-    assert "standard-oddball Neuropixels, mesoscope, and SLAP2 sessions" in manuscript
-    assert "5th–95th percentile nonblink range" in manuscript
+    assert "raw eye-camera video (left)" in manuscript
+    assert "same video with the NWB-packaged pupil" in manuscript
+    assert "The optional **Filtered** view" in manuscript
+    assert "isolated runs of one to four samples" in manuscript
     assert "**B,** a dorsal projection" in manuscript
     assert manuscript.count(
         "[Supplementary Figure 5](#fig-supp-optotagging-heatmaps)"
@@ -700,19 +711,46 @@ def test_nwb_file_contents_are_in_data_records() -> None:
     assert records_start < nwb_contents < validation_start < glossary_start
 
     records = manuscript[nwb_contents:validation_start]
-    assert "Shared across modalities:" in records
-    assert "Neuropixels NWB files" in records
-    assert "Mesoscope NWB files" in records
-    assert "SLAP2 NWB files" in records
     assert "DANDI:001424" in records
-    assert records.count(":::{tab-item}") == 4
-    assert records.count(
-        "| Question | NWB contents | Representative PyNWB entry point |"
+    assert "./interactive/nwb-file-contents.html" in records
+    assert ":label: nwb-file-contents-viewer" in records
+    assert "native collapsible PyNWB structure" in records
+    assert "The **Static** view" in records
+    assert ":title: Interactive NWB structures and static question tables" in records
+
+
+def test_nwb_file_contents_explorer_uses_pinned_native_snapshots() -> None:
+    viewer = (REPO_ROOT / "interactive" / "nwb-file-contents.html").read_text(
+        encoding="utf-8"
+    )
+    assert 'id="nwb-file-contents-viewer"' in viewer
+    assert 'data-view="interactive"' in viewer
+    assert 'data-view="static"' in viewer
+    assert viewer.count('data-view-panel="interactive"') == 3
+    assert viewer.count('class="static-section"') == 4
+    assert viewer.count("<table>") == 4
+    assert viewer.count(
+        "<th>Name</th><th>Description</th><th>Format</th><th>NWB Path</th>"
     ) == 4
-    assert "nwbfile.units.to_dataframe()" in records
-    assert 'nwbfile.processing[plane]["dff_timeseries"]' in records
-    assert 'nwbfile.processing["ophys"]["ImageSegmentation"]' in records
-    assert 'nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_dFF"]' in records
+    assert "<th>Question</th>" not in viewer
+    assert "HDMF location" not in viewer
+    assert 'data-tabs="interactive"' in viewer
+    assert 'data-tabs="static"' not in viewer
+    assert "selectView" in viewer
+    assert "selectModality" in viewer
+    assert "__NWB_FILE_CONTENTS_" not in viewer
+    assert "__NEUROPIXELS_TREE__" not in viewer
+
+    snapshot_dir = REPO_ROOT / "figure_sources" / "data" / "nwb-file-contents"
+    for modality in ("neuropixels", "mesoscope", "slap2"):
+        snapshot = snapshot_dir / f"{modality}.html"
+        assert snapshot.is_file()
+        with snapshot.open(encoding="utf-8") as stream:
+            prefix = stream.read(20_000)
+        assert "container-wrap" in prefix
+        assert "PyNWB 3." in prefix
+        assert "DANDI:001" in prefix
+        assert "<script>" not in prefix
 
 
 def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
@@ -891,7 +929,6 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert (
         manuscript.index(":label: fig-behavior-tracking")
         < manuscript.index(":label: fig-neuropixels-event-responses")
-        < manuscript.index("### Eye tracking across modalities")
         < manuscript.index(":label: fig-standard-oddball-plan")
     )
     for number, label in (

@@ -1,0 +1,205 @@
+:root {
+  color-scheme: light;
+  --ink: #303536;
+  --muted: #6e7472;
+  --line: #d0d4d2;
+  --soft-line: #e4e6e5;
+  --paper: #fff;
+  --wash: #f6f7f7;
+  --accent: #30383c;
+  --value: #00788e;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  min-width: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Myriad Pro", "Source Sans 3", sans-serif;
+}
+
+button { font: inherit; }
+
+.viewer {
+  width: 100%;
+  min-height: 720px;
+  padding: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--paper);
+}
+
+.view-switch {
+  width: max-content;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  margin: 0 0 10px auto;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.view-button,
+.modality-tab {
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.view-button {
+  min-width: 112px;
+  min-height: 34px;
+  padding: 5px 12px;
+}
+
+.view-button:last-child,
+.modality-tab:last-child { border-right: 0; }
+
+.view-button.active,
+.modality-tab.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.view-button:focus-visible,
+.modality-tab:focus-visible {
+  outline: 3px solid rgb(73 99 117 / 25%);
+  outline-offset: -3px;
+}
+
+.modality-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 4px 4px 0 0;
+}
+
+.modality-tabs.four-tabs { grid-template-columns: repeat(4, 1fr); }
+
+.modality-tab {
+  min-height: 36px;
+  padding: 6px 10px;
+}
+
+.view-note {
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.panel {
+  max-height: 660px;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-top: 0;
+  background: var(--paper);
+}
+
+#interactive-view .panel { border-top: 1px solid var(--line); }
+
+.nwb-resource-header {
+  position: sticky;
+  z-index: 2;
+  top: -12px;
+  margin: -12px -12px 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  background: rgb(255 255 255 / 96%);
+}
+
+.nwb-resource-source {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font: 11px/1.35 "IBM Plex Mono", Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.container-header h3 { margin: 0 0 8px; font-size: 16px; }
+.container-fields { max-width: 100%; font: 13px/1.45 "Open Sans", Arial, sans-serif; overflow-wrap: anywhere; }
+.container-fields .field-value { color: var(--value); }
+.container-fields details > summary { cursor: pointer; padding-block: 1px; }
+.container-fields details > summary:hover { color: #0a6eaa; }
+
+table {
+  width: 100%;
+  min-width: 820px;
+  margin: 8px 0;
+  border: 1px solid var(--line);
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+th,
+td {
+  padding: 7px 8px;
+  border-right: 1px solid var(--soft-line);
+  border-bottom: 1px solid var(--soft-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+th { background: #4b5052; color: #fff; font-weight: 650; }
+th:last-child,
+td:last-child { border-right: 0; }
+tr:last-child td { border-bottom: 0; }
+tbody tr:nth-child(even) td { background: var(--wash); }
+td:first-child { font-weight: 600; }
+code { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 0.92em; overflow-wrap: anywhere; }
+.panel > p { margin: 0 0 8px; font-size: 13px; line-height: 1.4; }
+
+.static-section + .static-section {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 2px solid var(--line);
+}
+
+.static-section h2 {
+  margin: 0 0 5px;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.static-section > p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #e7e5e4;
+    --muted: #a8a29e;
+    --line: #44403c;
+    --soft-line: #44403c;
+    --paper: #1c1917;
+    --wash: #292524;
+    --accent: #4b5052;
+    --value: #67e8f9;
+  }
+
+  .nwb-resource-header { background: rgb(28 25 23 / 96%); }
+  th { background: #292524; }
+}
+
+@media (max-width: 640px) {
+  .viewer { padding: 10px; }
+  .view-switch { width: 100%; grid-template-columns: repeat(2, 1fr); }
+  .modality-tab { padding-inline: 5px; }
+  .panel { max-height: 580px; padding: 8px; }
+  .nwb-resource-header { top: -8px; margin: -8px -8px 8px; }
+}
