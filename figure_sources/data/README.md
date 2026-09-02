@@ -100,8 +100,10 @@ putative_sst_cells = optotagging_results.loc[is_optotagged].copy()
 
 These should be described as putative optotagged SST cells rather than
 transcriptomically confirmed SST cells. The raised-cosine and 40 Hz metrics
-remain available for response characterization but are not part of this
-classification rule.
+remain in the table even though they are not part of this classification rule.
+Providing results for every stimulation condition allows users to define a
+stricter criterion, such as requiring consistent responses across conditions,
+or to apply an alternative classification appropriate for their analysis.
 
 `neuropixels-trajectories.json` contains all 332 CCF-localized probe insertions from 57 of the 60 Neuropixels session NWBs in the source inventory, together with each insertion's contiguous CCF area profile and a 100-micrometer whole-brain surface derived from the Allen CCF 2017 25-micrometer annotation volume. Three sessions without electrode `x`, `y`, and `z` coordinates are retained as explicit exclusions in `neuropixels-trajectories.provenance.json`. The provenance record also pins the DANDI inventory, Allen annotation volume, structure graph, and vendored checksums. Regenerate both files with `uv run --with h5py --with numpy --with pynrrd --with remfile --with scikit-image python scripts/extract_neuropixels_trajectories.py`. When only the shared A-F display palette changes, update colors and the vendored checksum without re-fetching NWBs by adding `--refresh-palette-only`.
 
