@@ -16,6 +16,101 @@ Maintainers can refresh and commit all three publication tables by manually runn
 
 `neuropixels-unit-yield.csv` contains one row for each unit-bearing session NWB in the July 30, 2026 snapshot of draft Dandiset 001637. It records total units, units passing all three manuscript QC thresholds, and the available `Probe*` electrode groups. The DANDI asset-manifest checksum, thresholds, skipped schema-only NWBs, and vendored checksum are recorded in `neuropixels-unit-yield.provenance.json`. Regenerate it with `uv run --with h5py --with numpy --with remfile python scripts/extract_neuropixels_unit_yield.py`.
 
+## Optotagging results
+
+`optotagging-results.parquet` is the per-unit statistical output of the
+Neuropixels optotagging analysis. It is derived from the public session NWBs in
+[DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files). The
+analysis requires the NWB `units` table and all three interval tables:
+`raised_cosine_presentations`, `5 hz pulse train_presentations`, and
+`40 hz pulse train_presentations`. Units whose `decoder_label` is `noise` are
+excluded; no additional unit-quality thresholds are applied when constructing
+this table.
+
+Each interval-table presentation is expanded into laser-pulse onset times using
+the condition frequency. Every output row represents one `(session_id,
+unit_id)` pair and contains `asset_id`, `asset_path`, and four metrics for each
+condition:
+
+- `pre_mean`: mean pre-laser firing rate across pulses, in spikes/s.
+- `post_mean`: mean post-laser firing rate across pulses, in spikes/s.
+- `modulation_index`: the mean finite pulse-level value of
+  `(post_rate - pre_rate) / (post_rate + pre_rate)`. Pulses for which both rates
+  are zero have an undefined modulation index and are omitted from this mean.
+- `p_value`: two-sided paired Wilcoxon signed-rank p-value comparing the
+  pulse-level pre- and post-laser firing rates. The implementation uses
+  `scipy.stats.wilcoxon(pre_rates, post_rates, zero_method="zsplit",
+  correction=False)`.
+
+Spike counts use half-open windows, so a spike at a window's start is included
+and a spike exactly at its end is excluded. All times below are relative to an
+individual laser-pulse onset:
+
+| Condition | Pulse width | Pre-rate window | Post-rate window |
+|---|---:|---:|---:|
+| Raised cosine | 1 s | `[-0.501, -0.001)` s | `[0.250, 0.750)` s |
+| 5 Hz pulse train | 10 ms | `[-0.011, -0.001)` s | `[0.002, 0.012)` s |
+| 40 Hz pulse train | 6 ms | `[-0.011, -0.001)` s | `[0.002, 0.012)` s |
+
+The 40 Hz statistical post window intentionally remains 10 ms to reproduce the
+reference analysis, although the physical laser pulse and the heatmap-ordering
+window are 6 ms. The Parquet file contains summary metrics only; the 1 ms PSTHs
+used by the viewer are not stored in it.
+
+The implementation is in
+[`src/openscope_p3_publication/optotagging.py`](../../src/openscope_p3_publication/optotagging.py).
+To regenerate the complete table, open the marimo notebook, choose **All
+sessions**, and run the analysis:
+
+```powershell
+uv run --with dandi --with h5py --with iblatlas --with iblutil --with marimo `
+  --with matplotlib --with numpy --with pandas --with pyarrow --with remfile `
+  --with scipy --with seaborn marimo edit optotagging_analysis.py
+```
+
+By default, the notebook writes `optotagging-results.parquet` and
+`optotagging-results.provenance.json` to
+`~/Data/openscope_p3_data_release_paper/`. The provenance document records the
+DANDI version and asset inventory, output checksum, condition parameters,
+excluded sessions, and failed sessions. When updating the committed snapshot,
+copy both generated files into `figure_sources/data/` together.
+
+From the repository root, load the committed table with:
+
+```python
+from pathlib import Path
+
+import pandas as pd
+
+results_path = Path("figure_sources/data/optotagging-results.parquet")
+optotagging_results = pd.read_parquet(results_path)
+```
+
+The publication's reference optotagged-cell criterion requires `p_value < 0.05`
+and `modulation_index > 0.1` independently in all three conditions:
+
+```python
+conditions = (
+    "raised_cosine_presentations",
+    "5 hz pulse train_presentations",
+    "40 hz pulse train_presentations",
+)
+
+is_optotagged = pd.Series(True, index=optotagging_results.index)
+for condition in conditions:
+    is_optotagged &= (
+        optotagging_results[f"{condition}__p_value"].lt(0.05)
+        & optotagging_results[f"{condition}__modulation_index"].gt(0.1)
+    )
+
+putative_sst_cells = optotagging_results.loc[is_optotagged].copy()
+```
+
+These should be described as putative optotagged SST cells rather than
+transcriptomically confirmed SST cells. `Load_data.py` currently applies a
+separate, less stringent 5 Hz-only heuristic for its downstream `neuron_type`
+label; it is not the all-condition publication criterion above.
+
 `neuropixels-trajectories.json` contains all 332 CCF-localized probe insertions from 57 of the 60 Neuropixels session NWBs in the source inventory, together with each insertion's contiguous CCF area profile and a 100-micrometer whole-brain surface derived from the Allen CCF 2017 25-micrometer annotation volume. Three sessions without electrode `x`, `y`, and `z` coordinates are retained as explicit exclusions in `neuropixels-trajectories.provenance.json`. The provenance record also pins the DANDI inventory, Allen annotation volume, structure graph, and vendored checksums. Regenerate both files with `uv run --with h5py --with numpy --with pynrrd --with remfile --with scikit-image python scripts/extract_neuropixels_trajectories.py`. When only the shared A-F display palette changes, update colors and the vendored checksum without re-fetching NWBs by adding `--refresh-palette-only`.
 
 `raw-neural-excerpts.json` and `figure_sources/media/neural-viewer/` contain the source-backed raw-data excerpts used by Figure 5. Neuropixels shaft views encode 100 ms of calibrated, unaveraged 30-kHz voltage from 96 regularly spaced contacts in each public compressed AP Zarr store; contiguous CCF structure and layer segments come from the NWB electrode-location annotations. Mesoscope sheets contain raw uncompressed ScanImage pages selected by synchronized NWB plane timestamps. Their spatial scale comes from the NWB imaging-plane grid spacing (0.78 µm per native pixel). SLAP2 sheets map native detector samples from DMD1/DMD2 acquisition trial 26 onto acquisition-plan superpixels and a structural reference; acquisition metadata supplies each remote-focus depth below pia, and the acquisition-coordinate transform supplies the 0.25 µm native-pixel scale. The four selectable single-channel movies and two aligned green/red composite sheets use 400 × 640 frames after a 2× spatial reduction and publication-level transpose of the native 1280 × 800 acquisition-coordinate raster, placing fast x vertically; sheets use lossless WebP encoding. The source payload retains synchronized event metadata for deterministic extraction and provenance, while the viewer exposes only elapsed excerpt time and does not mark stimulus onset. The payload records NWB checksums, S3 metadata, fetched-range and sheet checksums, native rates, native and display dimensions, spatial calibrations, and the checksum of `behavior-excerpts.json`. On macOS, install the WavPack decoder with `brew install wavpack`, then regenerate with `uv run --with h5py --with numpy --with remfile --with s3fs --with 'zarr<3' --with wavpack-numcodecs --with pillow==12.3.0 --with tifffile==2026.7.14 python scripts/extract_raw_neural_excerpts.py`.
