@@ -86,30 +86,22 @@ results_path = Path("figure_sources/data/optotagging-results.parquet")
 optotagging_results = pd.read_parquet(results_path)
 ```
 
-The publication's reference optotagged-cell criterion requires `p_value < 0.05`
-and `modulation_index > 0.1` independently in all three conditions:
+Putative optotagged SST cells are identified from the 5 Hz pulse-train response
+only, requiring `p_value < 0.05` and `modulation_index > 0.1`:
 
 ```python
-conditions = (
-    "raised_cosine_presentations",
-    "5 hz pulse train_presentations",
-    "40 hz pulse train_presentations",
+condition = "5 hz pulse train_presentations"
+is_optotagged = (
+    optotagging_results[f"{condition}__p_value"].lt(0.05)
+    & optotagging_results[f"{condition}__modulation_index"].gt(0.1)
 )
-
-is_optotagged = pd.Series(True, index=optotagging_results.index)
-for condition in conditions:
-    is_optotagged &= (
-        optotagging_results[f"{condition}__p_value"].lt(0.05)
-        & optotagging_results[f"{condition}__modulation_index"].gt(0.1)
-    )
-
 putative_sst_cells = optotagging_results.loc[is_optotagged].copy()
 ```
 
 These should be described as putative optotagged SST cells rather than
-transcriptomically confirmed SST cells. `Load_data.py` currently applies a
-separate, less stringent 5 Hz-only heuristic for its downstream `neuron_type`
-label; it is not the all-condition publication criterion above.
+transcriptomically confirmed SST cells. The raised-cosine and 40 Hz metrics
+remain available for response characterization but are not part of this
+classification rule.
 
 `neuropixels-trajectories.json` contains all 332 CCF-localized probe insertions from 57 of the 60 Neuropixels session NWBs in the source inventory, together with each insertion's contiguous CCF area profile and a 100-micrometer whole-brain surface derived from the Allen CCF 2017 25-micrometer annotation volume. Three sessions without electrode `x`, `y`, and `z` coordinates are retained as explicit exclusions in `neuropixels-trajectories.provenance.json`. The provenance record also pins the DANDI inventory, Allen annotation volume, structure graph, and vendored checksums. Regenerate both files with `uv run --with h5py --with numpy --with pynrrd --with remfile --with scikit-image python scripts/extract_neuropixels_trajectories.py`. When only the shared A-F display palette changes, update colors and the vendored checksum without re-fetching NWBs by adding `--refresh-palette-only`.
 
