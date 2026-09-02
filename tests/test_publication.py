@@ -105,6 +105,7 @@ def test_session_snapshot_refresh_repins_derived_provenance(tmp_path: Path) -> N
     session_path = tmp_path / "experimental-sessions.csv"
     running_path = tmp_path / "running-statistics.json"
     behavior_path = tmp_path / "behavior-static-frames.provenance.json"
+    pupil_path = tmp_path / "pupil-event-responses.provenance.json"
     previous = (
         b"source_session_id,mouse_id,date,modality,session_stimulus,qc,qc_tags,source_row\n"
         b"session-a,101,2026-01-01,mesoscope,OPTICAL_SESSION1_SEQUENCE,Pass,,8\n"
@@ -133,10 +134,17 @@ def test_session_snapshot_refresh_repins_derived_provenance(tmp_path: Path) -> N
     behavior_path.write_text(
         json.dumps({"running_statistics_sha256": "old"}), encoding="utf-8"
     )
+    pupil_path.write_text(
+        json.dumps(
+            {"source_snapshots": {"experimental_sessions": {"sha256": "old"}}}
+        ),
+        encoding="utf-8",
+    )
     updater["refresh_session_snapshot_dependents"].__globals__.update(
         {
             "RUNNING_STATISTICS_PATH": running_path,
             "BEHAVIOR_STATIC_PROVENANCE_PATH": behavior_path,
+            "PUPIL_EVENT_PROVENANCE_PATH": pupil_path,
         }
     )
 
@@ -144,9 +152,13 @@ def test_session_snapshot_refresh_repins_derived_provenance(tmp_path: Path) -> N
 
     running = json.loads(running_path.read_text(encoding="utf-8"))
     behavior = json.loads(behavior_path.read_text(encoding="utf-8"))
+    pupil = json.loads(pupil_path.read_text(encoding="utf-8"))
     assert running["source_session_records"]["sha256"] == file_sha256(session_path)
     assert running["sessions"][0]["source_row"] == 8
     assert behavior["running_statistics_sha256"] == file_sha256(running_path)
+    assert pupil["source_snapshots"]["experimental_sessions"]["sha256"] == (
+        file_sha256(session_path)
+    )
 
 
 def test_session_snapshot_refresh_rejects_semantic_changes(tmp_path: Path) -> None:

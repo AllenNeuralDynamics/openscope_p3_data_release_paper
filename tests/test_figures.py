@@ -1970,6 +1970,90 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert hashlib.sha256(SESSION_RECORDS_PATH.read_bytes()).hexdigest() == (
         provenance["vendored_sha256"]
     )
+
+    payload = load_experimental_session_records()
+    records = payload["records"]
+    assert len(records) == provenance["rows"] == provenance["source_rows"]
+    assert {
+        modality: sum(record["modality"] == modality for record in records)
+        for modality in ("neuropixels", "mesoscope", "slap2")
+    } == provenance["modality_rows"]
+
+    svg_path = write_session_inventory_svg(tmp_path / "session-inventory.svg")
+    svg = svg_path.read_text(encoding="utf-8")
+    assert svg.startswith("<svg ")
+    assert 'aria-label="Recording sessions per mouse across three modalities"' in svg
+    assert svg.count('class="platform-heading" data-modality=') == 3
+    assert svg.count('class="platform-logo"') == 3
+    assert '>A</text>' in svg and '>Neuropixels</text>' in svg
+    assert '>B</text>' in svg and '>Mesoscope</text>' in svg
+    assert '>C</text>' in svg and '>SLAP2</text>' in svg
+    assert 'id="session-inventory-legend"' in svg
+
+    session_targets = re.findall(r'<g class="session-target"([^>]*)>', svg)
+    assert session_targets
+    for attributes in session_targets:
+        assert 'data-session-id="' in attributes
+        assert 'data-session-type="' in attributes
+        assert 'data-qc-tag-labels="' in attributes
+        if 'data-session-id="unknown session id"' not in attributes:
+            for name in ("data-mouse-id", "data-date", "data-modality"):
+                assert f'{name}="' in attributes
+
+    displayed_modalities = set(re.findall(r'data-modality="([^"]+)"', svg))
+    assert {
+        "neuropixels",
+        "mesoscope",
+        "slap2-glutamate",
+        "slap2-voltage",
+    }.issubset(displayed_modalities)
+
+    failed_blocks = re.findall(
+        r'<rect class="session-block"[^>]+fill="none" '
+        r'stroke="(#[0-9A-F]{6})" stroke-width="2" pointer-events="all"/>',
+        svg,
+    )
+    assert failed_blocks
+    assert len(failed_blocks) == svg.count(
+        'class="session-qc-outline" data-qc-kind="session-fail"'
+    )
+    assert set(failed_blocks) == set(SESSION_TYPE_COLORS.values())
+
+    filled_blocks = re.findall(
+        r'<rect class="session-block"[^>]+fill="(#[0-9A-F]{6})" '
+        r'stroke="(#[0-9A-F]{6})" stroke-width="2"/>',
+        svg,
+    )
+    assert filled_blocks
+    assert all(fill == stroke for fill, stroke in filled_blocks)
+
+    qc_tag_labels = re.findall(r'data-qc-tags="([0-9,]+)"', svg)
+    assert qc_tag_labels
+    assert all(
+        numbers == sorted(numbers)
+        for label in qc_tag_labels
+        for numbers in [[int(number) for number in label.split(",")]]
+    )
+    marker_numbers = {
+        int(number)
+        for label in qc_tag_labels
+        for number in label.split(",")
+    }
+    legend = svg[svg.index('id="session-inventory-legend"') :]
+    legend_numbers = {int(number) for number in re.findall(r">(\d+)</text>", legend)}
+    assert marker_numbers <= legend_numbers
+
+    write_session_inventory_svg(svg_path)
+    assert svg_path.read_text(encoding="utf-8") == svg
+
+
+def legacy_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None:
+    provenance = json.loads(
+        SESSION_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    assert hashlib.sha256(SESSION_RECORDS_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
+    )
     assert provenance["worksheet_rows"] == 198
     assert provenance["rows"] == 198
     assert provenance["source_rows"] == 198
