@@ -184,7 +184,10 @@ for candidate in NEUROPIXELS_CANDIDATES:
 MESOSCOPE_CANDIDATES = (
     {
         "asset_id": "ab44a0f7-2864-4a30-8988-0b76aec28fa6",
-        "asset_path": "sub-832700/sub-832700_ses-multiplane-ophys-832700-2026-01-29-11-18-09_ophys.nwb",
+        "asset_path": (
+            "sub-832700/"
+            "sub-832700_ses-multiplane-ophys-832700-2026-01-29-11-18-09_ophys.nwb"
+        ),
         "asset_size": 4_671_820_041,
         "camera": ("1489075012_Eye_20260129T111733", "eye_cam_exposing"),
         "id": "mesoscope-candidate-1", "label": "Candidate 1",
@@ -193,7 +196,10 @@ MESOSCOPE_CANDIDATES = (
     },
     {
         "asset_id": "6dc5f369-7199-4242-b0c9-3874f23e644e",
-        "asset_path": "sub-846289/sub-846289_ses-multiplane-ophys-846289-2026-04-16-13-56-40_ophys.nwb",
+        "asset_path": (
+            "sub-846289/"
+            "sub-846289_ses-multiplane-ophys-846289-2026-04-16-13-56-40_ophys.nwb"
+        ),
         "asset_size": 4_291_076_055,
         "camera": ("1776371364_Eye_20260416T135611", "eye_cam_exposing"),
         "id": "mesoscope-candidate-2", "label": "Candidate 2",
@@ -202,7 +208,10 @@ MESOSCOPE_CANDIDATES = (
     },
     {
         "asset_id": "b980f6a1-0c34-4f2b-ba4e-72b2563e42de",
-        "asset_path": "sub-839909/sub-839909_ses-multiplane-ophys-839909-2026-02-26-15-11-01_ophys.nwb",
+        "asset_path": (
+            "sub-839909/"
+            "sub-839909_ses-multiplane-ophys-839909-2026-02-26-15-11-01_ophys.nwb"
+        ),
         "asset_size": 4_086_984_781,
         "camera": ("1772143800_Eye_20260226T151022", "eye_cam_exposing"),
         "id": "mesoscope-candidate-3", "label": "Candidate 3",
@@ -211,7 +220,10 @@ MESOSCOPE_CANDIDATES = (
     },
     {
         "asset_id": "cc63761d-360b-440f-ae0a-e2533334513f",
-        "asset_path": "sub-837568/sub-837568_ses-multiplane-ophys-837568-2026-02-19-13-22-26_ophys.nwb",
+        "asset_path": (
+            "sub-837568/"
+            "sub-837568_ses-multiplane-ophys-837568-2026-02-19-13-22-26_ophys.nwb"
+        ),
         "asset_size": 4_321_701_528,
         "camera": ("1771534202_Eye_20260219T132157", "eye_cam_exposing"),
         "id": "mesoscope-candidate-4", "label": "Candidate 4",
@@ -220,7 +232,10 @@ MESOSCOPE_CANDIDATES = (
     },
     {
         "asset_id": "31b0789e-de41-4c40-97c3-915919d0397a",
-        "asset_path": "sub-842971/sub-842971_ses-multiplane-ophys-842971-2026-05-06-09-36-56_ophys.nwb",
+        "asset_path": (
+            "sub-842971/"
+            "sub-842971_ses-multiplane-ophys-842971-2026-05-06-09-36-56_ophys.nwb"
+        ),
         "asset_size": 4_574_181_998,
         "camera": ("1778083903_Eye_20260506T093629", "eye_cam_exposing"),
         "id": "mesoscope-candidate-5", "label": "Candidate 5",

@@ -5277,7 +5277,9 @@ def append_session_block(
         f' data-mouse-id="{escape(mouse_id, quote=True)}"' if mouse_id else ""
     )
     date_attribute = f' data-date="{escape(date, quote=True)}"' if date else ""
-    context_attribute = f' data-session-type="{escape(SESSION_CONTEXT_LABELS[context], quote=True)}"'
+    context_attribute = (
+        f' data-session-type="{escape(SESSION_CONTEXT_LABELS[context], quote=True)}"'
+    )
     qc_tags_attribute = (
         f' data-qc-tag-labels="{escape("; ".join(qc_tags), quote=True)}"'
         if qc_tags
@@ -5393,7 +5395,6 @@ def write_session_inventory_svg(
     width = 1150
     height = 680
     panel_gap = 75
-    chart_top = 85
     chart_bottom = 570
     chart_offset = 104
     heading_label_offset = 66
