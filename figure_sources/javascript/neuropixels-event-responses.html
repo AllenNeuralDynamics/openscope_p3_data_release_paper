@@ -24,14 +24,15 @@ __NEUROPIXELS_EVENT_CSS__
 
       <section id="interactive-view">
         <nav id="context-tabs" class="context-tabs" aria-label="Predictive-processing context"></nav>
-        <div class="control-grid">
+        <div class="interactive-controls">
+          <div class="control-grid">
           <label>
             Event
             <select id="event-select"></select>
           </label>
           <label>
-            Probe
-            <select id="probe-select"></select>
+            Area
+            <select id="area-select" aria-label="Area for response filtering"></select>
           </label>
           <fieldset>
             <legend>Units</legend>
@@ -81,47 +82,43 @@ __NEUROPIXELS_EVENT_CSS__
               Subtract baseline
             </span>
           </label>
-          <label id="response-selection-control">
-            <span id="response-selection-label">Area</span>
-            <select id="area-select" aria-label="Area for mean response"></select>
-            <select id="unit-select" aria-label="Individual unit" hidden></select>
+          <label id="response-selection-control" hidden>
+            Unit
+            <select id="unit-select" aria-label="Individual unit"></select>
           </label>
-        </div>
+          </div>
 
-        <div class="heatmap-toolbar">
-          <fieldset>
-            <legend>Heatmap value</legend>
-            <div id="metric-tabs" class="button-group">
-              <button type="button" data-metric="mismatch" aria-pressed="true">Mismatch firing rate</button>
-              <button type="button" data-metric="control" aria-pressed="false">Control firing rate</button>
-              <button type="button" data-metric="difference" aria-pressed="false">Mismatch − control</button>
-              <button type="button" data-metric="mismatch-zscore" aria-pressed="false">Mismatch z score</button>
-              <button type="button" data-metric="control-zscore" aria-pressed="false">Control z score</button>
-            </div>
-          </fieldset>
-          <label>
-            Sort rows
-            <select id="sort-select">
-              <option value="response">Response magnitude</option>
-              <option value="peak-time">Time to positive peak</option>
-              <option value="rastermap">Rastermap</option>
-              <option value="depth">Probe depth</option>
-              <option value="unit">Unit ID</option>
-            </select>
-          </label>
-          <label>
-            Color limit
-            <input id="color-limit" type="range" min="25" max="200" value="100" step="5">
-            <output id="color-limit-value">100%</output>
-          </label>
+          <div class="heatmap-toolbar">
+            <fieldset>
+              <legend>Response conditioning</legend>
+              <div id="metric-tabs" class="button-group">
+                <button type="button" data-metric="mismatch" aria-pressed="true">Mismatch firing rate</button>
+                <button type="button" data-metric="control" aria-pressed="false">Control firing rate</button>
+                <button type="button" data-metric="difference" aria-pressed="false">Mismatch − control</button>
+                <button type="button" data-metric="mismatch-zscore" aria-pressed="false">Mismatch z-score</button>
+                <button type="button" data-metric="control-zscore" aria-pressed="false">Control z-score</button>
+              </div>
+            </fieldset>
+            <label>
+              Sort rows
+              <select id="sort-select">
+                <option value="area">Area</option>
+                <option value="response">Response magnitude</option>
+                <option value="peak-time">Time to positive peak</option>
+                <option value="rastermap">Rastermap</option>
+              </select>
+            </label>
+            <label>
+              Color limit
+              <input id="color-limit" type="range" min="25" max="200" value="100" step="5">
+              <output id="color-limit-value">100%</output>
+            </label>
+          </div>
         </div>
 
         <section class="heatmap-panel" aria-labelledby="heatmap-title">
           <div class="panel-heading">
-            <div>
-              <h2 id="heatmap-title">Unit response heatmap</h2>
-              <p id="heatmap-detail"></p>
-            </div>
+            <h2 id="heatmap-title">Unit response heatmap</h2>
             <div class="color-key-wrap">
               <div id="color-key" class="color-key" aria-label="Heatmap color scale"></div>
               <div class="color-key-labels">
@@ -146,10 +143,7 @@ __NEUROPIXELS_EVENT_CSS__
         </section>
 
         <article class="response-panel">
-          <h2 id="response-title">Area-mean spike-density function</h2>
-          <p id="response-note" class="response-note">
-            Shading shows ±1 SEM across units; dashed guides mark mismatch onset and offset.
-          </p>
+          <h2 id="response-title">Mismatch response averaged over units in All areas</h2>
           <canvas
             id="response-canvas"
             width="1200"
@@ -158,7 +152,6 @@ __NEUROPIXELS_EVENT_CSS__
             aria-label="Mismatch and matched-control spike-density functions"
           ></canvas>
         </article>
-        <p class="source-note" id="source-note"></p>
       </section>
 
       <section id="static-view" class="static-view" hidden>

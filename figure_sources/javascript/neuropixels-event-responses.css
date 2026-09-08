@@ -29,11 +29,15 @@ input {
   font: inherit;
 }
 
+input[type="range"] {
+  accent-color: #59605e;
+}
+
 button:focus-visible,
 select:focus-visible,
 input:focus-visible,
 canvas:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  outline: 3px solid rgba(89, 96, 94, 0.28);
   outline-offset: 2px;
 }
 
@@ -44,7 +48,7 @@ canvas:focus-visible {
   padding: 18px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: var(--paper);
+  background: transparent;
 }
 
 .is-embedded .response-viewer {
@@ -107,7 +111,12 @@ h2 {
 }
 
 .view-switch button[aria-pressed="true"],
-.button-group button[aria-pressed="true"],
+.button-group button[aria-pressed="true"] {
+  border-color: #7e8783;
+  background: #eef0ef;
+  color: var(--ink);
+}
+
 .context-tabs button[aria-pressed="true"] {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 11%, white);
@@ -120,18 +129,22 @@ h2 {
   border-bottom: 1px solid var(--line);
 }
 
+.interactive-controls {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: transparent;
+}
+
 .control-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--wash);
 }
 
 #response-selection-control {
-  grid-column: span 2;
+  grid-column: span 1;
 }
 
 fieldset,
@@ -181,7 +194,7 @@ select {
   width: 17px;
   height: 17px;
   margin: 0;
-  accent-color: var(--accent);
+  accent-color: #59605e;
 }
 
 .checkbox-control > span {
@@ -198,13 +211,14 @@ select {
   width: 17px;
   height: 17px;
   margin: 0;
-  accent-color: var(--accent);
+  accent-color: #59605e;
 }
 
 .range-control input[type="range"] {
   display: block;
   width: 100%;
   margin-top: 7px;
+  accent-color: #59605e;
 }
 
 .range-control output {
@@ -214,11 +228,23 @@ select {
 }
 
 .heatmap-toolbar {
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 185px 170px;
+  align-items: end;
   margin-top: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+#metric-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  flex-wrap: nowrap;
+}
+
+#metric-tabs button {
+  padding-inline: 7px;
+  white-space: nowrap;
 }
 
 .heatmap-toolbar output {
@@ -236,22 +262,16 @@ select {
 .heatmap-panel,
 .response-panel,
 .unit-panel {
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  margin-top: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
 }
 
-.panel-heading p,
-.response-note,
-.source-note {
+.panel-heading p {
   margin-bottom: 0;
   color: var(--muted);
   font-size: var(--figure-type-body);
-}
-
-.response-note {
-  margin-bottom: 4px;
 }
 
 .color-key {
@@ -334,6 +354,14 @@ canvas {
   .control-grid {
     grid-template-columns: 1fr 1fr 1fr;
   }
+
+  .heatmap-toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .heatmap-toolbar fieldset {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 600px) {
@@ -342,13 +370,20 @@ canvas {
   }
 
   .viewer-header,
-  .panel-heading,
-  .heatmap-toolbar {
+  .panel-heading {
     align-items: stretch;
     flex-direction: column;
   }
 
   .control-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .heatmap-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  #metric-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

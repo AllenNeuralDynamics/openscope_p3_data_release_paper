@@ -1,5 +1,5 @@
 {
-  "analysisSignature": "ffdafa7a1121a37592dcd233749734e9f0fa0939c8b5bdbb5aa4655a57e8ea5d",
+  "analysisSignature": "e6b8ec02d1161293e9a79cfb8920b68380691d82537fbcb40531dd17c500aeaf",
   "configuredSessions": [
     {
       "asset_id": "03973a42-cf55-476f-80d7-85bc402fa57b",
@@ -60,8 +60,13 @@
     "path": "src/openscope_p3_publication/neural_responses.py",
     "sha256": "726d46534ce056953502bf72ad37caed2126461e1b7bcd06bcc29f10554271a3"
   },
+  "ontology": {
+    "graphOrderField": "BrainRegions.order",
+    "packageVersion": "1.2.0",
+    "sourceField": "Allen structure-tree graph_order"
+  },
   "outputPath": "figure_sources/data/neuropixels-event-responses.json",
-  "outputSha256": "b134c02daf0a74efc33854b25c0ca546363f692551b02ad652c89e3632ff5998",
+  "outputSha256": "b4cb9d8913d3657ec48fff353b69c50a6870d8a15674b12b73cd2831aa5e7b3a",
   "rastermap": {
     "packageVersion": "1.0",
     "parameters": {
@@ -78,13 +83,13 @@
       "time_lag_window": 0
     }
   },
-  "retrievedDate": "2026-08-24",
+  "retrievedDate": "2026-08-28",
   "script": {
     "path": "scripts/extract_neuropixels_event_responses.py",
-    "sha256": "ba37b22627cb54d516136b961f40f201795cb820f3d70cbde7e7f443aa0d1f50"
+    "sha256": "b4a6ae01c09c3c39b2e2cce9b8447f4012141e7e42da2317f2bc2c7b4ef78607"
   },
   "sessionCount": 4,
   "totalQcUnits": 7266,
   "totalUnits": 13682,
-  "version": 8
+  "version": 9
 }
