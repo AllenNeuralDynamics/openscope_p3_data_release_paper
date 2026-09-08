@@ -4,7 +4,6 @@ title: OpenScope Predictive Processing Community Project - Data Release
 
 :::{warning} Author list not final
 The displayed author list and author order are provisional and will be finalized before manuscript submission.
-
 **[Add or update your authorship contribution](https://data.allenneuraldynamics.org/contributions/add?project=p3_data_release).**
 :::
 
