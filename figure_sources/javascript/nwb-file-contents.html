@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>NWB file contents</title>
+  <style>
+__NWB_FILE_CONTENTS_CSS__
+  </style>
+</head>
+<body>
+  <main class="viewer" id="nwb-file-contents-viewer">
+    <div class="view-switch" role="group" aria-label="Interactive or static view">
+      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
+      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
+    </div>
+
+    <section id="interactive-view" aria-label="Interactive NWB structure explorer">
+      <nav class="modality-tabs" data-tabs="interactive" aria-label="Representative NWB modality">
+        <button type="button" class="modality-tab active" data-modality="neuropixels" aria-pressed="true">Neuropixels</button>
+        <button type="button" class="modality-tab" data-modality="mesoscope" aria-pressed="false">Mesoscope</button>
+        <button type="button" class="modality-tab" data-modality="slap2" aria-pressed="false">SLAP2</button>
+      </nav>
+      <p class="view-note">Open a field to inspect nested containers, tables, dataset shapes, and representative PyNWB access paths.</p>
+      <div class="panel active" data-view-panel="interactive" data-modality="neuropixels">__NEUROPIXELS_TREE__</div>
+      <div class="panel" data-view-panel="interactive" data-modality="mesoscope" hidden>__MESOSCOPE_TREE__</div>
+      <div class="panel" data-view-panel="interactive" data-modality="slap2" hidden>__SLAP2_TREE__</div>
+    </section>
+
+    <section id="static-view" aria-label="Static NWB question tables" hidden>
+      <div class="panel static-panel">
+        <section class="static-section" aria-labelledby="common-fields-heading">
+        <h2 id="common-fields-heading">Common fields</h2>
+        <p>Session, subject, stimulus, locomotion, and eye-tracking data use a common NWB organization and synchronized time base.</p>
+        <table><thead><tr><th>Name</th><th>Description</th><th>Format</th><th>NWB Path</th></tr></thead><tbody>
+          <tr><td>Session identity</td><td>Unique file identifier, session identifier, description, and recording start time.</td><td>Scalar text and datetime metadata</td><td><code>nwbfile.identifier</code><br><code>nwbfile.session_id</code><br><code>nwbfile.session_start_time</code></td></tr>
+          <tr><td>Subject metadata</td><td>Mouse identifier, species, sex, age, date of birth, and genotype.</td><td><code>Subject</code> container</td><td><code>nwbfile.subject</code></td></tr>
+          <tr><td>Acquisition devices</td><td>Registered recording hardware; concrete device types differ by modality.</td><td>Mapping of <code>Device</code> containers</td><td><code>nwbfile.devices</code></td></tr>
+          <tr><td>Stimulus presentations</td><td>One timestamped table per experimental, control, receptive-field, or movie block.</td><td><code>TimeIntervals</code> tables</td><td><code>nwbfile.intervals[table_name]</code></td></tr>
+          <tr><td>Stimulus timing</td><td>Display-synchronized start and stop times for every presentation.</td><td>Float columns in a dynamic table</td><td><code>nwbfile.intervals[table_name]["start_time"]</code><br><code>nwbfile.intervals[table_name]["stop_time"]</code></td></tr>
+          <tr><td>Stimulus parameters</td><td>Trial identity and visual parameters such as orientation, contrast, duration, spatial frequency, and temporal frequency.</td><td>Numeric and categorical table columns</td><td><code>nwbfile.intervals[table_name].to_dataframe()</code></td></tr>
+          <tr><td>Running speed</td><td>Linear locomotion speed aligned to the session clock.</td><td>Timestamped <code>TimeSeries</code> array</td><td><code>nwbfile.processing["running"]["running_speed"]</code></td></tr>
+          <tr><td>Wheel rotation</td><td>Unwrapped wheel rotation aligned to running speed and stimulus timing.</td><td>Timestamped <code>TimeSeries</code> array</td><td><code>nwbfile.processing["running"]["running_wheel_rotation"]</code></td></tr>
+          <tr><td>Eye fits</td><td>Pupil, corneal-reflection, and eye-perimeter center, width, height, angle, raw area, cleaned area, and timestamps.</td><td>Three <code>DynamicTable</code> objects</td><td><code>nwbfile.processing["eye_tracking"]["pupil"]</code><br><code>nwbfile.processing["eye_tracking"]["corneal_reflection"]</code><br><code>nwbfile.processing["eye_tracking"]["ellipse"]</code></td></tr>
+          <tr><td>Likely blinks</td><td>Boolean likely-blink flag for each synchronized eye-camera sample.</td><td>Boolean <code>TimeSeries</code></td><td><code>nwbfile.processing["eye_tracking"]["likely_blink_times"]</code></td></tr>
+        </tbody></table>
+        </section>
+        <section class="static-section" aria-labelledby="neuropixels-fields-heading">
+        <h2 id="neuropixels-fields-heading">Neuropixels-specific fields</h2>
+        <p>Sorted units, probe/electrode anatomy, quality metrics, waveforms, and local field potentials.</p>
+        <table><thead><tr><th>Name</th><th>Description</th><th>Format</th><th>NWB Path</th></tr></thead><tbody>
+          <tr><td>Sorted units</td><td>One row per sorted unit with identity, probe, shank, firing properties, anatomical estimates, and quality metrics.</td><td><code>Units</code> dynamic table</td><td><code>nwbfile.units</code></td></tr>
+          <tr><td>Spike times</td><td>All detected spike timestamps for each unit.</td><td>Ragged float array per unit</td><td><code>nwbfile.units["spike_times"][unit_row]</code></td></tr>
+          <tr><td>Mean waveforms</td><td>Average and standard-deviation spike waveforms across channels for each unit.</td><td>Ragged multidimensional arrays</td><td><code>nwbfile.units["waveform_mean"][unit_row]</code><br><code>nwbfile.units["waveform_sd"][unit_row]</code></td></tr>
+          <tr><td>Unit yield and activity</td><td>Spike count, firing rate, firing range, amplitude, and median amplitude.</td><td>Numeric dynamic-table columns</td><td><code>nwbfile.units[["num_spikes", "firing_rate", "amplitude"]]</code></td></tr>
+          <tr><td>Unit quality metrics</td><td>Presence ratio, amplitude cutoff, ISI violations, SNR, d-prime, isolation distance, silhouette, refractory-period metrics, and default QC classification.</td><td>Numeric and categorical table columns</td><td><code>nwbfile.units.to_dataframe()</code></td></tr>
+          <tr><td>Unit anatomical position</td><td>Estimated CCF coordinates, depth, probe, shank, and linked electrode region for each unit.</td><td>Numeric columns and <code>DynamicTableRegion</code></td><td><code>nwbfile.units["electrodes"]</code><br><code>nwbfile.units[["estimated_x", "estimated_y", "estimated_z"]]</code></td></tr>
+          <tr><td>Electrode table</td><td>Every recorded channel with probe group, channel name, anatomical location, physical scaling, relative position, and CCF coordinates.</td><td>Electrodes <code>DynamicTable</code></td><td><code>nwbfile.electrodes</code></td></tr>
+          <tr><td>Probe groups</td><td>ProbeA through ProbeF electrode groups linked to registered Neuropixels devices; the exact recorded subset varies by session.</td><td>Mapping of <code>ElectrodeGroup</code> objects</td><td><code>nwbfile.electrode_groups</code></td></tr>
+          <tr><td>Local field potential</td><td>Downsampled voltage by channel and probe, with timestamps and electrode-region links.</td><td>Probe-specific <code>ElectricalSeries</code> arrays</td><td><code>nwbfile.processing["ecephys"]["LFP"]["ElectricalSeriesProbeA-LFP"]</code></td></tr>
+          <tr><td>Optotagging presentations</td><td>Laser timing and parameters for 5 Hz, 40 Hz, and raised-cosine photostimulation.</td><td><code>TimeIntervals</code> tables</td><td><code>nwbfile.intervals["5 hz pulse train_presentations"]</code></td></tr>
+        </tbody></table>
+        </section>
+        <section class="static-section" aria-labelledby="mesoscope-fields-heading">
+        <h2 id="mesoscope-fields-heading">Mesoscope-specific fields</h2>
+        <p>Eight VISp/VISl imaging planes with ROI masks, fluorescence products, inferred events, and field-of-view images.</p>
+        <table><thead><tr><th>Name</th><th>Description</th><th>Format</th><th>NWB Path</th></tr></thead><tbody>
+          <tr><td>Imaging planes</td><td>Four VISp and four VISl planes with device, optical channel, indicator, excitation wavelength, imaging rate, cortical location, grid spacing, and field origin.</td><td>Mapping of eight <code>ImagingPlane</code> containers</td><td><code>nwbfile.imaging_planes</code></td></tr>
+          <tr><td>Plane processing modules</td><td>One module per imaging plane linking all segmentation, trace, event, and image products.</td><td>Eight <code>ProcessingModule</code> containers</td><td><code>nwbfile.processing[plane]</code></td></tr>
+          <tr><td>ROI segmentation</td><td>One ROI row per segmented soma or dendrite, linked to its imaging plane and reference images.</td><td><code>PlaneSegmentation</code> dynamic table</td><td><code>nwbfile.processing[plane]["image_segmentation"]["roi_table"]</code></td></tr>
+          <tr><td>ROI image masks</td><td>Dense 512 x 512 weighted mask for every segmented ROI.</td><td>ROI x height x width float array</td><td><code>nwbfile.processing[plane]["image_segmentation"]["roi_table"]["image_mask"]</code></td></tr>
+          <tr><td>ROI classifications</td><td>Soma/dendrite labels and corresponding classifier probabilities.</td><td>Boolean and float table columns</td><td><code>nwbfile.processing[plane]["image_segmentation"]["roi_table"].to_dataframe()</code></td></tr>
+          <tr><td>Raw ROI fluorescence</td><td>Mean fluorescence within each ROI before neuropil correction.</td><td>Time x ROI <code>RoiResponseSeries</code></td><td><code>nwbfile.processing[plane]["raw_timeseries"]["ROI_fluorescence_timeseries"]</code></td></tr>
+          <tr><td>Neuropil fluorescence</td><td>Fluorescence measured in the surrounding neuropil and the separately stored neuropil-corrected trace.</td><td>Two time x ROI <code>RoiResponseSeries</code> arrays</td><td><code>nwbfile.processing[plane]["neuropil_fluorescence_timeseries"]</code><br><code>nwbfile.processing[plane]["neuropil_corrected_timeseries"]</code></td></tr>
+          <tr><td>dF/F traces</td><td>Baseline-normalized fluorescence for every ROI, stored in percent.</td><td>Time x ROI <code>RoiResponseSeries</code> array</td><td><code>nwbfile.processing[plane]["dff_timeseries"]["dff_timeseries"]</code></td></tr>
+          <tr><td>Inferred events</td><td>Deconvolved neural-event values for every ROI on the same timestamps as fluorescence.</td><td>Time x ROI <code>RoiResponseSeries</code> array</td><td><code>nwbfile.processing[plane]["event_timeseries"]</code></td></tr>
+          <tr><td>Field-of-view images</td><td>Average projection, maximum projection, and segmentation-mask summary image for each plane.</td><td>512 x 512 grayscale image set</td><td><code>nwbfile.processing[plane]["images"]</code></td></tr>
+        </tbody></table>
+        </section>
+        <section class="static-section" aria-labelledby="slap2-fields-heading">
+        <h2 id="slap2-fields-heading">SLAP2-specific fields</h2>
+        <p>Modern files contain two DMD imaging paths with weighted source masks, dual-channel fluorescence, baseline and dF/F traces, and structural/activity images. Pilot-era layouts are intentionally omitted.</p>
+        <table><thead><tr><th>Name</th><th>Description</th><th>Format</th><th>NWB Path</th></tr></thead><tbody>
+          <tr><td>DMD imaging planes</td><td>DMD1 and DMD2 optical paths with device, optical channel, indicator, excitation wavelength, imaging rate, and cortical location.</td><td>Two <code>ImagingPlane</code> containers</td><td><code>nwbfile.imaging_planes["ImagingPlane_DMD1"]</code><br><code>nwbfile.imaging_planes["ImagingPlane_DMD2"]</code></td></tr>
+          <tr><td>Source segmentation</td><td>One table per DMD path linking extracted synaptic or somatic sources to the corresponding imaging plane.</td><td>Two <code>PlaneSegmentation</code> dynamic tables</td><td><code>nwbfile.processing["ophys"]["ImageSegmentation"]["PlaneSegmentation_DMD1"]</code></td></tr>
+          <tr><td>Weighted source masks</td><td>Ragged lists of source-pixel x/y coordinates and weights, indexed once per extracted source.</td><td>Ragged compound <code>pixel_mask</code> array</td><td><code>nwbfile.processing["ophys"]["ImageSegmentation"]["PlaneSegmentation_DMD1"]["pixel_mask"]</code></td></tr>
+          <tr><td>Source axial bounds</td><td>Minimum and maximum z indices associated with every extracted source.</td><td>Integer dynamic-table columns</td><td><code>nwbfile.processing["ophys"]["ImageSegmentation"]["PlaneSegmentation_DMD1"][["z_min", "z_max"]]</code></td></tr>
+          <tr><td>Green-channel dF/F</td><td>Baseline-normalized green-channel signal for each source, typically glutamate or voltage indicator fluorescence.</td><td>Time x source <code>RoiResponseSeries</code></td><td><code>nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_dFF_green"]</code></td></tr>
+          <tr><td>Red-channel dF/F</td><td>Baseline-normalized red-channel signal for each source, including the concurrently recorded reference or calcium channel.</td><td>Time x source <code>RoiResponseSeries</code></td><td><code>nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_dFF_red"]</code></td></tr>
+          <tr><td>Baseline fluorescence</td><td>Green- and red-channel F0 estimates corresponding to the source traces.</td><td>Two time x source <code>RoiResponseSeries</code> arrays</td><td><code>nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_F0_green"]</code><br><code>nwbfile.processing["ophys"]["Fluorescence_DMD1"]["DMD1_F0_red"]</code></td></tr>
+          <tr><td>Mean images</td><td>Mean structural image for channel 0 and channel 1 in each DMD field of view.</td><td>Single-frame grayscale image series</td><td><code>nwbfile.processing["ophys"]["DMD1_mean_image_channel0"]</code><br><code>nwbfile.processing["ophys"]["DMD1_mean_image_channel1"]</code></td></tr>
+          <tr><td>Activity image</td><td>Source-localization activity projection for each DMD imaging path.</td><td>Single-frame grayscale image series</td><td><code>nwbfile.processing["ophys"]["DMD1_activity_image"]</code></td></tr>
+        </tbody></table>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script>
+__NWB_FILE_CONTENTS_JS__
+  </script>
+</body>
+</html>

@@ -16,6 +16,10 @@ dev = [
   "pytest>=8,<9",
   "ruff>=0.12,<1",
 ]
+nwb-view = [
+  "pynwb>=3.1,<4",
+  "remfile>=0.1,<1",
+]
 
 [project.scripts]
 build-publication-figures = "openscope_p3_publication.figures:main"

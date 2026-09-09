@@ -81,10 +81,11 @@ html.is-embedded .viewer { min-height: 0; }
 }
 
 .static-shell img {
-  width: 100%;
-  min-width: 1000px;
+  width: 90%;
+  min-width: 900px;
   height: auto;
   display: block;
+  margin-inline: auto;
 }
 
 .modality-tabs {

@@ -75,6 +75,7 @@ from openscope_p3_publication.figures import (
     load_unit_yield_data,
     modality_session_records,
     session_panel_rows,
+    session_table_modality,
     text_sha256_matches,
     total_duration_minutes,
     write_basic_stimuli_plan_svg,
@@ -1565,7 +1566,6 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert '<div id="playback-view">' in html
     assert 'selectView("playback")' in html
     assert 'id="static-panel"' in html
-    assert "data:image/svg+xml;base64," in html
     assert "detailed context, control, receptive-field, and zebra-movie blocks" in html
     assert "selectView" in html
     assert 'id="stimulus-canvas"' in html
@@ -1850,7 +1850,7 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
 
     assert 'id="data-explorer"' in html
     assert "Download visible rows as CSV" in html
-    assert "Two-photon mesoscope" in html
+    assert ">Mesoscope</text>" in html
     assert "832700_2026-01-30" in html
     assert "841193" in html
     assert 'data-view="interactive"' in html
@@ -1859,7 +1859,14 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
     assert 'class="view-button active" data-view="interactive" aria-pressed="true"' in html
     assert '<div id="interactive-view">' in html
     assert 'selectView("interactive")' in html
-    assert "data:image/svg+xml;base64," in html
+    assert '<g class="session-target" data-session-id=' in html
+    assert "__SESSION_INVENTORY_SVG__" not in html
+    assert "focusDataAccess" in html
+    assert 'selectTable("dataAccess")' in html
+    assert "No Data Access record is available" in html
+    assert 'target.dataset.sessionId === "unknown session id"' in html
+    assert 'target.classList.add("is-clickable")' in html
+    assert 'row.classList.add("selected-session")' in html
     assert "selectView" in html
     assert 'document.querySelector("body > main")' in html
     assert 'classList.add("is-embedded")' in html
@@ -1917,6 +1924,21 @@ def test_data_access_table_uses_modality_specific_columns(tmp_path: Path) -> Non
     ]
 
 
+def test_slap2_table_modality_uses_intended_green_channel() -> None:
+    assert session_table_modality({
+        "modality": "slap2",
+        "intended_recording_green_channel": "iGluSnFR4f",
+    }) == "slap2-glutamate"
+    assert session_table_modality({
+        "modality": "slap2",
+        "intended_recording_green_channel": "ASAP7y",
+    }) == "slap2-voltage"
+    assert session_table_modality({
+        "modality": "slap2",
+        "intended_recording_green_channel": "",
+    }) == "slap2"
+
+
 def test_data_access_snapshot_is_source_backed() -> None:
     provenance = json.loads(DATA_ACCESS_PROVENANCE_PATH.read_text(encoding="utf-8"))
     assert hashlib.sha256(DATA_ACCESS_PATH.read_bytes()).hexdigest() == (
@@ -1933,7 +1955,8 @@ def test_data_access_explorer_source_has_required_controls() -> None:
         Path(__file__).parents[1] / "figure_sources" / "javascript" / "data-explorer.js"
     ).read_text(encoding="utf-8")
 
-    assert '["animals", "sessions", "dataAccess"]' in javascript
+    assert '["inventory", "animals", "sessions", "dataAccess"]' in javascript
+    assert 'inventory: "Session Inventory"' in javascript
     assert 'dataAccess: "Data Access"' in javascript
     assert 'table.columnViews[elements.modality.value]' in javascript
     assert 'state.kind === "sessions" || state.kind === "dataAccess"' in javascript
@@ -1941,6 +1964,90 @@ def test_data_access_explorer_source_has_required_controls() -> None:
 
 
 def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None:
+    provenance = json.loads(
+        SESSION_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    assert hashlib.sha256(SESSION_RECORDS_PATH.read_bytes()).hexdigest() == (
+        provenance["vendored_sha256"]
+    )
+
+    payload = load_experimental_session_records()
+    records = payload["records"]
+    assert len(records) == provenance["rows"] == provenance["source_rows"]
+    assert {
+        modality: sum(record["modality"] == modality for record in records)
+        for modality in ("neuropixels", "mesoscope", "slap2")
+    } == provenance["modality_rows"]
+
+    svg_path = write_session_inventory_svg(tmp_path / "session-inventory.svg")
+    svg = svg_path.read_text(encoding="utf-8")
+    assert svg.startswith("<svg ")
+    assert 'aria-label="Recording sessions per mouse across three modalities"' in svg
+    assert svg.count('class="platform-heading" data-modality=') == 3
+    assert svg.count('class="platform-logo"') == 3
+    assert '>A</text>' in svg and '>Neuropixels</text>' in svg
+    assert '>B</text>' in svg and '>Mesoscope</text>' in svg
+    assert '>C</text>' in svg and '>SLAP2</text>' in svg
+    assert 'id="session-inventory-legend"' in svg
+
+    session_targets = re.findall(r'<g class="session-target"([^>]*)>', svg)
+    assert session_targets
+    for attributes in session_targets:
+        assert 'data-session-id="' in attributes
+        assert 'data-session-type="' in attributes
+        assert 'data-qc-tag-labels="' in attributes
+        if 'data-session-id="unknown session id"' not in attributes:
+            for name in ("data-mouse-id", "data-date", "data-modality"):
+                assert f'{name}="' in attributes
+
+    displayed_modalities = set(re.findall(r'data-modality="([^"]+)"', svg))
+    assert {
+        "neuropixels",
+        "mesoscope",
+        "slap2-glutamate",
+        "slap2-voltage",
+    }.issubset(displayed_modalities)
+
+    failed_blocks = re.findall(
+        r'<rect class="session-block"[^>]+fill="none" '
+        r'stroke="(#[0-9A-F]{6})" stroke-width="2" pointer-events="all"/>',
+        svg,
+    )
+    assert failed_blocks
+    assert len(failed_blocks) == svg.count(
+        'class="session-qc-outline" data-qc-kind="session-fail"'
+    )
+    assert set(failed_blocks) == set(SESSION_TYPE_COLORS.values())
+
+    filled_blocks = re.findall(
+        r'<rect class="session-block"[^>]+fill="(#[0-9A-F]{6})" '
+        r'stroke="(#[0-9A-F]{6})" stroke-width="2"/>',
+        svg,
+    )
+    assert filled_blocks
+    assert all(fill == stroke for fill, stroke in filled_blocks)
+
+    qc_tag_labels = re.findall(r'data-qc-tags="([0-9,]+)"', svg)
+    assert qc_tag_labels
+    assert all(
+        numbers == sorted(numbers)
+        for label in qc_tag_labels
+        for numbers in [[int(number) for number in label.split(",")]]
+    )
+    marker_numbers = {
+        int(number)
+        for label in qc_tag_labels
+        for number in label.split(",")
+    }
+    legend = svg[svg.index('id="session-inventory-legend"') :]
+    legend_numbers = {int(number) for number in re.findall(r">(\d+)</text>", legend)}
+    assert marker_numbers <= legend_numbers
+
+    write_session_inventory_svg(svg_path)
+    assert svg_path.read_text(encoding="utf-8") == svg
+
+
+def legacy_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None:
     provenance = json.loads(
         SESSION_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8")
     )
@@ -2041,14 +2148,20 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
     assert "Motion correction issue" not in svg
     assert "SLAP2 stopped early" in svg
     assert svg.count(">Cell matching problems</text>") == 1
-    assert svg.count('class="session-qc-outline"') == 18
-    assert svg.count('class="session-qc-outline" data-qc-kind="session-fail"') == 18
+    assert svg.count('class="session-qc-outline"') == 17
+    assert svg.count('class="session-qc-outline" data-qc-kind="session-fail"') == 17
+    assert svg.count('class="session-target" data-session-id=') > 0
+    assert "<title>" not in svg
+    assert 'data-session-id="unknown session id"' in svg
+    assert 'data-qc-tag-labels="' in svg
+    assert 'aria-label="Recording sessions per mouse across three modalities"' in svg
+    assert 'pointer-events="none"' in svg
     failed_blocks = re.findall(
         r'<rect class="session-block"[^>]+fill="none" '
-        r'stroke="(#[0-9A-F]{6})" stroke-width="2"/>',
+        r'stroke="(#[0-9A-F]{6})" stroke-width="2" pointer-events="all"/>',
         svg,
     )
-    assert len(failed_blocks) == 18
+    assert len(failed_blocks) == 17
     assert set(failed_blocks) == {
         SESSION_TYPE_COLORS["sensorimotor"],
         SESSION_TYPE_COLORS["standard"],
@@ -2341,19 +2454,23 @@ def test_behavior_viewer_is_deterministic(tmp_path: Path) -> None:
 def test_eye_tracking_snapshot_is_source_backed() -> None:
     payload = load_eye_tracking_excerpts()
 
-    assert payload["version"] == 2
+    assert payload["version"] == 3
     assert payload["durationSeconds"] == 16.0
     assert [session["id"] for session in payload["sessions"]] == [
         "neuropixels",
         "mesoscope",
         "slap2",
     ]
-    assert [session["event"]["trialNumber"] for session in payload["sessions"]] == [
-        863,
-        1535,
-        1354,
+    assert [session["subject"] for session in payload["sessions"]] == [
+        "834687",
+        "839909",
+        "828409",
     ]
-    assert payload["sessions"][2]["subject"] == "829704"
+    assert [session["context"] for session in payload["sessions"]] == [
+        "Neuropixels example",
+        "Mesoscope example",
+        "SLAP2 example",
+    ]
     for session in payload["sessions"]:
         assert set(session["fits"]) == {"pupil", "corneal_reflection", "ellipse"}
         assert [session["fits"][fit_id]["label"] for fit_id in (
@@ -2362,7 +2479,10 @@ def test_eye_tracking_snapshot_is_source_backed() -> None:
             "ellipse",
         )] == ["Pupil", "Corneal reflection", "Eye ellipse"]
         for fit in session["fits"].values():
-            assert len(fit["samples"]) >= 450
+            assert fit["sampleFields"] == [
+                "time", "x", "y", "width", "height", "area", "angle", "blink"
+            ]
+            assert len(fit["samples"]) >= 390
             assert fit["samples"][0][0] <= 0.04
             assert fit["samples"][-1][0] >= 15.95
             assert any(sample[-1] for sample in fit["samples"])
@@ -2370,7 +2490,7 @@ def test_eye_tracking_snapshot_is_source_backed() -> None:
             assert 0 <= reference["medianX"] < reference["frameWidth"]
             assert 0 <= reference["medianY"] < reference["frameHeight"]
             assert reference["areaLow"] < reference["areaHigh"]
-            assert reference["validNonblinkSamples"] > 100_000
+            assert reference["validNonblinkSamples"] > 80_000
         assert session["camera"]["id"] == "eye"
         assert session["camera"]["timeMap"][0][0] <= 0
         assert session["camera"]["timeMap"][-1][0] >= payload["durationSeconds"]
@@ -2391,21 +2511,23 @@ def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
 
     assert 'id="eye-tracking-viewer"' in html
     assert 'id="eye-video"' in html
-    assert 'id="stimulus-canvas"' in html
-    assert 'id="pupil-field"' in html
+    assert 'id="stimulus-canvas"' not in html
+    assert "drawStimulus" not in html
+    assert 'id="processed-eye-video"' in html
+    assert 'id="eye-overlay"' in html
     assert 'id="pupil-trace"' in html
-    assert 'id="fit-selector"' in html
+    assert 'id="overlay-key"' in html
+    assert 'id="cleaning-toggle"' in html
     assert "SLAP2" in html
     assert "Corneal reflection" in html
     assert "Eye ellipse" in html
-    assert "Full-session median" in html
     assert "fieldReference" in html
     assert "sampleBounds" not in html
-    assert "Pupil area trace with blink intervals" in html
+    assert "Selected eye-fit area traces with blink intervals" in html
     assert "Likely blink" in html
-    assert "drawField" in html
-    assert "currentFit" in html
-    assert "selectFit" in html
+    assert "drawOverlay" in html
+    assert "cleanedSession" in html
+    assert "updateCleaningMode" in html
     assert "blinkIntervals" in html
     assert 'data-view="static"' in html
     assert 'id="static-view"' in html
@@ -2415,8 +2537,7 @@ def test_eye_tracking_viewer_is_deterministic(tmp_path: Path) -> None:
     assert html.count('id="play-toggle"') == 1
     assert 'id="stage-play"' not in html
     assert "stagePlay" not in html
-    assert '<details class="session-metadata">' in html
-    assert '<details class="session-metadata" open>' not in html
+    assert '<section class="session-metadata"' in html
     assert html.index('id="pupil-trace"') < html.index('class="session-metadata"')
     assert html.index('class="session-metadata"') < html.index('id="source-links"')
     assert "aind-open-data.s3.us-west-2.amazonaws.com" in html
@@ -2436,18 +2557,18 @@ def test_eye_tracking_static_figure_is_source_backed(tmp_path: Path) -> None:
     svg = output.read_text(encoding="utf-8")
 
     assert "Synchronized eye-tracking signals across recording modalities" in svg
-    assert svg.count('class="oddball-period"') == 9
-    assert svg.count('class="blink-period"') >= 3
+    assert 'class="oddball-period"' not in svg
+    assert svg.count('class="blink-period"') == 84
     assert svg.count("X position") == 3
     assert svg.count("Y position") == 3
     assert svg.count("Pupil area") == 3
-    for label, subject, trial in (
-        ("Neuropixels", "820454", "863"),
-        ("Mesoscope", "832700", "1535"),
-        ("SLAP2", "829704", "1354"),
+    for label, subject in (
+        ("Neuropixels", "834687"),
+        ("Mesoscope", "839909"),
+        ("SLAP2", "828409"),
     ):
         assert label in svg
-        assert f"mouse {subject} · trial {trial}" in svg
+        assert f"mouse {subject}" in svg
 
     write_eye_tracking_static_svg(output)
     assert output.read_text(encoding="utf-8") == svg

@@ -28,6 +28,11 @@ body {
   font-family: var(--figure-font-sans);
 }
 
+html.interactive-mode,
+html.interactive-mode body {
+  overflow: hidden;
+}
+
 button,
 select {
   color: inherit;
@@ -172,7 +177,7 @@ legend {
 }
 
 .context-tabs {
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
 }
 
 .selection-summary {
@@ -297,9 +302,10 @@ canvas {
 
 .static-view img {
   display: block;
-  width: 100%;
-  min-width: 900px;
+  width: 95%;
+  min-width: 855px;
   height: auto;
+  margin-inline: auto;
 }
 
 @media (max-width: 760px) {
