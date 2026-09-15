@@ -793,10 +793,16 @@ next round.
 ### 9.1 Rastermap disclosure in the interactive figure
 
 The population embedding is fit once per event, before any user filtering, over MUA and SUA
-units with a usable baseline -- about 2,400 units per session, of which only about 55 percent
-are displayed under default filters. Filtered views therefore show a **subsequence of that
-order, not a re-embedding of the survivors**, and the responsiveness filter sharpens this:
-roughly 330 of 2,412 embedded units would remain at a 25 percent responsive rate.
+units with a usable baseline for that event -- **1,801 to 2,848 per session**, 58 to 72 percent
+of sorted units, of which 62 to 70 percent are displayed under default filters. Filtered views
+therefore show a **subsequence of that order, not a re-embedding of the survivors**, and the
+responsiveness filter sharpens this: roughly 300 of the standard context's 1,958 embedded
+units would remain at a 25 percent responsive rate.
+
+The eligibility rule is the sorter label **and** a finite positive baseline standard
+deviation. Counting the label alone gives 1,936 to 3,112, overstating the embedded population
+by about 10 percent, which is what the interactive readout reported until it was corrected to
+recompute the extractor's rule from the published baseline array.
 
 The eligible set is kept as it is, because it is the superset of everything displayable under
 any filter combination, including the **All sorted** option that deliberately retains units
@@ -811,7 +817,7 @@ Two disclosures instead:
    reader the embedding included units they have filtered out.
 2. The interactive figure gains a selected-unit readout, which it currently lacks entirely.
    Under Rastermap ordering it also names the embedded population, for example
-   `330 units - Rastermap order from 2,412 embedded`, putting the caveat where
+   `300 units - Rastermap order from 1,958 embedded`, putting the caveat where
    over-interpretation would otherwise happen. Under the other three orderings the denominator
    is meaningless, so it reads `330 units`.
 

@@ -111,7 +111,7 @@ def uint16_base64_values(encoded: str) -> array:
     return values
 
 
-SNAPSHOT_VERSION = 12
+SNAPSHOT_VERSION = 13
 """Schema version of the committed snapshot.
 
 Must match ``VERSION`` in scripts/extract_neuropixels_event_responses.py. Version

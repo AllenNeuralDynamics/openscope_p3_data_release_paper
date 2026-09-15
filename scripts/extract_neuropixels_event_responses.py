@@ -104,7 +104,7 @@ MEDIA_ASSET_ROOT = "media/neuropixels-event-responses"
 DANDI_API = "https://api.dandiarchive.org/api"
 DANDISET_ID = "001637"
 DANDI_VERSION = "draft"
-VERSION = 12
+VERSION = 13
 CONDITION_ORDER = ("context", "control")
 PROBE_ORDER = tuple(f"Probe{letter}" for letter in "ABCDEF")
 COMPATIBLE_METADATA_SIGNATURES = (
@@ -1868,7 +1868,9 @@ def main() -> None:
                         "signal runs 7 to 12 times chance for most events so the "
                         "uncorrected false-discovery proportion is about 8 to 13 "
                         "percent; corrected q values remain available as a stricter "
-                        "option and are used for example-neuron selection"
+                        "option but are not used for selection anywhere in the "
+                        "figure, because at the 1000 ms duration delay no unit "
+                        "survives correction and the example panel would be empty"
                     ),
                 },
                 "q1": {

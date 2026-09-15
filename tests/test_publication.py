@@ -658,8 +658,8 @@ def test_supplementary_and_power_figures_are_current() -> None:
         "figure-10-neuropixels-event-responses.svg"
     ) in manuscript
     assert "units are distinct across sessions" in manuscript
-    assert "all 16 conditions" in manuscript
-    assert "Z-score limits default to ±3" in manuscript
+    assert "and the same 16 events" in manuscript
+    assert "z-score limits default to ±3" in manuscript
     assert "Rastermap 1.0 ordering" in manuscript
     assert "**Area** is the default row order" in manuscript
     assert "canonical parent area in Allen graph order" in manuscript
@@ -667,19 +667,40 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "minimum and maximum depth" in manuscript
     assert "shared Greys-scale limit computed from both conditions" in manuscript
     assert "causal exponential spike-density kernel" in manuscript
-    assert "standard-oddball, sensorimotor, and sequence windows span −0.75 to 0.75 s" in manuscript
-    assert "duration windows span −1.5 to 1.5 s" in manuscript
+    assert "Standard-oddball and sensorimotor windows span −0.75 to 0.75 s" in manuscript
+    assert "duration windows −1.5 to 1.5 s" in manuscript
+    # The sequence window was widened so the Q1 comparison element is visible.
+    assert "sequence windows −2 to 1 s" in manuscript
     assert "10τ (100 ms) support" in manuscript
     assert "native 2.5 ms SDF is retained" in manuscript
     assert "hidden 97.5 ms pre-window" in manuscript
     assert "without an uncertainty band" in manuscript
-    assert "Dashed guides mark only the selected mismatch presentation" in manuscript
+    assert "Dashed guides mark the selected mismatch presentation" in manuscript
     assert "SST units have a positive 5 Hz optotagging response" in manuscript
     assert "±1 SEM across neurons" in manuscript
     assert "**Subtract baseline** control" in manuscript
-    assert "48 frontal, visual, hippocampal, or thalamic areas" in manuscript
-    assert "13,682 sorted units" in manuscript
-    assert "7,266 passed the manuscript QC thresholds" in manuscript
+    assert "50 frontal, visual, hippocampal, and thalamic areas" in manuscript
+    assert "12,968 sorted units" in manuscript
+    assert "8,093 passed the manuscript QC thresholds" in manuscript
+    # The four sessions come from 830794, not the 830846 the figure first used.
+    # Scoped to the caption: 830846 is a real session listed under data records.
+    figure_caption = manuscript[
+        manuscript.index("Neuropixels mismatch responses by predictive-processing")
+    :]
+    figure_caption = figure_caption[: figure_caption.index("\n:::")]
+    assert "mouse 830794" in figure_caption
+    assert "830846" not in figure_caption
+    # Disclosures the caption must carry, each recording a real limitation.
+    assert "subsequence of that fixed order, not a re-embedding" in manuscript
+    assert "hatched, not shaded" in manuscript
+    assert "selected on the statistical test rather than on the plotted effect" in manuscript
+    assert "revised upstream in August 2026" in manuscript
+    # Responsiveness is defined in prose, not in the caption.
+    assert "### Defining responsiveness per mismatch event" in manuscript
+    assert "paired Wilcoxon signed-rank test across" in manuscript
+    assert "two-sided Mann-Whitney *U*" in manuscript
+    assert "no unit survives correction at all" in manuscript
+    assert "with the difference in immediate stimulus history" in manuscript
     for obsolete in (
         "segmentation-neuropixels.html",
         "segmentation-mesoscope.html",

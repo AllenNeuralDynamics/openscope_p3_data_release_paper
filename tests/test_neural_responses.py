@@ -263,7 +263,7 @@ def test_neuron_type_classification(
 def test_neuropixels_event_snapshot_is_source_backed() -> None:
     payload = load_neuropixels_event_responses()
 
-    assert payload["version"] == 12
+    assert payload["version"] == 13
     assert payload["subject"] == "830794"
     assert payload["sessionOrder"] == [
         "standard",

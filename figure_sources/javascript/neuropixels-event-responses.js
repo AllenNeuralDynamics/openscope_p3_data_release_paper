@@ -398,7 +398,21 @@
     );
   }
 
-  function renderUnitCount(indices) {
+  function embeddedUnitCount(atlas) {
+    // Must match the extractor's Rastermap eligibility, which is a sorter
+    // label of MUA or SUA *and* a usable baseline for this event. Counting the
+    // label alone overstates the embedded population by about 10%.
+    const session = currentSession();
+    let count = 0;
+    session.units.forEach((unit, unitIndex) => {
+      if (!["mua", "sua"].includes(unit.decoderLabel)) return;
+      const std = atlas.baselineStd[baselineOffset(unitIndex, 0)];
+      if (Number.isFinite(std) && std > 0) count += 1;
+    });
+    return count;
+  }
+
+  function renderUnitCount(indices, atlas) {
     if (!unitCountReadout) return;
     const session = currentSession();
     const candidates = candidateUnitIndices().length;
@@ -410,10 +424,8 @@
     if (chance !== null) {
       parts.push(`about ${Math.round(chance).toLocaleString()} expected by chance`);
     }
-    if (state.sort === "rastermap") {
-      const embedded = session.units.filter((unit) =>
-        ["mua", "sua"].includes(unit.decoderLabel),
-      ).length;
+    if (state.sort === "rastermap" && atlas) {
+      const embedded = embeddedUnitCount(atlas);
       parts.push(
         `Rastermap order from ${embedded.toLocaleString()} embedded units, `
         + "so a filtered view is a subsequence of that order rather than a "
@@ -870,7 +882,7 @@
   function drawHeatmap(atlas) {
     const session = currentSession();
     state.sortedUnits = sortedUnitIndices(atlas);
-    renderUnitCount(state.sortedUnits);
+    renderUnitCount(state.sortedUnits, atlas);
     renderUnitSelect();
     const areaGroups = heatmapAreaGroups();
     configureHeatmapHeight(areaGroups);
