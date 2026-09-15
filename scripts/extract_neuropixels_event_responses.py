@@ -72,6 +72,8 @@ from openscope_p3_publication.neural_responses import (
     SDF_SOURCE_BIN_SECONDS,
     SDF_TAU_SECONDS,
     SEQUENCE_CONTROL_BASELINE_TABLE,
+    SEQUENCE_REFERENCE_ORIENTATION_DEGREES,
+    SEQUENCE_REFERENCE_TRIAL_TYPE,
     adjacent_blank_windows,
     classify_neuron_type,
     context_event_definitions,
@@ -83,6 +85,8 @@ from openscope_p3_publication.neural_responses import (
     relative_bin_centers,
     sample_windows_evenly,
     sdf_kernel,
+    sequence_comparison_span,
+    sequence_reference_indices,
 )
 from openscope_p3_publication.sensorimotor_running import (
     DEFAULT_RUNNING_THRESHOLD_CM_S,
@@ -100,7 +104,7 @@ MEDIA_ASSET_ROOT = "media/neuropixels-event-responses"
 DANDI_API = "https://api.dandiarchive.org/api"
 DANDISET_ID = "001637"
 DANDI_VERSION = "draft"
-VERSION = 11
+VERSION = 12
 CONDITION_ORDER = ("context", "control")
 PROBE_ORDER = tuple(f"Probe{letter}" for letter in "ABCDEF")
 COMPATIBLE_METADATA_SIGNATURES = (
@@ -337,7 +341,66 @@ def table_arrays(table: h5py.Group) -> dict[str, np.ndarray]:
     }
 
 
-def event_records(nwb: h5py.File, config) -> tuple[list[dict], list[dict]]:
+def sequence_reference_record(
+    control_arrays: dict[str, np.ndarray],
+    context_arrays: dict[str, np.ndarray],
+    borrowed_baselines: list[tuple[float, float]],
+) -> dict:
+    """Stimulus-matched control alignment for the sequence comparison element.
+
+    The sequence control trace is drawn only inside the two shaded windows,
+    because control block 2 is randomly ordered: outside those windows the
+    trace averages over an arbitrary draw of the fourteen orientations and
+    carries no sequence structure. The right-hand window uses the existing
+    control condition, which is already matched on stimulus identity. The
+    left-hand window needs this separate alignment, because at that offset the
+    control block's own trials are preceded by random gratings rather than by
+    element three.
+    """
+    indices = sequence_reference_indices(
+        control_arrays["trial_type"], control_arrays["orientation"]
+    )
+    if not indices:
+        raise RuntimeError(
+            "Control block 2 has no single 0 degree rows to match element three."
+        )
+    indices = np.asarray(indices, dtype=int)
+    durations = control_arrays["stop"][indices] - control_arrays["start"][indices]
+
+    # The span the figure shades, measured on the context block's own trials.
+    context_indices = np.concatenate(
+        [
+            np.asarray(
+                event_indices(
+                    context_arrays["trial_type"],
+                    context_arrays["orientation"],
+                    context_arrays["delay"],
+                    definition,
+                    control=False,
+                ),
+                dtype=int,
+            )
+            for definition in context_event_definitions("sequence")
+        ]
+    )
+    span_start, span_stop = sequence_comparison_span(
+        context_arrays["start"], context_arrays["stop"], context_indices
+    )
+
+    return {
+        "onsets": control_arrays["start"][indices],
+        "baseline_windows": sample_windows_evenly(borrowed_baselines, len(indices)),
+        "durationSeconds": round(float(np.mean(durations)), 6),
+        "spanSeconds": [round(span_start, 6), round(span_stop, 6)],
+        "stimulus": (
+            f"{SEQUENCE_REFERENCE_TRIAL_TYPE}@"
+            f"{SEQUENCE_REFERENCE_ORIENTATION_DEGREES:g}deg"
+        ),
+        "trials": int(len(indices)),
+    }
+
+
+def event_records(nwb: h5py.File, config) -> tuple[list[dict], list[dict], dict | None]:
     window_start, window_stop = context_window_seconds(config.context)
     context_arrays = table_arrays(nwb[f"intervals/{config.context_table}"])
     control_arrays = table_arrays(nwb[f"intervals/{config.control_table}"])
@@ -348,6 +411,7 @@ def event_records(nwb: h5py.File, config) -> tuple[list[dict], list[dict]]:
     )
     records = []
     extraction = []
+    borrowed_baselines: list[tuple[float, float]] = []
     for definition in context_event_definitions(config.context):
         condition_indices = {}
         condition_onsets = {}
@@ -417,6 +481,7 @@ def event_records(nwb: h5py.File, config) -> tuple[list[dict], list[dict]]:
                 sequence_baseline_arrays["block_number"],
                 float(control_arrays["start"].min()),
             )
+            borrowed_baselines = borrowed
             trials = len(condition_indices["control"])
             trial_baseline_windows["control"] = sample_windows_evenly(
                 borrowed, trials
@@ -564,7 +629,12 @@ def event_records(nwb: h5py.File, config) -> tuple[list[dict], list[dict]]:
                 "trial_baseline_windows": trial_baseline_windows,
             }
         )
-    return records, extraction
+    reference = None
+    if config.context == "sequence":
+        reference = sequence_reference_record(
+            control_arrays, context_arrays, borrowed_baselines
+        )
+    return records, extraction, reference
 
 
 def histogram_trial_counts(
@@ -997,7 +1067,7 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
         missing = sorted(required - set(units))
         if missing:
             raise RuntimeError(f"{config.session_id} unit columns missing: {missing}")
-        events, extraction = event_records(nwb, config)
+        events, extraction, reference = event_records(nwb, config)
         sst_pulse_times = optotagging_pulse_times(nwb)
         device_names = np.asarray(units["device_name"][:]).astype("U")
         selected_rows = np.flatnonzero(np.isin(device_names, selected_probes))
@@ -1018,6 +1088,31 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
             dtype=np.float32,
         )
         baseline_std = np.full_like(baseline_mean, np.nan)
+        # The stimulus-matched control alignment for the sequence comparison
+        # element. Held as one trace per unit rather than a third atlas
+        # condition: only the shaded element window is ever drawn, so a full
+        # three-second slice would be 95% waste.
+        reference_bin_count = 0
+        reference_sdf = None
+        reference_baseline = None
+        reference_source_edges = None
+        if reference is not None:
+            reference_bin_count = round(
+                reference["durationSeconds"] / SDF_SOURCE_BIN_SECONDS
+            )
+            if reference_bin_count < 1:
+                raise RuntimeError("Sequence reference window is shorter than a bin.")
+            reference_sdf = np.zeros(
+                (unit_count, reference_bin_count), dtype=np.uint16
+            )
+            reference_baseline = np.full(unit_count, np.nan, dtype=np.float32)
+            reference_source_edges = (
+                -causal_padding_bins * SDF_SOURCE_BIN_SECONDS
+                + np.arange(
+                    reference_bin_count + causal_padding_bins + 1, dtype=float
+                )
+                * SDF_SOURCE_BIN_SECONDS
+            )
         response_rates = np.full(
             (event_count, len(CONDITION_ORDER), unit_count),
             np.nan,
@@ -1169,6 +1264,24 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
                                 )
                             )
 
+            if reference is not None:
+                reference_counts = histogram_trial_counts(
+                    spikes,
+                    reference["onsets"],
+                    reference_source_edges,
+                )
+                reference_sdf[output_row] = quantize_sdf(
+                    sdf_trial_mean(
+                        reference_counts,
+                        len(reference["onsets"]),
+                        causal_padding_bins,
+                        reference_bin_count,
+                    )
+                )
+                reference_baseline[output_row] = baseline_rate_stats(
+                    spikes, reference["baseline_windows"]
+                )[0]
+
             unit_records.append(
                 {
                     "amplitudeCutoff": round(float(amplitude[row]), 6),
@@ -1288,8 +1401,34 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
         sdf_mean.astype("<u2").tobytes(),
     )
     response_delta = response_rates[:, 0] - response_rates[:, 1]
+    sequence_reference = None
+    if reference is not None:
+        sequence_reference = {
+            "baselineHzBase64": encode_float32(reference_baseline),
+            "binSeconds": SDF_SOURCE_BIN_SECONDS,
+            "description": (
+                "Control-block response to a single 0 degree grating, the "
+                "stimulus shown as element three of the previous sequence. "
+                "Drawn only inside the shaded comparison window, because "
+                "control block 2 is randomly ordered and carries no sequence "
+                "structure outside it."
+            ),
+            "dtype": "uint16 little-endian",
+            "durationSeconds": reference["durationSeconds"],
+            "quantizationScalePerHz": SDF_QUANTIZATION_SCALE,
+            "sdfBase64": encode_uint16(reference_sdf),
+            "shape": list(reference_sdf.shape),
+            "spanSeconds": reference["spanSeconds"],
+            "stimulus": reference["stimulus"],
+            "trials": reference["trials"],
+        }
     return {
         "asset": asset,
+        **(
+            {"sequenceComparisonReference": sequence_reference}
+            if sequence_reference is not None
+            else {}
+        ),
         "baselineMeanHzBase64": encode_float32(baseline_mean),
         "baselineStdHzBase64": encode_float32(baseline_std),
         "conditionOrder": list(CONDITION_ORDER),

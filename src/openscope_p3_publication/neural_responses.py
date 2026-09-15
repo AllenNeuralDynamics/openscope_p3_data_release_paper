@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import statistics
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -15,6 +16,8 @@ CONTEXT_WINDOWS_SECONDS = {
     "sequence": (-2.0, 1.0),
     "duration": (-1.5, 1.5),
 }
+SEQUENCE_COMPARISON_ROW_OFFSET = -5
+"""Row offset of element three of the previous sequence."""
 SEQUENCE_BASELINE_OFFSET = -3
 """Row offset of the grey inter-sequence interval from a substituted element."""
 BIN_SECONDS = 0.0025
@@ -406,3 +409,70 @@ def sample_windows_evenly(
         tuple(windows[min(total - 1, round(index * total / count))])
         for index in range(count)
     ]
+
+
+SEQUENCE_REFERENCE_TRIAL_TYPE = "single"
+"""Control-block row type that matches element three of a sequence."""
+
+SEQUENCE_REFERENCE_ORIENTATION_DEGREES = 0.0
+"""Orientation of element three, which the control reference must match.
+
+Element three of the previous sequence -- the comparison window for every
+sequence event -- is ``standard`` at 0 degrees in 100% of trials that survive
+the hygiene mask. The stimulus-matched control is therefore a single 0 degree
+grating, of which control block 2 contains 70: the same trial count as every
+other control condition in this context.
+"""
+
+ORIENTATION_TOLERANCE_RADIANS = 1e-3
+"""Match tolerance for a stimulus-table orientation in radians."""
+
+
+def sequence_reference_indices(
+    trial_types: Sequence[str],
+    orientations: Sequence[float],
+) -> list[int]:
+    """Control-block rows that match element three of a sequence.
+
+    Used for the left-hand segment of the sequence control trace, so that
+    segment compares the same stimulus across blocks rather than showing the
+    control block's response to whatever randomly preceded its own trials.
+    """
+    if len(trial_types) != len(orientations):
+        raise ValueError("Stimulus-table arrays must have the same length.")
+    target = math.radians(SEQUENCE_REFERENCE_ORIENTATION_DEGREES)
+    return [
+        index
+        for index, (trial_type, orientation) in enumerate(
+            zip(trial_types, orientations, strict=True)
+        )
+        if str(trial_type) == SEQUENCE_REFERENCE_TRIAL_TYPE
+        and abs(float(orientation) - target) <= ORIENTATION_TOLERANCE_RADIANS
+    ]
+
+
+def sequence_comparison_span(
+    start_times: Sequence[float],
+    stop_times: Sequence[float],
+    indices: Sequence[int],
+) -> tuple[float, float]:
+    """Display span of the sequence comparison element, relative to the event.
+
+    The element-three window sits at a fixed offset from the mismatch element,
+    so a single span describes every trial. Returned as the median across
+    trials, which is what the figure shades.
+    """
+    if len(start_times) != len(stop_times):
+        raise ValueError("start_times and stop_times must have the same length.")
+    if not len(indices):
+        raise ValueError("No trials were given.")
+    starts, stops = [], []
+    for index in indices:
+        reference = index + SEQUENCE_COMPARISON_ROW_OFFSET
+        if reference < 0:
+            continue
+        starts.append(float(start_times[reference]) - float(start_times[index]))
+        stops.append(float(stop_times[reference]) - float(start_times[index]))
+    if not starts:
+        raise ValueError("No trial had a comparison element within the table.")
+    return statistics.median(starts), statistics.median(stops)

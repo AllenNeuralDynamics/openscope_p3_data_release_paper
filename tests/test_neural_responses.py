@@ -13,6 +13,7 @@ from openscope_p3_publication.neural_response_figure import (
     mean_sem_traces,
     presentation_timing_values,
     response_matrix,
+    sequence_control_segments,
     static_rate_axis,
     uint16_base64_values,
     write_neuropixels_event_html,
@@ -28,6 +29,8 @@ from openscope_p3_publication.neural_responses import (
     SDF_SOURCE_BIN_SECONDS,
     SDF_TAU_SECONDS,
     SEQUENCE_CONTROL_BASELINE_TABLE,
+    SEQUENCE_REFERENCE_ORIENTATION_DEGREES,
+    SEQUENCE_REFERENCE_TRIAL_TYPE,
     adjacent_blank_windows,
     blank_interval_windows,
     classify_neuron_type,
@@ -41,6 +44,8 @@ from openscope_p3_publication.neural_responses import (
     relative_bin_edges,
     sample_windows_evenly,
     sdf_kernel,
+    sequence_comparison_span,
+    sequence_reference_indices,
     smooth_trace,
 )
 
@@ -258,7 +263,7 @@ def test_neuron_type_classification(
 def test_neuropixels_event_snapshot_is_source_backed() -> None:
     payload = load_neuropixels_event_responses()
 
-    assert payload["version"] == 11
+    assert payload["version"] == 12
     assert payload["subject"] == "830794"
     assert payload["sessionOrder"] == [
         "standard",
@@ -543,6 +548,12 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert 'id="baseline-response-canvas"' not in html
     assert 'id="baseline-subtracted"' in html
     assert 'id="response-note"' not in html
+    # A different element from the one 365c616 removed: that was static chrome
+    # restating the dashed guides. This one states what the control curve is,
+    # which the sequence segmentation makes necessary rather than redundant.
+    assert 'id="sequence-control-note"' in html
+    assert "drawn only inside the two shaded windows" in html
+    assert "function sequenceControlSegments(" in html
     assert 'id="heatmap-detail"' not in html
     assert 'id="source-note"' not in html
     assert "Response conditioning" in html
@@ -709,3 +720,170 @@ class TestSampleWindowsEvenly:
     def test_sampling_from_nothing_raises(self):
         with pytest.raises(ValueError, match="empty"):
             sample_windows_evenly([], 4)
+
+
+class TestSequenceReferenceIndices:
+    """The stimulus-matched control alignment for the comparison window."""
+
+    def _table(self):
+        types = ["single", "halt", "single", "omission", "single", "single"]
+        oris = [
+            0.0,
+            0.0,
+            math.radians(45),
+            0.0,
+            math.radians(90),
+            1e-5,
+        ]
+        return types, oris
+
+    def test_only_single_rows_at_zero_degrees_match(self):
+        assert sequence_reference_indices(*self._table()) == [0, 5]
+
+    def test_a_halt_at_zero_degrees_is_not_a_grating(self):
+        # halt and omission also carry orientation 0 but are not the stimulus.
+        types, oris = self._table()
+        assert 1 not in sequence_reference_indices(types, oris)
+        assert 3 not in sequence_reference_indices(types, oris)
+
+    def test_orientation_is_matched_within_tolerance(self):
+        # Stored orientations are radians and carry float error.
+        assert sequence_reference_indices(["single"], [1e-5]) == [0]
+        assert sequence_reference_indices(["single"], [0.01]) == []
+
+    def test_the_matched_orientation_is_element_three(self):
+        assert SEQUENCE_REFERENCE_ORIENTATION_DEGREES == 0.0
+        assert SEQUENCE_REFERENCE_TRIAL_TYPE == "single"
+
+    def test_mismatched_lengths_raise(self):
+        with pytest.raises(ValueError, match="same length"):
+            sequence_reference_indices(["single", "single"], [0.0])
+
+
+class TestSequenceComparisonSpan:
+    def _rows(self, count: int, period: float = 0.2669):
+        starts = [index * period for index in range(count)]
+        stops = [start + period for start in starts]
+        return starts, stops
+
+    def test_the_span_is_five_rows_back(self):
+        starts, stops = self._rows(12)
+        span = sequence_comparison_span(starts, stops, [7])
+        assert span == pytest.approx((-1.3345, -1.0676))
+
+    def test_the_span_width_is_one_element(self):
+        starts, stops = self._rows(12)
+        start, stop = sequence_comparison_span(starts, stops, [7])
+        assert stop - start == pytest.approx(0.2669)
+
+    def test_the_median_is_taken_across_trials(self):
+        starts, stops = self._rows(30)
+        span = sequence_comparison_span(starts, stops, [7, 12, 17])
+        assert span == pytest.approx((-1.3345, -1.0676))
+
+    def test_trials_without_a_comparison_row_are_skipped(self):
+        starts, stops = self._rows(12)
+        span = sequence_comparison_span(starts, stops, [2, 7])
+        assert span == pytest.approx((-1.3345, -1.0676))
+
+    def test_no_trial_with_a_comparison_row_raises(self):
+        starts, stops = self._rows(12)
+        with pytest.raises(ValueError, match="within the table"):
+            sequence_comparison_span(starts, stops, [1, 2])
+
+    def test_no_trials_raises(self):
+        starts, stops = self._rows(12)
+        with pytest.raises(ValueError, match="No trials"):
+            sequence_comparison_span(starts, stops, [])
+
+
+class TestSequenceControlSegments:
+    """Restricting the control trace to the two stimulus-matched windows."""
+
+    def _inputs(self):
+        # 1.0 s at 100 ms bins, comparison window at [-0.6, -0.4].
+        time = [round(-1.0 + index * 0.1, 3) for index in range(21)]
+        control = [1.0] * len(time)
+        sem = [0.1] * len(time)
+        reference = [5.0, 6.0]
+        reference_sem = [0.5, 0.6]
+        return time, control, sem, reference, reference_sem
+
+    def _call(self, **overrides):
+        time, control, sem, reference, reference_sem = self._inputs()
+        kwargs = dict(
+            comparison_span=(-0.6, -0.4),
+            mismatch_stop=0.2,
+            reference_bin_seconds=0.1,
+        )
+        kwargs.update(overrides)
+        return time, sequence_control_segments(
+            time, control, sem, reference, reference_sem, **kwargs
+        )
+
+    def test_the_mismatch_window_keeps_the_control_block_trace(self):
+        time, (values, _sem) = self._call()
+        for index, seconds in enumerate(time):
+            if 0.0 <= seconds <= 0.2:
+                assert values[index] == 1.0
+
+    def test_the_comparison_window_is_filled_from_the_reference(self):
+        time, (values, _sem) = self._call()
+        assert values[time.index(-0.6)] == 5.0
+        assert values[time.index(-0.5)] == 6.0
+
+    def test_everything_outside_both_windows_is_a_gap(self):
+        time, (values, _sem) = self._call()
+        for index, seconds in enumerate(time):
+            inside = (0.0 <= seconds <= 0.2) or (-0.6 <= seconds <= -0.4)
+            if not inside:
+                assert values[index] is None
+
+    def test_the_sem_follows_the_same_segmentation(self):
+        time, (values, sem) = self._call()
+        assert sem[time.index(-0.6)] == 0.5
+        assert sem[time.index(0.0)] == 0.1
+        assert sem[time.index(-1.0)] is None
+        assert len(sem) == len(values)
+
+    def test_a_reference_shorter_than_the_window_leaves_a_gap(self):
+        # Only two reference bins cover a 200 ms window at 100 ms bins.
+        time, (values, _sem) = self._call(comparison_span=(-0.6, -0.2))
+        assert values[time.index(-0.6)] == 5.0
+        assert values[time.index(-0.3)] is None
+
+    def test_absent_sem_is_propagated_as_absent(self):
+        time, control, _sem, reference, _reference_sem = self._inputs()
+        values, sem = sequence_control_segments(
+            time,
+            control,
+            None,
+            reference,
+            None,
+            comparison_span=(-0.6, -0.4),
+            mismatch_stop=0.2,
+            reference_bin_seconds=0.1,
+        )
+        assert sem is None
+        assert values[time.index(-0.6)] == 5.0
+
+    def test_mismatched_lengths_raise(self):
+        with pytest.raises(ValueError, match="same length"):
+            sequence_control_segments(
+                [0.0, 0.1],
+                [1.0],
+                None,
+                [1.0],
+                None,
+                comparison_span=(-0.6, -0.4),
+                mismatch_stop=0.2,
+                reference_bin_seconds=0.1,
+            )
+
+    def test_a_non_increasing_span_raises(self):
+        with pytest.raises(ValueError, match="increasing"):
+            self._call(comparison_span=(-0.4, -0.6))
+
+    def test_a_non_positive_bin_raises(self):
+        with pytest.raises(ValueError, match="positive"):
+            self._call(reference_bin_seconds=0.0)

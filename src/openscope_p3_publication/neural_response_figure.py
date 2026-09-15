@@ -111,7 +111,7 @@ def uint16_base64_values(encoded: str) -> array:
     return values
 
 
-SNAPSHOT_VERSION = 11
+SNAPSHOT_VERSION = 12
 """Schema version of the committed snapshot.
 
 Must match ``VERSION`` in scripts/extract_neuropixels_event_responses.py. Version
@@ -240,6 +240,28 @@ def load_neuropixels_event_responses(
         raise RuntimeError("Neuropixels event-response session coverage is invalid.")
     if payload.get("sessionOrder") != list(CONTEXT_ORDER):
         raise RuntimeError("Neuropixels event-response context order is invalid.")
+
+    sequence_payload = next(
+        (
+            session
+            for session in payload["sessions"]
+            if session.get("context") == "sequence"
+        ),
+        None,
+    )
+    reference = (sequence_payload or {}).get("sequenceComparisonReference")
+    if reference is None:
+        raise RuntimeError(
+            "The sequence session must carry its stimulus-matched control "
+            "reference; without it the control trace cannot be segmented."
+        )
+    if (
+        reference.get("stimulus") != "single@0deg"
+        or reference.get("trials") != 70
+        or len(reference.get("spanSeconds", [])) != 2
+        or reference["spanSeconds"][0] >= reference["spanSeconds"][1]
+    ):
+        raise RuntimeError("Sequence comparison reference is invalid.")
 
     expected_sessions = {session.session_id: session for session in NEURAL_SESSIONS}
     total_units = 0
@@ -661,6 +683,64 @@ def presentation_timing_values(
     return [start, stop]
 
 
+def sequence_control_segments(
+    time: list[float],
+    control_values: list[float],
+    control_sem: list[float] | None,
+    reference_values: list[float],
+    reference_sem: list[float] | None,
+    *,
+    comparison_span: tuple[float, float],
+    mismatch_stop: float,
+    reference_bin_seconds: float,
+) -> tuple[list[float | None], list[float | None] | None]:
+    """Restrict the sequence control trace to the two stimulus-matched windows.
+
+    Control block 2 presents single gratings in random order, so outside the
+    mismatch window its trace averages over an arbitrary draw of fourteen
+    orientations and carries no sequence structure. Drawing it continuously
+    invites the reader to compare epochs that are not comparable. Both windows
+    are matched on stimulus: the mismatch window keeps the control block's own
+    matched event, and the comparison window is filled from a separate
+    alignment to a single 0 degree grating, the stimulus the context block
+    shows as element three.
+
+    Values outside both windows become ``None``, which every renderer here
+    treats as a break in the line rather than as zero.
+    """
+    if len(time) != len(control_values):
+        raise ValueError("time and control_values must have the same length.")
+    if control_sem is not None and len(control_sem) != len(time):
+        raise ValueError("control_sem must match the time axis.")
+    if reference_bin_seconds <= 0:
+        raise ValueError("reference_bin_seconds must be positive.")
+    span_start, span_stop = comparison_span
+    if span_stop <= span_start:
+        raise ValueError("comparison_span must be increasing.")
+
+    values: list[float | None] = []
+    sems: list[float | None] | None = [] if control_sem is not None else None
+    for index, seconds in enumerate(time):
+        if 0.0 <= seconds <= mismatch_stop:
+            values.append(control_values[index])
+            if sems is not None:
+                sems.append(control_sem[index])
+            continue
+        if span_start <= seconds <= span_stop:
+            bin_index = round((seconds - span_start) / reference_bin_seconds)
+            if 0 <= bin_index < len(reference_values):
+                values.append(reference_values[bin_index])
+                if sems is not None:
+                    sems.append(
+                        reference_sem[bin_index] if reference_sem is not None else None
+                    )
+                continue
+        values.append(None)
+        if sems is not None:
+            sems.append(None)
+    return values, sems
+
+
 def mean_sem_traces(traces: list[list[float]]) -> tuple[list[float], list[float]]:
     if not traces:
         raise ValueError("At least one trace is required.")
@@ -692,8 +772,8 @@ def append_static_rate_plot(
     time: list[float],
     event_values: list[float],
     event_sem: list[float],
-    control_values: list[float],
-    control_sem: list[float],
+    control_values: list[float | None],
+    control_sem: list[float | None],
     timing: dict,
     baseline_subtracted: bool,
     display_start: float,
@@ -710,6 +790,7 @@ def append_static_rate_plot(
             (control_values, control_sem),
         )
         for index in visible
+        if trace[index] is not None and sem[index] is not None
         for value in (trace[index] - sem[index], trace[index] + sem[index])
     ]
     lower, upper, y_ticks = static_rate_axis(values, baseline_subtracted)
@@ -750,32 +831,59 @@ def append_static_rate_plot(
             f'x2="{px(value):.2f}" y2="{y + height:.2f}" '
             'stroke="#707674" stroke-width="1" stroke-dasharray="5 4"/>'
         )
+    def runs(values, sem=None):
+        # A gap is None, which the sequence control trace uses to mark the
+        # epochs where control block 2 is not comparable. Each contiguous run
+        # is drawn as its own sub-path so no line spans a gap.
+        grouped = []
+        current = []
+        for index in visible:
+            missing = values[index] is None or (
+                sem is not None and sem[index] is None
+            )
+            if missing:
+                if current:
+                    grouped.append(current)
+                    current = []
+                continue
+            current.append(index)
+        if current:
+            grouped.append(current)
+        return grouped
+
     for values, sem, color in (
         (control_values, control_sem, "#8A918E"),
         (event_values, event_sem, "#315F73"),
     ):
-        upper_path = [
-            f"{'L' if position else 'M'} {px(time[index]):.2f} "
-            f"{py(values[index] + sem[index]):.2f}"
-            for position, index in enumerate(visible)
-        ]
-        lower_path = [
-            f"L {px(time[index]):.2f} {py(values[index] - sem[index]):.2f}"
-            for index in reversed(visible)
-        ]
-        svg.append(
-            f'<path d="{" ".join([*upper_path, *lower_path, "Z"])}" '
-            f'fill="{color}" fill-opacity="0.14" stroke="none"/>'
-        )
+        for run in runs(values, sem):
+            upper_path = [
+                f"{'L' if position else 'M'} {px(time[index]):.2f} "
+                f"{py(values[index] + sem[index]):.2f}"
+                for position, index in enumerate(run)
+            ]
+            lower_path = [
+                f"L {px(time[index]):.2f} {py(values[index] - sem[index]):.2f}"
+                for index in reversed(run)
+            ]
+            svg.append(
+                f'<path d="{" ".join([*upper_path, *lower_path, "Z"])}" '
+                f'fill="{color}" fill-opacity="0.14" stroke="none"/>'
+            )
     for values, color, dash in (
         (control_values, "#8A918E", ' stroke-dasharray="8 6"'),
         (event_values, "#315F73", ""),
     ):
         path = [
-            f"{'L' if position else 'M'} {px(time[index]):.2f} "
-            f"{py(values[index]):.2f}"
-            for position, index in enumerate(visible)
+            segment
+            for run in runs(values)
+            for position, index in enumerate(run)
+            for segment in (
+                f"{'L' if position else 'M'} {px(time[index]):.2f} "
+                f"{py(values[index]):.2f}",
+            )
         ]
+        if not path:
+            continue
         svg.append(
             f'<path d="{" ".join(path)}" fill="none" stroke="{color}" '
             f'stroke-width="3"{dash}/>'
@@ -1230,6 +1338,36 @@ def write_neuropixels_event_svg(
         baseline_control_means, baseline_control_sem = mean_sem_traces(
             baseline_control_traces
         )
+        reference = session.get("sequenceComparisonReference")
+        if reference is not None:
+            # Same restriction the interactive applies: control block 2 has no
+            # sequence structure to trace between the two matched windows.
+            reference_scale = reference["quantizationScalePerHz"]
+            reference_bins = reference["shape"][1]
+            reference_counts = uint16_base64_values(reference["sdfBase64"])
+            reference_baselines = float32_values(reference["baselineHzBase64"])
+            reference_traces = [
+                [
+                    reference_counts[unit_index * reference_bins + bin_index]
+                    / reference_scale
+                    - reference_baselines[unit_index]
+                    for bin_index in range(reference_bins)
+                ]
+                for unit_index in selected
+            ]
+            reference_means, reference_sem = mean_sem_traces(reference_traces)
+            baseline_control_means, baseline_control_sem = (
+                sequence_control_segments(
+                    time,
+                    baseline_control_means,
+                    baseline_control_sem,
+                    reference_means,
+                    reference_sem,
+                    comparison_span=tuple(reference["spanSeconds"]),
+                    mismatch_stop=timing["presentationStopSeconds"],
+                    reference_bin_seconds=reference["binSeconds"],
+                )
+            )
         append_static_rate_plot(
             svg,
             x=x,

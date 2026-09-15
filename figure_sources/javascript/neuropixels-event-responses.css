@@ -421,3 +421,11 @@ canvas {
   color: var(--ink);
   font-weight: 700;
 }
+
+.sequence-control-note {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 6px 0 0;
+  max-width: 76ch;
+}

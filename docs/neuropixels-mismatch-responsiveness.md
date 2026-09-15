@@ -440,6 +440,55 @@ therefore carry their own baselines for baseline subtraction to do anything at a
 context condition already has the better baseline — its own within-trial grey interval, at zero
 temporal drift — whereas importing repeat 2 would introduce up to 27.7 minutes of it.
 
+### 5.2 The sequence control trace is drawn only inside the two matched windows
+
+Borrowing a baseline fixes the vertical offset but not the horizontal extent. Control block 2
+presents single gratings in **random order**, so a continuous control trace is not comparable
+to the context trace anywhere except at the aligned event. Measured at each row offset around
+a control `halt` trial, against the context block's own trials:
+
+| offset | context block | control block |
+|---|---|---|
+| `−5` | `standard@0°` in 33/35 | 15 distinct labels, most common 13/70 |
+| `−4` | `standard@45°` in 35/35 | 15 distinct labels |
+| `−3` | `sequence_omission` (grey) in 35/35 | 16 distinct labels |
+| `−2` | `standard@90°` in 35/35 | 16 distinct labels |
+| `−1` | `standard@45°` in 35/35 | 16 distinct labels |
+| **`0`** | `halt@0` in 35/35 | `halt@0` in 70/70 |
+| `+1` | `standard@45°` in 35/35 | 16 distinct labels |
+
+Every context offset is deterministic; every control offset except `0` spreads over ~16
+labels. Averaging 70 control trials therefore averages over a random draw of the fourteen
+orientations, and the timing washes out too: C2 row durations jitter over 250.2–266.9 ms, so
+transition phase decoheres across trials. Projecting the area-mean traces onto the two
+candidate periods confirms it — the context trace carries **0.249 Hz** at the sequence period
+against 0.037 Hz at the element period, while the control trace is flat at **0.048 and
+0.047 Hz**, with 3× less variance overall.
+
+So the trace is drawn as **two segments**, each matched on stimulus:
+
+- **Right segment**, the mismatch window `[0, 0.2669]`: the existing control condition, already
+  matched on stimulus identity (`halt@0`, `omission@0`, `single@45°`, `single@90°`).
+- **Left segment**, the comparison window `[−1.3345, −1.0676]`: a **separate alignment** to
+  `single@0°` in control block 2. Element three of the previous sequence is `standard@0°` in
+  **100%** of trials that survive the hygiene mask (30/30, 29/29, 33/33, 28/28), and C2
+  contains exactly **70** `single@0°` rows — the same trial count as every other control
+  condition here.
+
+Everything between and outside the two windows is a gap, not a zero. Stored as
+`sequenceComparisonReference` on the sequence session: one trace per unit over the element
+window only, since a full three-second slice would be 95% waste. The masking rule is
+`sequence_control_segments` in `neural_response_figure.py`, applied by both the interactive
+and the static generator so the static panel stands alone.
+
+**What this does and does not buy.** It makes each window a same-stimulus, different-context
+contrast. It does **not** match stimulus *history*: element three in the context block follows
+a fixed 90°–45° transition, while the control block's matched row follows a random
+orientation. The Q2 contrast therefore still conflates the violation of an established
+sequence expectation with the difference in immediate history, and the caption must say so.
+Matching the transition is not feasible — C2's 980 `single` rows spread over 14 orientations,
+so any specific ordered transition occurs 4–5 times by chance (§5, above).
+
 **Residual caveats to disclose in the caption.** The borrowed baseline is 333.6 ms against the
 context's grey row, and it is drawn from a different block, at a temporal offset of up to
 6.3 minutes from the trial it baselines. Both traces are in Hz, so the duration difference

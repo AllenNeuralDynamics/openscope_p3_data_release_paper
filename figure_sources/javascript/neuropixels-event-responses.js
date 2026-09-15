@@ -44,6 +44,7 @@
   const eventSelect = document.getElementById("event-select");
   const areaSelect = document.getElementById("area-select");
   const qcTabs = document.getElementById("qc-tabs");
+  const sequenceControlNote = document.getElementById("sequence-control-note");
   const responsivenessSelect = document.getElementById("responsiveness-select");
   const unitCountReadout = document.getElementById("unit-count-readout");
   const decoderLabelFilter = document.getElementById("decoder-label-filter");
@@ -135,6 +136,17 @@
           responseControl: decodeFloat32Base64(session.responseControlHzBase64),
           traceEventIndex: -1,
           traces: [[], []],
+          reference: session.sequenceComparisonReference
+            ? {
+                ...session.sequenceComparisonReference,
+                baseline: decodeFloat32Base64(
+                  session.sequenceComparisonReference.baselineHzBase64,
+                ),
+                sdf: decodeUint16Base64(
+                  session.sequenceComparisonReference.sdfBase64,
+                ),
+              }
+            : null,
         })),
       );
     }
@@ -991,9 +1003,13 @@
   }
 
   function meanAndSem(traces) {
+    return meanAndSemOf(traces, time.length);
+  }
+
+  function meanAndSemOf(traces, binCount) {
     const mean = [];
     const sem = [];
-    for (let bin = 0; bin < time.length; bin += 1) {
+    for (let bin = 0; bin < binCount; bin += 1) {
       const values = traces.map((trace) => trace[bin]).filter(Number.isFinite);
       if (!values.length) {
         mean.push(null);
@@ -1084,6 +1100,92 @@
       contextSem: context.sem,
       controlSem: control.sem,
     };
+  }
+
+  function referenceUnitTrace(atlas, unitIndex, baselineSubtracted) {
+    const reference = atlas.reference;
+    const bins = reference.shape[1];
+    const baseline = baselineSubtracted ? reference.baseline[unitIndex] : 0;
+    const trace = [];
+    for (let bin = 0; bin < bins; bin += 1) {
+      trace.push(
+        reference.sdf[unitIndex * bins + bin] / reference.quantizationScalePerHz -
+          baseline,
+      );
+    }
+    return trace;
+  }
+
+  function sequenceControlSegments(atlas, traces, baselineSubtracted) {
+    // Control block 2 is randomly ordered, so a continuous control trace
+    // averages over an arbitrary draw of the fourteen orientations outside the
+    // two windows the statistics actually use. Draw only those two windows, and
+    // fill the comparison window from the stimulus-matched 0 degree alignment
+    // rather than from whatever randomly preceded the control block's own
+    // trials.
+    const session = currentSession();
+    if (session.context !== "sequence" || !atlas.reference) return traces;
+
+    const timing = session.events[state.eventIndex].timing.context;
+    const comparison = (timing.presentationWindows || []).find(
+      (window) => window.rowOffset === SEQUENCE_COMPARISON_OFFSET,
+    );
+    const mismatchStop = timing.presentationStopSeconds;
+
+    const inMismatch = (seconds) => seconds >= 0 && seconds <= mismatchStop;
+    const control = traces.control.map((value, index) =>
+      inMismatch(time[index]) ? value : null,
+    );
+    const controlSem = traces.controlSem
+      ? traces.controlSem.map((value, index) =>
+          inMismatch(time[index]) ? value : null,
+        )
+      : traces.controlSem;
+
+    if (comparison) {
+      const reference =
+        state.scope === "unit"
+          ? { mean: referenceUnitTrace(atlas, state.selectedUnit, baselineSubtracted), sem: null }
+          : meanAndSemOf(
+              filteredUnitIndices().map((unitIndex) =>
+                referenceUnitTrace(atlas, unitIndex, baselineSubtracted),
+              ),
+              atlas.reference.shape[1],
+            );
+      time.forEach((seconds, index) => {
+        if (seconds < comparison.startSeconds || seconds > comparison.stopSeconds) {
+          return;
+        }
+        const bin = Math.round(
+          (seconds - comparison.startSeconds) / atlas.reference.binSeconds,
+        );
+        if (bin < 0 || bin >= reference.mean.length) return;
+        control[index] = reference.mean[bin];
+        if (controlSem) {
+          controlSem[index] = reference.sem ? reference.sem[bin] : null;
+        }
+      });
+    }
+    return { ...traces, control, controlSem };
+  }
+
+  function renderSequenceControlNote() {
+    const session = currentSession();
+    const reference = session.sequenceComparisonReference;
+    if (session.context !== "sequence" || !reference) {
+      sequenceControlNote.hidden = true;
+      sequenceControlNote.textContent = "";
+      return;
+    }
+    const eventLabel = session.events[state.eventIndex].label.toLowerCase();
+    sequenceControlNote.hidden = false;
+    sequenceControlNote.textContent =
+      `Control block 2 presents single gratings in random order, so it has no ` +
+      `sequence structure to trace continuously. The control curve is therefore ` +
+      `drawn only inside the two shaded windows, matched on stimulus in each: a ` +
+      `single 0° grating (${reference.trials} trials) against element three of ` +
+      `the previous sequence on the left, and ${eventLabel} against the ` +
+      `substituted element on the right.`;
   }
 
   function responseValues(traces) {
@@ -1211,25 +1313,34 @@
       context.restore();
       return;
     }
-    visible.forEach((index, position) => {
-      const value = values[index];
-      const x = responseX(index, plot);
-      const y =
-        plot.bottom -
-        ((value + sem[index] - yRange[0]) / (yRange[1] - yRange[0])) *
-          (plot.bottom - plot.top);
-      if (position) context.lineTo(x, y);
-      else context.moveTo(x, y);
+    // One closed sub-path per contiguous run. The sequence control trace has a
+    // gap between its two windows, and a single path would fill straight
+    // across it.
+    const runs = [];
+    visible.forEach((index) => {
+      const previous = runs[runs.length - 1];
+      if (previous && index === previous[previous.length - 1] + 1) {
+        previous.push(index);
+      } else {
+        runs.push([index]);
+      }
     });
-    [...visible].reverse().forEach((index) => {
-      const x = responseX(index, plot);
-      const y =
-        plot.bottom -
-        ((values[index] - sem[index] - yRange[0]) / (yRange[1] - yRange[0])) *
-          (plot.bottom - plot.top);
-      context.lineTo(x, y);
+    const y = (value) =>
+      plot.bottom -
+      ((value - yRange[0]) / (yRange[1] - yRange[0])) *
+        (plot.bottom - plot.top);
+    runs.forEach((run) => {
+      run.forEach((index, position) => {
+        const x = responseX(index, plot);
+        const upper = y(values[index] + sem[index]);
+        if (position) context.lineTo(x, upper);
+        else context.moveTo(x, upper);
+      });
+      [...run].reverse().forEach((index) => {
+        context.lineTo(responseX(index, plot), y(values[index] - sem[index]));
+      });
+      context.closePath();
     });
-    context.closePath();
     context.fill();
     context.restore();
   }
@@ -1445,15 +1556,21 @@
       if (sequence !== renderSequence) return;
       drawHeatmap(atlas);
       if (state.selectedUnit !== null) {
-        const traces = state.baselineSubtracted
-          ? baselineSubtractedTraces(atlas)
-          : responseTraces(atlas);
+        const traces = sequenceControlSegments(
+          atlas,
+          state.baselineSubtracted
+            ? baselineSubtractedTraces(atlas)
+            : responseTraces(atlas),
+          state.baselineSubtracted,
+        );
         drawResponsePanel(responseCanvas, traces, state.baselineSubtracted);
+        renderSequenceControlNote();
         responseTitle.textContent =
           state.scope === "area"
             ? `Mismatch response averaged over units in ${selectedAreaLabel()}`
             : `Mismatch response for unit ${session.units[state.selectedUnit].id}`;
       } else {
+        sequenceControlNote.hidden = true;
         const context = canvasContext(responseCanvas);
         context.fillStyle = "#68706d";
         context.textAlign = "center";
