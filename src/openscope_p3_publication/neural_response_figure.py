@@ -620,10 +620,247 @@ def response_matrix(payload: dict) -> tuple[list[str], list[dict]]:
                 {
                     "context": context,
                     "event": event["label"],
+                    "eventId": event["id"],
                     "values": values,
                 }
             )
     return areas, columns
+
+
+RESPONSIVE_P_MAX = 0.05
+"""Uncorrected significance threshold, matching the interactive figure.
+
+Section 6.3a of docs/neuropixels-mismatch-responsiveness.md records why the
+uncorrected p is reported with its chance expectation displayed rather than a
+Benjamini-Hochberg q: for 13 of 16 events the measured signal is 7-12 times
+chance, so correction changes no conclusion while costing power on the three
+events where it would matter.
+"""
+
+RESPONSIVE_MODULATION_MIN = 0.1
+"""Minimum absolute modulation index, matching the SST optotagging convention."""
+
+RESPONSIVE_CHANCE_FRACTION = RESPONSIVE_P_MAX
+"""Fraction of units expected to clear the significance gate by chance.
+
+A two-sided test at p < 0.05 admits 5% of units under the null. The modulation
+floor removes some of those, so this is an upper bound on the noise floor and
+is drawn on the panel as a reference rather than subtracted.
+"""
+
+RESPONSIVE_MIN_AREA_UNITS = 10
+"""Below this many units, an area's fraction is not drawn for that event."""
+
+
+SHORT_CONTEXT_LABELS = {
+    "standard": "Standard",
+    "sensorimotor": "Sensorimotor",
+    "sequence": "Sequence",
+    "duration": "Duration",
+}
+"""Context group headers for the area matrices.
+
+Each group spans four columns, about 180 px, and "Standard oddball" overruns
+that into the neighbouring group's header.
+"""
+
+SHORT_EVENT_LABELS = {
+    "orientation_45": "45°",
+    "orientation_90": "90°",
+    "halt": "Halt",
+    "omission": "Omission",
+    "motor_orientation_45": "45°",
+    "motor_orientation_90": "90°",
+    "motor_halt": "Halt",
+    "motor_omission": "Omission",
+    "delay_150": "150 ms",
+    "delay_500": "500 ms",
+    "delay_1000": "1000 ms",
+}
+"""Column labels for the area matrices.
+
+The full labels ("45 degree motor orientation") are 26 characters, and rotated
+at -55 degrees they run off the left edge of the figure and are clipped. The
+context group header above each block of four already names the context, so
+"motor" and "substitution" are redundant in the column label.
+"""
+
+
+def short_event_label(event_id: str, fallback: str) -> str:
+    """Axis label for one event column."""
+    return SHORT_EVENT_LABELS.get(event_id, fallback)
+
+
+STATIC_EXAMPLE_UNIT_TARGET = 150
+"""Rows drawn in the responsive-unit heatmap.
+
+Fixed so the four context panels share a row thickness. Where more units
+qualify, they are subsampled evenly across the anatomical order rather than
+truncated, so the panel represents the whole responsive population instead of
+one end of it. The panel label reports both counts.
+"""
+
+
+def responsive_unit_indices(
+    session: dict,
+    event_index: int,
+    *,
+    target: int = STATIC_EXAMPLE_UNIT_TARGET,
+) -> tuple[list[int], int]:
+    """Q1-responsive units for one event, in anatomical order.
+
+    Returns the drawn indices and the number that qualified. Selecting on the
+    statistical test rather than on the displayed mismatch-minus-control effect
+    matters: the previous criterion, the largest absolute effect, selected on
+    the very quantity the panel plots, so the panel was guaranteed to look
+    strong whether or not the effect was real.
+    """
+    unit_count = session["unitCount"]
+    offset = event_index * unit_count
+    p_values = float32_values(session["responsiveness"]["q1_p"]["base64"])
+    modulation = float32_values(session["responsiveness"]["q1_modulation"]["base64"])
+    group_priority = {
+        group: index for index, group in enumerate(STATIC_AREA_GROUP_ORDER)
+    }
+
+    def sort_key(index: int) -> tuple[int, str, float]:
+        unit = session["units"][index]
+        priority = min(
+            (group_priority[group] for group in unit["areaGroups"] if group in group_priority),
+            default=len(group_priority),
+        )
+        return priority, unit["location"], unit["depthUm"]
+
+    qualified = sorted(
+        (
+            index
+            for index, unit in enumerate(session["units"])
+            if unit["qcPass"]
+            and unit["decoderLabel"] in {"mua", "sua"}
+            and unit["firingRateHz"] >= 1
+            and math.isfinite(p_values[offset + index])
+            and math.isfinite(modulation[offset + index])
+            and p_values[offset + index] < RESPONSIVE_P_MAX
+            and abs(modulation[offset + index]) > RESPONSIVE_MODULATION_MIN
+        ),
+        key=sort_key,
+    )
+    if len(qualified) <= target:
+        return qualified, len(qualified)
+    # Even subsample across the anatomical order, not the first `target`.
+    step = len(qualified) / target
+    drawn = [qualified[min(len(qualified) - 1, math.floor(i * step))] for i in range(target)]
+    return drawn, len(qualified)
+
+
+def responsive_fraction_matrix(payload: dict) -> tuple[list[str], list[dict]]:
+    """Fraction of units responsive per area and event.
+
+    Shares the row and column order of :func:`response_matrix` so the two
+    panels can be read across: the same area occupies the same row in both,
+    and the same event the same column.
+
+    Responsiveness is the Q1 test -- the mismatch response against the same
+    unit's own most recent expected comparison -- at an uncorrected
+    ``p < RESPONSIVE_P_MAX`` with ``|modulation index| > RESPONSIVE_MODULATION_MIN``.
+    Cells backed by fewer than ``RESPONSIVE_MIN_AREA_UNITS`` units are ``None``
+    rather than a fraction, so a small denominator is never drawn as a
+    measurement.
+    """
+    areas, _ = response_matrix(payload)
+    sessions = {session["context"]: session for session in payload["sessions"]}
+    columns = []
+    for context in CONTEXT_ORDER:
+        session = sessions[context]
+        unit_count = session["unitCount"]
+        p_values = float32_values(session["responsiveness"]["q1_p"]["base64"])
+        modulation = float32_values(
+            session["responsiveness"]["q1_modulation"]["base64"]
+        )
+        by_area: dict[str, list[int]] = {}
+        for index, unit in enumerate(session["units"]):
+            if unit["qcPass"]:
+                by_area.setdefault(unit["location"], []).append(index)
+        for event_index, event in enumerate(session["events"]):
+            offset = event_index * unit_count
+            values: dict[str, float | None] = {}
+            counts: dict[str, int] = {}
+            for area in areas:
+                indices = by_area.get(area, [])
+                tested = [
+                    index
+                    for index in indices
+                    if math.isfinite(p_values[offset + index])
+                    and math.isfinite(modulation[offset + index])
+                ]
+                counts[area] = len(tested)
+                if len(tested) < RESPONSIVE_MIN_AREA_UNITS:
+                    values[area] = None
+                    continue
+                responsive = sum(
+                    1
+                    for index in tested
+                    if p_values[offset + index] < RESPONSIVE_P_MAX
+                    and abs(modulation[offset + index]) > RESPONSIVE_MODULATION_MIN
+                )
+                values[area] = responsive / len(tested)
+            columns.append(
+                {
+                    "context": context,
+                    "event": event["label"],
+                    "eventId": event["id"],
+                    "counts": counts,
+                    "values": values,
+                }
+            )
+    return areas, columns
+
+
+RESPONSIVE_RAMP_LIGHT = (242, 247, 245)
+RESPONSIVE_RAMP_DARK = (17, 74, 63)
+RESPONSIVE_NO_DATA_PATTERN = "responsive-no-data"
+"""Hatch pattern id for cells with too few units.
+
+A flat grey cannot be used. Any grey light enough to read as "empty" lands
+inside the ramp's own lightness range -- the obvious choice, #E6E8E7, sits at
+OKLab L 0.929 between the first and second ramp steps, so an area with no
+measurement would have been indistinguishable from a real low fraction. A
+hatch is categorically not a ramp value.
+"""
+
+
+def responsive_fraction_color(
+    value: float | None, limit: float
+) -> tuple[int, int, int] | None:
+    """Sequential single-hue ramp for a responsive fraction.
+
+    Sequential rather than diverging, because a fraction is a magnitude with no
+    meaningful midpoint -- unlike the mismatch-minus-control panel, whose
+    diverging ramp encodes the sign of an effect. The hue is deliberately
+    neither pole of that ramp so the two panels are not confused. Lightness is
+    monotone across the ramp (OKLab L 0.972 to 0.370).
+
+    Returns ``None`` for an absent value, which callers must render as
+    :data:`RESPONSIVE_NO_DATA_PATTERN` rather than as any colour. Returning a
+    colour here would let "no measurement" be drawn as a fraction.
+    """
+    if value is None or not math.isfinite(value) or limit <= 0:
+        return None
+    fraction = max(0.0, min(1.0, value / limit))
+    return tuple(
+        round(start + fraction * (end - start))
+        for start, end in zip(
+            RESPONSIVE_RAMP_LIGHT, RESPONSIVE_RAMP_DARK, strict=True
+        )
+    )
+
+
+def responsive_cell_fill(value: float | None, limit: float) -> str:
+    """SVG fill for one responsive-fraction cell, hatched when unmeasured."""
+    color = responsive_fraction_color(value, limit)
+    if color is None:
+        return f"url(#{RESPONSIVE_NO_DATA_PATTERN})"
+    return f"rgb{color}"
 
 
 def nice_limit(value: float) -> float:
@@ -779,6 +1016,7 @@ def append_static_rate_plot(
     display_start: float,
     display_end: float,
     unit_count: int,
+    qualified_count: int | None = None,
 ) -> None:
     visible = [
         index for index, value in enumerate(time) if value >= display_start
@@ -893,7 +1131,9 @@ def append_static_rate_plot(
             svg_text(
                 x + 8,
                 y + 20,
-                f"n={unit_count} units",
+                f"n={unit_count} of {qualified_count} responsive"
+                if qualified_count is not None and qualified_count != unit_count
+                else f"n={unit_count} units",
                 size=FIGURE_TYPE_SCALE["small"],
                 fill="#646B68",
             ),
@@ -930,6 +1170,133 @@ def time_axis_ticks(start: float, stop: float) -> tuple[float, ...]:
     return tuple(sorted(values))
 
 
+def append_area_matrix(
+    svg: list[str],
+    *,
+    areas: list[str],
+    columns: list[dict],
+    x: float,
+    y: float,
+    matrix_width: float,
+    row_height: float,
+    cell_fill,
+    draw_row_labels: bool,
+) -> None:
+    """Draw one area-by-event matrix.
+
+    Shared by both area panels so their rows and columns stay aligned and any
+    fix to one applies to both. ``cell_fill`` maps a cell value to an SVG fill
+    string, which lets an absent value render as a hatch rather than as a
+    colour on the panel's own scale.
+    """
+    column_width = matrix_width / len(columns)
+    for row_index, area in enumerate(areas):
+        row_y = y + row_index * row_height
+        if draw_row_labels:
+            svg.append(
+                svg_text(
+                    x - 15,
+                    row_y + row_height * 0.67,
+                    area,
+                    size=FIGURE_TYPE_SCALE["label"],
+                    anchor="end",
+                )
+            )
+        for column_index, column in enumerate(columns):
+            cell_x = x + column_index * column_width
+            svg.append(
+                f'<rect x="{cell_x:.2f}" y="{row_y:.2f}" '
+                f'width="{column_width:.2f}" height="{row_height:.2f}" '
+                f'fill="{cell_fill(column["values"][area])}" stroke="#ffffff"/>'
+            )
+    label_y = y + len(areas) * row_height + 18
+    for column_index, column in enumerate(columns):
+        center = x + (column_index + 0.5) * column_width
+        svg.append(
+            svg_text(
+                center,
+                label_y,
+                short_event_label(column["eventId"], column["event"]),
+                size=FIGURE_TYPE_SCALE["small"],
+                anchor="end",
+                fill="#646B68",
+                transform=f"rotate(-55 {center:.2f} {label_y:.2f})",
+            )
+        )
+    context_start = 0
+    for context in CONTEXT_ORDER:
+        count = sum(1 for column in columns if column["context"] == context)
+        if not count:
+            continue
+        center = x + (context_start + count / 2) * column_width
+        svg.append(
+            svg_text(
+                center,
+                y - 18,
+                SHORT_CONTEXT_LABELS[context],
+                size=FIGURE_TYPE_SCALE["small"],
+                weight=750,
+                anchor="middle",
+            )
+        )
+        context_start += count
+
+
+def append_matrix_legend(
+    svg: list[str],
+    *,
+    x: float,
+    y: float,
+    legend_width: float,
+    ramp,
+    ticks: list[tuple[float, str, bool]],
+    span: tuple[float, float],
+) -> None:
+    """Colour bar for an area matrix, with labelled ticks under it."""
+    steps = int(legend_width)
+    low, high = span
+    for step in range(steps):
+        value = low + (step / max(steps - 1, 1)) * (high - low)
+        svg.append(
+            f'<rect x="{x + step:.2f}" y="{y:.2f}" width="1.2" height="14" '
+            f'fill="rgb{ramp(value)}"/>'
+        )
+    for position, label, above in ticks:
+        tick_x = x + position * legend_width
+        if above:
+            # Interior ticks are labelled above the bar; a label below would
+            # collide with the end labels when the tick sits near an end.
+            svg.append(
+                f'<line x1="{tick_x:.2f}" y1="{y - 5:.2f}" x2="{tick_x:.2f}" '
+                f'y2="{y:.2f}" stroke="#303536" stroke-width="1.4"/>'
+            )
+            svg.append(
+                svg_text(
+                    tick_x,
+                    y - 10,
+                    label,
+                    size=FIGURE_TYPE_SCALE["small"],
+                    anchor="middle",
+                    fill="#303536",
+                )
+            )
+            continue
+        svg.append(
+            f'<line x1="{tick_x:.2f}" y1="{y + 14:.2f}" x2="{tick_x:.2f}" '
+            f'y2="{y + 19:.2f}" stroke="#646B68" stroke-width="1"/>'
+        )
+        svg.append(
+            svg_text(
+                tick_x,
+                y + 32,
+                label,
+                size=FIGURE_TYPE_SCALE["small"],
+                anchor="middle",
+                fill="#646B68",
+            )
+        )
+
+
 def write_neuropixels_event_svg(
     output: Path = STATIC_OUTPUT,
     payload: dict | None = None,
@@ -941,8 +1308,14 @@ def write_neuropixels_event_svg(
     matrix_top = 180
     row_height = 32
     areas, columns = response_matrix(payload)
+    fraction_areas, fraction_columns = responsive_fraction_matrix(payload)
+    if fraction_areas != areas:
+        raise RuntimeError(
+            "The two area matrices must share their rows to be read across."
+        )
     matrix_height = len(areas) * row_height
-    column_width = (width - left - right) / len(columns)
+    matrix_gap = 76
+    matrix_width = (width - left - right - matrix_gap) / 2
     heatmap_top = matrix_top + matrix_height + 330
     heatmap_height = 260
     line_top = heatmap_top + heatmap_height + 100
@@ -956,30 +1329,52 @@ def write_neuropixels_event_svg(
         ),
         '<title id="neural-response-title">Neuropixels mismatch responses</title>',
         (
-            '<desc id="neural-response-description">Panel A summarizes mean mismatch-minus-'
-            f"control firing-rate effects across {len(areas)} frontal, visual, "
-            "hippocampal, and "
-            "thalamic areas for all events. Panel B shows representative unit heatmaps "
+            '<desc id="neural-response-description">Panel A pairs two matrices over the '
+            f"same {len(areas)} frontal, visual, hippocampal and thalamic areas and the "
+            "same sixteen events: on the left the fraction of units responding to the "
+            "mismatch relative to their own expected comparison, on the right the mean "
+            "mismatch-minus-control firing rate. Panel B shows responsive-unit heatmaps "
             "plus baseline-subtracted population spike-density functions for one event "
             "per context.</desc>"
+        ),
+        (
+            "<defs>"
+            f'<pattern id="{RESPONSIVE_NO_DATA_PATTERN}" width="6" height="6" '
+            'patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
+            '<rect width="6" height="6" fill="#ffffff"/>'
+            '<line x1="0" y1="0" x2="0" y2="6" stroke="#C9CFCC" '
+            'stroke-width="1.6"/>'
+            "</pattern></defs>"
         ),
         '<rect width="100%" height="100%" fill="#ffffff"/>',
         svg_text(36, 52, "A", size=FIGURE_TYPE_SCALE["panel"], weight=800),
         svg_text(
             98,
             50,
-            "Area-level mismatch response across all conditions",
+            "Area-level responsiveness and mismatch-minus-control effect",
             size=FIGURE_TYPE_SCALE["title"],
             weight=750,
         ),
         svg_text(
             98,
-            80,
+            78,
             (
-                "Mean response-window firing rate: mismatch minus matched control; "
-                "areas with ≥10 pooled QC-passing units"
+                f"Left: fraction of units responsive (Q1, uncorrected "
+                f"p < {RESPONSIVE_P_MAX:g}, |modulation| > "
+                f"{RESPONSIVE_MODULATION_MIN:g}).  "
+                "Right: mismatch minus matched control firing rate."
             ),
             size=FIGURE_TYPE_SCALE["label"],
+            fill="#646B68",
+        ),
+        svg_text(
+            98,
+            100,
+            (
+                "Areas with ≥10 pooled QC-passing units. Hatched where an area has "
+                f"fewer than {RESPONSIVE_MIN_AREA_UNITS} tested units for that event."
+            ),
+            size=FIGURE_TYPE_SCALE["small"],
             fill="#646B68",
         ),
     ]
@@ -990,129 +1385,113 @@ def write_neuropixels_event_svg(
         if value is not None
     ]
     matrix_limit = nice_limit(sorted(finite)[math.floor(len(finite) * 0.95)])
-    for row_index, area in enumerate(areas):
-        y = matrix_top + row_index * row_height
-        svg.append(
-            svg_text(
-                left - 15,
-                y + row_height * 0.67,
-                area,
-                size=FIGURE_TYPE_SCALE["label"],
-                anchor="end",
-            )
-        )
-        for column_index, column in enumerate(columns):
-            x = left + column_index * column_width
-            value = column["values"][area]
-            color = (
-                optotagging_heatmap_color(value, matrix_limit)
-                if value is not None
-                else (230, 232, 231)
-            )
-            svg.append(
-                f'<rect x="{x:.2f}" y="{y:.2f}" width="{column_width:.2f}" '
-                f'height="{row_height:.2f}" fill="rgb{color}" stroke="#ffffff"/>'
-            )
-    for column_index, column in enumerate(columns):
-        x = left + (column_index + 0.5) * column_width
-        svg.append(
-            svg_text(
-                x,
-                matrix_top + matrix_height + 18,
-                column["event"],
-                size=FIGURE_TYPE_SCALE["small"],
-                anchor="end",
-                fill="#646B68",
-                transform=(
-                    f"rotate(-55 {x:.2f} "
-                    f"{matrix_top + matrix_height + 18:.2f})"
-                ),
-            )
-        )
-    context_start = 0
-    for context in CONTEXT_ORDER:
-        count = 4
-        center = left + (context_start + count / 2) * column_width
-        svg.append(
-            svg_text(
-                center,
-                matrix_top - 18,
-                CONTEXT_LABELS[context],
-                size=FIGURE_TYPE_SCALE["heading"],
-                weight=750,
-                anchor="middle",
-            )
-        )
-        context_start += count
-    legend_width = 190
-    legend_x = width - right - legend_width
-    legend_y = 103
-    for step in range(legend_width):
-        value = -matrix_limit + (step / (legend_width - 1)) * matrix_limit * 2
-        color = optotagging_heatmap_color(value, matrix_limit)
-        svg.append(
-            f'<rect x="{legend_x + step:.2f}" y="{legend_y:.2f}" width="1.2" '
-            f'height="14" fill="rgb{color}"/>'
-        )
-    svg.extend(
-        [
-            svg_text(
-                legend_x,
-                legend_y + 33,
-                f"−{matrix_limit:g}",
-                size=FIGURE_TYPE_SCALE["small"],
-                anchor="middle",
-                fill="#646B68",
+    fractions = [
+        value
+        for column in fraction_columns
+        for value in column["values"].values()
+        if value is not None
+    ]
+    fraction_limit = min(
+        1.0,
+        max(0.2, math.ceil(max(fractions) * 10) / 10) if fractions else 0.5,
+    )
+
+    def contrast_fill(value: float | None) -> str:
+        # An absent cell is hatched, not grey. The obvious grey, #E6E8E7, is
+        # darker than this ramp's white midpoint, so "no units of this area in
+        # this session" was being drawn as a small real effect.
+        if value is None or not math.isfinite(value):
+            return f"url(#{RESPONSIVE_NO_DATA_PATTERN})"
+        return f"rgb{optotagging_heatmap_color(value, matrix_limit)}"
+
+    append_area_matrix(
+        svg,
+        areas=areas,
+        columns=fraction_columns,
+        x=left,
+        y=matrix_top,
+        matrix_width=matrix_width,
+        row_height=row_height,
+        cell_fill=lambda value: responsive_cell_fill(value, fraction_limit),
+        draw_row_labels=True,
+    )
+    append_area_matrix(
+        svg,
+        areas=areas,
+        columns=columns,
+        x=left + matrix_width + matrix_gap,
+        y=matrix_top,
+        matrix_width=matrix_width,
+        row_height=row_height,
+        cell_fill=contrast_fill,
+        draw_row_labels=False,
+    )
+    append_matrix_legend(
+        svg,
+        x=left,
+        y=matrix_top + matrix_height + 108,
+        legend_width=190,
+        ramp=lambda value: responsive_fraction_color(value, fraction_limit)
+        or RESPONSIVE_RAMP_LIGHT,
+        ticks=[
+            (0.0, "0", False),
+            (
+                RESPONSIVE_CHANCE_FRACTION / fraction_limit,
+                f"chance {RESPONSIVE_CHANCE_FRACTION:.0%}",
+                True,
             ),
-            svg_text(
-                legend_x + legend_width / 2,
-                legend_y + 33,
-                "0",
-                size=FIGURE_TYPE_SCALE["small"],
-                anchor="middle",
-                fill="#646B68",
-            ),
-            svg_text(
-                legend_x + legend_width,
-                legend_y + 33,
-                f"+{matrix_limit:g} spikes/s",
-                size=FIGURE_TYPE_SCALE["small"],
-                anchor="middle",
-                fill="#646B68",
-            ),
-        ]
+            (1.0, f"{fraction_limit:.0%} responsive", False),
+        ],
+        span=(0.0, fraction_limit),
+    )
+    append_matrix_legend(
+        svg,
+        x=left + matrix_width + matrix_gap,
+        y=matrix_top + matrix_height + 108,
+        legend_width=190,
+        ramp=lambda value: optotagging_heatmap_color(value, matrix_limit),
+        ticks=[
+            (0.0, f"−{matrix_limit:g}", False),
+            (0.5, "0", False),
+            (1.0, f"+{matrix_limit:g} spikes/s", False),
+        ],
+        span=(-matrix_limit, matrix_limit),
     )
 
     svg.extend(
         [
             svg_text(
                 36,
-                heatmap_top - 85,
+                heatmap_top - 118,
                 "B",
                 size=FIGURE_TYPE_SCALE["panel"],
                 weight=800,
             ),
             svg_text(
                 98,
-                heatmap_top - 87,
-                "Representative unit dynamics",
+                heatmap_top - 116,
+                "Responsive unit dynamics",
                 size=FIGURE_TYPE_SCALE["title"],
                 weight=750,
             ),
             svg_text(
                 98,
-                heatmap_top - 57,
+                heatmap_top - 84,
                 (
-                    "Top 150 QC-passing MUA/SUA units ≥1 Hz by absolute response effect; "
-                    "heatmap color is mismatch minus control SDF spikes/s"
+                    "Q1-responsive QC-passing MUA/SUA units ≥1 Hz, in anatomical "
+                    "order; heatmap color is mismatch minus control SDF spikes/s"
                 ),
                 size=FIGURE_TYPE_SCALE["label"],
                 fill="#646B68",
             ),
             svg_text(
                 98,
-                heatmap_top - 35,
-                "Lower traces show baseline-subtracted mean SDF ±1 SEM across units",
+                heatmap_top - 58,
+                (
+                    "Rows are selected on the test, not on the plotted effect. Lower "
+                    "traces show baseline-subtracted mean SDF ±1 SEM across the same "
+                    "units"
+                ),
                 size=FIGURE_TYPE_SCALE["small"],
                 fill="#646B68",
             ),
@@ -1145,21 +1524,11 @@ def write_neuropixels_event_svg(
             index for index, value in enumerate(time) if value >= display_start
         )
         timing = session["events"][event_index]["timing"]["context"]
-        delta = float32_values(session["responseDeltaHzBase64"])
-        selected = [
-            index
-            for index, unit in enumerate(session["units"])
-            if unit["qcPass"]
-            and unit["decoderLabel"] in {"mua", "sua"}
-            and unit["firingRateHz"] >= 1
-        ]
-        selected.sort(
-            key=lambda index: abs(
-                delta[event_index * session["unitCount"] + index]
-            ),
-            reverse=True,
-        )
-        selected = selected[:150]
+        selected, qualified_count = responsive_unit_indices(session, event_index)
+        if not selected:
+            raise RuntimeError(
+                f"{session['context']} {event_id} has no responsive units to draw."
+            )
         sdf_mean_path = SOURCE_MEDIA_DIR / Path(
             session["sdfMeanAtlas"]["path"]
         ).name
@@ -1384,6 +1753,7 @@ def write_neuropixels_event_svg(
             display_start=display_start,
             display_end=display_end,
             unit_count=len(selected),
+            qualified_count=qualified_count,
         )
     svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)

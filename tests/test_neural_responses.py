@@ -527,8 +527,17 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     svg = first_svg.decode()
     html = first_html.decode()
     assert 'role="img"' in svg
-    assert "Area-level mismatch response across all conditions" in svg
-    assert "Representative unit dynamics" in svg
+    assert "Area-level responsiveness and mismatch-minus-control effect" in svg
+    assert "Responsive unit dynamics" in svg
+    # Two matrices over the same rows, and a hatch so an unmeasured cell is
+    # never drawn as a fraction on either panel's own scale.
+    assert svg.count('id="responsive-no-data"') == 1
+    assert 'url(#responsive-no-data)' in svg
+    assert "chance 5%" in svg
+    assert "% responsive" in svg
+    # Rows are selected on the test, not on the effect the panel plots.
+    assert "Rows are selected on the test, not on the plotted effect" in svg
+    assert "Top 150 QC-passing MUA/SUA units" not in svg
     assert svg.count("<image ") == 4
     assert "./media/neuropixels-event-responses/" in html
     assert 'id="heatmap-canvas"' in html
@@ -592,7 +601,7 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert "Δ firing rate" in svg
     assert "spike-density function" in html
     assert "spike-density functions" in svg
-    assert "±1 SEM across units" in svg
+    assert "±1 SEM across the same" in svg
     assert 'fill-opacity="0.14"' in svg
     assert "zscoreLimit: 3" in html
     assert 'colorLimit.max = "6"' in html
