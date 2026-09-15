@@ -6,6 +6,8 @@ from pathlib import Path
 import pytest
 
 from openscope_p3_publication.neural_response_figure import (
+    RESPONSIVE_MIN_AREA_UNITS,
+    RESPONSIVE_MIN_EVENT_COVERAGE,
     STATIC_AREA_GROUP_ORDER,
     STATIC_AREA_MIN_QC_UNITS,
     float32_values,
@@ -13,6 +15,7 @@ from openscope_p3_publication.neural_response_figure import (
     mean_sem_traces,
     presentation_timing_values,
     response_matrix,
+    responsive_fraction_matrix,
     sequence_control_segments,
     static_rate_axis,
     uint16_base64_values,
@@ -453,8 +456,31 @@ def test_static_response_matrix_uses_anatomical_area_order() -> None:
             area,
         )
 
-    assert len(areas) == 50
+    # 32 of the 46 pooled candidates clear the per-event coverage requirement.
+    assert len(areas) == 32
     assert len(columns) == 16
+    # Every drawn cell is backed by at least the minimum tested units, and the
+    # two matrices hatch identically so a row can be read across.
+    fraction_areas, fraction_columns = responsive_fraction_matrix(payload)
+    assert fraction_areas == areas
+    for contrast, fraction in zip(columns, fraction_columns, strict=True):
+        for area in areas:
+            assert contrast["counts"][area] == fraction["counts"][area]
+            assert (contrast["values"][area] is None) == (
+                fraction["values"][area] is None
+            )
+            if contrast["values"][area] is not None:
+                assert contrast["counts"][area] >= RESPONSIVE_MIN_AREA_UNITS
+    # Coverage is what earns a row: PL6b pooled over 10 units but had 2 to 5 per
+    # session, so every one of its cells was hatched.
+    assert "PL6b" not in areas
+    for area in areas:
+        measurable = sum(
+            1
+            for column in fraction_columns
+            if column["counts"][area] >= RESPONSIVE_MIN_AREA_UNITS
+        )
+        assert measurable >= RESPONSIVE_MIN_EVENT_COVERAGE
     assert areas == sorted(areas, key=sort_key)
     categories = [
         next(group for group in STATIC_AREA_GROUP_ORDER if group in area_groups[area])
@@ -463,10 +489,10 @@ def test_static_response_matrix_uses_anatomical_area_order() -> None:
     assert {
         group: categories.count(group) for group in STATIC_AREA_GROUP_ORDER
     } == {
-        "frontal": 17,
-        "visual": 20,
-        "hippocampal": 6,
-        "thalamic": 7,
+        "frontal": 10,
+        "visual": 14,
+        "hippocampal": 5,
+        "thalamic": 3,
     }
     assert all(count >= STATIC_AREA_MIN_QC_UNITS for count in area_counts.values())
     assert all(
@@ -538,7 +564,10 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     # Rows are selected on the test, not on the effect the panel plots.
     assert "Rows are selected on the test, not on the plotted effect" in svg
     assert "Top 150 QC-passing MUA/SUA units" not in svg
-    assert svg.count("<image ") == 4
+    # Two area groups x four contexts of example panels.
+    assert svg.count("<image ") == 8
+    assert "Visual cortex" in svg
+    assert "Visual thalamus" in svg
     assert "./media/neuropixels-event-responses/" in html
     assert 'id="heatmap-canvas"' in html
     assert 'data-metric="mismatch"' in html

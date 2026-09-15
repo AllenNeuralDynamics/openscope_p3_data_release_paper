@@ -569,13 +569,16 @@ def svg_text(
     )
 
 
-def response_matrix(payload: dict) -> tuple[list[str], list[dict]]:
+def candidate_matrix_areas(payload: dict) -> tuple[list[str], dict]:
+    """Areas eligible for a matrix row before the coverage filter.
+
+    Pooled across sessions, which is why the coverage filter in
+    :func:`tested_unit_counts` is needed: pooling admits areas whose every
+    individual cell is too thin to draw.
+    """
     area_counts = Counter()
     area_groups = {}
-    sessions = {}
     for session in payload["sessions"]:
-        delta = float32_values(session["responseDeltaHzBase64"])
-        sessions[session["context"]] = (session, delta)
         for unit in session["units"]:
             if unit["qcPass"] and unit["location"] != "void":
                 area_counts[unit["location"]] += 1
@@ -599,21 +602,39 @@ def response_matrix(payload: dict) -> tuple[list[str], list[dict]]:
         ),
         key=area_sort_key,
     )
+    return areas, area_groups
+
+
+def response_matrix(payload: dict) -> tuple[list[str], list[dict]]:
+    """Mean mismatch-minus-control firing rate per area and event.
+
+    Gated on the same tested-unit counts as the responsive-fraction matrix, so
+    both panels hatch identical cells and a row reads across.
+    """
+    areas, counts = tested_unit_counts(payload)
+    sessions = {
+        session["context"]: (session, float32_values(session["responseDeltaHzBase64"]))
+        for session in payload["sessions"]
+    }
     columns = []
     for context in CONTEXT_ORDER:
         session, delta = sessions[context]
+        by_area: dict[str, list[int]] = {}
+        for index, unit in enumerate(session["units"]):
+            if unit["qcPass"]:
+                by_area.setdefault(unit["location"], []).append(index)
         for event_index, event in enumerate(session["events"]):
             values = {}
             for area in areas:
-                selected = [
-                    index
-                    for index, unit in enumerate(session["units"])
-                    if unit["qcPass"] and unit["location"] == area
-                ]
+                selected = by_area.get(area, [])
+                tested = counts[(context, event_index, area)]
                 values[area] = (
-                    sum(delta[event_index * session["unitCount"] + index] for index in selected)
+                    sum(
+                        delta[event_index * session["unitCount"] + index]
+                        for index in selected
+                    )
                     / len(selected)
-                    if selected
+                    if selected and tested >= RESPONSIVE_MIN_AREA_UNITS
                     else None
                 )
             columns.append(
@@ -621,6 +642,7 @@ def response_matrix(payload: dict) -> tuple[list[str], list[dict]]:
                     "context": context,
                     "event": event["label"],
                     "eventId": event["id"],
+                    "counts": {area: counts[(context, event_index, area)] for area in areas},
                     "values": values,
                 }
             )
@@ -649,7 +671,69 @@ is drawn on the panel as a reference rather than subtracted.
 """
 
 RESPONSIVE_MIN_AREA_UNITS = 10
-"""Below this many units, an area's fraction is not drawn for that event."""
+"""Below this many tested units, a cell is hatched rather than drawn.
+
+Applied to **both** area matrices from the same count, so the two panels hatch
+exactly the same cells and a row can be read across. Before this, the
+mismatch-minus-control matrix had no minimum at all: PL6b, for instance, was
+drawn from two units in the standard context and five in sensorimotor while the
+responsive-fraction matrix beside it correctly hatched them.
+"""
+
+RESPONSIVE_MIN_EVENT_COVERAGE = 8
+"""Events an area must have measurable before it earns a row.
+
+Row membership previously counted units pooled across all four sessions while
+each cell is per-session, so areas appeared whose every cell was hatched. With
+16 events this threshold is equivalent to requiring two full contexts, and both
+rules select the same 32 of 46 areas in this release.
+"""
+
+
+def tested_unit_counts(payload: dict) -> tuple[list[str], dict]:
+    """Units with a usable Q1 test per area and event, and the areas to draw.
+
+    One source of truth for both area matrices: the counts decide which cells
+    are hatched, and an area earns a row only when at least
+    ``RESPONSIVE_MIN_EVENT_COVERAGE`` of its cells clear
+    ``RESPONSIVE_MIN_AREA_UNITS``.
+    """
+    candidates, _ = candidate_matrix_areas(payload)
+    sessions = {session["context"]: session for session in payload["sessions"]}
+    counts: dict[tuple[str, int, str], int] = {}
+    for context in CONTEXT_ORDER:
+        session = sessions[context]
+        unit_count = session["unitCount"]
+        p_values = float32_values(session["responsiveness"]["q1_p"]["base64"])
+        modulation = float32_values(
+            session["responsiveness"]["q1_modulation"]["base64"]
+        )
+        by_area: dict[str, list[int]] = {}
+        for index, unit in enumerate(session["units"]):
+            if unit["qcPass"]:
+                by_area.setdefault(unit["location"], []).append(index)
+        for event_index in range(len(session["events"])):
+            offset = event_index * unit_count
+            for area in candidates:
+                counts[(context, event_index, area)] = sum(
+                    1
+                    for index in by_area.get(area, [])
+                    if math.isfinite(p_values[offset + index])
+                    and math.isfinite(modulation[offset + index])
+                )
+    areas = [
+        area
+        for area in candidates
+        if sum(
+            1
+            for key, value in counts.items()
+            if key[2] == area and value >= RESPONSIVE_MIN_AREA_UNITS
+        )
+        >= RESPONSIVE_MIN_EVENT_COVERAGE
+    ]
+    if not areas:
+        raise RuntimeError("No area met the matrix coverage requirement.")
+    return areas, counts
 
 
 SHORT_CONTEXT_LABELS = {
@@ -701,11 +785,33 @@ one end of it. The panel label reports both counts.
 """
 
 
+STATIC_EXAMPLE_GROUPS: tuple[tuple[str, frozenset[str]], ...] = (
+    ("Visual cortex", frozenset({"cortical", "visual"})),
+    ("Visual thalamus", frozenset({"thalamic", "visual"})),
+)
+"""Area groups drawn as example populations in the static example panel.
+
+These are where the responsive fractions in the area matrix are highest, so
+they are where example dynamics are worth the space. Membership comes from the
+unit's own Allen-ontology groups: visual cortex is cortical and visual, visual
+thalamus is thalamic and visual, which resolves to the LGd subdivisions and LGv.
+"""
+
+STATIC_EXAMPLE_MAX_ROW_HEIGHT = 6.0
+"""Cap on a heatmap row's drawn thickness, in figure units.
+
+Without a cap, a panel backed by six units fills its box with six 43 px bands
+and reads louder than a panel backed by a hundred. The duration context really
+does have almost no responsive visual units, and that should look sparse.
+"""
+
+
 def responsive_unit_indices(
     session: dict,
     event_index: int,
     *,
     target: int = STATIC_EXAMPLE_UNIT_TARGET,
+    area_groups: frozenset[str] | None = None,
 ) -> tuple[list[int], int]:
     """Q1-responsive units for one event, in anatomical order.
 
@@ -742,6 +848,7 @@ def responsive_unit_indices(
             and math.isfinite(modulation[offset + index])
             and p_values[offset + index] < RESPONSIVE_P_MAX
             and abs(modulation[offset + index]) > RESPONSIVE_MODULATION_MIN
+            and (area_groups is None or area_groups <= set(unit["areaGroups"]))
         ),
         key=sort_key,
     )
@@ -767,7 +874,7 @@ def responsive_fraction_matrix(payload: dict) -> tuple[list[str], list[dict]]:
     rather than a fraction, so a small denominator is never drawn as a
     measurement.
     """
-    areas, _ = response_matrix(payload)
+    areas, tested = tested_unit_counts(payload)
     sessions = {session["context"]: session for session in payload["sessions"]}
     columns = []
     for context in CONTEXT_ORDER:
@@ -786,24 +893,27 @@ def responsive_fraction_matrix(payload: dict) -> tuple[list[str], list[dict]]:
             values: dict[str, float | None] = {}
             counts: dict[str, int] = {}
             for area in areas:
-                indices = by_area.get(area, [])
-                tested = [
+                testable = [
                     index
-                    for index in indices
+                    for index in by_area.get(area, [])
                     if math.isfinite(p_values[offset + index])
                     and math.isfinite(modulation[offset + index])
                 ]
-                counts[area] = len(tested)
-                if len(tested) < RESPONSIVE_MIN_AREA_UNITS:
+                counts[area] = tested[(context, event_index, area)]
+                if counts[area] != len(testable):
+                    raise RuntimeError(
+                        "Tested-unit counts disagree between the area matrices."
+                    )
+                if counts[area] < RESPONSIVE_MIN_AREA_UNITS:
                     values[area] = None
                     continue
                 responsive = sum(
                     1
-                    for index in tested
+                    for index in testable
                     if p_values[offset + index] < RESPONSIVE_P_MAX
                     and abs(modulation[offset + index]) > RESPONSIVE_MODULATION_MIN
                 )
-                values[area] = responsive / len(tested)
+                values[area] = responsive / len(testable)
             columns.append(
                 {
                     "context": context,
@@ -1316,11 +1426,18 @@ def write_neuropixels_event_svg(
     matrix_height = len(areas) * row_height
     matrix_gap = 76
     matrix_width = (width - left - right - matrix_gap) / 2
-    heatmap_top = matrix_top + matrix_height + 330
+    heatmap_top = matrix_top + matrix_height + 372
     heatmap_height = 260
     line_top = heatmap_top + heatmap_height + 100
     line_height = 145
-    height = line_top + line_height + 120
+    # One row of example panels per area group, stacked.
+    example_row_pitch = heatmap_height + 100 + line_height + 132
+    height = (
+        line_top
+        + (len(STATIC_EXAMPLE_GROUPS) - 1) * example_row_pitch
+        + line_height
+        + 120
+    )
     svg = [
         (
             f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
@@ -1371,8 +1488,10 @@ def write_neuropixels_event_svg(
             98,
             100,
             (
-                "Areas with ≥10 pooled QC-passing units. Hatched where an area has "
-                f"fewer than {RESPONSIVE_MIN_AREA_UNITS} tested units for that event."
+                f"Both panels hatch the same cells: fewer than "
+                f"{RESPONSIVE_MIN_AREA_UNITS} tested units for that event. Areas need "
+                f"≥{RESPONSIVE_MIN_EVENT_COVERAGE} of 16 events measurable to earn a "
+                "row."
             ),
             size=FIGURE_TYPE_SCALE["small"],
             fill="#646B68",
@@ -1512,249 +1631,291 @@ def write_neuropixels_event_svg(
             ),
         ]
     )
-    for context_index, context in enumerate(CONTEXT_ORDER):
-        session = sessions[context]
-        event_id = DEFAULT_EVENTS[context]
-        event_index = next(
-            index for index, event in enumerate(session["events"]) if event["id"] == event_id
+    for group_index, (group_label, group_filter) in enumerate(
+        STATIC_EXAMPLE_GROUPS
+    ):
+        row_offset = group_index * example_row_pitch
+        row_heatmap_top = heatmap_top + row_offset
+        row_line_top = line_top + row_offset
+        svg.append(
+            svg_text(
+                left - 80,
+                row_line_top + line_height / 2,
+                "Δ firing rate",
+                size=FIGURE_TYPE_SCALE["label"],
+                weight=700,
+                anchor="end",
+            )
         )
-        time = session["timeBinCentersSeconds"]
-        display_start, display_end = session["windowSeconds"]
-        first_visible = next(
-            index for index, value in enumerate(time) if value >= display_start
+        # Rotated into the left margin: horizontal, the longer group names run
+        # under the first heatmap.
+        label_x = 52
+        label_y = (
+            row_heatmap_top + 28 + row_line_top + line_height
+        ) / 2
+        svg.append(
+            svg_text(
+                label_x,
+                label_y,
+                group_label,
+                size=FIGURE_TYPE_SCALE["heading"],
+                weight=750,
+                anchor="middle",
+                transform=f"rotate(-90 {label_x:.2f} {label_y:.2f})",
+            )
         )
-        timing = session["events"][event_index]["timing"]["context"]
-        selected, qualified_count = responsive_unit_indices(session, event_index)
-        if not selected:
-            raise RuntimeError(
-                f"{session['context']} {event_id} has no responsive units to draw."
+        for context_index, context in enumerate(CONTEXT_ORDER):
+            session = sessions[context]
+            event_id = DEFAULT_EVENTS[context]
+            event_index = next(
+                index for index, event in enumerate(session["events"]) if event["id"] == event_id
             )
-        sdf_mean_path = SOURCE_MEDIA_DIR / Path(
-            session["sdfMeanAtlas"]["path"]
-        ).name
-        sdf_mean = uint16_values(sdf_mean_path)
-        heatmap_traces = []
-        for unit_index in selected:
-            event_trace = unit_rate_trace(
-                sdf_mean,
-                session,
-                event_index,
-                unit_index,
-                0,
+            time = session["timeBinCentersSeconds"]
+            display_start, display_end = session["windowSeconds"]
+            first_visible = next(
+                index for index, value in enumerate(time) if value >= display_start
             )
-            control_trace = unit_rate_trace(
-                sdf_mean,
-                session,
-                event_index,
-                unit_index,
-                1,
+            timing = session["events"][event_index]["timing"]["context"]
+            selected, qualified_count = responsive_unit_indices(
+                session, event_index, area_groups=group_filter
             )
-            heatmap_traces.extend(
-                event_value - control_value
-                for event_value, control_value in zip(
-                    event_trace[first_visible:],
-                    control_trace[first_visible:],
-                    strict=True,
+            if not selected:
+                raise RuntimeError(
+                    f"{session['context']} {event_id} has no responsive "
+                    f"{group_label.lower()} units to draw."
                 )
-            )
-        heat_limit = nice_limit(
-            sorted(abs(value) for value in heatmap_traces)[
-                math.floor(len(heatmap_traces) * 0.98)
-            ]
-        )
-        png = heatmap_png(
-            session,
-            sdf_mean,
-            event_index,
-            selected,
-            heat_limit,
-            time,
-            display_start,
-        )
-        encoded = base64.b64encode(png).decode()
-        x = left + context_index * (panel_width + panel_gap)
-        svg.extend(
-            [
-                svg_text(
-                    x + panel_width / 2,
-                    heatmap_top - 14,
-                    CONTEXT_LABELS[context],
-                    size=FIGURE_TYPE_SCALE["heading"],
-                    weight=750,
-                    anchor="middle",
-                ),
-                svg_text(
-                    x + panel_width / 2,
-                    heatmap_top + 12,
-                    session["events"][event_index]["label"],
-                    size=FIGURE_TYPE_SCALE["label"],
-                    anchor="middle",
-                    fill="#646B68",
-                ),
-                (
-                    f'<image x="{x:.2f}" y="{heatmap_top + 28:.2f}" '
-                    f'width="{panel_width:.2f}" height="{heatmap_height:.2f}" '
-                    f'preserveAspectRatio="none" href="data:image/png;base64,{encoded}"/>'
-                ),
-                svg_text(
-                    x - 7,
-                    heatmap_top + 34,
-                    "0",
-                    size=FIGURE_TYPE_SCALE["small"],
-                    anchor="end",
-                    fill="#646B68",
-                ),
-                svg_text(
-                    x - 7,
-                    heatmap_top + 28 + heatmap_height,
-                    str(len(selected)),
-                    size=FIGURE_TYPE_SCALE["small"],
-                    anchor="end",
-                    fill="#646B68",
-                ),
-            ]
-        )
-        colorbar_width = min(190, panel_width * 0.62)
-        colorbar_x = x + (panel_width - colorbar_width) / 2
-        colorbar_y = heatmap_top + heatmap_height + 36
-        for step in range(round(colorbar_width)):
-            value = -heat_limit + (step / (colorbar_width - 1)) * heat_limit * 2
-            color = optotagging_heatmap_color(value, heat_limit)
-            svg.append(
-                f'<rect x="{colorbar_x + step:.2f}" y="{colorbar_y:.2f}" '
-                f'width="1.2" height="10" fill="rgb{color}"/>'
-            )
-        svg.extend(
-            [
-                svg_text(
-                    colorbar_x,
-                    colorbar_y + 27,
-                    f"−{heat_limit:g}",
-                    size=FIGURE_TYPE_SCALE["small"],
-                    anchor="middle",
-                    fill="#646B68",
-                ),
-                svg_text(
-                    colorbar_x + colorbar_width / 2,
-                    colorbar_y + 27,
-                    "0",
-                    size=FIGURE_TYPE_SCALE["small"],
-                    anchor="middle",
-                    fill="#646B68",
-                ),
-                svg_text(
-                    colorbar_x + colorbar_width,
-                    colorbar_y + 27,
-                    f"+{heat_limit:g} spikes/s",
-                    size=FIGURE_TYPE_SCALE["small"],
-                    anchor="middle",
-                    fill="#646B68",
-                ),
-            ]
-        )
-        for value in presentation_timing_values(
-            timing,
-            display_start,
-            display_end,
-        ):
-            guide_x = (
-                x
-                + (value - display_start)
-                / (display_end - display_start)
-                * panel_width
-            )
-            svg.append(
-                f'<line x1="{guide_x:.2f}" y1="{heatmap_top + 28:.2f}" '
-                f'x2="{guide_x:.2f}" y2="{heatmap_top + 28 + heatmap_height:.2f}" '
-                'stroke="#303536" stroke-width="1" stroke-dasharray="5 4"/>'
-            )
-        baseline_means = float32_values(session["baselineMeanHzBase64"])
-        baseline_event_traces = [
-            [
-                value
-                - baseline_means[
-                    (event_index * 2) * session["unitCount"] + unit_index
-                ]
-                for value in unit_rate_trace(
+            sdf_mean_path = SOURCE_MEDIA_DIR / Path(
+                session["sdfMeanAtlas"]["path"]
+            ).name
+            sdf_mean = uint16_values(sdf_mean_path)
+            heatmap_traces = []
+            for unit_index in selected:
+                event_trace = unit_rate_trace(
                     sdf_mean,
                     session,
                     event_index,
                     unit_index,
                     0,
                 )
-            ]
-            for unit_index in selected
-        ]
-        baseline_control_traces = [
-            [
-                value
-                - baseline_means[
-                    (event_index * 2 + 1) * session["unitCount"] + unit_index
-                ]
-                for value in unit_rate_trace(
+                control_trace = unit_rate_trace(
                     sdf_mean,
                     session,
                     event_index,
                     unit_index,
                     1,
                 )
-            ]
-            for unit_index in selected
-        ]
-        baseline_event_means, baseline_event_sem = mean_sem_traces(
-            baseline_event_traces
-        )
-        baseline_control_means, baseline_control_sem = mean_sem_traces(
-            baseline_control_traces
-        )
-        reference = session.get("sequenceComparisonReference")
-        if reference is not None:
-            # Same restriction the interactive applies: control block 2 has no
-            # sequence structure to trace between the two matched windows.
-            reference_scale = reference["quantizationScalePerHz"]
-            reference_bins = reference["shape"][1]
-            reference_counts = uint16_base64_values(reference["sdfBase64"])
-            reference_baselines = float32_values(reference["baselineHzBase64"])
-            reference_traces = [
+                heatmap_traces.extend(
+                    event_value - control_value
+                    for event_value, control_value in zip(
+                        event_trace[first_visible:],
+                        control_trace[first_visible:],
+                        strict=True,
+                    )
+                )
+            heat_limit = nice_limit(
+                sorted(abs(value) for value in heatmap_traces)[
+                    math.floor(len(heatmap_traces) * 0.98)
+                ]
+            )
+            png = heatmap_png(
+                session,
+                sdf_mean,
+                event_index,
+                selected,
+                heat_limit,
+                time,
+                display_start,
+            )
+            encoded = base64.b64encode(png).decode()
+            x = left + context_index * (panel_width + panel_gap)
+            # A panel backed by six units should look sparse, not fill
+            # its box with six 43 px bands.
+            drawn_height = min(
+                heatmap_height,
+                len(selected) * STATIC_EXAMPLE_MAX_ROW_HEIGHT,
+            )
+            svg.extend(
                 [
-                    reference_counts[unit_index * reference_bins + bin_index]
-                    / reference_scale
-                    - reference_baselines[unit_index]
-                    for bin_index in range(reference_bins)
+                    svg_text(
+                        x + panel_width / 2,
+                        row_heatmap_top - 14,
+                        CONTEXT_LABELS[context],
+                        size=FIGURE_TYPE_SCALE["heading"],
+                        weight=750,
+                        anchor="middle",
+                    ),
+                    svg_text(
+                        x + panel_width / 2,
+                        row_heatmap_top + 12,
+                        session["events"][event_index]["label"],
+                        size=FIGURE_TYPE_SCALE["label"],
+                        anchor="middle",
+                        fill="#646B68",
+                    ),
+                    (
+                        f'<image x="{x:.2f}" y="{row_heatmap_top + 28:.2f}" '
+                        f'width="{panel_width:.2f}" height="{drawn_height:.2f}" '
+                        f'preserveAspectRatio="none" href="data:image/png;base64,{encoded}"/>'
+                    ),
+                    svg_text(
+                        x - 7,
+                        row_heatmap_top + 34,
+                        "0",
+                        size=FIGURE_TYPE_SCALE["small"],
+                        anchor="end",
+                        fill="#646B68",
+                    ),
+                    svg_text(
+                        x - 7,
+                        row_heatmap_top + 28 + drawn_height,
+                        str(len(selected)),
+                        size=FIGURE_TYPE_SCALE["small"],
+                        anchor="end",
+                        fill="#646B68",
+                    ),
+                ]
+            )
+            colorbar_width = min(190, panel_width * 0.62)
+            colorbar_x = x + (panel_width - colorbar_width) / 2
+            colorbar_y = row_heatmap_top + heatmap_height + 36
+            for step in range(round(colorbar_width)):
+                value = -heat_limit + (step / (colorbar_width - 1)) * heat_limit * 2
+                color = optotagging_heatmap_color(value, heat_limit)
+                svg.append(
+                    f'<rect x="{colorbar_x + step:.2f}" y="{colorbar_y:.2f}" '
+                    f'width="1.2" height="10" fill="rgb{color}"/>'
+                )
+            svg.extend(
+                [
+                    svg_text(
+                        colorbar_x,
+                        colorbar_y + 27,
+                        f"−{heat_limit:g}",
+                        size=FIGURE_TYPE_SCALE["small"],
+                        anchor="middle",
+                        fill="#646B68",
+                    ),
+                    svg_text(
+                        colorbar_x + colorbar_width / 2,
+                        colorbar_y + 27,
+                        "0",
+                        size=FIGURE_TYPE_SCALE["small"],
+                        anchor="middle",
+                        fill="#646B68",
+                    ),
+                    svg_text(
+                        colorbar_x + colorbar_width,
+                        colorbar_y + 27,
+                        f"+{heat_limit:g} spikes/s",
+                        size=FIGURE_TYPE_SCALE["small"],
+                        anchor="middle",
+                        fill="#646B68",
+                    ),
+                ]
+            )
+            for value in presentation_timing_values(
+                timing,
+                display_start,
+                display_end,
+            ):
+                guide_x = (
+                    x
+                    + (value - display_start)
+                    / (display_end - display_start)
+                    * panel_width
+                )
+                svg.append(
+                    f'<line x1="{guide_x:.2f}" y1="{row_heatmap_top + 28:.2f}" '
+                    f'x2="{guide_x:.2f}" y2="{row_heatmap_top + 28 + drawn_height:.2f}" '
+                    'stroke="#303536" stroke-width="1" stroke-dasharray="5 4"/>'
+                )
+            baseline_means = float32_values(session["baselineMeanHzBase64"])
+            baseline_event_traces = [
+                [
+                    value
+                    - baseline_means[
+                        (event_index * 2) * session["unitCount"] + unit_index
+                    ]
+                    for value in unit_rate_trace(
+                        sdf_mean,
+                        session,
+                        event_index,
+                        unit_index,
+                        0,
+                    )
                 ]
                 for unit_index in selected
             ]
-            reference_means, reference_sem = mean_sem_traces(reference_traces)
-            baseline_control_means, baseline_control_sem = (
-                sequence_control_segments(
-                    time,
-                    baseline_control_means,
-                    baseline_control_sem,
-                    reference_means,
-                    reference_sem,
-                    comparison_span=tuple(reference["spanSeconds"]),
-                    mismatch_stop=timing["presentationStopSeconds"],
-                    reference_bin_seconds=reference["binSeconds"],
-                )
+            baseline_control_traces = [
+                [
+                    value
+                    - baseline_means[
+                        (event_index * 2 + 1) * session["unitCount"] + unit_index
+                    ]
+                    for value in unit_rate_trace(
+                        sdf_mean,
+                        session,
+                        event_index,
+                        unit_index,
+                        1,
+                    )
+                ]
+                for unit_index in selected
+            ]
+            baseline_event_means, baseline_event_sem = mean_sem_traces(
+                baseline_event_traces
             )
-        append_static_rate_plot(
-            svg,
-            x=x,
-            y=line_top,
-            width=panel_width,
-            height=line_height,
-            time=time,
-            event_values=baseline_event_means,
-            event_sem=baseline_event_sem,
-            control_values=baseline_control_means,
-            control_sem=baseline_control_sem,
-            timing=timing,
-            baseline_subtracted=True,
-            display_start=display_start,
-            display_end=display_end,
-            unit_count=len(selected),
-            qualified_count=qualified_count,
-        )
+            baseline_control_means, baseline_control_sem = mean_sem_traces(
+                baseline_control_traces
+            )
+            reference = session.get("sequenceComparisonReference")
+            if reference is not None:
+                # Same restriction the interactive applies: control block 2 has no
+                # sequence structure to trace between the two matched windows.
+                reference_scale = reference["quantizationScalePerHz"]
+                reference_bins = reference["shape"][1]
+                reference_counts = uint16_base64_values(reference["sdfBase64"])
+                reference_baselines = float32_values(reference["baselineHzBase64"])
+                reference_traces = [
+                    [
+                        reference_counts[unit_index * reference_bins + bin_index]
+                        / reference_scale
+                        - reference_baselines[unit_index]
+                        for bin_index in range(reference_bins)
+                    ]
+                    for unit_index in selected
+                ]
+                reference_means, reference_sem = mean_sem_traces(reference_traces)
+                baseline_control_means, baseline_control_sem = (
+                    sequence_control_segments(
+                        time,
+                        baseline_control_means,
+                        baseline_control_sem,
+                        reference_means,
+                        reference_sem,
+                        comparison_span=tuple(reference["spanSeconds"]),
+                        mismatch_stop=timing["presentationStopSeconds"],
+                        reference_bin_seconds=reference["binSeconds"],
+                    )
+                )
+            append_static_rate_plot(
+                svg,
+                x=x,
+                y=row_line_top,
+                width=panel_width,
+                height=line_height,
+                time=time,
+                event_values=baseline_event_means,
+                event_sem=baseline_event_sem,
+                control_values=baseline_control_means,
+                control_sem=baseline_control_sem,
+                timing=timing,
+                baseline_subtracted=True,
+                display_start=display_start,
+                display_end=display_end,
+                unit_count=len(selected),
+                qualified_count=qualified_count,
+            )
     svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)
     write_svg_output(output, svg)
