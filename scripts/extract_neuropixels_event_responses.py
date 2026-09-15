@@ -13,6 +13,7 @@ import math
 import re
 import shutil
 import urllib.request
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import closing
 from dataclasses import asdict
@@ -40,11 +41,29 @@ except ImportError as exc:  # pragma: no cover - optional extraction environment
         "python scripts/extract_neuropixels_event_responses.py"
     ) from exc
 
+from openscope_p3_publication.mismatch_adjacency import (
+    SENSORIMOTOR_MIN_INTERVAL_SECONDS,
+)
+from openscope_p3_publication.mismatch_responsiveness import (
+    DEFAULT_MODULATION_MINIMUM,
+    DEFAULT_Q_MAX,
+    SENSORIMOTOR_BASELINE_SECONDS,
+    benjamini_hochberg,
+    classify_responsive,
+    clean_trial_mask,
+    comparison_windows,
+    paired_p_values,
+    unpaired_p_values,
+)
+from openscope_p3_publication.mismatch_responsiveness import (
+    modulation_index as trialwise_modulation_index,
+)
 from openscope_p3_publication.neural_responses import (
     BASELINE_BIN_SECONDS,
     BIN_SECONDS,
     CONTEXT_WINDOWS_SECONDS,
     NEURAL_SESSIONS,
+    NEURAL_SUBJECT,
     QC_THRESHOLDS,
     RASTERMAP_PARAMETERS,
     RASTERMAP_VERSION,
@@ -62,17 +81,23 @@ from openscope_p3_publication.neural_responses import (
     relative_bin_centers,
     sdf_kernel,
 )
+from openscope_p3_publication.sensorimotor_running import (
+    DEFAULT_RUNNING_THRESHOLD_CM_S,
+    forward_speed,
+    sensorimotor_trial_masks,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = REPO_ROOT / "figure_sources" / "data"
 DEFAULT_OUTPUT = DATA_DIR / "neuropixels-event-responses.json"
 DEFAULT_PROVENANCE_OUTPUT = DEFAULT_OUTPUT.with_suffix(".provenance.json")
+DEFAULT_RESPONSIVENESS_OUTPUT = DATA_DIR / "neuropixels-mismatch-responsiveness.csv"
 DEFAULT_MEDIA_DIR = REPO_ROOT / "figure_sources" / "media" / "neuropixels-event-responses"
 MEDIA_ASSET_ROOT = "media/neuropixels-event-responses"
 DANDI_API = "https://api.dandiarchive.org/api"
 DANDISET_ID = "001637"
 DANDI_VERSION = "draft"
-VERSION = 9
+VERSION = 10
 CONDITION_ORDER = ("context", "control")
 PROBE_ORDER = tuple(f"Probe{letter}" for letter in "ABCDEF")
 COMPATIBLE_METADATA_SIGNATURES = (
@@ -86,6 +111,7 @@ SST_OPTOTAGGING_CONDITION = next(
     for condition in OPTOTAGGING_CONDITIONS
     if condition.table_name == "5 hz pulse train_presentations"
 )
+RUNNING_SERIES = "processing/running/running_speed"
 SST_P_VALUE_MAX = 0.05
 SST_MODULATION_INDEX_MIN = 0.1
 
@@ -99,6 +125,11 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_PROVENANCE_OUTPUT,
     )
     parser.add_argument("--media-dir", type=Path, default=DEFAULT_MEDIA_DIR)
+    parser.add_argument(
+        "--responsiveness-output",
+        type=Path,
+        default=DEFAULT_RESPONSIVENESS_OUTPUT,
+    )
     parser.add_argument(
         "--cache-dir",
         type=Path,
@@ -334,19 +365,25 @@ def event_records(nwb: h5py.File, config) -> tuple[list[dict], list[dict]]:
             condition_onsets[condition] = arrays["start"][indices]
         baseline_windows = {}
         response_windows = {}
+        trial_baseline_windows = {}
         for condition, arrays in (
             ("context", context_arrays),
             ("control", control_arrays),
         ):
+            # Per-trial baselines keep their trial alignment, including the
+            # unavailable ones, so responsiveness can subtract a trial's own
+            # baseline. The pooled list below drops them because
+            # baseline_rate_stats accumulates 20 ms bins across all baselines.
+            trial_baseline_windows[condition] = neural_baseline_windows(
+                arrays["start"],
+                arrays["stop"],
+                condition_indices[condition],
+                config.context,
+                arrays["block_number"],
+            )
             baseline_windows[condition] = [
                 window
-                for window in neural_baseline_windows(
-                    arrays["start"],
-                    arrays["stop"],
-                    condition_indices[condition],
-                    config.context,
-                    arrays["block_number"],
-                )
+                for window in trial_baseline_windows[condition]
                 if window is not None
             ]
             if not baseline_windows[condition]:
@@ -358,6 +395,46 @@ def event_records(nwb: h5py.File, config) -> tuple[list[dict], list[dict]]:
                 arrays["stop"],
                 condition_indices[condition],
             )
+
+        # Duration only: the epoch the manipulation actually changes. The
+        # violated delay runs from row i-1 stop to row i start; the standard
+        # delay it is compared against runs from row i-2 stop to row i-1 start,
+        # which is the same interval the duration baseline uses.
+        delay_windows: list[tuple[float, float] | None] = []
+        standard_delay_windows: list[tuple[float, float] | None] = []
+        if config.context == "duration":
+            starts = context_arrays["start"]
+            stops = context_arrays["stop"]
+            blocks = context_arrays["block_number"]
+            for row in condition_indices["context"]:
+                if row < 2 or (
+                    blocks[row - 2] != blocks[row] or blocks[row - 1] != blocks[row]
+                ):
+                    delay_windows.append(None)
+                    standard_delay_windows.append(None)
+                    continue
+                violated = (float(stops[row - 1]), float(starts[row]))
+                standard = (float(stops[row - 2]), float(starts[row - 1]))
+                delay_windows.append(violated if violated[0] < violated[1] else None)
+                standard_delay_windows.append(
+                    standard if standard[0] < standard[1] else None
+                )
+
+        # Q1 compares each mismatch against the most recent expected instance in
+        # the same block, so it needs windows only for the context condition.
+        comparison = comparison_windows(
+            context_arrays["start"],
+            context_arrays["stop"],
+            condition_indices["context"],
+            config.context,
+            context_arrays["block_number"],
+        )
+        clean_mask = clean_trial_mask(
+            context_arrays["trial_type"],
+            condition_indices["context"],
+            config.context,
+            context_arrays["block_number"],
+        )
         timing = {}
         for condition, arrays in (
             ("context", context_arrays),
@@ -451,8 +528,13 @@ def event_records(nwb: h5py.File, config) -> tuple[list[dict], list[dict]]:
         extraction.append(
             {
                 "baseline_windows": baseline_windows,
+                "clean_mask": clean_mask,
+                "comparison_windows": comparison,
                 "condition_onsets": condition_onsets,
+                "delay_windows": delay_windows,
+                "standard_delay_windows": standard_delay_windows,
                 "response_windows": response_windows,
+                "trial_baseline_windows": trial_baseline_windows,
             }
         )
     return records, extraction
@@ -548,16 +630,139 @@ def baseline_rate_stats(
     return mean, math.sqrt(variance)
 
 
+def rates_in_windows(
+    spikes: np.ndarray,
+    windows: list[tuple[float, float] | None],
+) -> np.ndarray:
+    """Spike rate in each window, NaN where the window is unavailable.
+
+    Windows are per trial, so this is the per-trial vector the responsiveness
+    tests consume. ``None`` marks a trial whose comparison window falls outside
+    the table or crosses a block boundary.
+    """
+    rates = np.full(len(windows), np.nan, dtype=float)
+    for index, window in enumerate(windows):
+        if window is None:
+            continue
+        start, stop = window
+        first = int(np.searchsorted(spikes, start, side="left"))
+        last = int(np.searchsorted(spikes, stop, side="right"))
+        rates[index] = (last - first) / (stop - start)
+    return rates
+
+
 def mean_rate_in_windows(
     spikes: np.ndarray,
     windows: list[tuple[float, float]],
 ) -> float:
-    rates = []
-    for start, stop in windows:
-        first = int(np.searchsorted(spikes, start, side="left"))
-        last = int(np.searchsorted(spikes, stop, side="right"))
-        rates.append((last - first) / (stop - start))
-    return float(np.mean(rates))
+    return float(np.mean(rates_in_windows(spikes, windows)))
+
+
+def responsiveness_statistics(
+    collected: dict[str, np.ndarray],
+    clean_mask: Sequence[bool],
+) -> dict[str, np.ndarray]:
+    """Q1 and Q2 statistics for every unit at one event.
+
+    Q1 is the within-block comparison against the most recent expected
+    instance, paired within trial. Its p-value is invariant to subtracting a
+    common per-trial baseline, because the paired difference cancels it, so one
+    p-value is reported with modulation indices for both variants.
+
+    Q2 compares the mismatch response against the matched control block. The
+    blocks are recorded at different times with unequal trial counts, so the
+    test is unpaired and the baseline-subtracted variant is a genuinely
+    different comparison rather than a rescaling.
+    """
+    clean = np.asarray(list(clean_mask), dtype=bool)
+    test = collected["context_test"][:, clean]
+    comparison = collected["context_comparison"][:, clean]
+    context_baseline = collected["context_baseline"][:, clean]
+    control_test = collected["control_test"]
+    control_baseline = collected["control_baseline"]
+    unit_count = test.shape[0]
+
+    q1_p = paired_p_values(test, comparison)
+    q1_trials = np.sum(np.isfinite(test) & np.isfinite(comparison), axis=1)
+
+    q1_modulation = np.array(
+        [trialwise_modulation_index(test[row], comparison[row]) for row in range(unit_count)]
+    )
+    q1_modulation_baseline = np.array(
+        [
+            trialwise_modulation_index(
+                test[row] - context_baseline[row],
+                comparison[row] - context_baseline[row],
+            )
+            for row in range(unit_count)
+        ]
+    )
+
+    q2_p = unpaired_p_values(test, control_test)
+    q2_modulation = np.array(
+        [
+            trialwise_modulation_index(
+                np.full(1, np.nanmean(test[row])),
+                np.full(1, np.nanmean(control_test[row])),
+            )
+            for row in range(unit_count)
+        ]
+    )
+    mismatch_delta = test - context_baseline
+    control_delta = control_test - control_baseline
+    q2_delta_p = unpaired_p_values(mismatch_delta, control_delta)
+    q2_delta_modulation = np.array(
+        [
+            trialwise_modulation_index(
+                np.full(1, np.nanmean(mismatch_delta[row])),
+                np.full(1, np.nanmean(control_delta[row])),
+            )
+            for row in range(unit_count)
+        ]
+    )
+    q2_trials = np.sum(np.isfinite(test), axis=1)
+    q2_control_trials = np.sum(np.isfinite(control_test), axis=1)
+
+    # Duration only: firing during the violated delay against firing during a
+    # standard delay in the same trial. This is the epoch the manipulation
+    # changes, which the post-delay comparison above does not test.
+    nan_row = np.full(unit_count, np.nan)
+    delay_p = nan_row
+    delay_modulation = nan_row
+    delay_trials = np.zeros(unit_count, dtype=np.int32)
+    if "delay" in collected and np.any(np.isfinite(collected["delay"])):
+        delay = collected["delay"][:, clean]
+        standard_delay = collected["standard_delay"][:, clean]
+        delay_p = paired_p_values(delay, standard_delay)
+        delay_modulation = np.array(
+            [
+                trialwise_modulation_index(delay[row], standard_delay[row])
+                for row in range(unit_count)
+            ]
+        )
+        delay_trials = np.sum(
+            np.isfinite(delay) & np.isfinite(standard_delay), axis=1
+        ).astype(np.int32)
+
+    return {
+        "q1_p": q1_p,
+        "q1_q": benjamini_hochberg(q1_p),
+        "q1_modulation": q1_modulation,
+        "q1_modulation_baseline_subtracted": q1_modulation_baseline,
+        "q1_trials": q1_trials.astype(np.int32),
+        "q2_p": q2_p,
+        "q2_q": benjamini_hochberg(q2_p),
+        "q2_modulation": q2_modulation,
+        "q2_delta_p": q2_delta_p,
+        "q2_delta_q": benjamini_hochberg(q2_delta_p),
+        "q2_delta_modulation": q2_delta_modulation,
+        "q2_trials": q2_trials.astype(np.int32),
+        "q2_control_trials": q2_control_trials.astype(np.int32),
+        "delay_p": delay_p,
+        "delay_q": benjamini_hochberg(delay_p),
+        "delay_modulation": delay_modulation,
+        "delay_trials": delay_trials,
+    }
 
 
 def optotagging_pulse_times(nwb) -> np.ndarray:
@@ -720,6 +925,30 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
     with closing(remfile.File(asset["downloadUrl"])) as remote, h5py.File(
         remote, "r"
     ) as nwb:
+        # Sensorimotor mismatches only exist as a stimulus while the animal is
+        # running, because the decoupled optic flow is self-generated. Read the
+        # processed running series so those trials can be gated.
+        running_times = running_forward = None
+        if config.context == "sensorimotor":
+            if RUNNING_SERIES not in nwb:
+                raise RuntimeError(
+                    f"{config.session_id} has no {RUNNING_SERIES}; the sensorimotor "
+                    "running gate cannot be applied."
+                )
+            series = nwb[RUNNING_SERIES]
+            velocity = np.asarray(series["data"][:], dtype=float)
+            stamps = np.asarray(series["timestamps"][:], dtype=float)
+            unit_attr = series["data"].attrs.get("unit", series.attrs.get("unit", b""))
+            unit_attr = decode(unit_attr)
+            if str(unit_attr).lower().replace(" ", "") not in {"cm/s", "cmps"}:
+                raise RuntimeError(
+                    f"{config.session_id} running unit {unit_attr!r} is not cm/s."
+                )
+            finite = np.isfinite(stamps) & np.isfinite(velocity)
+            stamps, velocity = stamps[finite], velocity[finite]
+            order = np.argsort(stamps, kind="stable")
+            running_times = stamps[order]
+            running_forward = forward_speed(velocity[order])
         units = nwb["units"]
         required = {
             "amplitude_cutoff",
@@ -767,6 +996,39 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
             np.nan,
             dtype=np.float32,
         )
+        # Per-trial rates, held in memory only. They feed the rank tests and are
+        # then discarded: storing them would cost about 40 MB across the four
+        # sessions and, with the statistical test fixed at extraction time, buy
+        # nothing the stored p, q, and modulation indices do not already give.
+        trial_rates: list[dict[str, np.ndarray]] = []
+        for event_extract in extraction:
+            context_trials = len(event_extract["condition_onsets"]["context"])
+            control_trials = len(event_extract["condition_onsets"]["control"])
+            trial_rates.append(
+                {
+                    "context_test": np.full(
+                        (unit_count, context_trials), np.nan, dtype=np.float64
+                    ),
+                    "context_comparison": np.full(
+                        (unit_count, context_trials), np.nan, dtype=np.float64
+                    ),
+                    "context_baseline": np.full(
+                        (unit_count, context_trials), np.nan, dtype=np.float64
+                    ),
+                    "control_test": np.full(
+                        (unit_count, control_trials), np.nan, dtype=np.float64
+                    ),
+                    "control_baseline": np.full(
+                        (unit_count, control_trials), np.nan, dtype=np.float64
+                    ),
+                    "delay": np.full(
+                        (unit_count, context_trials), np.nan, dtype=np.float64
+                    ),
+                    "standard_delay": np.full(
+                        (unit_count, context_trials), np.nan, dtype=np.float64
+                    ),
+                }
+            )
         ids = np.asarray(units["id"][:], dtype=int)
         ks_ids = np.asarray(units["ks_unit_id"][:], dtype=int)
         decoder_labels = np.asarray(units["decoder_label"][:]).astype("U")
@@ -852,6 +1114,34 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
                     baseline_mean[event_index, condition_index, output_row] = mean
                     baseline_std[event_index, condition_index, output_row] = std
 
+                    # Per-trial rates for the responsiveness tests.
+                    collected = trial_rates[event_index]
+                    collected[f"{condition}_test"][output_row] = rates_in_windows(
+                        spikes,
+                        event_extract["response_windows"][condition],
+                    )
+                    collected[f"{condition}_baseline"][output_row] = rates_in_windows(
+                        spikes,
+                        event_extract["trial_baseline_windows"][condition],
+                    )
+                    if condition == "context":
+                        collected["context_comparison"][output_row] = (
+                            rates_in_windows(
+                                spikes,
+                                event_extract["comparison_windows"],
+                            )
+                        )
+                        if event_extract["delay_windows"]:
+                            collected["delay"][output_row] = rates_in_windows(
+                                spikes, event_extract["delay_windows"]
+                            )
+                            collected["standard_delay"][output_row] = (
+                                rates_in_windows(
+                                    spikes,
+                                    event_extract["standard_delay_windows"],
+                                )
+                            )
+
             unit_records.append(
                 {
                     "amplitudeCutoff": round(float(amplitude[row]), 6),
@@ -908,6 +1198,62 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
             config.context,
         )
 
+        # The effective trial mask combines the context-specific adjacency
+        # hygiene with, for sensorimotor only, the running gate and the 2 s
+        # minimum-interval rule the released data does not honour.
+        gates: list[np.ndarray] | None = None
+        gate_summaries: list[dict] | None = None
+        if config.context == "sensorimotor":
+            gates, gate_summaries = sensorimotor_trial_masks(
+                [
+                    extraction[index]["condition_onsets"]["context"]
+                    for index in range(event_count)
+                ],
+                [
+                    np.asarray(
+                        [
+                            stop
+                            for _start, stop in extraction[index]["response_windows"][
+                                "context"
+                            ]
+                        ],
+                        dtype=float,
+                    )
+                    for index in range(event_count)
+                ],
+                running_times,
+                running_forward,
+            )
+
+        effective_masks = []
+        for event_index, event in enumerate(events):
+            mask = np.asarray(extraction[event_index]["clean_mask"], dtype=bool)
+            event["excludedAdjacentTrialCount"] = int((~mask).sum())
+            if gates is not None:
+                mask = mask & gates[event_index]
+                event["runningGate"] = gate_summaries[event_index]
+            event["cleanTrialCount"] = int(mask.sum())
+            effective_masks.append(mask)
+
+        responsiveness = [
+            responsiveness_statistics(
+                trial_rates[event_index],
+                effective_masks[event_index],
+            )
+            for event_index in range(event_count)
+        ]
+
+        # A reader asking "responsive to any event in this context" runs one test
+        # per event per unit, so that filter needs the wider family. Stored
+        # alongside the per-event q, which stays the primary value because it
+        # matches the per-event claim.
+        for key in ("q1_p", "q2_p", "q2_delta_p", "delay_p"):
+            stacked = np.stack([record[key] for record in responsiveness])
+            wide = benjamini_hochberg(stacked.ravel()).reshape(stacked.shape)
+            for event_index, record in enumerate(responsiveness):
+                record[f"{key[:-2]}_q_across_events"] = wide[event_index]
+
+
     session_prefix = config.context.replace("sensorimotor", "motor")
     sdf_mean_path = media_dir / f"{session_prefix}-sdf-mean.u16.gz"
     sdf_mean_asset = write_gzip(
@@ -938,8 +1284,40 @@ def extract_session(config, media_dir: Path, selected_probes: tuple[str, ...]) -
             "dtype": "uint16 little-endian",
             "shape": list(ranks.shape),
         },
+        "responsiveness": {
+            key: {
+                "base64": encode_float32(
+                    np.stack([record[key] for record in responsiveness])
+                ),
+                "dtype": "float32 little-endian",
+                "shape": [event_count, unit_count],
+            }
+            for key in (
+                "q1_p",
+                "q1_q",
+                "q1_modulation",
+                "q1_modulation_baseline_subtracted",
+                "q1_trials",
+                "q2_p",
+                "q2_q",
+                "q2_modulation",
+                "q2_delta_p",
+                "q2_delta_q",
+                "q2_delta_modulation",
+                "q2_trials",
+                "q2_control_trials",
+                "delay_p",
+                "delay_q",
+                "delay_modulation",
+                "delay_trials",
+                "q1_q_across_events",
+                "q2_q_across_events",
+                "q2_delta_q_across_events",
+                "delay_q_across_events",
+            )
+        },
         "sessionId": config.session_id,
-        "subject": "830846",
+        "subject": NEURAL_SUBJECT,
         "timeBinCentersSeconds": relative_bin_centers(config.context),
         "unitCount": unit_count,
         "units": unit_records,
@@ -1023,6 +1401,133 @@ def cached_session(
     )
 
 
+RESPONSIVENESS_COLUMNS = (
+    "session_id",
+    "context",
+    "event_id",
+    "unit_id",
+    "probe",
+    "location",
+    "parent_area",
+    "major_parent",
+    "neuron_type",
+    "qc_pass",
+    "firing_rate_hz",
+    "q1_n_trials",
+    "q1_p",
+    "q1_q",
+    "q1_modulation_index",
+    "q1_modulation_index_baseline_subtracted",
+    "q1_responsive",
+    "q2_n_mismatch",
+    "q2_n_control",
+    "q2_p",
+    "q2_q",
+    "q2_modulation_index",
+    "q2_delta_p",
+    "q2_delta_q",
+    "q2_delta_modulation_index",
+    "q2_selective",
+    "q1_q_across_events",
+    "q2_delta_q_across_events",
+    "delay_n_trials",
+    "delay_p",
+    "delay_q",
+    "delay_modulation_index",
+)
+
+
+def _csv_number(value) -> str:
+    """Six significant figures, empty for non-finite, to keep the table compact."""
+    number = float(value)
+    if not math.isfinite(number):
+        return ""
+    return f"{number:.6g}"
+
+
+def write_responsiveness_csv(path: Path, records: list[dict]) -> dict:
+    """Write one row per unit per event: the reviewable responsiveness snapshot."""
+    rows = 0
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(",".join(RESPONSIVENESS_COLUMNS) + "\n")
+        for record in records:
+            responsiveness = record["responsiveness"]
+            decoded = {
+                key: np.frombuffer(
+                    base64.b64decode(responsiveness[key]["base64"]), dtype="<f4"
+                ).reshape(responsiveness[key]["shape"])
+                for key in responsiveness
+            }
+            q1_flag = classify_responsive(
+                q_values=decoded["q1_q"].ravel(),
+                modulation_indices=decoded["q1_modulation"].ravel(),
+            ).reshape(decoded["q1_q"].shape)
+            q2_flag = classify_responsive(
+                q_values=decoded["q2_delta_q"].ravel(),
+                modulation_indices=decoded["q2_delta_modulation"].ravel(),
+            ).reshape(decoded["q2_delta_q"].shape)
+
+            for event_index, event in enumerate(record["events"]):
+                for unit_index, unit in enumerate(record["units"]):
+                    cells = [
+                        record["sessionId"],
+                        record["context"],
+                        event["id"],
+                        str(unit["id"]),
+                        unit["probe"],
+                        unit["location"],
+                        unit["parentArea"],
+                        unit["majorParent"],
+                        unit["neuronType"],
+                        "1" if unit["qcPass"] else "0",
+                        _csv_number(unit["firingRateHz"]),
+                        _csv_number(decoded["q1_trials"][event_index, unit_index]),
+                        _csv_number(decoded["q1_p"][event_index, unit_index]),
+                        _csv_number(decoded["q1_q"][event_index, unit_index]),
+                        _csv_number(decoded["q1_modulation"][event_index, unit_index]),
+                        _csv_number(
+                            decoded["q1_modulation_baseline_subtracted"][
+                                event_index, unit_index
+                            ]
+                        ),
+                        "1" if q1_flag[event_index, unit_index] else "0",
+                        _csv_number(decoded["q2_trials"][event_index, unit_index]),
+                        _csv_number(
+                            decoded["q2_control_trials"][event_index, unit_index]
+                        ),
+                        _csv_number(decoded["q2_p"][event_index, unit_index]),
+                        _csv_number(decoded["q2_q"][event_index, unit_index]),
+                        _csv_number(decoded["q2_modulation"][event_index, unit_index]),
+                        _csv_number(decoded["q2_delta_p"][event_index, unit_index]),
+                        _csv_number(decoded["q2_delta_q"][event_index, unit_index]),
+                        _csv_number(
+                            decoded["q2_delta_modulation"][event_index, unit_index]
+                        ),
+                        "1" if q2_flag[event_index, unit_index] else "0",
+                        _csv_number(
+                            decoded["q1_q_across_events"][event_index, unit_index]
+                        ),
+                        _csv_number(
+                            decoded["q2_delta_q_across_events"][event_index, unit_index]
+                        ),
+                        _csv_number(decoded["delay_trials"][event_index, unit_index]),
+                        _csv_number(decoded["delay_p"][event_index, unit_index]),
+                        _csv_number(decoded["delay_q"][event_index, unit_index]),
+                        _csv_number(
+                            decoded["delay_modulation"][event_index, unit_index]
+                        ),
+                    ]
+                    handle.write(",".join(cells) + "\n")
+                    rows += 1
+    return {
+        "path": display_path(path),
+        "rows": rows,
+        "sha256": file_sha256(path),
+        "size": path.stat().st_size,
+    }
+
+
 def write_json(path: Path, payload: dict) -> None:
     def json_safe(value):
         if isinstance(value, dict):
@@ -1099,7 +1604,10 @@ def main() -> None:
             "baselineRules": {
                 "duration": "row i-2 stop_time through row i-1 start_time",
                 "sensorimotor": "343 ms immediately preceding event start_time",
-                "sequence": "previous row start_time through event start_time",
+                "sequence": (
+                    "grey inter-sequence interval at row i-3, the full row from its "
+                    "start_time through its stop_time"
+                ),
                 "standard": "previous row stop_time through event start_time",
             },
             "baselineBinSeconds": BASELINE_BIN_SECONDS,
@@ -1118,6 +1626,139 @@ def main() -> None:
                 },
                 "sstOverridesWaveformClass": True,
                 "thalamicFastSpikingMaximumMs": 0.28,
+            },
+            "responsiveness": {
+                "comparisonRules": {
+                    "duration": (
+                        "pre-delay stimulus at row i-1, against the post-delay "
+                        "stimulus at row i"
+                    ),
+                    "sensorimotor": (
+                        f"{SENSORIMOTOR_BASELINE_SECONDS * 1000:.0f} ms immediately "
+                        "preceding event start_time, because closed-loop flow is "
+                        "continuous and has no preceding trial"
+                    ),
+                    "sequence": (
+                        "element three of the previous sequence at row i-5, the same "
+                        "physical sequence position"
+                    ),
+                    "standard": (
+                        "previous presentation at row i-1, the expected standard "
+                        "stimulus"
+                    ),
+                },
+                "sensorimotorGate": {
+                    "minimumIntervalSeconds": SENSORIMOTOR_MIN_INTERVAL_SECONDS,
+                    "rationale": (
+                        "closed-loop optic flow is self-generated, so a stationary "
+                        "animal has no flow to decouple and the mismatch is not a "
+                        "stimulus; the protocol's 2 s minimum separation is also not "
+                        "honoured in the released data"
+                    ),
+                    "runningThresholdCmS": DEFAULT_RUNNING_THRESHOLD_CM_S,
+                    "runningWindows": (
+                        "mean forward speed must reach the threshold in both the "
+                        "pre-event baseline window and the mismatch window"
+                    ),
+                },
+                "hygiene": (
+                    "a mismatch preceded by another mismatch is excluded from Q1, "
+                    "because its comparison is not an expected stimulus; for sequence "
+                    "the whole previous sequence must be free of substitutions"
+                ),
+                "modulationIndex": (
+                    "trial-wise mean of (test - comparison) / (test + comparison), "
+                    "matching the SST optotagging convention"
+                ),
+                "multipleComparisons": {
+                    "family": (
+                        "all units recorded in one context block, tested at one event, "
+                        "for one test. Sessions and contexts are one to one and units "
+                        "are distinct acute insertions never shared between sessions, "
+                        "so there is no cross-session multiplicity to correct"
+                    ),
+                    "familyAcrossEvents": (
+                        "a second Benjamini-Hochberg value is stored over units by "
+                        "events, for the 'responsive to any event' selection, which "
+                        "implicitly runs one test per event per unit"
+                    ),
+                    "familyIncludesFilteredUnits": (
+                        "the family deliberately spans every unit rather than only the "
+                        "analysable set, so the stored q stays valid whatever unit "
+                        "filters a reader applies"
+                    ),
+                    "method": "Benjamini-Hochberg",
+                    "note": (
+                        "non-finite p values are excluded from the family rather than "
+                        "treated as non-significant"
+                    ),
+                    "reporting": (
+                        "the figure reports the uncorrected p with the chance "
+                        "expectation shown alongside every count, because the observed "
+                        "signal runs 7 to 12 times chance for most events so the "
+                        "uncorrected false-discovery proportion is about 8 to 13 "
+                        "percent; corrected q values remain available as a stricter "
+                        "option and are used for example-neuron selection"
+                    ),
+                },
+                "q1": {
+                    "question": (
+                        "is the unit driven differently by the mismatch than by the "
+                        "most recent expected instance in the same block"
+                    ),
+                    "test": "paired Wilcoxon signed-rank across trials, zero_method zsplit",
+                    "baselineInvariance": (
+                        "both windows are presentations in the same trial, so "
+                        "subtracting that trial's baseline leaves the paired difference "
+                        "unchanged; the p value is identical with and without baseline "
+                        "subtraction and only the modulation index differs"
+                    ),
+                },
+                "delayEpoch": {
+                    "contexts": ["duration"],
+                    "question": (
+                        "does firing during the violated delay differ from firing "
+                        "during a standard delay in the same trial"
+                    ),
+                    "test": "paired Wilcoxon signed-rank across trials, zero_method zsplit",
+                    "windows": (
+                        "violated delay from row i-1 stop_time to row i start_time, "
+                        "against the standard delay from row i-2 stop_time to row i-1 "
+                        "start_time"
+                    ),
+                    "rationale": (
+                        "the duration manipulation changes the delay itself, which the "
+                        "post-delay comparison does not test; deviant delays of 150, "
+                        "500 and 1000 ms give windows of unequal length, so rates "
+                        "rather than counts are compared and the 150 ms window is the "
+                        "noisiest"
+                    ),
+                },
+                "q2": {
+                    "question": (
+                        "is the unit's mismatch response different from the same "
+                        "physical event in the matched control block"
+                    ),
+                    "test": "Mann-Whitney U, two-sided",
+                    "unpaired": (
+                        "trial counts differ between blocks and the blocks are recorded "
+                        "at different times, so the comparison cannot be paired"
+                    ),
+                    "variants": (
+                        "raw response windows and baseline-subtracted responses are both "
+                        "reported; subtraction matters here because each block has its "
+                        "own baseline"
+                    ),
+                },
+                "thresholds": {
+                    "modulationIndexMinimum": DEFAULT_MODULATION_MINIMUM,
+                    "qValueMaximum": DEFAULT_Q_MAX,
+                    "twoSided": True,
+                    "twoSidedNote": (
+                        "suppression counts as responsive, unlike the one-sided SST "
+                        "optotagging rule, because a mismatch can reduce firing"
+                    ),
+                },
             },
             "heatmapModes": [
                 "mismatch SDF spikes/s",
@@ -1172,10 +1813,13 @@ def main() -> None:
         },
         "sessionOrder": [record["context"] for record in records],
         "sessions": records,
-        "subject": "830846",
+        "subject": NEURAL_SUBJECT,
         "version": VERSION,
     }
     write_json(args.output, payload)
+    responsiveness_asset = write_responsiveness_csv(
+        args.responsiveness_output, records
+    )
     referenced_media = {
         Path(record[key]["path"]).name
         for record in records
@@ -1199,6 +1843,16 @@ def main() -> None:
         "analysisSignature": signature,
         "configuredSessions": [asdict(config) for config in configs],
         "media": media,
+        "responsivenessTable": responsiveness_asset,
+        "responsivenessModule": {
+            "path": "src/openscope_p3_publication/mismatch_responsiveness.py",
+            "sha256": file_sha256(
+                REPO_ROOT
+                / "src"
+                / "openscope_p3_publication"
+                / "mismatch_responsiveness.py"
+            ),
+        },
         "module": {
             "path": "src/openscope_p3_publication/neural_responses.py",
             "sha256": file_sha256(

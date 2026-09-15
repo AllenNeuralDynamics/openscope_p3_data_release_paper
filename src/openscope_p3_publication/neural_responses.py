@@ -9,9 +9,14 @@ from .pupil_responses import EVENT_DEFINITIONS, EventDefinition, event_matches
 CONTEXT_WINDOWS_SECONDS = {
     "standard": (-0.75, 0.75),
     "sensorimotor": (-0.75, 0.75),
-    "sequence": (-0.75, 0.75),
+    # Wide enough for the previous sequence to be both computable and visible.
+    # Rows are a measured 266.9 ms, so element three of the previous sequence
+    # sits at -1.3345 s and that sequence begins at -1.868 s.
+    "sequence": (-2.0, 1.0),
     "duration": (-1.5, 1.5),
 }
+SEQUENCE_BASELINE_OFFSET = -3
+"""Row offset of the grey inter-sequence interval from a substituted element."""
 BIN_SECONDS = 0.0025
 BASELINE_BIN_SECONDS = 0.02
 SDF_SOURCE_BIN_SECONDS = 0.0025
@@ -49,50 +54,61 @@ class NeuralSession:
     control_table: str
 
 
+# Mouse 830794. Its predecessor, 830846, averaged 1.12 cm/s in the sensorimotor
+# block with a median of 0.00 and retained 2 to 4 trials per mismatch type after
+# running gating, which cannot support a closed-loop analysis. 830794 runs in
+# every context and has the highest QC-passing unit count in the release.
+#
+# These asset IDs pin the August 2026 revisions of the draft. Dandiset 001637 is
+# mutable and 48 of its 60 assets were replaced that month; the earlier June
+# revisions labelled one visual area with an acronym absent from the Allen
+# ontology, which the August revisions fixed. See
+# docs/neuropixels-area-label-provenance.md.
+NEURAL_SUBJECT = "830794"
 NEURAL_SESSIONS = (
     NeuralSession(
-        context="sequence",
-        session_id="ecephys_830846_2026-03-09_10-32-54",
-        asset_id="03973a42-cf55-476f-80d7-85bc402fa57b",
+        context="sensorimotor",
+        session_id="ecephys_830794_2026-01-26_12-02-05",
+        asset_id="0766996b-2afa-4c6f-a381-134c9e380edc",
         asset_path=(
-            "sub-830846/"
-            "sub-830846_ses-ecephys-830846-2026-03-09-10-32-54_ecephys.nwb"
+            "sub-830794/"
+            "sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys.nwb"
+        ),
+        context_table="Sensory-motor mismatch block_presentations",
+        control_table="Control block 4_presentations",
+    ),
+    NeuralSession(
+        context="standard",
+        session_id="ecephys_830794_2026-01-27_11-25-31",
+        asset_id="50a50f11-dbf8-482f-bc8f-6629e91c2f06",
+        asset_path=(
+            "sub-830794/"
+            "sub-830794_ses-ecephys-830794-2026-01-27-11-25-31_ecephys.nwb"
+        ),
+        context_table="Standard mismatch block_presentations",
+        control_table="Control block 1_presentations",
+    ),
+    NeuralSession(
+        context="sequence",
+        session_id="ecephys_830794_2026-01-28_11-01-44",
+        asset_id="f30a96cf-3d66-4975-8d43-65138633fb93",
+        asset_path=(
+            "sub-830794/"
+            "sub-830794_ses-ecephys-830794-2026-01-28-11-01-44_ecephys.nwb"
         ),
         context_table="Sequence mismatch block_presentations",
         control_table="Control block 2_presentations",
     ),
     NeuralSession(
         context="duration",
-        session_id="ecephys_830846_2026-03-10_10-17-25",
-        asset_id="77123ffa-5029-4485-a2e5-2eacac954f74",
+        session_id="ecephys_830794_2026-01-29_11-12-57",
+        asset_id="d8a2fb8e-d542-4c9b-9c71-38942b2049f0",
         asset_path=(
-            "sub-830846/"
-            "sub-830846_ses-ecephys-830846-2026-03-10-10-17-25_ecephys.nwb"
+            "sub-830794/"
+            "sub-830794_ses-ecephys-830794-2026-01-29-11-12-57_ecephys.nwb"
         ),
         context_table="Duration mismatch block_presentations",
         control_table="Control block 3_presentations",
-    ),
-    NeuralSession(
-        context="standard",
-        session_id="ecephys_830846_2026-03-11_10-19-32",
-        asset_id="680d1c0c-e338-4d0b-ba29-4329436d2ae2",
-        asset_path=(
-            "sub-830846/"
-            "sub-830846_ses-ecephys-830846-2026-03-11-10-19-32_ecephys.nwb"
-        ),
-        context_table="Standard mismatch block_presentations",
-        control_table="Control block 1_presentations",
-    ),
-    NeuralSession(
-        context="sensorimotor",
-        session_id="ecephys_830846_2026-03-12_11-09-13",
-        asset_id="7b0e4734-f3e6-4733-8318-223a28687ec1",
-        asset_path=(
-            "sub-830846/"
-            "sub-830846_ses-ecephys-830846-2026-03-12-11-09-13_ecephys.nwb"
-        ),
-        context_table="Sensory-motor mismatch block_presentations",
-        control_table="Control block 4_presentations",
     ),
 )
 
@@ -180,14 +196,19 @@ def neural_baseline_windows(
             start = float(stop_times[index - 1])
             stop = event_start
         elif context == "sequence":
-            if index == 0 or (
+            # The grey inter-sequence interval, not the preceding grating
+            # element. Sequences are five rows (four gratings then grey) with
+            # the substitution at element three, so the grey sits three rows
+            # back. Verified in 140/140 mismatch trials.
+            reference = index + SEQUENCE_BASELINE_OFFSET
+            if reference < 0 or (
                 block_numbers is not None
-                and block_numbers[index - 1] != block_numbers[index]
+                and block_numbers[reference] != block_numbers[index]
             ):
                 windows.append(None)
                 continue
-            start = float(start_times[index - 1])
-            stop = event_start
+            start = float(start_times[reference])
+            stop = float(stop_times[reference])
         else:
             start = event_start - 0.343
             stop = event_start

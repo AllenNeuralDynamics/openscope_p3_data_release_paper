@@ -48,8 +48,11 @@ def test_neural_sessions_cover_four_contexts_for_one_mouse() -> None:
         "sequence",
         "duration",
     }
-    assert all("830846" in session.session_id for session in NEURAL_SESSIONS)
+    assert all("830794" in session.session_id for session in NEURAL_SESSIONS)
     assert len({session.asset_id for session in NEURAL_SESSIONS}) == 4
+    assert all(
+        session.asset_path.startswith("sub-830794/") for session in NEURAL_SESSIONS
+    )
 
 
 def test_neural_time_grid_uses_two_point_five_millisecond_bins() -> None:
@@ -59,13 +62,13 @@ def test_neural_time_grid_uses_two_point_five_millisecond_bins() -> None:
     assert CONTEXT_WINDOWS_SECONDS == {
         "standard": (-0.75, 0.75),
         "sensorimotor": (-0.75, 0.75),
-        "sequence": (-0.75, 0.75),
+        "sequence": (-2.0, 1.0),
         "duration": (-1.5, 1.5),
     }
     for context, expected_count in (
         ("standard", 600),
         ("sensorimotor", 600),
-        ("sequence", 600),
+        ("sequence", 1200),
         ("duration", 1200),
     ):
         edges = relative_bin_edges(context)
@@ -136,13 +139,6 @@ def test_context_specific_neural_baselines() -> None:
         starts,
         stops,
         [2],
-        "sequence",
-        blocks,
-    ) == [(100.7, 101.4)]
-    assert neural_baseline_windows(
-        starts,
-        stops,
-        [2],
         "sensorimotor",
         blocks,
     )[0] == pytest.approx((101.057, 101.4))
@@ -153,6 +149,48 @@ def test_context_specific_neural_baselines() -> None:
         "duration",
         blocks,
     ) == [(100.37, 100.7)]
+
+
+def test_sequence_baseline_is_the_grey_inter_sequence_interval() -> None:
+    """The grey interval three rows back, not the preceding grating element.
+
+    Sequences are five contiguous 266.9 ms rows -- four gratings then a grey
+    inter-sequence interval -- with the substitution always at element three.
+    """
+    period = 0.2669
+    starts = [round(index * period, 6) for index in range(20)]
+    stops = [round(value + period, 6) for value in starts]
+    blocks = [2.0] * 20
+    # Element three of the fourth sequence.
+    substitution = 3 * 5 + 2
+
+    windows = neural_baseline_windows(starts, stops, [substitution], "sequence", blocks)
+    grey = substitution - 3
+    assert windows == [(starts[grey], stops[grey])]
+
+    # The old rule used the preceding element, a 45 degree grating.
+    assert windows != [(starts[substitution - 1], starts[substitution])]
+
+    # The baseline is a full row, not the run up to the event onset.
+    start, stop = windows[0]
+    assert stop - start == pytest.approx(period)
+
+
+def test_sequence_baseline_is_unavailable_without_a_preceding_grey() -> None:
+    period = 0.2669
+    starts = [round(index * period, 6) for index in range(20)]
+    stops = [round(value + period, 6) for value in starts]
+    blocks = [2.0] * 20
+    # Element three of the first sequence has no previous sequence.
+    assert neural_baseline_windows(starts, stops, [2], "sequence", blocks) == [None]
+
+
+def test_sequence_baseline_respects_block_boundaries() -> None:
+    period = 0.2669
+    starts = [round(index * period, 6) for index in range(20)]
+    stops = [round(value + period, 6) for value in starts]
+    blocks = [2.0] * 10 + [3.0] * 10
+    assert neural_baseline_windows(starts, stops, [11], "sequence", blocks) == [None]
 
 
 def test_neural_response_uses_recorded_presentation_window() -> None:
@@ -216,8 +254,8 @@ def test_neuron_type_classification(
 def test_neuropixels_event_snapshot_is_source_backed() -> None:
     payload = load_neuropixels_event_responses()
 
-    assert payload["version"] == 9
-    assert payload["subject"] == "830846"
+    assert payload["version"] == 10
+    assert payload["subject"] == "830794"
     assert payload["sessionOrder"] == [
         "standard",
         "sensorimotor",
@@ -227,29 +265,30 @@ def test_neuropixels_event_snapshot_is_source_backed() -> None:
     assert [session["windowSeconds"] for session in payload["sessions"]] == [
         [-0.75, 0.75],
         [-0.75, 0.75],
-        [-0.75, 0.75],
+        # Wide enough to reach element three of the previous sequence at -1.3345 s.
+        [-2.0, 1.0],
         [-1.5, 1.5],
     ]
     assert [session["unitCount"] for session in payload["sessions"]] == [
-        3355,
-        2943,
-        3550,
-        3834,
+        3018,
+        3966,
+        2902,
+        3082,
     ]
     assert sum(
         unit["qcPass"]
         for session in payload["sessions"]
         for unit in session["units"]
-    ) == 7266
+    ) == 8093
     assert all(len(session["events"]) == 4 for session in payload["sessions"])
     assert [
         len(session["events"][0]["timing"]["context"]["presentationWindows"])
         for session in payload["sessions"]
-    ] == [3, 1, 6, 5]
+    ] == [3, 1, 12, 5]
     assert [
         session["sdfMeanAtlas"]["shape"][-1]
         for session in payload["sessions"]
-    ] == [600, 600, 600, 1200]
+    ] == [600, 600, 1200, 1200]
     assert all("waveformAtlas" not in session for session in payload["sessions"])
     assert all(
         math.isfinite(unit["firingRateHz"]) and unit["firingRateHz"] >= 0
@@ -276,10 +315,10 @@ def test_neuropixels_event_snapshot_is_source_backed() -> None:
         }
         for session in payload["sessions"]
     ] == [
-        {"RS": 2324, "FS": 527, "SST": 504},
-        {"RS": 2166, "FS": 361, "SST": 416},
-        {"RS": 2636, "FS": 487, "SST": 427},
-        {"RS": 2747, "FS": 583, "SST": 504},
+        {"RS": 2218, "FS": 512, "SST": 288},
+        {"RS": 2916, "FS": 715, "SST": 335},
+        {"RS": 2052, "FS": 498, "SST": 352},
+        {"RS": 2006, "FS": 574, "SST": 502},
     ]
     assert all(
         math.isfinite(unit["peakToValleyMs"])
@@ -300,7 +339,7 @@ def test_neuropixels_event_snapshot_is_source_backed() -> None:
             for unit in session["units"]
         )
         for label in ("mua", "noise", "sua")
-    } == {"mua": 4971, "noise": 4152, "sua": 4559}
+    } == {"mua": 4459, "noise": 3672, "sua": 4837}
     groups = {
         group
         for session in payload["sessions"]
@@ -405,7 +444,7 @@ def test_static_response_matrix_uses_anatomical_area_order() -> None:
             area,
         )
 
-    assert len(areas) == 48
+    assert len(areas) == 50
     assert len(columns) == 16
     assert areas == sorted(areas, key=sort_key)
     categories = [
@@ -415,10 +454,10 @@ def test_static_response_matrix_uses_anatomical_area_order() -> None:
     assert {
         group: categories.count(group) for group in STATIC_AREA_GROUP_ORDER
     } == {
-        "frontal": 21,
-        "visual": 13,
+        "frontal": 17,
+        "visual": 20,
         "hippocampal": 6,
-        "thalamic": 8,
+        "thalamic": 7,
     }
     assert all(count >= STATIC_AREA_MIN_QC_UNITS for count in area_counts.values())
     assert all(

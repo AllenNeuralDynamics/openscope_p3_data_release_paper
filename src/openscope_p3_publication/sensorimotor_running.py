@@ -37,6 +37,12 @@ premised on self-generated optic flow needs a speed that actually produces flow.
 MINIMUM_QUALIFYING_TRIALS = 8
 """Below this many trials in the worst event type, a session is not analysable."""
 
+SENSORIMOTOR_MIN_INTERVAL_SECONDS = 2.0
+"""Protocol minimum between consecutive sensorimotor mismatch onsets.
+
+The released data does not honour it: 19 of 140 pairs fall below 2 s.
+"""
+
 
 def forward_speed(velocity: Sequence[float] | np.ndarray) -> np.ndarray:
     """Clip velocity to forward-only speed, the convention used across P3 figures."""
@@ -180,3 +186,77 @@ def summarize_session(
             "available": bool(minimum >= MINIMUM_QUALIFYING_TRIALS),
         }
     return summary
+
+
+def sensorimotor_trial_masks(
+    onsets_by_event: list[np.ndarray],
+    offsets_by_event: list[np.ndarray],
+    running_times: np.ndarray,
+    running_forward: np.ndarray,
+) -> tuple[list[np.ndarray], list[dict]]:
+    """Which sensorimotor mismatch trials are analysable, per event.
+
+    Two independent requirements. The animal must be running in both the
+    pre-event baseline window and the mismatch window, because a closed-loop
+    mismatch requires self-generated flow to have been present before it was
+    decoupled. And the trial must not follow another mismatch within the
+    protocol's intended 2 s minimum, which the released data does not honour.
+
+    The adjacency rule spans **every** mismatch in the block regardless of type,
+    because any preceding mismatch leaves the context un-reset. Computing it per
+    event type would miss most violations, since trials of one type are far
+    apart while different types interleave.
+    """
+    # Global ordering across all events, so adjacency sees every mismatch.
+    flat = [
+        (float(onset), event_index, trial_index)
+        for event_index, onsets in enumerate(onsets_by_event)
+        for trial_index, onset in enumerate(onsets)
+    ]
+    flat.sort()
+    isolated = {(event, trial): True for _onset, event, trial in flat}
+    for position in range(1, len(flat)):
+        gap = flat[position][0] - flat[position - 1][0]
+        if gap < SENSORIMOTOR_MIN_INTERVAL_SECONDS:
+            isolated[(flat[position][1], flat[position][2])] = False
+
+    masks: list[np.ndarray] = []
+    summaries: list[dict] = []
+    for event_index, (onsets, offsets) in enumerate(
+        zip(onsets_by_event, offsets_by_event, strict=True)
+    ):
+        onsets = np.asarray(onsets, dtype=float)
+        offsets = np.asarray(offsets, dtype=float)
+        pre_mean, _pre_n = window_means(
+            running_times,
+            running_forward,
+            onsets - BASELINE_SECONDS,
+            onsets,
+        )
+        event_mean, _event_n = window_means(
+            running_times, running_forward, onsets, offsets
+        )
+        running = qualifying_trials(
+            pre_mean, event_mean, DEFAULT_RUNNING_THRESHOLD_CM_S
+        )
+        isolated_mask = np.array(
+            [isolated[(event_index, trial)] for trial in range(len(onsets))],
+            dtype=bool,
+        )
+        mask = running & isolated_mask
+        masks.append(mask)
+        summaries.append(
+            {
+                "runningThresholdCmS": DEFAULT_RUNNING_THRESHOLD_CM_S,
+                "minimumIntervalSeconds": SENSORIMOTOR_MIN_INTERVAL_SECONDS,
+                "trialsTotal": int(len(onsets)),
+                "trialsRunning": int(running.sum()),
+                "trialsIsolated": int(isolated_mask.sum()),
+                "trialsAnalysable": int(mask.sum()),
+                "excludedNotRunning": int((~running).sum()),
+                "excludedTooClose": int((~isolated_mask).sum()),
+                "meanPreSpeedCmS": round(float(np.nanmean(pre_mean)), 4),
+                "meanEventSpeedCmS": round(float(np.nanmean(event_mean)), 4),
+            }
+        )
+    return masks, summaries

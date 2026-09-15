@@ -29,6 +29,7 @@ from .neural_responses import (
     BIN_SECONDS,
     CONTEXT_WINDOWS_SECONDS,
     NEURAL_SESSIONS,
+    NEURAL_SUBJECT,
     QC_THRESHOLDS,
     RASTERMAP_PARAMETERS,
     RASTERMAP_VERSION,
@@ -110,13 +111,24 @@ def uint16_base64_values(encoded: str) -> array:
     return values
 
 
+SNAPSHOT_VERSION = 10
+"""Schema version of the committed snapshot.
+
+Must match ``VERSION`` in scripts/extract_neuropixels_event_responses.py. Version
+10 added the per-unit responsiveness block, the duration delay-epoch statistic,
+and per-event running-gate summaries.
+"""
+
+
 def load_neuropixels_event_responses(
     data_path: Path = DATA_PATH,
     provenance_path: Path = PROVENANCE_PATH,
 ) -> dict:
     payload = json.loads(data_path.read_text(encoding="utf-8"))
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    if payload.get("version") != 9 or provenance.get("version") != 9:
+    if payload.get("version") != SNAPSHOT_VERSION or (
+        provenance.get("version") != SNAPSHOT_VERSION
+    ):
         raise RuntimeError("Neuropixels event-response snapshot version is unsupported.")
     if provenance.get("rastermap") != {
         "packageVersion": RASTERMAP_VERSION,
@@ -209,12 +221,17 @@ def load_neuropixels_event_responses(
         != {
             "duration": "row i-2 stop_time through row i-1 start_time",
             "sensorimotor": "343 ms immediately preceding event start_time",
-            "sequence": "previous row start_time through event start_time",
+            # The grey inter-sequence interval, corrected from the preceding
+            # grating element. See docs/neuropixels-mismatch-responsiveness.md.
+            "sequence": (
+                "grey inter-sequence interval at row i-3, the full row from its "
+                "start_time through its stop_time"
+            ),
             "standard": "previous row stop_time through event start_time",
         }
     ):
         raise RuntimeError("Neuropixels event-response parameters are invalid.")
-    if payload.get("subject") != "830846" or len(payload.get("sessions", [])) != 4:
+    if payload.get("subject") != NEURAL_SUBJECT or len(payload.get("sessions", [])) != 4:
         raise RuntimeError("Neuropixels event-response session coverage is invalid.")
     if payload.get("sessionOrder") != list(CONTEXT_ORDER):
         raise RuntimeError("Neuropixels event-response context order is invalid.")

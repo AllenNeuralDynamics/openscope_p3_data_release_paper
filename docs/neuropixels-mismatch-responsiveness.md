@@ -76,7 +76,7 @@ requires a re-extraction.
 
 ---
 
-## 3. Four problems found while verifying
+## 3. Five problems found while verifying
 
 ### 3.1 The sequence baseline is wrong
 
@@ -229,7 +229,39 @@ Control block 1 varies by **101.9 s** in duration across sessions (2322.2–2424
 identical trial types and row count, and **RF mapping exists in two stimulus versions**
 (1214 vs 1215 rows, with genuinely different trial-type and orientation content).
 
-### 3.4 Regenerating the atlases triggers CONTRIBUTING's binary-review rule
+### 3.4 The source assets were replaced upstream, and this figure now pins the August revisions
+
+Discovered while auditing 830794's anatomical labels. Dandiset 001637 is a **draft**, which is
+mutable, and **48 of its 60 Neuropixels assets were replaced in August 2026**, affecting 15 of
+the 16 mice. The asset IDs this repository had pinned resolve to the June 2026 revisions, which
+still fetch correctly and therefore kept returning superseded data silently.
+
+The June revisions of all four 830794 sessions labelled a complete six-layer visual area
+`VISlm`, an acronym absent from the pinned Allen ontology, which made `area_classification`
+fail outright on 614 units. **The August revisions label that area `VISl` and resolve normally**,
+so no alias table, coordinate-derived relabelling, or special case is required. `NEURAL_SESSIONS`
+now pins the August revisions.
+
+Consequences:
+
+- The NWB `location` strings stay authoritative. A release-wide audit against the electrode CCF
+  coordinates found 95.9% exact and 96.9% area-level agreement across 178,447 units, with
+  residual disagreement at anatomical boundaries and ontology hierarchy levels rather than
+  systematic, and **no unresolvable acronym anywhere in the current release**.
+- Figure 10 will be built from different source revisions than the repository's other pinned
+  Neuropixels snapshots, which still reference June. The adjacency and locomotion supplementals
+  already read the August revisions because their extractors enumerate the API. This
+  inconsistency is documented rather than resolved here; refreshing the remaining snapshots is
+  a separate operation.
+- Unit counts moved on 17 of 60 sessions, by between −93 and +64, for −106 across the release
+  (−0.05%). Two of 830794's four sessions are affected: sequence 2,951 to 2,902 and duration
+  3,125 to 3,082.
+
+Full analysis, including the CCF coordinate convention and why the units table's
+`estimated_x/y/z` must not be used for anatomy, is in
+[`docs/neuropixels-area-label-provenance.md`](neuropixels-area-label-provenance.md).
+
+### 3.5 Regenerating the atlases triggers CONTRIBUTING's binary-review rule
 
 Re-extraction rewrites all four `.u16.gz` atlases (~32 MB), and widening the sequence window
 grows that file from 7.6 MB to roughly 12 MB. Every rewritten file is a new blob in git
@@ -393,6 +425,55 @@ Q1 reuses `compute_response_metrics`, generalized to accept explicit per-trial w
 instead of its current fixed-width pre-window. Keep the existing signature as a thin wrapper
 so the optotagging path and `tests/test_figures.py:398` are untouched.
 
+### 6.1a Where the statistics run — a correction
+
+The plan assumed `compute_response_metrics` was a tested function to build on. It is not
+exercised in CI: it imports `scipy.stats.wilcoxon`, scipy is not a declared dependency, and all
+sixteen skipped tests in the suite are guarded by `requires_optotagging_analysis_deps` with the
+message that these dependencies are "installed ad hoc by the extractor".
+
+That is a deliberate architecture, not an oversight, and CONTRIBUTING reinforces it: `pytest`,
+`build-publication-figures`, and `myst build` must work offline from a fresh clone after
+installing declared dependencies. **The presentation stage therefore cannot use scipy**, so
+statistics cannot be computed at build time as §7 originally implied.
+
+Revised split:
+
+| Stage | Dependencies | Responsibility |
+|---|---|---|
+| Extractor | scipy installed ad hoc | per-trial rates, Wilcoxon signed-rank, Mann-Whitney U; stores per-trial scalars, raw *p*, and modulation index |
+| Package | numpy only | Benjamini-Hochberg FDR, threshold application, responsiveness classification — fully tested in CI |
+| Renderers | numpy only | read stored *p* and MI, derive *q*, apply thresholds |
+
+What this preserves and what it costs: **thresholds remain revisable without re-extraction**,
+which is the practical need — the *q* cutoff, the MI floor, and the running gate are all
+applied at presentation time from stored values. Changing the *statistical test* now requires
+re-running the extractor, which is acceptable because that is a rare and deliberate act.
+
+Benjamini-Hochberg is implemented in numpy rather than taken from scipy, because it is about
+ten lines, deterministic, applied at presentation time, and worth having under test. The
+FDR family is fixed as (session, event, test) and does not depend on interactive unit
+filtering, so *q* is well defined independently of what a reader selects.
+
+Hand-rolling the rank tests themselves was rejected: scipy's tie handling and exact/normal
+approximation behaviour is not worth reimplementing for a publication.
+
+### 6.1b Q1 significance is baseline-invariant
+
+Worth recording because it removes a stored variant. Q1 is paired within trial, and both its
+windows are stimulus presentations in the same trial, so subtracting that trial's own baseline
+from both leaves the paired difference unchanged:
+
+    (test - baseline) - (comparison - baseline) = test - comparison
+
+The Wilcoxon signed-rank statistic depends only on those differences, so **Q1's p-value is
+identical with and without baseline subtraction**. Only the modulation index changes, because
+its denominator does.
+
+Q2 is unpaired and spans two blocks recorded at different times, so there the two baselines are
+different quantities and subtraction genuinely changes the comparison. Stored variants are
+therefore: one Q1 p-value with two modulation indices, and two full Q2 variants.
+
 ### 6.2 Power is genuinely limited — disclose it
 
 The median QC-passing unit fires ~2 spikes per trial in a ~0.37 s window; the 10th-percentile
@@ -445,14 +526,91 @@ reader can see it directly.
 selected on the same statistic used to test them. They are illustrative, not inferential, and
 the caption should say so.
 
-### 6.4 Thresholds
+### 6.3a Resolved by the data: report uncorrected p with the chance level
 
-| Parameter | Proposed | Basis |
+§6.3 argued for Benjamini-Hochberg, but that argument was explicitly conditional on the true
+responsive fraction being small. It is not, and the measured signal settles the question.
+
+Per event, on default-filter units clearing the modulation floor:
+
+| Context / event | nominal p ≤ 0.05 | expected by chance | implied false-discovery proportion | q ≤ 0.05 |
+|---|---|---|---|---|
+| standard orientation_45 | 277 | 33 | 12% | 151 |
+| standard orientation_90 | 284 | 32 | 11% | 187 |
+| sensorimotor, all four | 616–756 | 61–63 | 8–10% | 388–553 |
+| sequence halt | 400 | 41 | 10% | 247 |
+| duration omission | 217 | 29 | 13% | 117 |
+| **duration delay_150** | 62 | 24 | **39%** | 0 |
+| **duration delay_500** | 38 | 19 | **50%** | 0 |
+| **duration delay_1000** | 88 | 23 | **26%** | 0 |
+
+For thirteen of sixteen events the signal runs **7 to 12 times chance**, so uncorrected testing
+carries only about 8 to 13 percent false discoveries, while Benjamini-Hochberg discards roughly
+40 percent of the excess-over-chance units. The three duration delay events are the exception
+and are exactly where correction removed everything.
+
+**Decision: report the uncorrected p and display the chance expectation beside every count.**
+The interactive figure's unit readout reads, for example, `277 units - about 33 expected by
+chance`. This is more informative than a corrected threshold rather than less, because it puts
+the noise floor in front of the reader instead of hiding it inside a cutoff, and it turns the
+duration result from an empty column into a legible weak one: `62 units - about 24 expected by
+chance`.
+
+Corrected values remain stored and available as a stricter option, and are used for
+example-neuron selection where showcasing a chance unit would be worse than missing one.
+Per-area population claims use the binomial count test of §6.3 against the chance rate, which
+needs no per-unit correction at all — that was the main thing Benjamini-Hochberg was being asked
+to provide.
+
+This also matches convention. Uncorrected per-unit thresholds with the responsive fraction and
+chance level reported are the common practice for single-unit responsiveness in systems
+neuroscience; false-discovery control is more typical of imaging and genomics, where the number
+of simultaneous tests is far larger.
+
+### 6.3b What the correction family actually is
+
+Recorded because the original wording was misleading. The family is **all units recorded in one
+context block, tested at one event, for one test**. Sessions and contexts are one to one in this
+figure, and units are distinct acute insertions never shared between sessions, so there is no
+cross-session multiplicity available to correct.
+
+Measured alternatives, summed over the four standard-session events:
+
+| Family | Responsive |
+|---|---|
+| uncorrected | 996 |
+| all units, within event *(primary)* | 577 |
+| analysable units only, within event | 641 |
+| within unit, across the four events | 799 |
+| one family of units by events | 574 |
+
+Notes on the rejected options. Correcting a unit across its own four events gives a family of
+four tests, so it barely corrects and leaves the across-unit multiplicity — the dominant one
+when screening more than a thousand units — uncontrolled. Restricting the family to the
+analysable units recovers about 11 percent, but the interactive figure lets a reader move the
+firing-rate threshold and toggle sorter labels, at which point a q computed over the default set
+no longer applies; spanning every unit keeps the stored value valid under any filter.
+Correcting within area was rejected for per-unit claims because it would make a unit's threshold
+depend on how many units happened to be recorded around it, which is not a property of the
+neuron.
+
+A second value over units by events is stored for the "responsive to any event" selection, which
+implicitly runs one test per event per unit. It costs about half a percent, since
+Benjamini-Hochberg scales by m/j and quadrupling the tests quadruples both the family size and
+each test's rank.
+
+### 6.4 Thresholds as implemented
+
+| Parameter | Value | Basis |
 |---|---|---|
-| Significance | `q < 0.05` (BH within session × event × test) | §6.3 |
-| Effect-size floor | `MI > 0.1` | matches existing SST classification |
-| Running gate | `≥ 1.0 cm/s` | matches `running-statistics.json` |
-| Minimum trials | 8 after gating | judgement — needs sign-off (§13) |
+| Significance, primary | uncorrected `p ≤ 0.05`, with the chance expectation shown beside every count | §6.3a |
+| Significance, stricter option | BH `q ≤ 0.05` over the family in §6.3b | §6.3b |
+| Effect-size floor | `\|MI\| > 0.1`, **two-sided** | magnitude matches the SST rule; two-sided because a mismatch can suppress firing, and suppression is 53% of responsive units |
+| Running gate, sensorimotor | `≥ 5.0 cm/s` in **both** the pre-event and mismatch windows | §3.2; stricter than the 1.0 cm/s in `extract_running_statistics.py`, which was chosen to detect locomotion at all rather than flow-generating speed |
+| Minimum trials, sensorimotor | 8 in the worst event type | §3.2; does not bind for 830794, whose worst type retains 29 |
+| Adjacency, sensorimotor | `≥ 2 s` since the previous mismatch onset | §3.3; the protocol's intended minimum, which the released data does not honour |
+| Adjacency, other contexts | the compared instance must itself be uncontaminated | §4; costs 13, 20, and 13 of 140 trials |
+| Per-area population claim | binomial count test against the chance rate | §6.3 |
 
 ---
 
@@ -486,14 +644,24 @@ The interactive figure does not read the CSV directly. Per CONTRIBUTING's deploy
 pattern, `build-publication-figures` folds a compact per-unit payload into the existing
 `neuropixels-event-responses.json` and generates the ignored copy under `interactive/`.
 
-**Per-trial scalars.** The extractor additionally retains, per (event, condition, unit), the
-per-trial test-window and comparison-window rates. This is what makes every threshold, test,
-and baseline-subtraction choice in this document revisable **without rerunning the cloud
-extraction** — the expensive stage is paid once. Cost is roughly 5 MB uncompressed per
-session as quantized integers. Per-trial *time series* are explicitly not retained; they would
-multiply the 32 MB of atlases by 35–68.
+**Per-trial scalars are not retained — a revision of the original plan.** Keeping them was
+premised on computing statistics at build time, which §6.1a establishes is impossible because
+the presentation stage has no scipy. With the test fixed at extraction time, per-trial values
+would cost roughly 40 MB across the four sessions (about 2.5 million values per session, two
+windows over 35 to 70 trials for every unit, event, and condition) and buy nothing the stored
+statistics do not already provide.
 
----
+Instead the extractor stores, per event and unit, a few scalars: the Q1 and Q2 raw *p* values,
+Benjamini-Hochberg *q* values, modulation indices, and contributing trial counts — a few
+hundred kilobytes per session. Benjamini-Hochberg is numpy-only, so the extractor computes it
+directly.
+
+Tunability is preserved where it matters. The *q* cutoff, the modulation-index floor, and the
+one- versus two-sided choice are all applied at presentation time from stored values.
+Baseline-subtraction remains switchable because the extractor computes and stores statistics
+for **both** the baseline-subtracted and raw variants rather than choosing one; two extra
+scalars per unit and event is negligible. Only changing the statistical test itself requires
+re-extraction, which is a rare and deliberate act.
 
 ## 8. Interactive figure changes
 
@@ -516,16 +684,51 @@ multiply the 32 MB of atlases by 35–68.
 
 ## 9. Static figure changes
 
-Load the `dataviz` skill before implementing; no panel design is committed here.
+Load the `dataviz` skill before implementing; no panel geometry is committed here.
 
-- **Panel A — example responsive neurons per mismatch condition.** Per context, a small number
-  of units passing Q1, showing the test and comparison windows explicitly.
-- **Panel B — per-area quantification.** Responsive fraction by area and event, with the
+**Row order is anatomical.** A second Rastermap embedding fit over responsive visual-cortex
+units was considered and rejected on sizing grounds. Visual cortex contributes only 136-223
+QC-passing units per session before responsiveness filtering, so a single event would leave
+roughly 30-90 units, and the figure's Rastermap configuration (`n_clusters=100`, `n_PCs=200`)
+cannot run at that scale -- 200 principal components cannot be extracted from 90 samples. A
+reduced second parameter set would have been needed, and Rastermap's embedding quality at
+n around 50 is well below what it is designed for. Area order needs no embedding, no second
+parameter set, and no build-time Rastermap, which is unavailable anyway because the package is
+installed ad hoc by extractors.
+
+- **Panel A - example responsive neurons per mismatch condition.** Per context, a small number
+  of units passing Q1, with the test and comparison windows drawn explicitly.
+- **Panel B - per-area quantification.** Responsive fraction by area and event, with the
   binomial chance level drawn as a reference (§6.3).
-- **Panel C — mismatch versus control.** The Q2 contrast per area.
+- **Panel C - mismatch versus control.** The Q2 contrast per area.
 
 Existing panels are not preserved by default; what they become is a design question for the
 next round.
+
+### 9.1 Rastermap disclosure in the interactive figure
+
+The population embedding is fit once per event, before any user filtering, over MUA and SUA
+units with a usable baseline -- about 2,400 units per session, of which only about 55 percent
+are displayed under default filters. Filtered views therefore show a **subsequence of that
+order, not a re-embedding of the survivors**, and the responsiveness filter sharpens this:
+roughly 330 of 2,412 embedded units would remain at a 25 percent responsive rate.
+
+The eligible set is kept as it is, because it is the superset of everything displayable under
+any filter combination, including the **All sorted** option that deliberately retains units
+failing the QC thresholds. Fitting on the QC-passing set instead would leave that option's
+Rastermap order partly arbitrary.
+
+Two disclosures instead:
+
+1. The caption states that the embedding is fit over MUA and SUA units with a valid baseline
+   and that filtered views show a subsequence rather than a re-embedding. The present caption
+   says the orders "remain fixed when unit filters change", which is true but does not tell the
+   reader the embedding included units they have filtered out.
+2. The interactive figure gains a selected-unit readout, which it currently lacks entirely.
+   Under Rastermap ordering it also names the embedded population, for example
+   `330 units - Rastermap order from 2,412 embedded`, putting the caveat where
+   over-interpretation would otherwise happen. Under the other three orderings the denominator
+   is meaningless, so it reads `330 units`.
 
 ## 10. Manuscript text
 
@@ -590,7 +793,7 @@ Plus, specific to this change:
    levels — for scientific sanity-checking, not just green tests.
 5. Reported surviving trial counts for the sensorimotor running gate.
 6. Confirmation that the regenerated CSV is under 10 MiB and the total binary delta is
-   declared for maintainer review (§3.4).
+   declared for maintainer review (§3.5).
 7. Visual check of the interactive figure in MyST light and dark themes at desktop and mobile
    widths.
 
@@ -613,7 +816,7 @@ Plus, specific to this change:
    | **`[-2.0, 1.0]`** *(chosen)* | **3.0 s** | **1200** | **~15 MB** | two complete sequences plus the following one |
 
    This doubles the sequence atlas and widens every sequence heatmap, which is the main
-   contributor to the binary-review requirement in §3.4.
+   contributor to the binary-review requirement in §3.5.
 
 3. **Baseline subtraction default for Q1 standard.** Proposed off.
 4. **Delay-window statistic for duration** (§4.4) — add now, or defer given per-trial storage

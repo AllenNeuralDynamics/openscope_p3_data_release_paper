@@ -1,64 +1,64 @@
 {
-  "analysisSignature": "e6b8ec02d1161293e9a79cfb8920b68380691d82537fbcb40531dd17c500aeaf",
+  "analysisSignature": "e20108492faa57f5df9bdb01e0a8d8dd2017180bd2fe0cc0f5e6c46975aae02c",
   "configuredSessions": [
     {
-      "asset_id": "03973a42-cf55-476f-80d7-85bc402fa57b",
-      "asset_path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-09-10-32-54_ecephys.nwb",
-      "context": "sequence",
-      "context_table": "Sequence mismatch block_presentations",
-      "control_table": "Control block 2_presentations",
-      "session_id": "ecephys_830846_2026-03-09_10-32-54"
-    },
-    {
-      "asset_id": "77123ffa-5029-4485-a2e5-2eacac954f74",
-      "asset_path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-10-10-17-25_ecephys.nwb",
-      "context": "duration",
-      "context_table": "Duration mismatch block_presentations",
-      "control_table": "Control block 3_presentations",
-      "session_id": "ecephys_830846_2026-03-10_10-17-25"
-    },
-    {
-      "asset_id": "680d1c0c-e338-4d0b-ba29-4329436d2ae2",
-      "asset_path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-11-10-19-32_ecephys.nwb",
-      "context": "standard",
-      "context_table": "Standard mismatch block_presentations",
-      "control_table": "Control block 1_presentations",
-      "session_id": "ecephys_830846_2026-03-11_10-19-32"
-    },
-    {
-      "asset_id": "7b0e4734-f3e6-4733-8318-223a28687ec1",
-      "asset_path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-12-11-09-13_ecephys.nwb",
+      "asset_id": "0766996b-2afa-4c6f-a381-134c9e380edc",
+      "asset_path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys.nwb",
       "context": "sensorimotor",
       "context_table": "Sensory-motor mismatch block_presentations",
       "control_table": "Control block 4_presentations",
-      "session_id": "ecephys_830846_2026-03-12_11-09-13"
+      "session_id": "ecephys_830794_2026-01-26_12-02-05"
+    },
+    {
+      "asset_id": "50a50f11-dbf8-482f-bc8f-6629e91c2f06",
+      "asset_path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-27-11-25-31_ecephys.nwb",
+      "context": "standard",
+      "context_table": "Standard mismatch block_presentations",
+      "control_table": "Control block 1_presentations",
+      "session_id": "ecephys_830794_2026-01-27_11-25-31"
+    },
+    {
+      "asset_id": "f30a96cf-3d66-4975-8d43-65138633fb93",
+      "asset_path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-28-11-01-44_ecephys.nwb",
+      "context": "sequence",
+      "context_table": "Sequence mismatch block_presentations",
+      "control_table": "Control block 2_presentations",
+      "session_id": "ecephys_830794_2026-01-28_11-01-44"
+    },
+    {
+      "asset_id": "d8a2fb8e-d542-4c9b-9c71-38942b2049f0",
+      "asset_path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-29-11-12-57_ecephys.nwb",
+      "context": "duration",
+      "context_table": "Duration mismatch block_presentations",
+      "control_table": "Control block 3_presentations",
+      "session_id": "ecephys_830794_2026-01-29_11-12-57"
     }
   ],
   "media": [
     {
       "path": "figure_sources/media/neuropixels-event-responses/duration-sdf-mean.u16.gz",
-      "sha256": "1ec88acaeb9ec174dc0624243295ed42625ba13b21e29035b5dfa8776d945c21",
-      "size": 13989217
+      "sha256": "8de46f65742e56738c1ab9372eac2801bd17e19c2007bfa4b56cd90ddf9cfdc7",
+      "size": 11317540
     },
     {
       "path": "figure_sources/media/neuropixels-event-responses/motor-sdf-mean.u16.gz",
-      "sha256": "45d6f272e4f9492ed03fbae3a136a7516f743013b7bc360e8445d506b0cbfbe9",
-      "size": 3824591
+      "sha256": "02cc0bc96a587f2b2629ab262e5018abd6f1b1c3b3d7ec12dc5b045852736228",
+      "size": 6582487
     },
     {
       "path": "figure_sources/media/neuropixels-event-responses/sequence-sdf-mean.u16.gz",
-      "sha256": "e10a4ac6fa533c3475ff974ed491f5b967ef7a4f451711aa3549c1792b6f1b96",
-      "size": 7590617
+      "sha256": "91e962161268da97b3220f9f7e3df0631ffcccd32f8b272adb447d88f5fe6c70",
+      "size": 12432030
     },
     {
       "path": "figure_sources/media/neuropixels-event-responses/standard-sdf-mean.u16.gz",
-      "sha256": "676941aa4bdd18e6e070950db296f697d898bf3a2ab894c6af4103e15b13bd85",
-      "size": 6638162
+      "sha256": "7b87d5fa84eec02897dd57c235f7e9dca7ad74639933c3b9da8d335b6e748cab",
+      "size": 6299836
     }
   ],
   "module": {
     "path": "src/openscope_p3_publication/neural_responses.py",
-    "sha256": "726d46534ce056953502bf72ad37caed2126461e1b7bcd06bcc29f10554271a3"
+    "sha256": "8e9c9e62b6277947698e2d6dc7e2ad8083e61c624c222b758b3591f98caf7490"
   },
   "ontology": {
     "graphOrderField": "BrainRegions.order",
@@ -66,7 +66,7 @@
     "sourceField": "Allen structure-tree graph_order"
   },
   "outputPath": "figure_sources/data/neuropixels-event-responses.json",
-  "outputSha256": "b4cb9d8913d3657ec48fff353b69c50a6870d8a15674b12b73cd2831aa5e7b3a",
+  "outputSha256": "14c66dda38fcc98a3449475481829e075ccfde2850fae979f42d4b3413eb8b67",
   "rastermap": {
     "packageVersion": "1.0",
     "parameters": {
@@ -83,13 +83,23 @@
       "time_lag_window": 0
     }
   },
-  "retrievedDate": "2026-08-28",
+  "responsivenessModule": {
+    "path": "src/openscope_p3_publication/mismatch_responsiveness.py",
+    "sha256": "9a9cda9eca83a72bad8d015ea3b13ecc8a0ffdda3dee7c64027098066f49f5e8"
+  },
+  "responsivenessTable": {
+    "path": "figure_sources/data/neuropixels-mismatch-responsiveness.csv",
+    "rows": 51872,
+    "sha256": "add1a9fab1ba280b822069e8afd53dc4d23b90f9158b2eedd4509385f7b6b432",
+    "size": 10869606
+  },
+  "retrievedDate": "2026-09-15",
   "script": {
     "path": "scripts/extract_neuropixels_event_responses.py",
-    "sha256": "b4a6ae01c09c3c39b2e2cce9b8447f4012141e7e42da2317f2bc2c7b4ef78607"
+    "sha256": "86e88f7c99c7c7e6ab8cc2e180909730e3e3cbae2121c4886ae19ed1d804165a"
   },
   "sessionCount": 4,
-  "totalQcUnits": 7266,
-  "totalUnits": 13682,
-  "version": 9
+  "totalQcUnits": 8093,
+  "totalUnits": 12968,
+  "version": 10
 }

@@ -10,9 +10,11 @@ from openscope_p3_publication.sensorimotor_running import (
     DEFAULT_RUNNING_THRESHOLD_CM_S,
     MINIMUM_QUALIFYING_TRIALS,
     RUNNING_THRESHOLDS_CM_S,
+    SENSORIMOTOR_MIN_INTERVAL_SECONDS,
     block_speed_summary,
     forward_speed,
     qualifying_trials,
+    sensorimotor_trial_masks,
     summarize_session,
     window_means,
 )
@@ -211,3 +213,80 @@ class TestBlockWindow:
             times, forward, onsets, onsets + 0.35, ["motor_halt"] * 3
         )["block"]["mean_cm_s"]
         assert explicit != pytest.approx(inferred)
+
+
+class TestSensorimotorTrialMasks:
+    """The gate that gets applied to Figure 10's sensorimotor trials.
+
+    The adjacency half of this rule was implemented per event type at first,
+    which found only 6 of the 19 real violations in the released data, because
+    trials of one type are far apart while different types interleave. These
+    tests pin the global behaviour.
+    """
+
+    def _running_series(self, speed: float = 30.0, duration: float = 400.0):
+        times = np.arange(0.0, duration, 1 / 60)
+        return times, forward_speed(np.full(len(times), speed))
+
+    def test_adjacency_spans_every_event_type(self):
+        times, forward = self._running_series()
+        # Two events of different types 0.45 s apart: within one type the gaps
+        # are 100 s, so a per-type rule would see no violation at all.
+        onsets = [np.array([10.0, 110.0]), np.array([10.45, 210.0])]
+        offsets = [o + 0.35 for o in onsets]
+        masks, summaries = sensorimotor_trial_masks(onsets, offsets, times, forward)
+        assert summaries[1]["excludedTooClose"] == 1
+        assert masks[1].tolist() == [False, True]
+        assert sum(s["excludedTooClose"] for s in summaries) == 1
+
+    def test_the_later_trial_of_a_close_pair_is_excluded(self):
+        times, forward = self._running_series()
+        onsets = [np.array([10.0]), np.array([11.0])]
+        offsets = [o + 0.35 for o in onsets]
+        masks, summaries = sensorimotor_trial_masks(onsets, offsets, times, forward)
+        # The first is kept; only the one lacking a reset context is dropped.
+        assert masks[0].tolist() == [True]
+        assert masks[1].tolist() == [False]
+
+    def test_events_beyond_the_minimum_are_kept(self):
+        times, forward = self._running_series()
+        onsets = [np.array([10.0]), np.array([10.0 + SENSORIMOTOR_MIN_INTERVAL_SECONDS])]
+        offsets = [o + 0.35 for o in onsets]
+        masks, _s = sensorimotor_trial_masks(onsets, offsets, times, forward)
+        assert masks[0].tolist() == [True]
+        assert masks[1].tolist() == [True]
+
+    def test_running_and_adjacency_are_independent_requirements(self):
+        times = np.arange(0.0, 400.0, 1 / 60)
+        # Stationary for the first half of the block, running afterwards.
+        velocity = np.where(times < 100.0, 0.0, 30.0)
+        forward = forward_speed(velocity)
+        onsets = [np.array([50.0, 200.0]), np.array([201.0, 300.0])]
+        offsets = [o + 0.35 for o in onsets]
+        masks, summaries = sensorimotor_trial_masks(onsets, offsets, times, forward)
+        # 50 s: stationary. 201 s: running but too close to 200 s.
+        assert masks[0].tolist() == [False, True]
+        assert masks[1].tolist() == [False, True]
+        assert summaries[0]["excludedNotRunning"] == 1
+        assert summaries[1]["excludedTooClose"] == 1
+
+    def test_summary_counts_are_self_consistent(self):
+        times, forward = self._running_series()
+        onsets = [np.array([10.0, 11.0, 50.0]), np.array([80.0])]
+        offsets = [o + 0.35 for o in onsets]
+        masks, summaries = sensorimotor_trial_masks(onsets, offsets, times, forward)
+        for mask, summary in zip(masks, summaries, strict=True):
+            assert summary["trialsTotal"] == len(mask)
+            assert summary["trialsAnalysable"] == int(mask.sum())
+            assert summary["trialsRunning"] + summary["excludedNotRunning"] == len(mask)
+            assert summary["trialsIsolated"] + summary["excludedTooClose"] == len(mask)
+
+    def test_the_gate_requires_running_in_both_windows(self):
+        times = np.arange(0.0, 100.0, 1 / 60)
+        # Running only up to the event onset, stationary during the event.
+        velocity = np.where(times < 20.0, 30.0, 0.0)
+        masks, summaries = sensorimotor_trial_masks(
+            [np.array([20.0])], [np.array([20.35])], times, forward_speed(velocity)
+        )
+        assert masks[0].tolist() == [False]
+        assert summaries[0]["excludedNotRunning"] == 1
