@@ -374,7 +374,7 @@ per-trial storage in §6 makes it addable later without re-extraction. Flagged i
 |---|---|---|---|---|
 | Standard | offset `0` | offset `−1` (expected standard) | offset `−1` stop → event start | prev row not a deviant |
 | Sensorimotor | offset `0` | 343 ms pre-event | same as comparison | **running ≥ 1.0 cm/s** |
-| Sequence | offset `0` (element 3) | offset `−5` (prev element 3) | offset `−3` (**grey**, corrected) | prev sequence clean |
+| Sequence | offset `0` (element 3) | offset `−5` (prev element 3) | offset `−3` (**grey**, corrected); control borrows C1 (§5.1) | prev sequence clean |
 | Duration | offset `0` (post-delay) | offset `−1` (pre-delay) | offset `−2` stop → `−1` start | — |
 
 ---
@@ -388,7 +388,7 @@ recorded at different times, so these tests are **unpaired** (Mann-Whitney U).
 |---|---|---|
 | Standard | deviant response vs. same stimulus in control block C1 | **Yes** |
 | Sensorimotor | running-gated mismatch vs. same event in open-loop C4 | Yes |
-| Sequence | substituted element 3 vs. same event type in C2 | **No** — C2 has no sequence structure or grey interval, so no comparable baseline exists |
+| Sequence | substituted element 3 vs. same event type in C2 | **Yes**, against a borrowed baseline — see §5.1 |
 | Duration | (post-delay − pre-delay) in mismatch vs. the same difference in C3 | Implicit in the difference |
 
 Duration is a difference-of-differences: the per-trial quantity is already
@@ -407,8 +407,44 @@ in 22.5° steps), plus 70 `halt` and 70 `omission`, and **no `sequence_omission`
 A specific ordered orientation transition would occur roughly 4–5 times by chance. Drop this
 comparison.
 
-The same inspection confirms the decision not to baseline-subtract the sequence Q2 contrast:
-C2 has no grey inter-sequence interval, so no comparable baseline exists.
+### 5.1 The sequence control baseline is borrowed from control block 1
+
+Applying the §4 sequence rule to control block 2 produces a meaningless baseline, and this
+is worth stating plainly because the code initially did exactly that. Offset `−3` in C2 lands
+on an arbitrary drifting grating — `single@202°` ×7, `single@112°` ×6, `single@292°` ×6,
+`halt@0°` ×5 and so on across all 14 orientations — because C2 has no grey rows to land on.
+Nor is there a better offset: C2 is **fully contiguous**, with an inter-row gap whose median,
+minimum and maximum are all 0.0 ms across its entire 298 s. No window inside C2 is a blank.
+
+The fix uses control block 1, which is presented in **two repeats that bracket the sequence
+block**:
+
+| Epoch | Span | Structure |
+|---|---|---|
+| C1 repeat 1 | 61.1–441.6 s | 544 rows of 367 ms, 543 blank ISIs of 333.6 ms |
+| Sequence mismatch block | 441.6–2104.3 s | five-element sequences with grey |
+| C1 repeat 2 | 2104.6–2485.4 s | 544 rows of 367 ms, 543 blank ISIs of 333.6 ms |
+| C2 (sequence control) | 2485.4–2783.9 s | 1120 contiguous rows, no blank |
+
+C1 repeat 2 ends **0.3 s before C2 begins**, so its 543 blank intervals (181 s of genuine
+no-stimulus time) are the closest real baseline to the control trials in the whole session.
+Each of the 70 control trials per event draws one blank window, sampled evenly across the
+repeat so the baseline spans it rather than clustering at one end. Implemented as
+`blank_interval_windows`, `adjacent_blank_windows` and `sample_windows_evenly` in
+`neural_responses.py`, selecting the repeat by proximity rather than by block number.
+
+**Why not use repeat 2 for the context condition too?** Because it would be a no-op for Q2 and
+a regression for Q1. Mann-Whitney U is rank-based, so subtracting the *same* constant from both
+conditions preserves every rank and leaves the p-value unchanged; the two conditions must
+therefore carry their own baselines for baseline subtraction to do anything at all. And the
+context condition already has the better baseline — its own within-trial grey interval, at zero
+temporal drift — whereas importing repeat 2 would introduce up to 27.7 minutes of it.
+
+**Residual caveats to disclose in the caption.** The borrowed baseline is 333.6 ms against the
+context's grey row, and it is drawn from a different block, at a temporal offset of up to
+6.3 minutes from the trial it baselines. Both traces are in Hz, so the duration difference
+affects the variance of the baseline estimate rather than biasing it; the block difference is
+the real limitation and is why the sequence Q2 contrast is the weaker of the four.
 
 ---
 
@@ -819,8 +855,12 @@ Plus, specific to this change:
    contributor to the binary-review requirement in §3.5.
 
 3. **Baseline subtraction default for Q1 standard.** Proposed off.
-4. **Delay-window statistic for duration** (§4.4) — add now, or defer given per-trial storage
-   makes it cheap later? Recommend defer.
+4. ~~**Delay-window statistic for duration** (§4.4) — add now, or defer given per-trial
+   storage makes it cheap later?~~ **Resolved: added now**, alongside the sensorimotor running
+   gate.
+4b. ~~**Sequence control baseline.**~~ **Resolved: borrow control block 1's second repeat**
+   (§5.1). Control block 2 contains no blank interval anywhere, so the §4 rule produced an
+   arbitrary grating. The context condition keeps its own within-trial grey.
 5. ~~**Whether the sensorimotor context should use a different mouse.**~~ **Resolved: switch
    all four sessions to 830794** (§3.2). Note the reasoning that made this cheap — the caption
    already states units are not longitudinally matched across sessions, so the one-mouse

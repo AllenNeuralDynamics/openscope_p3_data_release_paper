@@ -1237,7 +1237,17 @@
   // Sequences are five contiguous rows -- four gratings then a grey
   // inter-sequence interval -- with the substitution always at element three.
   // Marking every boundary lets a reader place the substituted element within
-  // its sequence, and see the previous sequence that Q1 compares against.
+  // its sequence, and shading the element that Q1 compares against shows the
+  // comparison directly rather than describing it.
+  function contextTint(alpha) {
+    const hex = contextColors[state.context] || "#5a6360";
+    const value = Number.parseInt(hex.slice(1), 16);
+    const red = (value >> 16) & 255;
+    const green = (value >> 8) & 255;
+    const blue = value & 255;
+    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+  }
+
   function drawSequenceElementGuides(context, plot) {
     const session = currentSession();
     if (session.context !== "sequence") return;
@@ -1249,40 +1259,46 @@
     const toX = (seconds) =>
       plot.left + ((seconds - displayStart()) / span) * (plot.right - plot.left);
 
+    // The compared element, shaded like the mismatch window but in grey so the
+    // two read as the same kind of interval playing different roles.
+    const comparison = windows.find(
+      (window) => window.rowOffset === SEQUENCE_COMPARISON_OFFSET,
+    );
+    if (comparison) {
+      const left = Math.max(toX(comparison.startSeconds), plot.left);
+      const right = Math.min(toX(comparison.stopSeconds), plot.right);
+      if (right > left) {
+        context.save();
+        context.fillStyle = "rgba(120, 128, 125, 0.16)";
+        context.fillRect(left, plot.top, right - left, plot.bottom - plot.top);
+        context.strokeStyle = "rgba(120, 128, 125, 0.7)";
+        context.lineWidth = 1;
+        context.setLineDash([4, 4]);
+        context.beginPath();
+        context.moveTo(left, plot.top);
+        context.lineTo(left, plot.bottom);
+        context.moveTo(right, plot.top);
+        context.lineTo(right, plot.bottom);
+        context.stroke();
+        context.restore();
+      }
+    }
+
     context.save();
     context.lineWidth = 1;
     context.setLineDash([3, 4]);
+    context.strokeStyle = "rgba(120, 128, 125, 0.28)";
     windows.forEach((window) => {
+      if (window.rowOffset === 0) return;
+      if (window.rowOffset === SEQUENCE_COMPARISON_OFFSET) return;
       const x = toX(window.startSeconds);
       if (x < plot.left || x > plot.right) return;
-      // The substituted element already carries its own solid guides.
-      if (window.rowOffset === 0) return;
-      context.strokeStyle =
-        window.rowOffset === SEQUENCE_COMPARISON_OFFSET
-          ? "rgba(49, 95, 115, 0.55)"
-          : "rgba(120, 128, 125, 0.32)";
       context.beginPath();
       context.moveTo(x, plot.top);
       context.lineTo(x, plot.bottom);
       context.stroke();
     });
     context.restore();
-
-    // Label the element Q1 compares against, so the widened window reads as a
-    // deliberate choice rather than extra blank space.
-    const comparison = windows.find(
-      (window) => window.rowOffset === SEQUENCE_COMPARISON_OFFSET,
-    );
-    if (comparison) {
-      const x = toX(comparison.startSeconds);
-      if (x >= plot.left && x <= plot.right) {
-        context.save();
-        context.fillStyle = "#315f73";
-        context.textAlign = "left";
-        context.fillText("previous element 3", x + 4, plot.top + 12);
-        context.restore();
-      }
-    }
   }
 
   function drawResponsePanel(canvas, traces, baselineSubtracted) {
@@ -1305,7 +1321,7 @@
         ((timing.presentationStopSeconds - displayStart()) /
           (displayEnd() - displayStart())) *
           (plot.right - plot.left);
-      context.fillStyle = "rgba(90, 99, 96, 0.09)";
+      context.fillStyle = contextTint(0.14);
       context.fillRect(startX, plot.top, stopX - startX, plot.bottom - plot.top);
     }
     drawSequenceElementGuides(context, plot);

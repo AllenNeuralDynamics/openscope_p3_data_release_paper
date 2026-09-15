@@ -27,6 +27,9 @@ from openscope_p3_publication.neural_responses import (
     SDF_QUANTIZATION_SCALE,
     SDF_SOURCE_BIN_SECONDS,
     SDF_TAU_SECONDS,
+    SEQUENCE_CONTROL_BASELINE_TABLE,
+    adjacent_blank_windows,
+    blank_interval_windows,
     classify_neuron_type,
     context_event_definitions,
     context_window_seconds,
@@ -36,6 +39,7 @@ from openscope_p3_publication.neural_responses import (
     qc_passes,
     relative_bin_centers,
     relative_bin_edges,
+    sample_windows_evenly,
     sdf_kernel,
     smooth_trace,
 )
@@ -254,7 +258,7 @@ def test_neuron_type_classification(
 def test_neuropixels_event_snapshot_is_source_backed() -> None:
     payload = load_neuropixels_event_responses()
 
-    assert payload["version"] == 10
+    assert payload["version"] == 11
     assert payload["subject"] == "830794"
     assert payload["sessionOrder"] == [
         "standard",
@@ -588,3 +592,120 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert "sdfSemAtlas" not in html
     assert "function sdfKernel" not in html
     assert "__NEUROPIXELS_EVENT_" not in html
+
+
+class TestBlankIntervalWindows:
+    """The sequence control baseline, borrowed from control block 1.
+
+    Control block 2 is contiguous, so the sequence row offset lands on a
+    grating rather than a blank. See docs/neuropixels-mismatch-responsiveness.md.
+    """
+
+    def _repeats(self):
+        # Two repeats of the same block, numbered 1 and 3 as in the protocol.
+        starts, stops, blocks = [], [], []
+        for block, origin in ((1.0, 0.0), (3.0, 100.0)):
+            for row in range(4):
+                starts.append(origin + row * 0.7)
+                stops.append(origin + row * 0.7 + 0.367)
+                blocks.append(block)
+        return starts, stops, blocks
+
+    def test_gaps_are_grouped_by_block(self):
+        windows = blank_interval_windows(*self._repeats())
+        assert sorted(windows) == [1.0, 3.0]
+        assert len(windows[1.0]) == len(windows[3.0]) == 3
+
+    def test_a_gap_runs_from_one_stop_to_the_next_start(self):
+        windows = blank_interval_windows(*self._repeats())
+        assert windows[1.0][0] == pytest.approx((0.367, 0.7))
+
+    def test_block_boundaries_do_not_produce_a_gap(self):
+        windows = blank_interval_windows(*self._repeats())
+        assert all(stop <= 2.5 for _start, stop in windows[1.0])
+
+    def test_contiguous_rows_yield_no_blanks(self):
+        # Control block 2's shape: no inter-row gap anywhere.
+        starts = [row * 0.2669 for row in range(10)]
+        stops = [start + 0.2669 for start in starts]
+        assert blank_interval_windows(starts, stops, [4.0] * 10) == {}
+
+    def test_display_jitter_is_not_a_blank(self):
+        starts = [0.0, 0.2680, 0.5360]
+        stops = [0.2669, 0.5349, 0.8029]
+        assert blank_interval_windows(starts, stops, [4.0] * 3) == {}
+
+    def test_rows_out_of_order_are_sorted_first(self):
+        windows = blank_interval_windows([0.7, 0.0], [1.067, 0.367], [1.0, 1.0])
+        assert windows[1.0] == [pytest.approx((0.367, 0.7))]
+
+    def test_mismatched_lengths_raise(self):
+        with pytest.raises(ValueError, match="same length"):
+            blank_interval_windows([0.0, 1.0], [0.5], [1.0, 1.0])
+
+
+class TestAdjacentBlankWindows:
+    def _repeats(self):
+        starts, stops, blocks = [], [], []
+        for block, origin in ((1.0, 0.0), (3.0, 100.0)):
+            for row in range(4):
+                starts.append(origin + row * 0.7)
+                stops.append(origin + row * 0.7 + 0.367)
+                blocks.append(block)
+        return starts, stops, blocks
+
+    def test_the_repeat_ending_just_before_the_target_is_chosen(self):
+        windows = adjacent_blank_windows(*self._repeats(), 102.5)
+        assert windows[0][0] == pytest.approx(100.367)
+
+    def test_a_later_repeat_is_not_preferred_over_a_preceding_one(self):
+        # The first repeat precedes the target; the second is nearer but later.
+        windows = adjacent_blank_windows(*self._repeats(), 3.0)
+        assert windows[0][0] == pytest.approx(0.367)
+
+    def test_a_following_repeat_is_used_when_none_precedes(self):
+        windows = adjacent_blank_windows(*self._repeats(), -10.0)
+        assert windows[0][0] == pytest.approx(0.367)
+
+    def test_the_borrow_table_is_control_block_one(self):
+        # Not the sequence session's own control table, which is block 2.
+        assert SEQUENCE_CONTROL_BASELINE_TABLE == "Control block 1_presentations"
+        sequence = next(
+            config for config in NEURAL_SESSIONS if config.context == "sequence"
+        )
+        assert sequence.control_table == "Control block 2_presentations"
+        assert SEQUENCE_CONTROL_BASELINE_TABLE != sequence.control_table
+
+    def test_a_table_without_blanks_raises(self):
+        starts = [row * 0.2669 for row in range(10)]
+        stops = [start + 0.2669 for start in starts]
+        with pytest.raises(ValueError, match="No blank"):
+            adjacent_blank_windows(starts, stops, [4.0] * 10, 5.0)
+
+
+class TestSampleWindowsEvenly:
+    def _windows(self, count: int):
+        return [(float(index), index + 0.3336) for index in range(count)]
+
+    def test_one_window_is_returned_per_trial(self):
+        assert len(sample_windows_evenly(self._windows(543), 70)) == 70
+
+    def test_the_sample_spans_the_whole_repeat(self):
+        sampled = sample_windows_evenly(self._windows(543), 70)
+        assert sampled[0][0] == pytest.approx(0.0)
+        assert sampled[-1][0] > 530.0
+
+    def test_windows_are_distinct_when_there_are_enough_of_them(self):
+        assert len(set(sample_windows_evenly(self._windows(543), 70))) == 70
+
+    def test_more_trials_than_windows_reuses_windows_without_failing(self):
+        sampled = sample_windows_evenly(self._windows(3), 7)
+        assert len(sampled) == 7
+        assert set(sampled) <= set(self._windows(3))
+
+    def test_no_trials_needs_no_windows(self):
+        assert sample_windows_evenly(self._windows(10), 0) == []
+
+    def test_sampling_from_nothing_raises(self):
+        with pytest.raises(ValueError, match="empty"):
+            sample_windows_evenly([], 4)

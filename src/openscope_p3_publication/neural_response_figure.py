@@ -111,7 +111,7 @@ def uint16_base64_values(encoded: str) -> array:
     return values
 
 
-SNAPSHOT_VERSION = 10
+SNAPSHOT_VERSION = 11
 """Schema version of the committed snapshot.
 
 Must match ``VERSION`` in scripts/extract_neuropixels_event_responses.py. Version
@@ -222,10 +222,15 @@ def load_neuropixels_event_responses(
             "duration": "row i-2 stop_time through row i-1 start_time",
             "sensorimotor": "343 ms immediately preceding event start_time",
             # The grey inter-sequence interval, corrected from the preceding
-            # grating element. See docs/neuropixels-mismatch-responsiveness.md.
+            # grating element, and the borrowed control baseline. See
+            # docs/neuropixels-mismatch-responsiveness.md.
             "sequence": (
-                "grey inter-sequence interval at row i-3, the full row from its "
-                "start_time through its stop_time"
+                "context: grey inter-sequence interval at row i-3, the full row "
+                "from its start_time through its stop_time. control: control "
+                "block 2 is contiguous and contains no grey, so baselines are "
+                "the blank inter-stimulus intervals of the control block 1 "
+                "repeat that ends where control block 2 begins, sampled evenly "
+                "across that repeat, one per trial"
             ),
             "standard": "previous row stop_time through event start_time",
         }

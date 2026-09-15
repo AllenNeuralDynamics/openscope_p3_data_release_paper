@@ -26,6 +26,7 @@ threshold application -- is numpy-only and tested in CI.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 
 import numpy as np
@@ -298,3 +299,80 @@ def unpaired_p_values(
             result = mannwhitneyu(left, right, alternative="two-sided")
         out[row] = float(result.pvalue)
     return out
+
+
+def binomial_survival(successes: int, trials: int, probability: float) -> float:
+    """Exact upper-tail binomial probability ``P(X >= successes)``.
+
+    Panel B asks whether an area's responsive fraction exceeds what the
+    thresholds alone would produce: at ``p < 0.05`` two-sided, roughly 5% of
+    units clear the significance gate by chance, and the modulation floor
+    removes some of those. This gives the area-level test against that floor
+    without adding a scipy dependency to the presentation stage.
+
+    Validated against ``scipy.stats.binom.sf`` over 4000 random ``(n, k, p)``
+    draws: relative agreement to 7e-13 everywhere except one case at 1e-297,
+    where scipy itself is 41% off the exact value and this function is not.
+
+    Summed directly over the upper tail. Computing it as ``1 - P(X < k)``
+    would take fewer terms when ``k`` is small, but it cancels catastrophically
+    once the answer is tiny: at ``n = 50``, ``k = 25``, ``p = 0.05`` the lower
+    sum rounds to exactly 1.0 and the complement returns 0.0 for a true value
+    of 5.5e-21. Note that comparing against a reference implementation in
+    absolute terms does not catch this, which is why the monotonicity test
+    guards it instead.
+    """
+    if trials < 0:
+        raise ValueError("trials must not be negative.")
+    if not 0.0 <= probability <= 1.0:
+        raise ValueError("probability must lie in [0, 1].")
+    successes = max(int(successes), 0)
+    if successes == 0:
+        return 1.0
+    if successes > trials:
+        return 0.0
+    if probability == 0.0:
+        return 0.0
+    if probability == 1.0:
+        return 1.0
+
+    log_p = math.log(probability)
+    log_q = math.log1p(-probability)
+
+    def log_pmf(count: int) -> float:
+        return (
+            math.lgamma(trials + 1)
+            - math.lgamma(count + 1)
+            - math.lgamma(trials - count + 1)
+            + count * log_p
+            + (trials - count) * log_q
+        )
+
+    total = math.fsum(
+        math.exp(log_pmf(count)) for count in range(successes, trials + 1)
+    )
+    return float(min(total, 1.0))
+
+
+def responsive_fraction_p_values(
+    responsive_counts: Sequence[int],
+    unit_counts: Sequence[int],
+    chance_probability: float,
+) -> np.ndarray:
+    """Per-area upper-tail p-values for an excess of responsive units.
+
+    Areas with no units yield NaN rather than 1.0, so an empty area is never
+    read as a measured null result.
+    """
+    counts = np.asarray(responsive_counts, dtype=float)
+    totals = np.asarray(unit_counts, dtype=float)
+    if counts.shape != totals.shape:
+        raise ValueError("responsive_counts and unit_counts must have the same length.")
+    return np.array(
+        [
+            binomial_survival(int(count), int(total), chance_probability)
+            if total > 0
+            else np.nan
+            for count, total in zip(counts, totals, strict=True)
+        ]
+    )

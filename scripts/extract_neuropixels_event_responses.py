@@ -71,6 +71,8 @@ from openscope_p3_publication.neural_responses import (
     SDF_QUANTIZATION_SCALE,
     SDF_SOURCE_BIN_SECONDS,
     SDF_TAU_SECONDS,
+    SEQUENCE_CONTROL_BASELINE_TABLE,
+    adjacent_blank_windows,
     classify_neuron_type,
     context_event_definitions,
     context_window_seconds,
@@ -79,6 +81,7 @@ from openscope_p3_publication.neural_responses import (
     neural_response_windows,
     qc_passes,
     relative_bin_centers,
+    sample_windows_evenly,
     sdf_kernel,
 )
 from openscope_p3_publication.sensorimotor_running import (
@@ -97,7 +100,7 @@ MEDIA_ASSET_ROOT = "media/neuropixels-event-responses"
 DANDI_API = "https://api.dandiarchive.org/api"
 DANDISET_ID = "001637"
 DANDI_VERSION = "draft"
-VERSION = 10
+VERSION = 11
 CONDITION_ORDER = ("context", "control")
 PROBE_ORDER = tuple(f"Probe{letter}" for letter in "ABCDEF")
 COMPATIBLE_METADATA_SIGNATURES = (
@@ -338,6 +341,11 @@ def event_records(nwb: h5py.File, config) -> tuple[list[dict], list[dict]]:
     window_start, window_stop = context_window_seconds(config.context)
     context_arrays = table_arrays(nwb[f"intervals/{config.context_table}"])
     control_arrays = table_arrays(nwb[f"intervals/{config.control_table}"])
+    sequence_baseline_arrays = (
+        table_arrays(nwb[f"intervals/{SEQUENCE_CONTROL_BASELINE_TABLE}"])
+        if config.context == "sequence"
+        else None
+    )
     records = []
     extraction = []
     for definition in context_event_definitions(config.context):
@@ -395,6 +403,25 @@ def event_records(nwb: h5py.File, config) -> tuple[list[dict], list[dict]]:
                 arrays["stop"],
                 condition_indices[condition],
             )
+
+        if config.context == "sequence":
+            # Control block 2 has no blank period anywhere in its 298 s: its
+            # rows are contiguous, so the sequence rule's row offset lands on
+            # an arbitrary grating rather than a baseline. Borrow the blank
+            # inter-stimulus intervals of the control block 1 repeat that ends
+            # where control block 2 begins -- genuine no-stimulus windows
+            # within a minute of the trials they baseline.
+            borrowed = adjacent_blank_windows(
+                sequence_baseline_arrays["start"],
+                sequence_baseline_arrays["stop"],
+                sequence_baseline_arrays["block_number"],
+                float(control_arrays["start"].min()),
+            )
+            trials = len(condition_indices["control"])
+            trial_baseline_windows["control"] = sample_windows_evenly(
+                borrowed, trials
+            )
+            baseline_windows["control"] = list(trial_baseline_windows["control"])
 
         # Duration only: the epoch the manipulation actually changes. The
         # violated delay runs from row i-1 stop to row i start; the standard
@@ -1605,8 +1632,12 @@ def main() -> None:
                 "duration": "row i-2 stop_time through row i-1 start_time",
                 "sensorimotor": "343 ms immediately preceding event start_time",
                 "sequence": (
-                    "grey inter-sequence interval at row i-3, the full row from its "
-                    "start_time through its stop_time"
+                    "context: grey inter-sequence interval at row i-3, the full row "
+                    "from its start_time through its stop_time. control: control "
+                    "block 2 is contiguous and contains no grey, so baselines are "
+                    "the blank inter-stimulus intervals of the control block 1 "
+                    "repeat that ends where control block 2 begins, sampled evenly "
+                    "across that repeat, one per trial"
                 ),
                 "standard": "previous row stop_time through event start_time",
             },

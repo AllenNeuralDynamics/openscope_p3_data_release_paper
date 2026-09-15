@@ -1,5 +1,5 @@
 {
-  "analysisSignature": "e20108492faa57f5df9bdb01e0a8d8dd2017180bd2fe0cc0f5e6c46975aae02c",
+  "analysisSignature": "68f94de4bb1f9d8d7f4c3581db6fe3b234b884f754943a696b988b8c911d15ff",
   "configuredSessions": [
     {
       "asset_id": "0766996b-2afa-4c6f-a381-134c9e380edc",
@@ -37,28 +37,28 @@
   "media": [
     {
       "path": "figure_sources/media/neuropixels-event-responses/duration-sdf-mean.u16.gz",
-      "sha256": "8de46f65742e56738c1ab9372eac2801bd17e19c2007bfa4b56cd90ddf9cfdc7",
+      "sha256": "01d428533221e05d4a8e6371f56058ef131c1259316b5ddbc034bb58abd65580",
       "size": 11317540
     },
     {
       "path": "figure_sources/media/neuropixels-event-responses/motor-sdf-mean.u16.gz",
-      "sha256": "02cc0bc96a587f2b2629ab262e5018abd6f1b1c3b3d7ec12dc5b045852736228",
+      "sha256": "a56e008c5f7be7d98c1f1ea3dc831b8b52b7d20c0046eb8fb70bc26405774eb8",
       "size": 6582487
     },
     {
       "path": "figure_sources/media/neuropixels-event-responses/sequence-sdf-mean.u16.gz",
-      "sha256": "91e962161268da97b3220f9f7e3df0631ffcccd32f8b272adb447d88f5fe6c70",
+      "sha256": "5fce30f6ceb24c26abbe173d3a099274e9eafef0a72f4fa4c2220717324f75f4",
       "size": 12432030
     },
     {
       "path": "figure_sources/media/neuropixels-event-responses/standard-sdf-mean.u16.gz",
-      "sha256": "7b87d5fa84eec02897dd57c235f7e9dca7ad74639933c3b9da8d335b6e748cab",
+      "sha256": "f7545008e0c6c79f0e1d2818aa020d2d965cc94882c7b6e76ec716fa7440f4ad",
       "size": 6299836
     }
   ],
   "module": {
     "path": "src/openscope_p3_publication/neural_responses.py",
-    "sha256": "8e9c9e62b6277947698e2d6dc7e2ad8083e61c624c222b758b3591f98caf7490"
+    "sha256": "5fbf08007dbaacf020b124bc62f60bc51c86c6ffeac2cbeb2979b5476d9a28df"
   },
   "ontology": {
     "graphOrderField": "BrainRegions.order",
@@ -66,7 +66,7 @@
     "sourceField": "Allen structure-tree graph_order"
   },
   "outputPath": "figure_sources/data/neuropixels-event-responses.json",
-  "outputSha256": "14c66dda38fcc98a3449475481829e075ccfde2850fae979f42d4b3413eb8b67",
+  "outputSha256": "bc6ff394ce5f1bd73672f652e9b05f5a7dee67790536de62a57cc3bd37c1b4f2",
   "rastermap": {
     "packageVersion": "1.0",
     "parameters": {
@@ -85,21 +85,21 @@
   },
   "responsivenessModule": {
     "path": "src/openscope_p3_publication/mismatch_responsiveness.py",
-    "sha256": "9a9cda9eca83a72bad8d015ea3b13ecc8a0ffdda3dee7c64027098066f49f5e8"
+    "sha256": "aab9c8b0ea291056269e07755cffa3fd47a71752449de39fa663fe768a185ef4"
   },
   "responsivenessTable": {
     "path": "figure_sources/data/neuropixels-mismatch-responsiveness.csv",
     "rows": 51872,
-    "sha256": "add1a9fab1ba280b822069e8afd53dc4d23b90f9158b2eedd4509385f7b6b432",
-    "size": 10869606
+    "sha256": "975d41f2b36869c92e2d36f02d45a91b548648c02c8033d5cdd07eeed2be1767",
+    "size": 10668936
   },
   "retrievedDate": "2026-09-15",
   "script": {
     "path": "scripts/extract_neuropixels_event_responses.py",
-    "sha256": "86e88f7c99c7c7e6ab8cc2e180909730e3e3cbae2121c4886ae19ed1d804165a"
+    "sha256": "9091d2d92534d0b6e3d840bdbd74c1f3220b548190b55e29120439661e5e677b"
   },
   "sessionCount": 4,
   "totalQcUnits": 8093,
   "totalUnits": 12968,
-  "version": 10
+  "version": 11
 }

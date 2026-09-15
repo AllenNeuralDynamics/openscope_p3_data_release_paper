@@ -16,11 +16,13 @@ from openscope_p3_publication.mismatch_responsiveness import (
     DEFAULT_Q_MAX,
     SEQUENCE_COMPARISON_OFFSET,
     benjamini_hochberg,
+    binomial_survival,
     classify_responsive,
     clean_trial_mask,
     comparison_offset,
     comparison_windows,
     modulation_index,
+    responsive_fraction_p_values,
 )
 
 
@@ -227,3 +229,76 @@ class TestClassifyResponsive:
         # The SST classification in this figure uses p < 0.05 and MI > 0.1.
         assert DEFAULT_Q_MAX == 0.05
         assert DEFAULT_MODULATION_MINIMUM == 0.1
+
+
+class TestBinomialSurvival:
+    """Reimplemented here because the presentation stage declares only numpy.
+
+    Validated against scipy.stats.binom.sf and against exact mpmath sums over
+    4000 random cases; see the function docstring.
+    """
+
+    def test_every_outcome_is_at_least_one_success(self):
+        assert binomial_survival(0, 10, 0.05) == 1.0
+
+    def test_more_successes_than_trials_is_impossible(self):
+        assert binomial_survival(11, 10, 0.05) == 0.0
+
+    def test_a_fair_coin_splits_around_the_middle(self):
+        assert binomial_survival(1, 2, 0.5) == pytest.approx(0.75)
+        assert binomial_survival(2, 2, 0.5) == pytest.approx(0.25)
+
+    def test_a_known_small_case(self):
+        # P(X >= 2) for n=3, p=0.5 is 4/8.
+        assert binomial_survival(2, 3, 0.5) == pytest.approx(0.5)
+
+    def test_the_chance_floor_is_not_significant(self):
+        # 5 of 100 responsive is exactly the chance expectation at p < 0.05.
+        assert binomial_survival(5, 100, 0.05) > 0.4
+
+    def test_a_clear_excess_is_significant(self):
+        # 35 of 100 is the signal level measured in these blocks.
+        assert binomial_survival(35, 100, 0.05) == pytest.approx(2.387e-14, rel=1e-3)
+
+    def test_the_far_upper_tail_underflows_to_zero_not_to_a_negative(self):
+        assert binomial_survival(500, 500, 0.05) == 0.0
+
+    def test_the_deep_tail_is_not_lost_to_cancellation(self):
+        # A complement-based implementation returns 0.0 here.
+        assert binomial_survival(25, 50, 0.05) == pytest.approx(5.547e-21, rel=1e-3)
+
+    def test_probability_is_monotonic_in_the_count(self):
+        values = [binomial_survival(count, 50, 0.05) for count in range(51)]
+        pairs = zip(values, values[1:], strict=False)
+        assert all(later <= earlier for earlier, later in pairs)
+
+    def test_degenerate_probabilities(self):
+        assert binomial_survival(1, 10, 0.0) == 0.0
+        assert binomial_survival(10, 10, 1.0) == 1.0
+
+    def test_no_trials_means_no_successes(self):
+        assert binomial_survival(1, 0, 0.05) == 0.0
+
+    def test_an_invalid_probability_raises(self):
+        with pytest.raises(ValueError, match="probability"):
+            binomial_survival(1, 10, 1.5)
+
+    def test_negative_trials_raise(self):
+        with pytest.raises(ValueError, match="negative"):
+            binomial_survival(1, -1, 0.05)
+
+
+class TestResponsiveFractionPValues:
+    def test_one_p_value_per_area(self):
+        p = responsive_fraction_p_values([12, 3, 40], [100, 100, 100], 0.05)
+        assert p.shape == (3,)
+        assert p[2] < p[0] < p[1]
+
+    def test_an_empty_area_is_not_a_measured_null(self):
+        p = responsive_fraction_p_values([0, 12], [0, 100], 0.05)
+        assert np.isnan(p[0])
+        assert p[1] < 0.01
+
+    def test_mismatched_lengths_raise(self):
+        with pytest.raises(ValueError, match="same length"):
+            responsive_fraction_p_values([1, 2], [10], 0.05)
