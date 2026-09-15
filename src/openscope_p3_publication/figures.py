@@ -6119,6 +6119,7 @@ def main() -> None:
         write_neuropixels_event_svg,
     )
     from .pupil_figure import write_pupil_event_html, write_pupil_event_svg
+    from .sensorimotor_running_figure import write_sensorimotor_running_svg
 
     merged_figure_1_path = write_merged_figure_1_svg()
     figure_1_panel_c_path = write_figure_1_panel_c_svg()
@@ -6149,6 +6150,7 @@ def main() -> None:
     svg_path = write_static_svg()
     unit_yield_svg_path = write_unit_yield_svg()
     mismatch_adjacency_svg_path = write_mismatch_adjacency_svg()
+    sensorimotor_running_svg_path = write_sensorimotor_running_svg()
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {figure_1_panel_c_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
@@ -6180,6 +6182,7 @@ def main() -> None:
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {mismatch_adjacency_svg_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {sensorimotor_running_svg_path.relative_to(REPO_ROOT)}")
 
 
 if __name__ == "__main__":
