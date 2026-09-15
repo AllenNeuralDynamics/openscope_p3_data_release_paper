@@ -1,11 +1,16 @@
-"""Measure locomotion during the sensorimotor mismatch block across P3 Neuropixels NWBs.
+"""Measure locomotion during the sensorimotor mismatch block across the P3 release.
 
 The sensorimotor block couples optic flow to the animal's locomotion, so a
 mismatch event only exists as a stimulus when the animal is running. This reads
 the processed running series and the sensorimotor interval tables from every
-released Neuropixels session containing that block, and records block-level
-speed plus the number of mismatch trials that qualify as running at each
-threshold in the reported ladder.
+released Neuropixels and mesoscope session containing that block, and records
+block-level speed plus the number of mismatch trials that qualify as running at
+each threshold in the reported ladder.
+
+Both modalities package the sensorimotor interval table and a 60 Hz cm/s
+processed running series identically, so one code path covers them. SLAP2 is
+declared unavailable: its running data is packaged as Harp encoder files on
+project S3 rather than in the NWB.
 
 Refresh (maintainer operation):
 
@@ -43,9 +48,26 @@ from openscope_p3_publication.sensorimotor_running import (  # noqa: E402
 DEFAULT_OUTPUT = REPO_ROOT / "figure_sources" / "data" / "sensorimotor-running.json"
 DEFAULT_PROVENANCE_OUTPUT = DEFAULT_OUTPUT.with_suffix(".provenance.json")
 DANDI_API = "https://api.dandiarchive.org/api"
-DANDISET_ID = "001637"
 DANDI_VERSION = "draft"
-PAYLOAD_VERSION = 1
+# Neuropixels and mesoscope NWBs share the sensorimotor interval table and the
+# processed running series, so one code path covers both. SLAP2 running lives in
+# Harp encoder files on project S3 rather than in the NWB, needs wheel
+# calibration and stimulus alignment, and is declared unavailable here.
+DANDISETS = {
+    "neuropixels": "001637",
+    "mesoscope": "001768",
+}
+UNAVAILABLE_MODALITIES = {
+    "slap2": {
+        "dandiset_id": "001424",
+        "reason": (
+            "SLAP2 running is packaged as Harp encoder files on project S3 rather "
+            "than as an NWB processed running series, and requires wheel "
+            "calibration and stimulus alignment"
+        ),
+    },
+}
+PAYLOAD_VERSION = 2
 CONTEXT_TABLE = "Sensory-motor mismatch block_presentations"
 CONTROL_TABLE = "Control block 4_presentations"
 MISMATCH_TYPES = (
@@ -75,24 +97,31 @@ def fetch_json(url: str) -> dict:
         return json.load(response)
 
 
-def list_assets() -> tuple[list[dict], str, str]:
-    url = (
-        f"{DANDI_API}/dandisets/{DANDISET_ID}/versions/{DANDI_VERSION}"
-        "/assets/?page_size=100"
-    )
+def list_assets() -> tuple[list[dict], dict[str, str], str]:
+    """Every NWB asset across the covered dandisets, tagged with its modality."""
     assets: list[dict] = []
-    page_url = url
-    while page_url:
-        page = fetch_json(page_url)
-        assets.extend(page["results"])
-        page_url = page["next"]
-    assets = [asset for asset in assets if asset["path"].endswith(".nwb")]
-    assets.sort(key=lambda asset: asset["path"])
+    urls: dict[str, str] = {}
+    for modality, dandiset_id in DANDISETS.items():
+        url = (
+            f"{DANDI_API}/dandisets/{dandiset_id}/versions/{DANDI_VERSION}"
+            "/assets/?page_size=100"
+        )
+        urls[modality] = url
+        page_url = url
+        while page_url:
+            page = fetch_json(page_url)
+            for asset in page["results"]:
+                if asset["path"].endswith(".nwb"):
+                    assets.append(
+                        {**asset, "modality": modality, "dandiset_id": dandiset_id}
+                    )
+            page_url = page["next"]
+    assets.sort(key=lambda asset: (asset["modality"], asset["path"]))
     manifest = json.dumps(
-        [[asset["asset_id"], asset["path"]] for asset in assets],
+        [[a["modality"], a["asset_id"], a["path"]] for a in assets],
         separators=(",", ":"),
     )
-    return assets, url, hashlib.sha256(manifest.encode()).hexdigest()
+    return assets, urls, hashlib.sha256(manifest.encode()).hexdigest()
 
 
 def decode_attribute(value) -> str:
@@ -124,6 +153,8 @@ def inspect_asset(asset: dict) -> dict | None:
         record: dict = {
             "asset_id": asset["asset_id"],
             "asset_path": asset["path"],
+            "dandiset_id": asset["dandiset_id"],
+            "modality": asset["modality"],
             "subject": str(nwb["general/subject/subject_id"][()].decode()),
         }
         try:
@@ -174,9 +205,24 @@ def inspect_asset(asset: dict) -> dict | None:
 def cohort_statistics(sessions: list[dict]) -> dict:
     usable = [s for s in sessions if "context" in s]
     means = [s["context"]["block"]["mean_cm_s"] for s in usable]
+    by_modality: dict[str, dict] = {}
+    for modality in DANDISETS:
+        rows = [s for s in usable if s.get("modality") == modality]
+        if not rows:
+            continue
+        modality_means = [s["context"]["block"]["mean_cm_s"] for s in rows]
+        by_modality[modality] = {
+            "sessions": len(rows),
+            "subjects": len({s["subject"] for s in rows}),
+            "block_mean_cm_s_median": round(statistics.median(modality_means), 4),
+            "stationary_median_sessions": sum(
+                1 for s in rows if s["context"]["block"]["median_cm_s"] == 0.0
+            ),
+        }
     stats: dict = {
         "sessions": len(sessions),
         "sessions_with_running": len(usable),
+        "by_modality": by_modality,
         "block_mean_cm_s_median": round(statistics.median(means), 4) if means else None,
         "stationary_median_sessions": sum(
             1 for s in usable if s["context"]["block"]["median_cm_s"] == 0.0
@@ -198,8 +244,12 @@ def cohort_statistics(sessions: list[dict]) -> dict:
 
 def main() -> None:
     args = parse_args()
-    assets, asset_api_url, manifest_sha256 = list_assets()
-    print(f"Scanning {len(assets)} Neuropixels assets", flush=True)
+    assets, asset_api_urls, manifest_sha256 = list_assets()
+    print(
+        f"Scanning {len(assets)} assets across "
+        f"{', '.join(f'{m} ({d})' for m, d in DANDISETS.items())}",
+        flush=True,
+    )
 
     sessions: list[dict] = []
     with ThreadPoolExecutor(max_workers=args.max_workers) as pool:
@@ -211,7 +261,11 @@ def main() -> None:
             sessions.append(record)
             speed = record.get("context", {}).get("block", {}).get("mean_cm_s")
             shown = f"{speed:.2f} cm/s" if speed is not None else record.get("error", "")
-            print(f"  [{done}/{len(assets)}] {record['subject']}: {shown}", flush=True)
+            print(
+                f"  [{done}/{len(assets)}] {record['modality']} "
+                f"{record['subject']}: {shown}",
+                flush=True,
+            )
 
     if not sessions:
         raise RuntimeError("No sensorimotor blocks were found in the released assets.")
@@ -232,6 +286,10 @@ def main() -> None:
             "running_series": RUNNING_SERIES,
             "thresholds_cm_s": list(RUNNING_THRESHOLDS_CM_S),
         },
+        "modalities": {
+            "covered": {m: {"dandiset_id": d} for m, d in DANDISETS.items()},
+            "unavailable": UNAVAILABLE_MODALITIES,
+        },
         "cohort": cohort_statistics(sessions),
         "sessions": sessions,
     }
@@ -241,14 +299,19 @@ def main() -> None:
     )
 
     provenance = {
-        "asset_api_url": asset_api_url,
+        "asset_api_urls": asset_api_urls,
         "asset_count": len(assets),
         "asset_manifest_sha256": manifest_sha256,
-        "dandiset_id": DANDISET_ID,
+        "dandisets": DANDISETS,
         "dandiset_version": DANDI_VERSION,
+        "unavailable_modalities": UNAVAILABLE_MODALITIES,
         "notes": (
-            "The processed running series and the sensorimotor interval tables are "
-            "streamed with remfile; no spike data is read. Forward speed clips negative "
+            "Neuropixels and mesoscope NWBs package the sensorimotor interval table "
+            "and the processed running series identically, so one code path covers "
+            "both; SLAP2 is declared unavailable because its running data lives in "
+            "Harp encoder files on project S3. The running series and interval tables "
+            "are streamed with remfile; no spike or imaging data is read. "
+            "Forward speed clips negative "
             "velocity to zero. A mismatch trial qualifies as running only when the mean "
             "forward speed reaches the threshold in both the preceding baseline window "
             "and the mismatch window, because a closed-loop mismatch requires flow to "

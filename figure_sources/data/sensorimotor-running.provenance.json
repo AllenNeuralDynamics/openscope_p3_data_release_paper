@@ -1,13 +1,25 @@
 {
-  "asset_api_url": "https://api.dandiarchive.org/api/dandisets/001637/versions/draft/assets/?page_size=100",
-  "asset_count": 60,
-  "asset_manifest_sha256": "18053523902d69d56f102855b779007d7f6da0a15583c450412fe852ca0d5889",
-  "dandiset_id": "001637",
+  "asset_api_urls": {
+    "mesoscope": "https://api.dandiarchive.org/api/dandisets/001768/versions/draft/assets/?page_size=100",
+    "neuropixels": "https://api.dandiarchive.org/api/dandisets/001637/versions/draft/assets/?page_size=100"
+  },
+  "asset_count": 146,
+  "asset_manifest_sha256": "99ae64c84063cc73cbf976121ea6796feb6e3ea776df371fe578ea608ca08e66",
   "dandiset_version": "draft",
-  "notes": "The processed running series and the sensorimotor interval tables are streamed with remfile; no spike data is read. Forward speed clips negative velocity to zero. A mismatch trial qualifies as running only when the mean forward speed reaches the threshold in both the preceding baseline window and the mismatch window, because a closed-loop mismatch requires flow to have been present before it was decoupled. Block running fractions use a strict comparison to stay comparable with running-statistics.json.",
-  "output_sha256": "8a7c77befe392500912b9fcab332b2038df1463d08567f5340749bdf43915886",
+  "dandisets": {
+    "mesoscope": "001768",
+    "neuropixels": "001637"
+  },
+  "notes": "Neuropixels and mesoscope NWBs package the sensorimotor interval table and the processed running series identically, so one code path covers both; SLAP2 is declared unavailable because its running data lives in Harp encoder files on project S3. The running series and interval tables are streamed with remfile; no spike or imaging data is read. Forward speed clips negative velocity to zero. A mismatch trial qualifies as running only when the mean forward speed reaches the threshold in both the preceding baseline window and the mismatch window, because a closed-loop mismatch requires flow to have been present before it was decoupled. Block running fractions use a strict comparison to stay comparable with running-statistics.json.",
+  "output_sha256": "e6dab018b42f524e9be699018506042cb7e420d4bd873ca07b70a4c44a559192",
   "retrieved_date": "2026-09-14",
-  "script_sha256": "459e0b26f37eddd75c5f00c0dc82fbebeeb15a77f1eaa787aed80523d1cf51be",
-  "sessions": 16,
-  "source_module_sha256": "0d81a596e98448785952f3bf18534b86d74dbd2d84a7e0b376820591c8133af4"
+  "script_sha256": "aa89cd89cb5be0015e97ea20151f59d5f815de6fa8c7609a22af72133f31dfd9",
+  "sessions": 39,
+  "source_module_sha256": "0d81a596e98448785952f3bf18534b86d74dbd2d84a7e0b376820591c8133af4",
+  "unavailable_modalities": {
+    "slap2": {
+      "dandiset_id": "001424",
+      "reason": "SLAP2 running is packaged as Harp encoder files on project S3 rather than as an NWB processed running series, and requires wheel calibration and stimulus alignment"
+    }
+  }
 }
