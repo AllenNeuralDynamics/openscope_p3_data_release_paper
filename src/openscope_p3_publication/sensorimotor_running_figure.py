@@ -44,6 +44,19 @@ SURFACE = "#FFFFFF"
 FONT = "Source Sans 3, sans-serif"
 TYPE_SMALL = 12
 
+EVENT_HEADERS = {
+    "motor_halt": "halt",
+    "motor_omission": "omission",
+    "motor_orientation_45": "45°",
+    "motor_orientation_90": "90°",
+}
+EVENT_ORDER = (
+    "motor_halt",
+    "motor_omission",
+    "motor_orientation_45",
+    "motor_orientation_90",
+)
+
 
 def load_running_data(
     data_path: Path = DATA_PATH,
@@ -124,8 +137,7 @@ def write_sensorimotor_running_svg(
     panel_a_x, panel_a_w = 176, 290
     panel_a_value_x = 524
     panel_b_x, panel_b_w = 556, 216
-    panel_c_x, panel_c_w = 818, 240
-    panel_c_value_x = 1104
+    panel_c_x, panel_c_w = 818, 300
     top = 196
     rows_bottom = top + len(sessions) * row_height
 
@@ -135,12 +147,11 @@ def write_sensorimotor_running_svg(
     trial_max = max(
         record["context"]["mismatch_trials"] for record in sessions
     )
-    per_label_max = max(
-        max(entry["per_label"].values() or [0])
-        for record in sessions
-        for entry in [record["context"]["thresholds"][default_key]]
-    )
-    per_label_axis = max(per_label_max, MINIMUM_QUALIFYING_TRIALS + 4)
+    event_order = [
+        label
+        for label in EVENT_ORDER
+        if any(label in r["context"]["thresholds"][default_key]["per_label"] for r in sessions)
+    ] or sorted(sessions[0]["context"]["thresholds"][default_key]["per_label"])
 
     svg: list[str] = []
 
@@ -178,7 +189,7 @@ def write_sensorimotor_running_svg(
         _text(
             panel_c_x + 20,
             top - 52,
-            "Trials in the worst event type",
+            "Qualifying trials per event type",
             size=15,
             fill=INK_PRIMARY,
             weight="600",
@@ -188,7 +199,7 @@ def write_sensorimotor_running_svg(
         _text(
             panel_c_x + 20,
             top - 33,
-            f"at {DEFAULT_RUNNING_THRESHOLD_CM_S:g} cm/s; this limits the analysis",
+            f"of 35 each, at the {DEFAULT_RUNNING_THRESHOLD_CM_S:g} cm/s gate",
         )
     )
 
@@ -216,16 +227,13 @@ def write_sensorimotor_running_svg(
         cx = panel_b_x + index * cell_w + cell_w / 2
         svg.append(_text(cx, top - 14, f"≥{key}", anchor="middle"))
 
-    # --- panel C axis ---------------------------------------------------
-    rule_x = panel_c_x + MINIMUM_QUALIFYING_TRIALS / per_label_axis * panel_c_w
-    svg.append(
-        f'<line x1="{rule_x:.2f}" y1="{top - 12}" x2="{rule_x:.2f}" '
-        f'y2="{rows_bottom}" stroke="{REFERENCE_COLOR}" stroke-width="1.5" '
-        'stroke-dasharray="5 4"/>'
-    )
-    svg.append(
-        _text(rule_x, top - 18, f"min {MINIMUM_QUALIFYING_TRIALS}", anchor="middle")
-    )
+    # --- panel C column headers -----------------------------------------
+    event_cell_w = panel_c_w / len(event_order)
+    for index, label in enumerate(event_order):
+        cx = panel_c_x + index * event_cell_w + event_cell_w / 2
+        svg.append(
+            _text(cx, top - 14, EVENT_HEADERS.get(label, label), anchor="middle")
+        )
 
     # --- rows -----------------------------------------------------------
     for index, record in enumerate(sessions):
@@ -288,39 +296,41 @@ def write_sensorimotor_running_svg(
                 )
             )
 
-        # Panel C — worst per-event count against the minimum-trial rule.
-        minimum = entry["minimum_per_label"]
-        min_w = minimum / per_label_axis * panel_c_w
-        colour = AVAILABLE_COLOR if entry["available"] else UNAVAILABLE_COLOR
-        svg.append(
-            f'<rect x="{panel_c_x}" y="{centre - bar_h / 2:.2f}" '
-            f'width="{max(min_w, 1.0):.2f}" height="{bar_h}" rx="3" fill="{colour}"/>'
-        )
-        svg.append(
-            _text(
-                panel_c_value_x,
-                centre + 4,
-                str(minimum),
-                fill=INK_TICK,
-                anchor="end",
+        # Panel C — qualifying trials for each mismatch event type. Status
+        # fill, not magnitude: whether that event type is analysable at all.
+        for e_index, label in enumerate(event_order):
+            count = entry["per_label"].get(label, 0)
+            cx = panel_c_x + e_index * event_cell_w
+            passes = count >= MINIMUM_QUALIFYING_TRIALS
+            fill = AVAILABLE_COLOR if passes else UNAVAILABLE_COLOR
+            svg.append(
+                f'<rect x="{cx + 1:.2f}" y="{y + 3}" width="{event_cell_w - 2:.2f}" '
+                f'height="{row_height - 6}" rx="3" fill="{fill}" '
+                f'fill-opacity="{0.92 if passes else 0.82:g}"/>'
             )
-        )
+            svg.append(
+                _text(
+                    cx + event_cell_w / 2,
+                    centre + 4,
+                    str(count),
+                    fill=SURFACE,
+                    anchor="middle",
+                )
+            )
 
     svg.append(
         f'<line x1="{panel_a_x}" y1="{rows_bottom}" x2="{panel_a_x + panel_a_w}" '
         f'y2="{rows_bottom}" stroke="{AXIS_COLOR}" stroke-width="1.5"/>'
-    )
-    svg.append(
-        f'<line x1="{panel_c_x}" y1="{rows_bottom}" '
-        f'x2="{panel_c_x + panel_c_w}" y2="{rows_bottom}" '
-        f'stroke="{AXIS_COLOR}" stroke-width="1.5"/>'
     )
 
     # --- legend ---------------------------------------------------------
     legend_y = rows_bottom + 34
     for offset, (colour, label) in enumerate(
         (
-            (AVAILABLE_COLOR, f"Meets the {MINIMUM_QUALIFYING_TRIALS}-trial minimum"),
+            (
+                AVAILABLE_COLOR,
+                f"Event type reaches the {MINIMUM_QUALIFYING_TRIALS}-trial minimum",
+            ),
             (UNAVAILABLE_COLOR, "Below the minimum: not analysable"),
         )
     ):
@@ -384,8 +394,8 @@ def write_sensorimotor_running_svg(
             (
                 f"Median session speed {median:.2f} cm/s; "
                 f"{stationary} of {len(sessions)} sessions have a median of 0.00 cm/s; "
-                f"{available} sessions clear the minimum at "
-                f"{DEFAULT_RUNNING_THRESHOLD_CM_S:g} cm/s"
+                f"{available} sessions clear the minimum in all four event types "
+                f"at {DEFAULT_RUNNING_THRESHOLD_CM_S:g} cm/s"
             )
             if median is not None and stationary is not None and available is not None
             else f"{len(sessions)} sessions with a processed running series",

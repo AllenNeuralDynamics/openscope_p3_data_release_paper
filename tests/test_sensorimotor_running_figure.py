@@ -168,9 +168,25 @@ class TestRender:
         for value in RUNNING_THRESHOLDS_CM_S:
             assert f"≥{value:g}" in content
 
-    def test_draws_the_minimum_trial_rule(self, synthetic_data: Path, tmp_path: Path):
+    def test_labels_every_mismatch_event_type(
+        self, synthetic_data: Path, tmp_path: Path
+    ):
         content = render(synthetic_data, tmp_path)
-        assert f"min {MINIMUM_QUALIFYING_TRIALS}" in content
+        for header in ("halt", "omission", "45°", "90°"):
+            assert f">{header}</text>" in content, header
+
+    def test_reports_per_event_type_counts(self, synthetic_data: Path, tmp_path: Path):
+        content = render(synthetic_data, tmp_path)
+        # 848387 qualifies 137 of 140 at 5 cm/s, so 34 in each of four types.
+        assert ">34</text>" in content
+
+    def test_event_types_below_the_minimum_are_marked(
+        self, synthetic_data: Path, tmp_path: Path
+    ):
+        content = render(synthetic_data, tmp_path)
+        # The stationary session has zero qualifying trials in every type.
+        assert UNAVAILABLE_COLOR in content
+        assert MINIMUM_QUALIFYING_TRIALS == 8
 
     def test_carries_a_legend(self, synthetic_data: Path, tmp_path: Path):
         content = render(synthetic_data, tmp_path)
