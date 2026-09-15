@@ -601,17 +601,20 @@ Plus, specific to this change:
 1. ~~**Minimum trial count** for the sensorimotor running gate.~~ **Resolved by the switch to
    830794** (§3.2). The rule stays at 8 as a guard but no longer binds: the worst event type
    retains 29 trials at a 5 cm/s threshold. Confirm 5.0 cm/s is the threshold you want.
-2. **Sequence window width.** Must reach at least −1.3345 s (offset `−5` start) and ideally
-   −1.0676 s (its stop). Two candidates, at 2.5 ms bins:
+2. ~~**Sequence window width.**~~ **Resolved: `[-2.0, 1.0]`.** Must reach at least
+   -1.3345 s (offset `-5` start). The chosen window spans 3.0 s, 1200 bins at 2.5 ms, and
+   shows the previous sequence complete, the mismatch sequence complete, and a full
+   following sequence.
 
    | Window | Span | Bins | Atlas est. | Shows |
    |---|---|---|---|---|
-   | `[−1.6, 0.8]` *(recommended)* | 2.4 s | 960 | ~12 MB | full current sequence, plus back through e3 of the previous sequence |
-   | `[−2.0, 0.8]` | 2.8 s | 1120 | ~14 MB | both sequences complete, e1 of the previous sequence onward |
+   | `[-0.75, 0.75]` *(current)* | 1.5 s | 600 | 7.6 MB | mismatch element only, and not the Q1 comparison |
+   | `[-1.6, 0.8]` | 2.4 s | 960 | ~12 MB | back through element 3 of the previous sequence |
+   | **`[-2.0, 1.0]`** *(chosen)* | **3.0 s** | **1200** | **~15 MB** | two complete sequences plus the following one |
 
-   Current is `[−0.75, 0.75]`, 600 bins, 7.6 MB. The wider option is the only one that shows
-   two complete sequences, but costs ~2 MB more and widens every heatmap. Recommend
-   `[−1.6, 0.8]` unless you want the full previous sequence plotted.
+   This doubles the sequence atlas and widens every sequence heatmap, which is the main
+   contributor to the binary-review requirement in §3.4.
+
 3. **Baseline subtraction default for Q1 standard.** Proposed off.
 4. **Delay-window statistic for duration** (§4.4) — add now, or defer given per-trial storage
    makes it cheap later? Recommend defer.
@@ -728,8 +731,18 @@ The full ranked table is in §3.2. Headline findings:
 
 - **Median block speed is 0.00 cm/s in 11 of 16 sessions.** Most animals are stationary for
   more than half the block.
-- **Only 2 of 16 sessions run substantially**: 848387 (70.6 cm/s, 97.5% running) and 830794
-  (23.4 cm/s, 94.5%).
+- **Only 2 of 16 Neuropixels sessions run substantially**: 848387 (70.6 cm/s, 97.5% running)
+  and 830794 (23.4 cm/s, 94.5%).
+- **As shipped, this figure covers 39 sessions across two modalities** rather than the 16
+  planned here: 16 Neuropixels from 16 mice and 23 mesoscope from 10 mice, because both
+  package the sensorimotor interval table and the 60 Hz running series identically. SLAP2 is
+  declared unavailable in the payload, its running data being Harp encoder files on project S3.
+- **Mesoscope animals run considerably more**, which the Neuropixels-only view concealed:
+  median block speed 2.35 cm/s against 1.00 cm/s. At the 5 cm/s gate 11 of 39 sessions reach
+  the minimum in all four event types, but only 2 are Neuropixels against 9 of 23 mesoscope
+  sessions, and the strongest session in the release is mesoscope 843000 at 35, 34, 35, and 35
+  trials. The switch to 830794 remains correct because Figure 10 needs Neuropixels units, but
+  the sensorimotor paradigm is better sampled overall than the Neuropixels cohort suggests.
 - **Cohort median block speed is ~1.0 cm/s**, which is also the repository's existing running
   threshold — meaning the median session sits exactly at the detection floor.
 - Surviving trials at 5 cm/s range from **137 of 140** (848387) down to **0** (several
@@ -747,8 +760,11 @@ Load the `dataviz` skill before implementing.
   obvious — two runners, fourteen largely stationary animals.
 - **B — Surviving trials versus threshold.** For each session, trials qualifying at 1, 2, 5,
   and 10 cm/s, so a reader can see how threshold choice interacts with session choice.
-- **C — Worst-event-type count.** The number that actually limits a per-event analysis, with
-  the minimum-trial rule drawn as a reference line. This is the panel that justifies §3.2.
+- **C — Qualifying trials per event type.** As shipped, the count for each of motor halt,
+  motor omission, and the 45 and 90 degree changes, coloured by whether that type reaches the
+  minimum. An earlier draft reported only the worst type, which hid partial availability:
+  832691 falls below the minimum only for motor halt, and 830849 only for motor omission and
+  the 45 degree change.
 
 Optionally a speed distribution for the selected session, showing where the gated trials fall.
 
@@ -773,14 +789,20 @@ the main analysis.
 
 ---
 
-## 16. Recommended pull-request sequence
+## 16. Pull-request plan
 
-| # | Pull request | Contents | Size |
-|---|---|---|---|
-| 1 | Adjacency supplemental (§14) | extractor, JSON intermediate, static SVG, tests, caption | small |
-| 2 | Locomotion supplemental (§15) | extractor, JSON intermediate, static SVG, tests, caption | small |
-| 3 | Responsiveness (§4–§10) | mouse switch to 830794, per-trial extraction, responsiveness CSV, regenerated atlases, interactive filter and white background, static panels, caption and manuscript text, tests | **large — needs maintainer binary review (§3.4)** |
+**One pull request for the whole change**, per the maintainer's decision, on branch
+`edit/neuropixel-mismatch-responsiveness`.
 
-PR 3 is large and unavoidably so, because the mouse switch invalidates every current Figure 10
-value. Splitting the supplementals out keeps its diff limited to the responsiveness change plus
-the re-extraction, rather than mixing in two independent analyses.
+| Landed | Contents |
+|---|---|
+| `8ccb549` | Adjacency supplemental (§14): extractor, intermediate, static SVG, tests, caption |
+| `5fdf75b` | Locomotion supplemental (§15): extractor, intermediate, static SVG, tests, caption |
+| `9a6535c` | Per-event-type panel C |
+| `b7db150` | Interactive locomotion table across Neuropixels and mesoscope |
+| *pending* | Responsiveness (§4-§10): mouse switch to 830794, per-trial extraction, responsiveness CSV, regenerated atlases, interactive filter and white background, static panels, caption and manuscript text, tests |
+
+The pull request needs **maintainer binary review** under CONTRIBUTING: regenerating the four
+SDF atlases writes roughly 32 MB of new blobs, and widening the sequence window to
+`[-2.0, 1.0]` grows that file from 7.6 MB to about 15 MB. Declare the total binary delta in
+the pull-request description.
