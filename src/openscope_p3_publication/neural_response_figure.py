@@ -786,11 +786,7 @@ def append_static_rate_plot(
             ),
         ]
     )
-    ticks = (
-        (-1.5, -1, 0, 1, 1.5)
-        if display_start == -1.5
-        else (-0.75, -0.5, 0, 0.5, 0.75)
-    )
+    ticks = time_axis_ticks(display_start, display_end)
     for tick in ticks:
         svg.append(
             svg_text(
@@ -802,6 +798,23 @@ def append_static_rate_plot(
                 fill="#646B68",
             )
         )
+
+
+def time_axis_ticks(start: float, stop: float) -> tuple[float, ...]:
+    """Time ticks derived from the window rather than hardcoded per context.
+
+    Reproduces the previous tick sets exactly for the 1.5 s and 3 s symmetric
+    windows, and labels the sequence window's full ``[-2, 1]`` span, which a
+    per-context literal left unlabelled beyond +/-0.75 s.
+    """
+    step = 1.0 if stop - start > 2 else 0.5
+    values = {start, 0.0, stop}
+    current = math.ceil(start / step) * step
+    while current < stop:
+        if current > start:
+            values.add(round(current, 3))
+        current += step
+    return tuple(sorted(values))
 
 
 def write_neuropixels_event_svg(

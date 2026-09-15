@@ -25,6 +25,7 @@
     eventIndex: 0,
     metric: "mismatch",
     qc: "qc",
+    responsiveness: "all",
     decoderLabels: new Set(["mua", "sua"]),
     minimumFiringRateHz: 1,
     neuronTypes: new Set(["RS", "FS", "SST"]),
@@ -43,6 +44,8 @@
   const eventSelect = document.getElementById("event-select");
   const areaSelect = document.getElementById("area-select");
   const qcTabs = document.getElementById("qc-tabs");
+  const responsivenessSelect = document.getElementById("responsiveness-select");
+  const unitCountReadout = document.getElementById("unit-count-readout");
   const decoderLabelFilter = document.getElementById("decoder-label-filter");
   const neuronTypeFilter = document.getElementById("neuron-type-filter");
   const baselineSubtractedControl = document.getElementById(
@@ -185,6 +188,95 @@
     return session.units.filter(unitMatchesBaseFilters);
   }
 
+  const responsivenessCache = new Map();
+
+  function responsiveness(session) {
+    if (!responsivenessCache.has(session.context)) {
+      const decoded = {};
+      const block = session.responsiveness || {};
+      Object.keys(block).forEach((key) => {
+        decoded[key] = decodeFloat32Base64(block[key].base64);
+      });
+      responsivenessCache.set(session.context, {
+        values: decoded,
+        unitCount: session.unitCount,
+      });
+    }
+    return responsivenessCache.get(session.context);
+  }
+
+  // The figure reports the uncorrected p with the chance expectation shown
+  // beside the count. Measured signal runs 7 to 12 times chance for most
+  // events, so the uncorrected false-discovery proportion is about 8 to 13
+  // percent, while correction discards roughly 40 percent of the excess.
+  // Element three of the previous sequence, five rows back.
+  const SEQUENCE_COMPARISON_OFFSET = -5;
+  const RESPONSIVE_P_MAX = 0.05;
+  const RESPONSIVE_MODULATION_MIN = 0.1;
+
+  function responsiveAt(session, eventIndex, unitIndex, kind) {
+    const store = responsiveness(session);
+    const offset = eventIndex * store.unitCount + unitIndex;
+    const prefix = kind === "q2" ? "q2_delta" : "q1";
+    const p = store.values[`${prefix}_p`]?.[offset];
+    const modulation = store.values[`${prefix}_modulation`]?.[offset];
+    if (!Number.isFinite(p) || !Number.isFinite(modulation)) return false;
+    return p <= RESPONSIVE_P_MAX
+      && Math.abs(modulation) > RESPONSIVE_MODULATION_MIN;
+  }
+
+  function unitMatchesResponsiveness(unitIndex) {
+    if (state.responsiveness === "all") return true;
+    const session = currentSession();
+    if (state.responsiveness === "q1-any") {
+      return session.events.some((_event, index) =>
+        responsiveAt(session, index, unitIndex, "q1"),
+      );
+    }
+    const kind = state.responsiveness === "q2-event" ? "q2" : "q1";
+    return responsiveAt(session, state.eventIndex, unitIndex, kind);
+  }
+
+  // Units that pass every filter except the responsiveness one. These are the
+  // units the test was applied to, and therefore the denominator the chance
+  // expectation must use.
+  function candidateUnitIndices() {
+    const session = currentSession();
+    return session.units
+      .map((unit, index) => ({ unit, index }))
+      .filter(({ unit }) => unitMatchesBaseFilters(unit) && areaMatches(unit))
+      .map(({ index }) => index);
+  }
+
+  // Expected false positives under the null: five percent of the tests run on
+  // units clearing the modulation floor. Computed over the candidates rather
+  // than the survivors, because using the survivors would understate the noise
+  // floor by the very factor the test selected for.
+  function chanceExpectation() {
+    if (state.responsiveness === "all") return null;
+    const session = currentSession();
+    const store = responsiveness(session);
+    const prefix = state.responsiveness === "q2-event" ? "q2_delta" : "q1";
+    const events =
+      state.responsiveness === "q1-any"
+        ? session.events.map((_event, index) => index)
+        : [state.eventIndex];
+    let eligible = 0;
+    candidateUnitIndices().forEach((unitIndex) => {
+      events.forEach((eventIndex) => {
+        const offset = eventIndex * store.unitCount + unitIndex;
+        const modulation = store.values[`${prefix}_modulation`]?.[offset];
+        if (
+          Number.isFinite(modulation)
+          && Math.abs(modulation) > RESPONSIVE_MODULATION_MIN
+        ) {
+          eligible += 1;
+        }
+      });
+    });
+    return eligible * RESPONSIVE_P_MAX;
+  }
+
   function unitMatchesBaseFilters(unit) {
     return (
       (state.qc === "all" || unit.qcPass) &&
@@ -247,8 +339,10 @@
     return session.units
       .map((unit, index) => ({ unit, index }))
       .filter(
-        ({ unit }) =>
-          unitMatchesBaseFilters(unit) && areaMatches(unit),
+        ({ unit, index }) =>
+          unitMatchesBaseFilters(unit)
+          && areaMatches(unit)
+          && unitMatchesResponsiveness(index),
       )
       .map(({ index }) => index);
   }
@@ -290,6 +384,31 @@
       leftUnit.depthUm - rightUnit.depthUm ||
       leftUnit.id - rightUnit.id
     );
+  }
+
+  function renderUnitCount(indices) {
+    if (!unitCountReadout) return;
+    const session = currentSession();
+    const candidates = candidateUnitIndices().length;
+    const parts = [
+      `<strong>${indices.length.toLocaleString()}</strong> of `
+      + `${candidates.toLocaleString()} selected units`,
+    ];
+    const chance = chanceExpectation();
+    if (chance !== null) {
+      parts.push(`about ${Math.round(chance).toLocaleString()} expected by chance`);
+    }
+    if (state.sort === "rastermap") {
+      const embedded = session.units.filter((unit) =>
+        ["mua", "sua"].includes(unit.decoderLabel),
+      ).length;
+      parts.push(
+        `Rastermap order from ${embedded.toLocaleString()} embedded units, `
+        + "so a filtered view is a subsequence of that order rather than a "
+        + "re-embedding",
+      );
+    }
+    unitCountReadout.innerHTML = parts.join(" &middot; ");
   }
 
   function sortedUnitIndices(atlas) {
@@ -477,6 +596,21 @@
 
   function displayEnd() {
     return currentSession().windowSeconds[1];
+  }
+
+  // Derived from the window rather than hardcoded per context, so a widened
+  // window is labelled across its whole width. Reproduces the previous tick
+  // sets exactly for the 1.5 s and 3 s symmetric windows, and covers the
+  // sequence window's full [-2, 1] span.
+  function timeAxisTicks() {
+    const start = displayStart();
+    const end = displayEnd();
+    const step = end - start > 2 ? 1 : 0.5;
+    const values = new Set([start, 0, end]);
+    for (let value = Math.ceil(start / step) * step; value < end; value += step) {
+      if (value > start) values.add(Number(value.toFixed(3)));
+    }
+    return [...values].sort((left, right) => left - right);
   }
 
   function presentationTimingValues(timing) {
@@ -724,6 +858,7 @@
   function drawHeatmap(atlas) {
     const session = currentSession();
     state.sortedUnits = sortedUnitIndices(atlas);
+    renderUnitCount(state.sortedUnits);
     renderUnitSelect();
     const areaGroups = heatmapAreaGroups();
     configureHeatmapHeight(areaGroups);
@@ -796,10 +931,7 @@
         plot.bottom - plot.top,
       );
     }
-    const ticks =
-      state.context === "duration"
-        ? [-1.5, -1, 0, 1, 1.5]
-        : [-0.75, -0.5, 0, 0.5, 0.75];
+    const ticks = timeAxisTicks();
     for (const tick of ticks) {
       const x =
         plot.left +
@@ -1102,6 +1234,57 @@
     context.restore();
   }
 
+  // Sequences are five contiguous rows -- four gratings then a grey
+  // inter-sequence interval -- with the substitution always at element three.
+  // Marking every boundary lets a reader place the substituted element within
+  // its sequence, and see the previous sequence that Q1 compares against.
+  function drawSequenceElementGuides(context, plot) {
+    const session = currentSession();
+    if (session.context !== "sequence") return;
+    const windows =
+      session.events[state.eventIndex].timing.context.presentationWindows || [];
+    if (!windows.length) return;
+
+    const span = displayEnd() - displayStart();
+    const toX = (seconds) =>
+      plot.left + ((seconds - displayStart()) / span) * (plot.right - plot.left);
+
+    context.save();
+    context.lineWidth = 1;
+    context.setLineDash([3, 4]);
+    windows.forEach((window) => {
+      const x = toX(window.startSeconds);
+      if (x < plot.left || x > plot.right) return;
+      // The substituted element already carries its own solid guides.
+      if (window.rowOffset === 0) return;
+      context.strokeStyle =
+        window.rowOffset === SEQUENCE_COMPARISON_OFFSET
+          ? "rgba(49, 95, 115, 0.55)"
+          : "rgba(120, 128, 125, 0.32)";
+      context.beginPath();
+      context.moveTo(x, plot.top);
+      context.lineTo(x, plot.bottom);
+      context.stroke();
+    });
+    context.restore();
+
+    // Label the element Q1 compares against, so the widened window reads as a
+    // deliberate choice rather than extra blank space.
+    const comparison = windows.find(
+      (window) => window.rowOffset === SEQUENCE_COMPARISON_OFFSET,
+    );
+    if (comparison) {
+      const x = toX(comparison.startSeconds);
+      if (x >= plot.left && x <= plot.right) {
+        context.save();
+        context.fillStyle = "#315f73";
+        context.textAlign = "left";
+        context.fillText("previous element 3", x + 4, plot.top + 12);
+        context.restore();
+      }
+    }
+  }
+
   function drawResponsePanel(canvas, traces, baselineSubtracted) {
     const axis = responseAxis(traces, baselineSubtracted);
     const yRange = axis.range;
@@ -1125,6 +1308,7 @@
       context.fillStyle = "rgba(90, 99, 96, 0.09)";
       context.fillRect(startX, plot.top, stopX - startX, plot.bottom - plot.top);
     }
+    drawSequenceElementGuides(context, plot);
     context.strokeStyle = "#d5d9d7";
     context.fillStyle = "#59605e";
     context.lineWidth = 1;
@@ -1141,10 +1325,7 @@
       context.textAlign = "right";
       context.fillText(formatRateTick(value), plot.left - 10, y + 6);
     }
-    const ticks =
-      state.context === "duration"
-        ? [-1.5, -1, 0, 1, 1.5]
-        : [-0.75, -0.5, 0, 0.5, 0.75];
+    const ticks = timeAxisTicks();
     for (const tick of ticks) {
       const x =
         plot.left +
@@ -1356,6 +1537,11 @@
   });
   eventSelect.addEventListener("change", () => {
     state.eventIndex = Number(eventSelect.value);
+    render();
+  });
+  responsivenessSelect.addEventListener("change", () => {
+    state.responsiveness = responsivenessSelect.value;
+    state.selectedUnit = null;
     render();
   });
   areaSelect.addEventListener("change", () => {

@@ -56,6 +56,15 @@ __NEUROPIXELS_EVENT_CSS__
              <label><input type="checkbox" data-neuron-type="SST" checked> SST</label>
            </div>
           </fieldset>
+          <label class="select-control">
+            Responsiveness
+            <select id="responsiveness-select" aria-label="Responsiveness filter">
+              <option value="all" selected>All units</option>
+              <option value="q1-event">Responsive to this event</option>
+              <option value="q1-any">Responsive to any event here</option>
+              <option value="q2-event">Mismatch-selective for this event</option>
+            </select>
+          </label>
           <label class="range-control">
            Minimum firing rate
            <input
@@ -87,6 +96,7 @@ __NEUROPIXELS_EVENT_CSS__
             <select id="unit-select" aria-label="Individual unit"></select>
           </label>
           </div>
+          <output id="unit-count-readout" aria-live="polite"></output>
 
           <div class="heatmap-toolbar">
             <fieldset>

@@ -389,3 +389,35 @@ canvas {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.select-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--figure-type-control);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.select-control select {
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 400;
+}
+
+#unit-count-readout {
+  display: block;
+  padding: 8px 0 0;
+  color: var(--muted);
+  font-size: var(--figure-type-metadata);
+  font-variant-numeric: tabular-nums;
+}
+
+#unit-count-readout strong {
+  color: var(--ink);
+  font-weight: 700;
+}
