@@ -6113,6 +6113,7 @@ def write_neuropixels_trajectory_svg(
 
 
 def main() -> None:
+    from .mismatch_adjacency_figure import write_mismatch_adjacency_svg
     from .neural_response_figure import (
         write_neuropixels_event_html,
         write_neuropixels_event_svg,
@@ -6147,6 +6148,7 @@ def main() -> None:
     optotagging_svg_path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT
     svg_path = write_static_svg()
     unit_yield_svg_path = write_unit_yield_svg()
+    mismatch_adjacency_svg_path = write_mismatch_adjacency_svg()
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {figure_1_panel_c_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
@@ -6177,6 +6179,7 @@ def main() -> None:
     print(f"Wrote {optotagging_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {mismatch_adjacency_svg_path.relative_to(REPO_ROOT)}")
 
 
 if __name__ == "__main__":
