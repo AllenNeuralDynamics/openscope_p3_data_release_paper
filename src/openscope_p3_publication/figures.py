@@ -4807,10 +4807,18 @@ def load_unit_yield_data(
     summary = [
         {
             "day": day,
-            "meanPercent": sum(record["percentOfDay1"] for record in day_records)
-            / len(day_records),
-            "meanUnitsPerProbe": sum(record["unitsPerProbe"] for record in day_records)
-            / len(day_records),
+            # statistics.mean, not sum()/len(): naive summation is
+            # order-dependent in its last bits, so a change in record order
+            # silently rewrote these values and dirtied the committed HTML on
+            # every rebuild. The committed value 338.33125 is reachable by 54%
+            # of orderings and 338.33125000000007 by the rest; exact summation
+            # is reachable by all of them.
+            "meanPercent": statistics.mean(
+                record["percentOfDay1"] for record in day_records
+            ),
+            "meanUnitsPerProbe": statistics.mean(
+                record["unitsPerProbe"] for record in day_records
+            ),
             "sessionCount": len(day_records),
         }
         for day, day_records in sorted(summary_by_day.items())

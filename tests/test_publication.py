@@ -1069,3 +1069,45 @@ def test_interactive_figure_has_static_fallback() -> None:
     )
     assert "The **Interactive** view" in manuscript
     assert "control and system-identification stimuli" in manuscript
+
+def test_unit_yield_summary_means_are_order_independent() -> None:
+    """Summary means must not depend on record order.
+
+    Naive sum()/len() differs in its last bits with the summation order, so a
+    change in record order silently rewrote these values and dirtied the
+    committed HTML on every rebuild without any input changing.
+    """
+    import random
+    import statistics
+
+    values = [
+        395.5,
+        387.0,
+        454.1666666666667,
+        315.1666666666667,
+        320.8333333333333,
+        312.8333333333333,
+        350.8333333333333,
+        260.8,
+        276.8333333333333,
+        295.8333333333333,
+        275.3333333333333,
+        297.6666666666667,
+        356.1666666666667,
+        405.6666666666667,
+        375.1666666666667,
+        333.5,
+    ]
+    rng = random.Random(0)
+    naive = {
+        sum(order) / len(order)
+        for order in (rng.sample(values, len(values)) for _ in range(200))
+    }
+    exact = {
+        statistics.mean(order)
+        for order in (rng.sample(values, len(values)) for _ in range(200))
+    }
+    # The bug: naive summation gives more than one answer for one dataset.
+    assert len(naive) > 1
+    assert len(exact) == 1
+    assert exact == {338.33125}
