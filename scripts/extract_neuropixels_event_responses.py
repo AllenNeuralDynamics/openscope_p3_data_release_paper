@@ -104,7 +104,7 @@ MEDIA_ASSET_ROOT = "media/neuropixels-event-responses"
 DANDI_API = "https://api.dandiarchive.org/api"
 DANDISET_ID = "001637"
 DANDI_VERSION = "draft"
-VERSION = 13
+VERSION = 14
 CONDITION_ORDER = ("context", "control")
 PROBE_ORDER = tuple(f"Probe{letter}" for letter in "ABCDEF")
 COMPATIBLE_METADATA_SIGNATURES = (
@@ -1863,14 +1863,21 @@ def main() -> None:
                         "treated as non-significant"
                     ),
                     "reporting": (
-                        "the figure reports the uncorrected p with the chance "
-                        "expectation shown alongside every count, because the observed "
-                        "signal runs 7 to 12 times chance for most events so the "
-                        "uncorrected false-discovery proportion is about 8 to 13 "
-                        "percent; corrected q values remain available as a stricter "
-                        "option but are not used for selection anywhere in the "
-                        "figure, because at the 1000 ms duration delay no unit "
-                        "survives correction and the example panel would be empty"
+                        "the figure reports the uncorrected p and displays the chance "
+                        "expectation alongside every count, so the noise floor is "
+                        "always visible; measured over QC-passing units the responsive "
+                        "fraction runs 0.6 to 7.1 times chance with a median of 3.1, "
+                        "implying a false-discovery proportion of roughly 14 to 38 "
+                        "percent for the twelve non-duration events, and the three "
+                        "duration delay events sit at or below chance. corrected q "
+                        "values are released beside every p for readers who want the "
+                        "stricter screen; they are not used for selection anywhere in "
+                        "the figure, because at the 1000 ms duration delay no unit "
+                        "survives correction and the example panel would be empty. an "
+                        "earlier revision of this figure quoted 7 to 12 times chance, "
+                        "measured before the subject change, the sequence baseline "
+                        "correction and the sensorimotor running gate; that figure does "
+                        "not hold for this data under any denominator"
                     ),
                 },
                 "q1": {

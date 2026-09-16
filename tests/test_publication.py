@@ -699,7 +699,12 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "### Defining responsiveness per mismatch event" in manuscript
     assert "paired Wilcoxon signed-rank test across" in manuscript
     assert "two-sided Mann-Whitney *U*" in manuscript
-    assert "no unit survives correction at all" in manuscript
+    # The multiple-comparisons basis was re-measured; guard the corrected
+    # numbers so the superseded 7-12x claim cannot return.
+    assert "does a single" in manuscript
+    assert "0.6 to" in manuscript
+    assert "7 to 12 times chance" not in manuscript
+    assert "8 to 13 percent" not in manuscript
     assert "with the difference in immediate stimulus history" in manuscript
     for obsolete in (
         "segmentation-neuropixels.html",

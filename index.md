@@ -1047,14 +1047,18 @@ Matching the transition is not possible, because C2's 980 single-grating rows
 spread over fourteen orientations and any specific ordered transition occurs four
 to five times by chance.
 
-Reported *p* values are uncorrected, with the chance expectation shown alongside
-every count. Benjamini-Hochberg values over each units-by-event family are
-computed and released in the per-unit table, but for 13 of the 16 events the
-observed signal runs 7 to 12 times chance, implying an uncorrected
-false-discovery proportion of roughly 8 to 13 percent, so correction changes no
-conclusion. The exception is instructive and is not hidden: at the 1000 ms
-duration delay no unit survives correction at all, and the duration context
-should be read as the weakest of the four throughout.
+Reported *p* values are uncorrected, with the chance expectation displayed
+alongside every count so the noise floor is always visible. Benjamini-Hochberg
+values over each units-by-event family are computed and released beside every
+*p* value. The uncorrected screen is weak on this data and should be treated as
+exploratory: measured over QC-passing units the responsive fraction runs 0.6 to
+7.1 times the 5% chance level with a median of 3.1, implying a false-discovery
+proportion of roughly 14 to 38 percent across the twelve non-duration events.
+The three duration delay events sit at or below chance — the 500 ms delay finds
+49 units where chance alone predicts 85 — and at none of the three does a single
+unit survive correction. Correction removes 26 to 58 percent of
+the nominal survivors at the other thirteen events, so it is not cosmetic;
+quantitative claims should use the released *q* values.
 
 :::{iframe} ./interactive/neuropixels-event-responses.html
 :label: fig-neuropixels-event-responses

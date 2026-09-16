@@ -1,5 +1,5 @@
 {
-  "analysisSignature": "fc5f5bf2780428e9ca68cead89724d524307e5a339e1aeda39ee5440550e45c2",
+  "analysisSignature": "0ef6801089f9fe1644b04133fd447125b3b21add6b30c49ea32a9839d8003c83",
   "configuredSessions": [
     {
       "asset_id": "0766996b-2afa-4c6f-a381-134c9e380edc",
@@ -66,7 +66,7 @@
     "sourceField": "Allen structure-tree graph_order"
   },
   "outputPath": "figure_sources/data/neuropixels-event-responses.json",
-  "outputSha256": "ffa0907730efc021380cff1cca01960bda6d4fc6532a56e3f2e055dfdbdafb51",
+  "outputSha256": "a75dd4b49b8e36d30e88820e878ea517c98a4a3e826e5d131a3a7935a19a3cc4",
   "rastermap": {
     "packageVersion": "1.0",
     "parameters": {
@@ -96,10 +96,10 @@
   "retrievedDate": "2026-09-15",
   "script": {
     "path": "scripts/extract_neuropixels_event_responses.py",
-    "sha256": "0fb73074724493522560efcf49492e049826c1f43d2382fa13a387705884eac0"
+    "sha256": "bb9a2df1f9c3669f68907af3176aed268a4d616309fc724df9fa416639a06681"
   },
   "sessionCount": 4,
   "totalQcUnits": 8093,
   "totalUnits": 12968,
-  "version": 13
+  "version": 14
 }

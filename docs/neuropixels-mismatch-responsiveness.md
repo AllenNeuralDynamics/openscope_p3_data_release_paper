@@ -618,33 +618,57 @@ responsive fraction being small. It is not, and the measured signal settles the 
 
 Per event, on default-filter units clearing the modulation floor:
 
-| Context / event | nominal p ≤ 0.05 | expected by chance | implied false-discovery proportion | q ≤ 0.05 |
-|---|---|---|---|---|
-| standard orientation_45 | 277 | 33 | 12% | 151 |
-| standard orientation_90 | 284 | 32 | 11% | 187 |
-| sensorimotor, all four | 616–756 | 61–63 | 8–10% | 388–553 |
-| sequence halt | 400 | 41 | 10% | 247 |
-| duration omission | 217 | 29 | 13% | 117 |
-| **duration delay_150** | 62 | 24 | **39%** | 0 |
-| **duration delay_500** | 38 | 19 | **50%** | 0 |
-| **duration delay_1000** | 88 | 23 | **26%** | 0 |
+| Context / event | tested | nominal p < 0.05 | expected by chance | implied FDR | q ≤ 0.05 |
+|---|---|---|---|---|---|
+| standard orientation_45 | 1767 | 300 | 88 | 29% | 158 |
+| standard orientation_90 | 1771 | 317 | 89 | 28% | 200 |
+| standard halt | 1767 | 230 | 88 | 38% | 102 |
+| standard omission | 1751 | 257 | 88 | 34% | 156 |
+| sensorimotor motor_orientation_45 | 2645 | 944 | 132 | 14% | 696 |
+| sensorimotor motor_orientation_90 | 2673 | 834 | 134 | 16% | 589 |
+| sensorimotor motor_halt | 2649 | 719 | 132 | 18% | 468 |
+| sensorimotor motor_omission | 2636 | 757 | 132 | 17% | 500 |
+| sequence orientation_45 | 1791 | 258 | 90 | 35% | 108 |
+| sequence orientation_90 | 1797 | 297 | 90 | 30% | 172 |
+| sequence halt | 1793 | 435 | 90 | 21% | 260 |
+| sequence omission | 1792 | 247 | 90 | 36% | 116 |
+| **duration delay_150** | 1708 | 72 | 85 | **119%** | **0** |
+| **duration delay_500** | 1707 | 49 | 85 | **174%** | **0** |
+| **duration delay_1000** | 1716 | 107 | 86 | **80%** | **0** |
+| duration omission | 1716 | 232 | 86 | 37% | 122 |
 
-For thirteen of sixteen events the signal runs **7 to 12 times chance**, so uncorrected testing
-carries only about 8 to 13 percent false discoveries, while Benjamini-Hochberg discards roughly
-40 percent of the excess-over-chance units. The three duration delay events are the exception
-and are exactly where correction removed everything.
+> **Corrected 2026-09-15.** An earlier version of this table claimed the signal runs **7 to 12
+> times chance** for thirteen of sixteen events, implying only 8 to 13 percent false
+> discoveries. That does not hold for the current data and was not re-measured after the
+> subject change to 830794 (§3.2), the sequence baseline correction (§3.1), and the
+> sensorimotor running gate. Measured now over QC-passing units the ratio runs **0.6 to 7.1
+> times chance, median 3.1**, and no denominator reproduces the old figure: over all units
+> rather than QC-passing it is 0.6 to 6.3, and dropping the modulation gate changes it by less
+> than 0.3. The stale number had propagated into the manuscript, the shareable definitions
+> doc, and the committed provenance string; all four are fixed.
 
-**Decision: report the uncorrected p and display the chance expectation beside every count.**
-The interactive figure's unit readout reads, for example, `277 units - about 33 expected by
-chance`. This is more informative than a corrected threshold rather than less, because it puts
-the noise floor in front of the reader instead of hiding it inside a cutoff, and it turns the
-duration result from an empty column into a legible weak one: `62 units - about 24 expected by
-chance`.
+So the implied false-discovery proportion is **14 to 38 percent** across the twelve
+non-duration events, not 8 to 13, and the three duration delay events sit **at or below
+chance** -- `delay_500` finds 49 units where chance alone predicts 85. Benjamini-Hochberg
+removes 26 to 58 percent of the nominal survivors outside the three duration delays and all
+of them inside them.
 
-Corrected values remain stored and available as a stricter option, and are used for
-example-neuron selection where showcasing a chance unit would be worse than missing one.
+**Decision, unchanged but on a corrected basis: report the uncorrected p and display the
+chance expectation beside every count.** The interactive readout reads, for example,
+`300 units - about 88 expected by chance`. The justification is no longer "correction changes
+no conclusion", because it does. It is that a threshold hides the noise floor while a
+displayed expectation shows it, and that the duration result is more legible as
+`72 units - about 85 expected by chance` -- visibly nothing -- than as an empty column.
+
+Two consequences follow and are now stated wherever the screen is described:
+
+1. The uncorrected fraction is an **exploratory screen**, and quantitative claims should use
+   the released q values, which sit beside every p in the per-unit table.
+2. Corrected values are **not** used for example-neuron selection, contrary to an earlier
+   plan: at the 1000 ms duration delay no unit survives, so the example panel would be empty.
+
 Per-area population claims use the binomial count test of §6.3 against the chance rate, which
-needs no per-unit correction at all — that was the main thing Benjamini-Hochberg was being asked
+needs no per-unit correction at all -- that was the main thing Benjamini-Hochberg was being asked
 to provide.
 
 This also matches convention. Uncorrected per-unit thresholds with the responsive fraction and
