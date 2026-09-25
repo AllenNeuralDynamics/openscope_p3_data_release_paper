@@ -1,0 +1,4755 @@
+{
+ "context_order": [
+  "standard",
+  "sequence",
+  "duration",
+  "sensorimotor"
+ ],
+ "contexts": {
+  "duration": {
+   "block_duration_seconds": 1614.3422,
+   "block_duration_seconds_max": 1614.3762,
+   "block_duration_seconds_min": 1614.2762,
+   "events": [
+    {
+     "adjacent": false,
+     "interval": null,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 3.6531,
+     "row": 5,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 4.5038,
+     "row": 6,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 20.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 18.3154,
+     "row": 26,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 19.5164,
+     "row": 28,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 22.986,
+     "row": 32,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 30.4923,
+     "row": 43,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "omission",
+     "onset_offset_seconds": 38.1988,
+     "row": 54,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 40.4507,
+     "row": 57,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 40.9511,
+     "row": 58,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 42.319,
+     "row": 59,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 16.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 53.3282,
+     "row": 75,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 18.0,
+     "label": "omission",
+     "onset_offset_seconds": 65.9388,
+     "row": 93,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 27.0,
+     "label": "omission",
+     "onset_offset_seconds": 84.8548,
+     "row": 120,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 51.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 120.3847,
+     "row": 171,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 25.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 138.5666,
+     "row": 196,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 144.6718,
+     "row": 205,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 22.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 160.752,
+     "row": 227,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 166.5068,
+     "row": 235,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 23.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 182.4202,
+     "row": 258,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 20.0,
+     "label": "omission",
+     "onset_offset_seconds": 196.432,
+     "row": 278,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 199.9016,
+     "row": 282,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 208.4588,
+     "row": 294,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 16.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 220.3355,
+     "row": 310,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "omission",
+     "onset_offset_seconds": 229.4431,
+     "row": 323,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 16.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 241.3198,
+     "row": 339,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 245.3232,
+     "row": 345,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "omission",
+     "onset_offset_seconds": 253.0297,
+     "row": 356,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "omission",
+     "onset_offset_seconds": 253.7303,
+     "row": 357,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 22.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 269.8105,
+     "row": 379,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 21.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 284.673,
+     "row": 400,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "omission",
+     "onset_offset_seconds": 292.3795,
+     "row": 411,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 24.0,
+     "label": "omission",
+     "onset_offset_seconds": 309.1936,
+     "row": 435,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 318.4514,
+     "row": 448,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 18.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 330.8618,
+     "row": 466,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 29.0,
+     "label": "omission",
+     "onset_offset_seconds": 351.1789,
+     "row": 495,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 354.832,
+     "row": 500,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 35.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 379.1525,
+     "row": 535,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 379.6529,
+     "row": 536,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 384.0066,
+     "row": 542,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 389.5779,
+     "row": 549,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 402.1552,
+     "row": 566,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 407.2094,
+     "row": 573,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "omission",
+     "onset_offset_seconds": 412.8142,
+     "row": 581,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 16.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 424.1737,
+     "row": 597,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 435.8836,
+     "row": 614,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 25.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 453.1982,
+     "row": 639,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 32.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 475.7671,
+     "row": 671,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 477.135,
+     "row": 672,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 483.5904,
+     "row": 681,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 492.1476,
+     "row": 693,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 55.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 530.8302,
+     "row": 748,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.0,
+     "label": "omission",
+     "onset_offset_seconds": 539.2372,
+     "row": 760,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 28.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 559.521,
+     "row": 788,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "omission",
+     "onset_offset_seconds": 560.2216,
+     "row": 789,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 562.29,
+     "row": 791,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 15.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 572.5986,
+     "row": 806,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 578.7038,
+     "row": 815,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 18.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 591.4645,
+     "row": 833,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "omission",
+     "onset_offset_seconds": 594.2669,
+     "row": 837,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "omission",
+     "onset_offset_seconds": 597.0692,
+     "row": 841,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 599.6714,
+     "row": 845,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 19.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 613.6499,
+     "row": 864,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 615.0177,
+     "row": 865,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 28.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 634.7676,
+     "row": 893,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 22.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 649.9805,
+     "row": 915,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 20.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 664.6595,
+     "row": 935,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 665.8605,
+     "row": 937,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 16.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 677.22,
+     "row": 953,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 18.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 690.4979,
+     "row": 971,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 46.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 722.5248,
+     "row": 1017,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 724.7767,
+     "row": 1020,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 725.2772,
+     "row": 1021,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 49.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 760.2733,
+     "row": 1070,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "omission",
+     "onset_offset_seconds": 764.4768,
+     "row": 1076,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 20.0,
+     "label": "omission",
+     "onset_offset_seconds": 778.4886,
+     "row": 1096,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 20.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 792.6505,
+     "row": 1116,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 800.3237,
+     "row": 1126,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 27.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 819.9068,
+     "row": 1153,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 822.6758,
+     "row": 1156,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 828.9478,
+     "row": 1164,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 45.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 860.6244,
+     "row": 1209,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 866.029,
+     "row": 1217,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 32.0,
+     "label": "omission",
+     "onset_offset_seconds": 888.4478,
+     "row": 1249,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 36.0,
+     "label": "omission",
+     "onset_offset_seconds": 913.6691,
+     "row": 1285,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 919.4239,
+     "row": 1293,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 932.0012,
+     "row": 1310,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "omission",
+     "onset_offset_seconds": 936.9053,
+     "row": 1317,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 946.1631,
+     "row": 1330,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 26.0,
+     "label": "omission",
+     "onset_offset_seconds": 964.3784,
+     "row": 1356,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "omission",
+     "onset_offset_seconds": 965.7796,
+     "row": 1358,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 45.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 997.9734,
+     "row": 1403,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "omission",
+     "onset_offset_seconds": 1003.5781,
+     "row": 1411,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 1010.7341,
+     "row": 1421,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 1017.1895,
+     "row": 1430,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 1019.4414,
+     "row": 1433,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 1021.6933,
+     "row": 1436,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 1022.544,
+     "row": 1437,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 62.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1065.7804,
+     "row": 1499,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1077.4903,
+     "row": 1516,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "omission",
+     "onset_offset_seconds": 1078.8915,
+     "row": 1518,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 16.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1089.9007,
+     "row": 1534,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 44.0,
+     "label": "omission",
+     "onset_offset_seconds": 1120.7267,
+     "row": 1578,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 1122.278,
+     "row": 1580,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 1129.9511,
+     "row": 1590,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 78.0,
+     "label": "omission",
+     "onset_offset_seconds": 1184.5971,
+     "row": 1668,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "omission",
+     "onset_offset_seconds": 1189.5012,
+     "row": 1675,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 29.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 1210.4856,
+     "row": 1704,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 1214.8392,
+     "row": 1710,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 26.0,
+     "label": "omission",
+     "onset_offset_seconds": 1233.0546,
+     "row": 1736,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 21.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 1247.9171,
+     "row": 1757,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1248.4175,
+     "row": 1758,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "omission",
+     "onset_offset_seconds": 1253.3216,
+     "row": 1765,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 1258.893,
+     "row": 1772,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 16.0,
+     "label": "omission",
+     "onset_offset_seconds": 1270.1024,
+     "row": 1788,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 1273.5553,
+     "row": 1792,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 40.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 1302.2462,
+     "row": 1832,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "omission",
+     "onset_offset_seconds": 1311.3538,
+     "row": 1845,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 1318.3264,
+     "row": 1854,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 14.0,
+     "label": "omission",
+     "onset_offset_seconds": 1328.1346,
+     "row": 1868,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.0,
+     "label": "omission",
+     "onset_offset_seconds": 1340.0446,
+     "row": 1885,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 42.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 1370.1366,
+     "row": 1927,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 78.0,
+     "label": "omission",
+     "onset_offset_seconds": 1424.7826,
+     "row": 2005,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1425.2831,
+     "row": 2006,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 1433.6401,
+     "row": 2017,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1441.1464,
+     "row": 2028,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 1445.5001,
+     "row": 2034,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 1447.0514,
+     "row": 2036,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 25.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 1464.7163,
+     "row": 2061,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 39.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 1492.7065,
+     "row": 2100,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 55.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1531.0221,
+     "row": 2155,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "omission",
+     "onset_offset_seconds": 1538.7286,
+     "row": 2166,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 26.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 1557.6111,
+     "row": 2192,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1564.4169,
+     "row": 2202,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1569.1208,
+     "row": 2209,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "jitter_500ms",
+     "onset_offset_seconds": 1575.5763,
+     "row": 2218,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1578.1784,
+     "row": 2222,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "jitter_1000ms",
+     "onset_offset_seconds": 1580.9474,
+     "row": 2225,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1587.0526,
+     "row": 2234,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1595.2595,
+     "row": 2246,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "jitter_150ms",
+     "onset_offset_seconds": 1595.7599,
+     "row": 2247,
+     "same_type": true
+    }
+   ],
+   "rows": 2274,
+   "schedule_identical_across_sessions": true,
+   "schedule_sha256": "cbca21c65241e694db11cf8e058e1bcd0ef8c9e6a7b16f6a882f8c353a3c5043",
+   "sessions": 14,
+   "subjects": [
+    "820454",
+    "830794",
+    "830795",
+    "830846",
+    "830847",
+    "830848",
+    "830849",
+    "830851",
+    "830852",
+    "832691",
+    "834686",
+    "834687",
+    "848387",
+    "848390"
+   ],
+   "summary": {
+    "adjacency_rule": "previous presentation row is also a deviant",
+    "adjacent_count": 13,
+    "adjacent_different_type_count": 7,
+    "adjacent_fraction": 0.09285714285714286,
+    "adjacent_same_type_count": 6,
+    "context": "duration",
+    "interval_median": 11.0,
+    "interval_min": 1.0,
+    "interval_seconds_median": 8.20690465716325,
+    "interval_seconds_min": 0.5004183570922578,
+    "interval_unit": "presentations",
+    "mismatch_trials": 140,
+    "per_label": {
+     "jitter_1000ms": {
+      "adjacent": 3,
+      "same_type": 1,
+      "total": 35
+     },
+     "jitter_150ms": {
+      "adjacent": 6,
+      "same_type": 2,
+      "total": 35
+     },
+     "jitter_500ms": {
+      "adjacent": 2,
+      "same_type": 2,
+      "total": 35
+     },
+     "omission": {
+      "adjacent": 2,
+      "same_type": 1,
+      "total": 35
+     }
+    },
+    "preceding_standard_run_zero_count": 13
+   }
+  },
+  "sensorimotor": {
+   "block_duration_seconds": 1561.0138,
+   "block_duration_seconds_max": 1561.0149,
+   "block_duration_seconds_min": 1561.0132,
+   "events": [
+    {
+     "adjacent": false,
+     "interval": null,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 17.5147,
+     "row": 525,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 34.87937439751613,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 52.3941,
+     "row": 1561,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.287780582469452,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 57.6819,
+     "row": 1710,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.55973652588176,
+     "label": "motor_omission",
+     "onset_offset_seconds": 69.2416,
+     "row": 2047,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.79156974085663,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 79.0332,
+     "row": 2331,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.660660777430053,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 91.6939,
+     "row": 2701,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.720641662526987,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 96.4145,
+     "row": 2833,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.9199704458242195,
+     "label": "motor_omission",
+     "onset_offset_seconds": 100.3345,
+     "row": 2941,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.3528121024839947,
+     "label": "motor_halt",
+     "onset_offset_seconds": 103.6873,
+     "row": 3032,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.153503102483683,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 107.8408,
+     "row": 3147,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 18.03185062249827,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 125.8726,
+     "row": 3678,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 22.969331409251026,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 148.842,
+     "row": 4357,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.955016534161359,
+     "label": "motor_omission",
+     "onset_offset_seconds": 154.797,
+     "row": 4526,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.7856742291218097,
+     "label": "motor_omission",
+     "onset_offset_seconds": 157.5827,
+     "row": 4600,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.097736917530483,
+     "label": "motor_halt",
+     "onset_offset_seconds": 174.6804,
+     "row": 5103,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.2185324075232984,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 176.8989,
+     "row": 5160,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 0.9174347674227192,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 177.8164,
+     "row": 5178,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 0.6171896625270392,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 178.4336,
+     "row": 5187,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 0.8840816625269099,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 179.3176,
+     "row": 5204,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 15.663186417530483,
+     "label": "motor_halt",
+     "onset_offset_seconds": 194.9808,
+     "row": 5664,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.460485650792066,
+     "label": "motor_halt",
+     "onset_offset_seconds": 207.4413,
+     "row": 6028,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.3844995741900448,
+     "label": "motor_halt",
+     "onset_offset_seconds": 208.8258,
+     "row": 6060,
+     "same_type": true
+    },
+    {
+     "adjacent": true,
+     "interval": 1.31777002242643,
+     "label": "motor_omission",
+     "onset_offset_seconds": 210.1436,
+     "row": 6090,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 85.98906494582434,
+     "label": "motor_halt",
+     "onset_offset_seconds": 296.1327,
+     "row": 8658,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.686428329193518,
+     "label": "motor_halt",
+     "onset_offset_seconds": 299.8191,
+     "row": 8759,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 43.01955043754492,
+     "label": "motor_halt",
+     "onset_offset_seconds": 342.8386,
+     "row": 10039,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.020889562455068,
+     "label": "motor_omission",
+     "onset_offset_seconds": 347.8595,
+     "row": 10180,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.4195568792295035,
+     "label": "motor_omission",
+     "onset_offset_seconds": 351.2791,
+     "row": 10273,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.653067112491158,
+     "label": "motor_halt",
+     "onset_offset_seconds": 354.9321,
+     "row": 10373,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 15.062680365766823,
+     "label": "motor_omission",
+     "onset_offset_seconds": 369.9948,
+     "row": 10815,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.69233826087111,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 380.6872,
+     "row": 11126,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.1843267591432323,
+     "label": "motor_omission",
+     "onset_offset_seconds": 381.8715,
+     "row": 11152,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 15.329574477573601,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 397.2011,
+     "row": 11602,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.823250602483881,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 405.0243,
+     "row": 11827,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.618871082469468,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 407.6432,
+     "row": 11896,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.887442592476646,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 412.5306,
+     "row": 12033,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 50.22561448585316,
+     "label": "motor_omission",
+     "onset_offset_seconds": 462.7562,
+     "row": 13529,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 19.332931739128867,
+     "label": "motor_omission",
+     "onset_offset_seconds": 482.0892,
+     "row": 14099,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 0.4503811425125832,
+     "label": "motor_halt",
+     "onset_offset_seconds": 482.5396,
+     "row": 14103,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.327044672534157,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 494.8666,
+     "row": 14463,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 14.962593602483821,
+     "label": "motor_halt",
+     "onset_offset_seconds": 509.8292,
+     "row": 14902,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.889135289164983,
+     "label": "motor_halt",
+     "onset_offset_seconds": 516.7183,
+     "row": 15099,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.1851716525196707,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 518.9035,
+     "row": 15155,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.150968817458761,
+     "label": "motor_halt",
+     "onset_offset_seconds": 520.0545,
+     "row": 15180,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.457120289164777,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 528.5116,
+     "row": 15424,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.492163614218839,
+     "label": "motor_halt",
+     "onset_offset_seconds": 539.0038,
+     "row": 15729,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 22.435554152519558,
+     "label": "motor_omission",
+     "onset_offset_seconds": 561.4393,
+     "row": 16392,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.319461474118384,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 564.7588,
+     "row": 16482,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.788208592476622,
+     "label": "motor_omission",
+     "onset_offset_seconds": 570.547,
+     "row": 16646,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.223575740856631,
+     "label": "motor_halt",
+     "onset_offset_seconds": 578.7706,
+     "row": 16883,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.192765200827921,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 589.9633,
+     "row": 17209,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.120975927537756,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 595.0843,
+     "row": 17353,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 0.483738965838711,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 595.568,
+     "row": 17358,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 5.321144504139738,
+     "label": "motor_omission",
+     "onset_offset_seconds": 600.8892,
+     "row": 17508,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.193595985853108,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 613.0828,
+     "row": 17864,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 24.83756917080632,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 637.9203,
+     "row": 18599,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.752319514147075,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 640.6727,
+     "row": 18672,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 34.24548924085684,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 674.9182,
+     "row": 19689,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.55468030745169,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 680.4728,
+     "row": 19846,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.151798897515846,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 682.6246,
+     "row": 19901,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.421237485853226,
+     "label": "motor_halt",
+     "onset_offset_seconds": 688.0459,
+     "row": 20054,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.221057525881861,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 693.2669,
+     "row": 20201,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 15.930078945824334,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 709.197,
+     "row": 20669,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.8866025241538864,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 713.0836,
+     "row": 20776,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 0.8173524458245538,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 713.901,
+     "row": 20791,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 23.403036084197083,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 737.304,
+     "row": 21483,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.820721385781326,
+     "label": "motor_omission",
+     "onset_offset_seconds": 742.1247,
+     "row": 21618,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.05256892753755,
+     "label": "motor_halt",
+     "onset_offset_seconds": 745.1773,
+     "row": 21700,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.789894759143408,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 752.9672,
+     "row": 21924,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 30.775903084197353,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 783.7431,
+     "row": 22837,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.887450110763211,
+     "label": "motor_omission",
+     "onset_offset_seconds": 788.6305,
+     "row": 22974,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.79495045583144,
+     "label": "motor_omission",
+     "onset_offset_seconds": 802.4255,
+     "row": 23378,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.689796005867493,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 810.1153,
+     "row": 23599,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.4178623792295184,
+     "label": "motor_omission",
+     "onset_offset_seconds": 811.5331,
+     "row": 23632,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 16.463851307451478,
+     "label": "motor_omission",
+     "onset_offset_seconds": 827.997,
+     "row": 24116,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.323667327465955,
+     "label": "motor_omission",
+     "onset_offset_seconds": 836.3207,
+     "row": 24356,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.35451688923672,
+     "label": "motor_halt",
+     "onset_offset_seconds": 841.6752,
+     "row": 24507,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 43.62004168081353,
+     "label": "motor_halt",
+     "onset_offset_seconds": 885.2952,
+     "row": 25805,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.5187830541756284,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 887.814,
+     "row": 25871,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.69234235575982,
+     "label": "motor_halt",
+     "onset_offset_seconds": 898.5063,
+     "row": 26182,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.025934664254692,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 909.5323,
+     "row": 26503,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.857466689092917,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 918.3897,
+     "row": 26759,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.292828399243945,
+     "label": "motor_halt",
+     "onset_offset_seconds": 929.6826,
+     "row": 27088,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.153495102483703,
+     "label": "motor_omission",
+     "onset_offset_seconds": 933.8361,
+     "row": 27203,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.35198857246246,
+     "label": "motor_omission",
+     "onset_offset_seconds": 936.1881,
+     "row": 27264,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.3511306925486224,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 937.5392,
+     "row": 27295,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.4512285424405036,
+     "label": "motor_halt",
+     "onset_offset_seconds": 938.9904,
+     "row": 27329,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.058459132505504,
+     "label": "motor_omission",
+     "onset_offset_seconds": 949.0489,
+     "row": 27621,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.524688160799087,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 958.5736,
+     "row": 27897,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 20.86754747757368,
+     "label": "motor_omission",
+     "onset_offset_seconds": 979.4411,
+     "row": 28513,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.555514945824598,
+     "label": "motor_omission",
+     "onset_offset_seconds": 985.9966,
+     "row": 28700,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.764957495860017,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1003.7616,
+     "row": 29223,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.6522314440965147,
+     "label": "motor_omission",
+     "onset_offset_seconds": 1006.4138,
+     "row": 29293,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.258631837472876,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1016.6725,
+     "row": 29591,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.461329790892933,
+     "label": "motor_omission",
+     "onset_offset_seconds": 1030.1338,
+     "row": 29985,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 29.775053995860162,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 1059.9088,
+     "row": 30868,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 22.635717532433773,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1082.5446,
+     "row": 31537,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 0.5171000541756712,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 1083.0617,
+     "row": 31543,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.2527333975160673,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1086.3144,
+     "row": 31631,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.227801839200765,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1099.5422,
+     "row": 32018,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.191905485853113,
+     "label": "motor_omission",
+     "onset_offset_seconds": 1109.7341,
+     "row": 32314,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.392077915802702,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1120.1262,
+     "row": 32616,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.387020984125456,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1124.5132,
+     "row": 32738,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.487109112490998,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1129.0003,
+     "row": 32863,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.96174786749475,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1142.962,
+     "row": 33272,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 14.595617545896175,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1157.5577,
+     "row": 33700,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.023425544168276,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1165.5811,
+     "row": 33931,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.726535749136247,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1177.3076,
+     "row": 34273,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.684741160799149,
+     "label": "motor_omission",
+     "onset_offset_seconds": 1178.9924,
+     "row": 34314,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.361249927537756,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1192.3536,
+     "row": 34705,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.294514917530478,
+     "label": "motor_omission",
+     "onset_offset_seconds": 1205.6481,
+     "row": 35094,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.02594728743702,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1216.6741,
+     "row": 35415,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.931755220842433,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 1234.6058,
+     "row": 35943,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 70.20907126915063,
+     "label": "motor_omission",
+     "onset_offset_seconds": 1304.8149,
+     "row": 38038,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 19.39965946756638,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1324.2146,
+     "row": 38610,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.487110219114356,
+     "label": "motor_omission",
+     "onset_offset_seconds": 1328.7017,
+     "row": 38735,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.1843252225698961,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 1329.886,
+     "row": 38761,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 15.996789455832186,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1345.8828,
+     "row": 39231,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.125193887508658,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1356.008,
+     "row": 39525,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 24.237058092476673,
+     "label": "motor_omission",
+     "onset_offset_seconds": 1380.245,
+     "row": 40242,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 19.232842327465733,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 1399.4779,
+     "row": 40809,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.2177005241542247,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 1400.6956,
+     "row": 40836,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 7.522987114218722,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 1408.2186,
+     "row": 41052,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.7865202308498738,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 1412.0051,
+     "row": 41156,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 39.85019401414684,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1451.8553,
+     "row": 42341,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.289467267422424,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1459.1448,
+     "row": 42550,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.622239467566715,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1465.767,
+     "row": 42739,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.22442395410394,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1474.9914,
+     "row": 43006,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.923335054175368,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1482.9148,
+     "row": 43234,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.655603917530243,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1489.5704,
+     "row": 43424,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.417850405795889,
+     "label": "motor_omission",
+     "onset_offset_seconds": 1490.9882,
+     "row": 43457,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 16.69738719254815,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 1507.6856,
+     "row": 43948,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.419536542441165,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1511.1051,
+     "row": 44041,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.9858515176019864,
+     "label": "motor_halt",
+     "onset_offset_seconds": 1514.091,
+     "row": 44121,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.6847468274661423,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1515.7757,
+     "row": 44162,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.885764847480459,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 1518.6615,
+     "row": 44239,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.955007799171881,
+     "label": "motor_orientation_45",
+     "onset_offset_seconds": 1524.6165,
+     "row": 44408,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.422065895788819,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1531.0386,
+     "row": 44591,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 19.73327325086325,
+     "label": "motor_omission",
+     "onset_offset_seconds": 1550.7718,
+     "row": 45173,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.522999447552138,
+     "label": "motor_orientation_90",
+     "onset_offset_seconds": 1558.2948,
+     "row": 45389,
+     "same_type": false
+    }
+   ],
+   "rows": 45461,
+   "schedule_identical_across_sessions": true,
+   "schedule_sha256": "6a1ee0c6a14f3d7bfe95815dabd0cac7a69c7cae52266d7715aad9065dc264c4",
+   "sessions": 16,
+   "subjects": [
+    "820454",
+    "820459",
+    "830794",
+    "830795",
+    "830846",
+    "830847",
+    "830848",
+    "830849",
+    "830851",
+    "830852",
+    "832691",
+    "834686",
+    "834687",
+    "834691",
+    "848387",
+    "848390"
+   ],
+   "summary": {
+    "adjacency_rule": "previous mismatch onset less than 2 s earlier",
+    "adjacent_count": 19,
+    "adjacent_different_type_count": 15,
+    "adjacent_fraction": 0.1357142857142857,
+    "adjacent_same_type_count": 4,
+    "context": "sensorimotor",
+    "interval_median": 7.689796005867493,
+    "interval_min": 0.4503811425125832,
+    "interval_seconds_median": 7.689796005867493,
+    "interval_seconds_min": 0.4503811425125832,
+    "interval_unit": "seconds",
+    "mismatch_trials": 140,
+    "per_label": {
+     "motor_halt": {
+      "adjacent": 4,
+      "same_type": 1,
+      "total": 35
+     },
+     "motor_omission": {
+      "adjacent": 5,
+      "same_type": 0,
+      "total": 35
+     },
+     "motor_orientation_45": {
+      "adjacent": 7,
+      "same_type": 3,
+      "total": 35
+     },
+     "motor_orientation_90": {
+      "adjacent": 3,
+      "same_type": 0,
+      "total": 35
+     }
+    },
+    "preceding_standard_run_zero_count": 0
+   }
+  },
+  "sequence": {
+   "block_duration_seconds": 1662.8497,
+   "block_duration_seconds_max": 1662.9172,
+   "block_duration_seconds_min": 1662.6836,
+   "events": [
+    {
+     "adjacent": false,
+     "interval": null,
+     "label": "omission",
+     "onset_offset_seconds": 9.8583,
+     "row": 37,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 11.1928,
+     "row": 42,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "omission",
+     "onset_offset_seconds": 13.8617,
+     "row": 52,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 19.0,
+     "label": "halt",
+     "onset_offset_seconds": 39.1663,
+     "row": 147,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "halt",
+     "onset_offset_seconds": 41.8352,
+     "row": 157,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 44.5041,
+     "row": 167,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 20.0,
+     "label": "omission",
+     "onset_offset_seconds": 71.1432,
+     "row": 267,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 28.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 108.458,
+     "row": 407,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 30.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 148.425,
+     "row": 557,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "omission",
+     "onset_offset_seconds": 149.7427,
+     "row": 562,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 160.4017,
+     "row": 602,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 164.3884,
+     "row": 617,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 165.7229,
+     "row": 622,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "omission",
+     "onset_offset_seconds": 183.0541,
+     "row": 687,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 23.0,
+     "label": "halt",
+     "onset_offset_seconds": 213.7133,
+     "row": 802,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 25.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 247.0246,
+     "row": 927,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 18.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 270.9948,
+     "row": 1017,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 272.3293,
+     "row": 1022,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "halt",
+     "onset_offset_seconds": 277.6671,
+     "row": 1042,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 40.0,
+     "label": "halt",
+     "onset_offset_seconds": 330.9786,
+     "row": 1242,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 334.982,
+     "row": 1257,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 336.3165,
+     "row": 1262,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "omission",
+     "onset_offset_seconds": 341.6376,
+     "row": 1282,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 356.3,
+     "row": 1337,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 368.2934,
+     "row": 1382,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 16.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 389.5947,
+     "row": 1462,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "omission",
+     "onset_offset_seconds": 390.9291,
+     "row": 1467,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 15.0,
+     "label": "halt",
+     "onset_offset_seconds": 410.9293,
+     "row": 1542,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "halt",
+     "onset_offset_seconds": 421.6049,
+     "row": 1582,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "omission",
+     "onset_offset_seconds": 426.9428,
+     "row": 1602,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 28.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 464.2575,
+     "row": 1742,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "halt",
+     "onset_offset_seconds": 465.592,
+     "row": 1747,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 474.9165,
+     "row": 1782,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 478.9032,
+     "row": 1797,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 481.5721,
+     "row": 1807,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "halt",
+     "onset_offset_seconds": 485.5755,
+     "row": 1822,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 497.5689,
+     "row": 1867,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 30.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 537.5359,
+     "row": 2017,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 540.1881,
+     "row": 2027,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "omission",
+     "onset_offset_seconds": 542.857,
+     "row": 2037,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 558.8371,
+     "row": 2097,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 14.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 577.5028,
+     "row": 2167,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 578.8206,
+     "row": 2172,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "omission",
+     "onset_offset_seconds": 581.4895,
+     "row": 2182,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 584.1584,
+     "row": 2192,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "omission",
+     "onset_offset_seconds": 592.1485,
+     "row": 2222,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 593.483,
+     "row": 2227,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "omission",
+     "onset_offset_seconds": 596.1519,
+     "row": 2237,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "halt",
+     "onset_offset_seconds": 604.1419,
+     "row": 2267,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 617.4698,
+     "row": 2317,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 640.1055,
+     "row": 2402,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 20.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 666.778,
+     "row": 2502,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 21.0,
+     "label": "halt",
+     "onset_offset_seconds": 694.7515,
+     "row": 2607,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "halt",
+     "onset_offset_seconds": 701.4071,
+     "row": 2632,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 14.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 720.0561,
+     "row": 2702,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "omission",
+     "onset_offset_seconds": 725.394,
+     "row": 2722,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.0,
+     "label": "omission",
+     "onset_offset_seconds": 748.0631,
+     "row": 2807,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "halt",
+     "onset_offset_seconds": 752.0664,
+     "row": 2822,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 758.7387,
+     "row": 2847,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "halt",
+     "onset_offset_seconds": 762.7254,
+     "row": 2862,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 19.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 788.0467,
+     "row": 2957,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 797.3712,
+     "row": 2992,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 798.7057,
+     "row": 2997,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 804.0268,
+     "row": 3017,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "halt",
+     "onset_offset_seconds": 818.6892,
+     "row": 3072,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "omission",
+     "onset_offset_seconds": 825.3448,
+     "row": 3097,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 842.6593,
+     "row": 3162,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 28.0,
+     "label": "halt",
+     "onset_offset_seconds": 879.9741,
+     "row": 3302,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 889.2986,
+     "row": 3337,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "halt",
+     "onset_offset_seconds": 891.9675,
+     "row": 3347,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 894.6364,
+     "row": 3357,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 21.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 922.61,
+     "row": 3462,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 929.2656,
+     "row": 3487,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "omission",
+     "onset_offset_seconds": 933.269,
+     "row": 3502,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "omission",
+     "onset_offset_seconds": 937.2723,
+     "row": 3517,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 26.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 971.9015,
+     "row": 3647,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 15.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 991.9016,
+     "row": 3722,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "omission",
+     "onset_offset_seconds": 993.2361,
+     "row": 3727,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 995.905,
+     "row": 3737,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1011.8851,
+     "row": 3797,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "omission",
+     "onset_offset_seconds": 1014.554,
+     "row": 3807,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1026.5475,
+     "row": 3852,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1042.5276,
+     "row": 3912,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1057.1899,
+     "row": 3967,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "omission",
+     "onset_offset_seconds": 1059.8422,
+     "row": 3977,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 16.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1081.1601,
+     "row": 4057,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1095.8224,
+     "row": 4112,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 14.0,
+     "label": "omission",
+     "onset_offset_seconds": 1114.4715,
+     "row": 4182,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 23.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1145.1139,
+     "row": 4297,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1146.4484,
+     "row": 4302,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1151.7695,
+     "row": 4322,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 15.0,
+     "label": "halt",
+     "onset_offset_seconds": 1171.753,
+     "row": 4397,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1187.7498,
+     "row": 4457,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "omission",
+     "onset_offset_seconds": 1191.7365,
+     "row": 4472,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1209.0511,
+     "row": 4537,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "halt",
+     "onset_offset_seconds": 1221.0445,
+     "row": 4582,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 26.0,
+     "label": "halt",
+     "onset_offset_seconds": 1255.6903,
+     "row": 4712,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "omission",
+     "onset_offset_seconds": 1263.6804,
+     "row": 4742,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "halt",
+     "onset_offset_seconds": 1266.3493,
+     "row": 4752,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1275.6738,
+     "row": 4787,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1286.3328,
+     "row": 4827,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 23.0,
+     "label": "omission",
+     "onset_offset_seconds": 1316.9753,
+     "row": 4942,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "omission",
+     "onset_offset_seconds": 1318.3097,
+     "row": 4947,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "halt",
+     "onset_offset_seconds": 1327.6509,
+     "row": 4982,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "omission",
+     "onset_offset_seconds": 1328.9854,
+     "row": 4987,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1330.3031,
+     "row": 4992,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "halt",
+     "onset_offset_seconds": 1336.9754,
+     "row": 5017,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1348.9689,
+     "row": 5062,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1352.9556,
+     "row": 5077,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "halt",
+     "onset_offset_seconds": 1359.6111,
+     "row": 5102,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1360.9456,
+     "row": 5107,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "omission",
+     "onset_offset_seconds": 1362.2801,
+     "row": 5112,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "omission",
+     "onset_offset_seconds": 1363.6145,
+     "row": 5117,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "halt",
+     "onset_offset_seconds": 1374.2735,
+     "row": 5157,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "omission",
+     "onset_offset_seconds": 1376.9424,
+     "row": 5167,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1390.2536,
+     "row": 5217,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 28.0,
+     "label": "omission",
+     "onset_offset_seconds": 1427.5683,
+     "row": 5357,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.0,
+     "label": "omission",
+     "onset_offset_seconds": 1440.8795,
+     "row": 5407,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1444.8829,
+     "row": 5422,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "halt",
+     "onset_offset_seconds": 1451.5385,
+     "row": 5447,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "halt",
+     "onset_offset_seconds": 1468.8698,
+     "row": 5512,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "omission",
+     "onset_offset_seconds": 1472.8565,
+     "row": 5527,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "halt",
+     "onset_offset_seconds": 1476.8598,
+     "row": 5542,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "halt",
+     "onset_offset_seconds": 1478.1943,
+     "row": 5547,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1490.171,
+     "row": 5592,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1503.4989,
+     "row": 5642,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1506.1678,
+     "row": 5652,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "halt",
+     "onset_offset_seconds": 1508.8367,
+     "row": 5662,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "halt",
+     "onset_offset_seconds": 1518.1613,
+     "row": 5697,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 14.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1536.8103,
+     "row": 5767,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 23.0,
+     "label": "omission",
+     "onset_offset_seconds": 1567.4527,
+     "row": 5882,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "halt",
+     "onset_offset_seconds": 1572.7739,
+     "row": 5902,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 18.0,
+     "label": "halt",
+     "onset_offset_seconds": 1596.7774,
+     "row": 5992,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "omission",
+     "onset_offset_seconds": 1607.4364,
+     "row": 6032,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1612.7575,
+     "row": 6052,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "omission",
+     "onset_offset_seconds": 1615.4265,
+     "row": 6062,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 18.0,
+     "label": "halt",
+     "onset_offset_seconds": 1639.3966,
+     "row": 6152,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1640.7311,
+     "row": 6157,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1652.7245,
+     "row": 6202,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "halt",
+     "onset_offset_seconds": 1658.0623,
+     "row": 6222,
+     "same_type": false
+    }
+   ],
+   "rows": 6240,
+   "schedule_identical_across_sessions": true,
+   "schedule_sha256": "5b2dbed444fc828c55f7d88e30ce8dafcff7a0da50836ff258fb663c1bb3c61e",
+   "sessions": 15,
+   "structure": {
+    "grey_rows": 1248,
+    "sequences": 1248
+   },
+   "subjects": [
+    "820454",
+    "820459",
+    "830794",
+    "830795",
+    "830846",
+    "830847",
+    "830848",
+    "830849",
+    "830851",
+    "830852",
+    "832691",
+    "834686",
+    "834687",
+    "848387",
+    "848390"
+   ],
+   "summary": {
+    "adjacency_rule": "previous sequence (5 rows back) also substituted",
+    "adjacent_count": 20,
+    "adjacent_different_type_count": 16,
+    "adjacent_fraction": 0.14285714285714285,
+    "adjacent_same_type_count": 4,
+    "context": "sequence",
+    "interval_median": 6.0,
+    "interval_min": 1.0,
+    "interval_seconds_median": 7.990059217658995,
+    "interval_seconds_min": 1.317774170432699,
+    "interval_unit": "sequences",
+    "mismatch_trials": 140,
+    "per_label": {
+     "halt": {
+      "adjacent": 2,
+      "same_type": 1,
+      "total": 35
+     },
+     "omission": {
+      "adjacent": 7,
+      "same_type": 2,
+      "total": 35
+     },
+     "orientation_45": {
+      "adjacent": 5,
+      "same_type": 0,
+      "total": 35
+     },
+     "orientation_90": {
+      "adjacent": 6,
+      "same_type": 1,
+      "total": 35
+     }
+    },
+    "preceding_standard_run_zero_count": 0
+   }
+  },
+  "standard": {
+   "block_duration_seconds": 1592.8073,
+   "block_duration_seconds_max": 1592.8084,
+   "block_duration_seconds_min": 1592.8073,
+   "events": [
+    {
+     "adjacent": false,
+     "interval": null,
+     "label": "omission",
+     "onset_offset_seconds": 18.9159,
+     "row": 27,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 30.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 39.9336,
+     "row": 57,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "omission",
+     "onset_offset_seconds": 40.6342,
+     "row": 58,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "halt",
+     "onset_offset_seconds": 48.3407,
+     "row": 69,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "omission",
+     "onset_offset_seconds": 50.4425,
+     "row": 72,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "halt",
+     "onset_offset_seconds": 51.1431,
+     "row": 73,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "halt",
+     "onset_offset_seconds": 56.7478,
+     "row": 81,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 57.4484,
+     "row": 82,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 58.8496,
+     "row": 84,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 39.0,
+     "label": "omission",
+     "onset_offset_seconds": 86.1725,
+     "row": 123,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "halt",
+     "onset_offset_seconds": 88.2743,
+     "row": 126,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 94.5796,
+     "row": 135,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "halt",
+     "onset_offset_seconds": 102.2861,
+     "row": 146,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 102.9867,
+     "row": 147,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 52.0,
+     "label": "halt",
+     "onset_offset_seconds": 139.4174,
+     "row": 199,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 18.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 152.028,
+     "row": 217,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 14.0,
+     "label": "omission",
+     "onset_offset_seconds": 161.8362,
+     "row": 231,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 162.5368,
+     "row": 232,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "omission",
+     "onset_offset_seconds": 165.3392,
+     "row": 236,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "omission",
+     "onset_offset_seconds": 168.1416,
+     "row": 240,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "omission",
+     "onset_offset_seconds": 173.7463,
+     "row": 248,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 42.0,
+     "label": "halt",
+     "onset_offset_seconds": 203.171,
+     "row": 290,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 15.0,
+     "label": "halt",
+     "onset_offset_seconds": 213.6799,
+     "row": 305,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 222.7875,
+     "row": 318,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 42.0,
+     "label": "omission",
+     "onset_offset_seconds": 252.2123,
+     "row": 360,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "halt",
+     "onset_offset_seconds": 253.6135,
+     "row": 362,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "omission",
+     "onset_offset_seconds": 257.817,
+     "row": 368,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 26.0,
+     "label": "halt",
+     "onset_offset_seconds": 276.0324,
+     "row": 394,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "omission",
+     "onset_offset_seconds": 282.3377,
+     "row": 403,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "omission",
+     "onset_offset_seconds": 291.4453,
+     "row": 416,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 294.9483,
+     "row": 421,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 19.0,
+     "label": "omission",
+     "onset_offset_seconds": 308.2595,
+     "row": 440,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 29.0,
+     "label": "halt",
+     "onset_offset_seconds": 328.5766,
+     "row": 469,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 24.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 345.3907,
+     "row": 493,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 350.2949,
+     "row": 500,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 40.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 378.3185,
+     "row": 540,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "omission",
+     "onset_offset_seconds": 381.8214,
+     "row": 545,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 382.522,
+     "row": 546,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "omission",
+     "onset_offset_seconds": 383.2226,
+     "row": 547,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "halt",
+     "onset_offset_seconds": 386.7255,
+     "row": 552,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "halt",
+     "onset_offset_seconds": 388.8273,
+     "row": 555,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 395.1326,
+     "row": 564,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 397.935,
+     "row": 568,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 63.0,
+     "label": "omission",
+     "onset_offset_seconds": 442.0721,
+     "row": 631,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.0,
+     "label": "halt",
+     "onset_offset_seconds": 453.9821,
+     "row": 648,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 457.4851,
+     "row": 653,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 19.0,
+     "label": "halt",
+     "onset_offset_seconds": 470.7963,
+     "row": 672,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "omission",
+     "onset_offset_seconds": 474.9998,
+     "row": 678,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 15.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 485.5087,
+     "row": 693,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 491.814,
+     "row": 702,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 496.0175,
+     "row": 708,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 507.9275,
+     "row": 725,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 510.7299,
+     "row": 729,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 30.0,
+     "label": "halt",
+     "onset_offset_seconds": 531.7476,
+     "row": 759,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.0,
+     "label": "omission",
+     "onset_offset_seconds": 538.7535,
+     "row": 769,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 19.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 552.0647,
+     "row": 788,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.0,
+     "label": "halt",
+     "onset_offset_seconds": 563.9747,
+     "row": 805,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 72.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 614.4172,
+     "row": 877,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 26.0,
+     "label": "halt",
+     "onset_offset_seconds": 632.6325,
+     "row": 903,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 640.339,
+     "row": 914,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 649.4466,
+     "row": 927,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 21.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 664.159,
+     "row": 948,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 14.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 673.9673,
+     "row": 962,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 7.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 678.8714,
+     "row": 969,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 686.5779,
+     "row": 980,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 10.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 693.5838,
+     "row": 990,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 694.2844,
+     "row": 991,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "halt",
+     "onset_offset_seconds": 697.0867,
+     "row": 995,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 44.0,
+     "label": "halt",
+     "onset_offset_seconds": 727.9127,
+     "row": 1039,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 30.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 748.9304,
+     "row": 1069,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 31.0,
+     "label": "omission",
+     "onset_offset_seconds": 770.6487,
+     "row": 1100,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "halt",
+     "onset_offset_seconds": 772.0498,
+     "row": 1102,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 778.3551,
+     "row": 1111,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "omission",
+     "onset_offset_seconds": 781.1575,
+     "row": 1115,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 21.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 795.8699,
+     "row": 1136,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "halt",
+     "onset_offset_seconds": 798.6722,
+     "row": 1140,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 18.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 811.2828,
+     "row": 1158,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 811.9834,
+     "row": 1159,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "omission",
+     "onset_offset_seconds": 821.0911,
+     "row": 1172,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 23.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 837.2047,
+     "row": 1195,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 838.6058,
+     "row": 1197,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "omission",
+     "onset_offset_seconds": 844.9111,
+     "row": 1206,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 71.0,
+     "label": "halt",
+     "onset_offset_seconds": 894.653,
+     "row": 1277,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 22.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 910.066,
+     "row": 1299,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 29.0,
+     "label": "omission",
+     "onset_offset_seconds": 930.3831,
+     "row": 1328,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "halt",
+     "onset_offset_seconds": 938.0896,
+     "row": 1339,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 47.0,
+     "label": "halt",
+     "onset_offset_seconds": 971.0173,
+     "row": 1386,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 24.0,
+     "label": "halt",
+     "onset_offset_seconds": 987.8314,
+     "row": 1410,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 21.0,
+     "label": "omission",
+     "onset_offset_seconds": 1002.5438,
+     "row": 1431,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "omission",
+     "onset_offset_seconds": 1003.945,
+     "row": 1433,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1010.2503,
+     "row": 1442,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "halt",
+     "onset_offset_seconds": 1012.3521,
+     "row": 1445,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1013.0527,
+     "row": 1446,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 33.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1036.1721,
+     "row": 1479,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1040.3757,
+     "row": 1485,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 48.0,
+     "label": "halt",
+     "onset_offset_seconds": 1074.004,
+     "row": 1533,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 12.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1082.411,
+     "row": 1545,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 28.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1102.0275,
+     "row": 1573,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "halt",
+     "onset_offset_seconds": 1104.8299,
+     "row": 1577,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 20.0,
+     "label": "omission",
+     "onset_offset_seconds": 1118.8417,
+     "row": 1597,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "halt",
+     "onset_offset_seconds": 1125.147,
+     "row": 1606,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 6.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1129.3505,
+     "row": 1612,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1130.7517,
+     "row": 1614,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1132.8535,
+     "row": 1617,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 38.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1159.4759,
+     "row": 1655,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1160.1765,
+     "row": 1656,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1172.0865,
+     "row": 1673,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "omission",
+     "onset_offset_seconds": 1173.4877,
+     "row": 1675,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 15.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1183.9965,
+     "row": 1690,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 17.0,
+     "label": "omission",
+     "onset_offset_seconds": 1195.9066,
+     "row": 1707,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 20.0,
+     "label": "omission",
+     "onset_offset_seconds": 1209.9183,
+     "row": 1727,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "omission",
+     "onset_offset_seconds": 1210.6189,
+     "row": 1728,
+     "same_type": true
+    },
+    {
+     "adjacent": false,
+     "interval": 5.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1214.1219,
+     "row": 1733,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1223.2295,
+     "row": 1746,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 14.0,
+     "label": "omission",
+     "onset_offset_seconds": 1233.0378,
+     "row": 1760,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 14.0,
+     "label": "omission",
+     "onset_offset_seconds": 1242.8461,
+     "row": 1774,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1244.2472,
+     "row": 1776,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "halt",
+     "onset_offset_seconds": 1247.0496,
+     "row": 1780,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1252.6543,
+     "row": 1788,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 18.0,
+     "label": "omission",
+     "onset_offset_seconds": 1265.2649,
+     "row": 1806,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "halt",
+     "onset_offset_seconds": 1268.0673,
+     "row": 1810,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 2.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1269.4685,
+     "row": 1812,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 9.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1275.7738,
+     "row": 1821,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 46.0,
+     "label": "omission",
+     "onset_offset_seconds": 1308.0009,
+     "row": 1867,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 8.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1313.6056,
+     "row": 1875,
+     "same_type": false
+    },
+    {
+     "adjacent": true,
+     "interval": 1.0,
+     "label": "halt",
+     "onset_offset_seconds": 1314.3062,
+     "row": 1876,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 139.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1411.6882,
+     "row": 2015,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 11.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1419.3946,
+     "row": 2026,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 25.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1436.9094,
+     "row": 2051,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1439.0112,
+     "row": 2054,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 14.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1448.8194,
+     "row": 2068,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 35.0,
+     "label": "omission",
+     "onset_offset_seconds": 1473.34,
+     "row": 2103,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1482.4477,
+     "row": 2116,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 3.0,
+     "label": "halt",
+     "onset_offset_seconds": 1484.5495,
+     "row": 2119,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 18.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1497.1601,
+     "row": 2137,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 13.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1506.2678,
+     "row": 2150,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 4.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1509.0701,
+     "row": 2154,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 65.0,
+     "label": "orientation_90",
+     "onset_offset_seconds": 1554.6084,
+     "row": 2219,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 16.0,
+     "label": "orientation_45",
+     "onset_offset_seconds": 1565.8179,
+     "row": 2235,
+     "same_type": false
+    },
+    {
+     "adjacent": false,
+     "interval": 27.0,
+     "label": "halt",
+     "onset_offset_seconds": 1584.7338,
+     "row": 2262,
+     "same_type": false
+    }
+   ],
+   "rows": 2274,
+   "schedule_identical_across_sessions": true,
+   "schedule_sha256": "599698b4684e2dbb3de8713c1cc6b95ca0bb04de9a825a93458aa098b1cd3ab3",
+   "sessions": 15,
+   "subjects": [
+    "820454",
+    "830794",
+    "830795",
+    "830846",
+    "830847",
+    "830848",
+    "830849",
+    "830851",
+    "830852",
+    "832691",
+    "834686",
+    "834687",
+    "834691",
+    "848387",
+    "848390"
+   ],
+   "summary": {
+    "adjacency_rule": "previous presentation row is also a deviant",
+    "adjacent_count": 13,
+    "adjacent_different_type_count": 12,
+    "adjacent_fraction": 0.09285714285714286,
+    "adjacent_same_type_count": 1,
+    "context": "standard",
+    "interval_median": 11.0,
+    "interval_min": 1.0,
+    "interval_seconds_median": 7.706484749059939,
+    "interval_seconds_min": 0.7005753075641223,
+    "interval_unit": "presentations",
+    "mismatch_trials": 140,
+    "per_label": {
+     "halt": {
+      "adjacent": 2,
+      "same_type": 0,
+      "total": 35
+     },
+     "omission": {
+      "adjacent": 3,
+      "same_type": 1,
+      "total": 35
+     },
+     "orientation_45": {
+      "adjacent": 7,
+      "same_type": 0,
+      "total": 35
+     },
+     "orientation_90": {
+      "adjacent": 1,
+      "same_type": 0,
+      "total": 35
+     }
+    },
+    "preceding_standard_run_zero_count": 13
+   }
+  }
+ },
+ "version": 1
+}

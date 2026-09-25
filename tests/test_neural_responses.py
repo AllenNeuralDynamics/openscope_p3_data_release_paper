@@ -6,6 +6,8 @@ from pathlib import Path
 import pytest
 
 from openscope_p3_publication.neural_response_figure import (
+    RESPONSIVE_MIN_AREA_UNITS,
+    RESPONSIVE_MIN_EVENT_COVERAGE,
     STATIC_AREA_GROUP_ORDER,
     STATIC_AREA_MIN_QC_UNITS,
     float32_values,
@@ -13,6 +15,8 @@ from openscope_p3_publication.neural_response_figure import (
     mean_sem_traces,
     presentation_timing_values,
     response_matrix,
+    responsive_fraction_matrix,
+    sequence_control_segments,
     static_rate_axis,
     uint16_base64_values,
     write_neuropixels_event_html,
@@ -27,6 +31,11 @@ from openscope_p3_publication.neural_responses import (
     SDF_QUANTIZATION_SCALE,
     SDF_SOURCE_BIN_SECONDS,
     SDF_TAU_SECONDS,
+    SEQUENCE_CONTROL_BASELINE_TABLE,
+    SEQUENCE_REFERENCE_ORIENTATION_DEGREES,
+    SEQUENCE_REFERENCE_TRIAL_TYPE,
+    adjacent_blank_windows,
+    blank_interval_windows,
     classify_neuron_type,
     context_event_definitions,
     context_window_seconds,
@@ -36,7 +45,10 @@ from openscope_p3_publication.neural_responses import (
     qc_passes,
     relative_bin_centers,
     relative_bin_edges,
+    sample_windows_evenly,
     sdf_kernel,
+    sequence_comparison_span,
+    sequence_reference_indices,
     smooth_trace,
 )
 
@@ -48,8 +60,11 @@ def test_neural_sessions_cover_four_contexts_for_one_mouse() -> None:
         "sequence",
         "duration",
     }
-    assert all("830846" in session.session_id for session in NEURAL_SESSIONS)
+    assert all("830794" in session.session_id for session in NEURAL_SESSIONS)
     assert len({session.asset_id for session in NEURAL_SESSIONS}) == 4
+    assert all(
+        session.asset_path.startswith("sub-830794/") for session in NEURAL_SESSIONS
+    )
 
 
 def test_neural_time_grid_uses_two_point_five_millisecond_bins() -> None:
@@ -59,13 +74,13 @@ def test_neural_time_grid_uses_two_point_five_millisecond_bins() -> None:
     assert CONTEXT_WINDOWS_SECONDS == {
         "standard": (-0.75, 0.75),
         "sensorimotor": (-0.75, 0.75),
-        "sequence": (-0.75, 0.75),
+        "sequence": (-2.0, 1.0),
         "duration": (-1.5, 1.5),
     }
     for context, expected_count in (
         ("standard", 600),
         ("sensorimotor", 600),
-        ("sequence", 600),
+        ("sequence", 1200),
         ("duration", 1200),
     ):
         edges = relative_bin_edges(context)
@@ -136,13 +151,6 @@ def test_context_specific_neural_baselines() -> None:
         starts,
         stops,
         [2],
-        "sequence",
-        blocks,
-    ) == [(100.7, 101.4)]
-    assert neural_baseline_windows(
-        starts,
-        stops,
-        [2],
         "sensorimotor",
         blocks,
     )[0] == pytest.approx((101.057, 101.4))
@@ -153,6 +161,48 @@ def test_context_specific_neural_baselines() -> None:
         "duration",
         blocks,
     ) == [(100.37, 100.7)]
+
+
+def test_sequence_baseline_is_the_grey_inter_sequence_interval() -> None:
+    """The grey interval three rows back, not the preceding grating element.
+
+    Sequences are five contiguous 266.9 ms rows -- four gratings then a grey
+    inter-sequence interval -- with the substitution always at element three.
+    """
+    period = 0.2669
+    starts = [round(index * period, 6) for index in range(20)]
+    stops = [round(value + period, 6) for value in starts]
+    blocks = [2.0] * 20
+    # Element three of the fourth sequence.
+    substitution = 3 * 5 + 2
+
+    windows = neural_baseline_windows(starts, stops, [substitution], "sequence", blocks)
+    grey = substitution - 3
+    assert windows == [(starts[grey], stops[grey])]
+
+    # The old rule used the preceding element, a 45 degree grating.
+    assert windows != [(starts[substitution - 1], starts[substitution])]
+
+    # The baseline is a full row, not the run up to the event onset.
+    start, stop = windows[0]
+    assert stop - start == pytest.approx(period)
+
+
+def test_sequence_baseline_is_unavailable_without_a_preceding_grey() -> None:
+    period = 0.2669
+    starts = [round(index * period, 6) for index in range(20)]
+    stops = [round(value + period, 6) for value in starts]
+    blocks = [2.0] * 20
+    # Element three of the first sequence has no previous sequence.
+    assert neural_baseline_windows(starts, stops, [2], "sequence", blocks) == [None]
+
+
+def test_sequence_baseline_respects_block_boundaries() -> None:
+    period = 0.2669
+    starts = [round(index * period, 6) for index in range(20)]
+    stops = [round(value + period, 6) for value in starts]
+    blocks = [2.0] * 10 + [3.0] * 10
+    assert neural_baseline_windows(starts, stops, [11], "sequence", blocks) == [None]
 
 
 def test_neural_response_uses_recorded_presentation_window() -> None:
@@ -216,8 +266,8 @@ def test_neuron_type_classification(
 def test_neuropixels_event_snapshot_is_source_backed() -> None:
     payload = load_neuropixels_event_responses()
 
-    assert payload["version"] == 9
-    assert payload["subject"] == "830846"
+    assert payload["version"] == 14
+    assert payload["subject"] == "830794"
     assert payload["sessionOrder"] == [
         "standard",
         "sensorimotor",
@@ -227,29 +277,30 @@ def test_neuropixels_event_snapshot_is_source_backed() -> None:
     assert [session["windowSeconds"] for session in payload["sessions"]] == [
         [-0.75, 0.75],
         [-0.75, 0.75],
-        [-0.75, 0.75],
+        # Wide enough to reach element three of the previous sequence at -1.3345 s.
+        [-2.0, 1.0],
         [-1.5, 1.5],
     ]
     assert [session["unitCount"] for session in payload["sessions"]] == [
-        3355,
-        2943,
-        3550,
-        3834,
+        3018,
+        3966,
+        2902,
+        3082,
     ]
     assert sum(
         unit["qcPass"]
         for session in payload["sessions"]
         for unit in session["units"]
-    ) == 7266
+    ) == 8093
     assert all(len(session["events"]) == 4 for session in payload["sessions"])
     assert [
         len(session["events"][0]["timing"]["context"]["presentationWindows"])
         for session in payload["sessions"]
-    ] == [3, 1, 6, 5]
+    ] == [3, 1, 12, 5]
     assert [
         session["sdfMeanAtlas"]["shape"][-1]
         for session in payload["sessions"]
-    ] == [600, 600, 600, 1200]
+    ] == [600, 600, 1200, 1200]
     assert all("waveformAtlas" not in session for session in payload["sessions"])
     assert all(
         math.isfinite(unit["firingRateHz"]) and unit["firingRateHz"] >= 0
@@ -276,10 +327,10 @@ def test_neuropixels_event_snapshot_is_source_backed() -> None:
         }
         for session in payload["sessions"]
     ] == [
-        {"RS": 2324, "FS": 527, "SST": 504},
-        {"RS": 2166, "FS": 361, "SST": 416},
-        {"RS": 2636, "FS": 487, "SST": 427},
-        {"RS": 2747, "FS": 583, "SST": 504},
+        {"RS": 2218, "FS": 512, "SST": 288},
+        {"RS": 2916, "FS": 715, "SST": 335},
+        {"RS": 2052, "FS": 498, "SST": 352},
+        {"RS": 2006, "FS": 574, "SST": 502},
     ]
     assert all(
         math.isfinite(unit["peakToValleyMs"])
@@ -300,7 +351,7 @@ def test_neuropixels_event_snapshot_is_source_backed() -> None:
             for unit in session["units"]
         )
         for label in ("mua", "noise", "sua")
-    } == {"mua": 4971, "noise": 4152, "sua": 4559}
+    } == {"mua": 4459, "noise": 3672, "sua": 4837}
     groups = {
         group
         for session in payload["sessions"]
@@ -405,8 +456,31 @@ def test_static_response_matrix_uses_anatomical_area_order() -> None:
             area,
         )
 
-    assert len(areas) == 48
+    # 32 of the 46 pooled candidates clear the per-event coverage requirement.
+    assert len(areas) == 32
     assert len(columns) == 16
+    # Every drawn cell is backed by at least the minimum tested units, and the
+    # two matrices hatch identically so a row can be read across.
+    fraction_areas, fraction_columns = responsive_fraction_matrix(payload)
+    assert fraction_areas == areas
+    for contrast, fraction in zip(columns, fraction_columns, strict=True):
+        for area in areas:
+            assert contrast["counts"][area] == fraction["counts"][area]
+            assert (contrast["values"][area] is None) == (
+                fraction["values"][area] is None
+            )
+            if contrast["values"][area] is not None:
+                assert contrast["counts"][area] >= RESPONSIVE_MIN_AREA_UNITS
+    # Coverage is what earns a row: PL6b pooled over 10 units but had 2 to 5 per
+    # session, so every one of its cells was hatched.
+    assert "PL6b" not in areas
+    for area in areas:
+        measurable = sum(
+            1
+            for column in fraction_columns
+            if column["counts"][area] >= RESPONSIVE_MIN_AREA_UNITS
+        )
+        assert measurable >= RESPONSIVE_MIN_EVENT_COVERAGE
     assert areas == sorted(areas, key=sort_key)
     categories = [
         next(group for group in STATIC_AREA_GROUP_ORDER if group in area_groups[area])
@@ -415,10 +489,10 @@ def test_static_response_matrix_uses_anatomical_area_order() -> None:
     assert {
         group: categories.count(group) for group in STATIC_AREA_GROUP_ORDER
     } == {
-        "frontal": 21,
-        "visual": 13,
-        "hippocampal": 6,
-        "thalamic": 8,
+        "frontal": 10,
+        "visual": 14,
+        "hippocampal": 5,
+        "thalamic": 3,
     }
     assert all(count >= STATIC_AREA_MIN_QC_UNITS for count in area_counts.values())
     assert all(
@@ -479,9 +553,21 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     svg = first_svg.decode()
     html = first_html.decode()
     assert 'role="img"' in svg
-    assert "Area-level mismatch response across all conditions" in svg
-    assert "Representative unit dynamics" in svg
-    assert svg.count("<image ") == 4
+    assert "Area-level responsiveness and mismatch-minus-control effect" in svg
+    assert "Responsive unit dynamics" in svg
+    # Two matrices over the same rows, and a hatch so an unmeasured cell is
+    # never drawn as a fraction on either panel's own scale.
+    assert svg.count('id="responsive-no-data"') == 1
+    assert 'url(#responsive-no-data)' in svg
+    assert "chance 5%" in svg
+    assert "% responsive" in svg
+    # Rows are selected on the test, not on the effect the panel plots.
+    assert "Rows are selected on the test, not on the plotted effect" in svg
+    assert "Top 150 QC-passing MUA/SUA units" not in svg
+    # Two area groups x four contexts of example panels.
+    assert svg.count("<image ") == 8
+    assert "Visual cortex" in svg
+    assert "Visual thalamus" in svg
     assert "./media/neuropixels-event-responses/" in html
     assert 'id="heatmap-canvas"' in html
     assert 'data-metric="mismatch"' in html
@@ -500,6 +586,12 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert 'id="baseline-response-canvas"' not in html
     assert 'id="baseline-subtracted"' in html
     assert 'id="response-note"' not in html
+    # A different element from the one 365c616 removed: that was static chrome
+    # restating the dashed guides. This one states what the control curve is,
+    # which the sequence segmentation makes necessary rather than redundant.
+    assert 'id="sequence-control-note"' in html
+    assert "drawn only inside the two shaded windows" in html
+    assert "function sequenceControlSegments(" in html
     assert 'id="heatmap-detail"' not in html
     assert 'id="source-note"' not in html
     assert "Response conditioning" in html
@@ -508,6 +600,13 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert "Mismatch response averaged over units in" in html
     assert "Mismatch response for unit" in html
     assert 'class="interactive-controls"' in html
+    assert ".response-panel {\n  overflow-x: auto;\n}" in html
+    assert "@media (max-width: 400px)" in html
+    assert (
+        ".control-grid,\n  #metric-tabs {\n"
+        "    grid-template-columns: minmax(0, 1fr);\n  }"
+    ) in html
+    assert ".checkbox-group {\n  display: flex;\n  flex-wrap: wrap;" in html
     assert "baselineSubtracted && yRange[0] <= 0" in html
     assert "function plotHorizontalBounds()" in html
     assert "const plot = { ...plotHorizontalBounds(), top: 22, bottom: 280 }" in html
@@ -535,10 +634,18 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert 'id="minimum-firing-rate"' in html
     assert 'id="unit-count"' not in html
     assert "Δ firing rate" in html
-    assert "Δ firing rate" in svg
+    assert svg.count(">Δ firing rate</text>") == 2
+    assert svg.count('class="rate-axes"') == 8
+    assert 'class="rate-x-tick"' in svg
+    assert 'class="rate-y-tick"' in svg
+    assert svg.count(">Time from mismatch (s)</text>") == 8
+    assert 'fill="#FAFBFA" stroke="#D0D4D2"' not in svg
+    assert svg.count(">(spikes/s)</text>") == 2
+    assert ">Mismatch</text>" in svg
+    assert ">Matched control</text>" in svg
     assert "spike-density function" in html
     assert "spike-density functions" in svg
-    assert "±1 SEM across units" in svg
+    assert "±1 SEM across the same" in svg
     assert 'fill-opacity="0.14"' in svg
     assert "zscoreLimit: 3" in html
     assert 'colorLimit.max = "6"' in html
@@ -549,3 +656,287 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert "sdfSemAtlas" not in html
     assert "function sdfKernel" not in html
     assert "__NEUROPIXELS_EVENT_" not in html
+
+
+class TestBlankIntervalWindows:
+    """The sequence control baseline, borrowed from control block 1.
+
+    Control block 2 is contiguous, so the sequence row offset lands on a
+    grating rather than a blank. See docs/neuropixels-mismatch-responsiveness.md.
+    """
+
+    def _repeats(self):
+        # Two repeats of the same block, numbered 1 and 3 as in the protocol.
+        starts, stops, blocks = [], [], []
+        for block, origin in ((1.0, 0.0), (3.0, 100.0)):
+            for row in range(4):
+                starts.append(origin + row * 0.7)
+                stops.append(origin + row * 0.7 + 0.367)
+                blocks.append(block)
+        return starts, stops, blocks
+
+    def test_gaps_are_grouped_by_block(self):
+        windows = blank_interval_windows(*self._repeats())
+        assert sorted(windows) == [1.0, 3.0]
+        assert len(windows[1.0]) == len(windows[3.0]) == 3
+
+    def test_a_gap_runs_from_one_stop_to_the_next_start(self):
+        windows = blank_interval_windows(*self._repeats())
+        assert windows[1.0][0] == pytest.approx((0.367, 0.7))
+
+    def test_block_boundaries_do_not_produce_a_gap(self):
+        windows = blank_interval_windows(*self._repeats())
+        assert all(stop <= 2.5 for _start, stop in windows[1.0])
+
+    def test_contiguous_rows_yield_no_blanks(self):
+        # Control block 2's shape: no inter-row gap anywhere.
+        starts = [row * 0.2669 for row in range(10)]
+        stops = [start + 0.2669 for start in starts]
+        assert blank_interval_windows(starts, stops, [4.0] * 10) == {}
+
+    def test_display_jitter_is_not_a_blank(self):
+        starts = [0.0, 0.2680, 0.5360]
+        stops = [0.2669, 0.5349, 0.8029]
+        assert blank_interval_windows(starts, stops, [4.0] * 3) == {}
+
+    def test_rows_out_of_order_are_sorted_first(self):
+        windows = blank_interval_windows([0.7, 0.0], [1.067, 0.367], [1.0, 1.0])
+        assert windows[1.0] == [pytest.approx((0.367, 0.7))]
+
+    def test_mismatched_lengths_raise(self):
+        with pytest.raises(ValueError, match="same length"):
+            blank_interval_windows([0.0, 1.0], [0.5], [1.0, 1.0])
+
+
+class TestAdjacentBlankWindows:
+    def _repeats(self):
+        starts, stops, blocks = [], [], []
+        for block, origin in ((1.0, 0.0), (3.0, 100.0)):
+            for row in range(4):
+                starts.append(origin + row * 0.7)
+                stops.append(origin + row * 0.7 + 0.367)
+                blocks.append(block)
+        return starts, stops, blocks
+
+    def test_the_repeat_ending_just_before_the_target_is_chosen(self):
+        windows = adjacent_blank_windows(*self._repeats(), 102.5)
+        assert windows[0][0] == pytest.approx(100.367)
+
+    def test_a_later_repeat_is_not_preferred_over_a_preceding_one(self):
+        # The first repeat precedes the target; the second is nearer but later.
+        windows = adjacent_blank_windows(*self._repeats(), 3.0)
+        assert windows[0][0] == pytest.approx(0.367)
+
+    def test_a_following_repeat_is_used_when_none_precedes(self):
+        windows = adjacent_blank_windows(*self._repeats(), -10.0)
+        assert windows[0][0] == pytest.approx(0.367)
+
+    def test_the_borrow_table_is_control_block_one(self):
+        # Not the sequence session's own control table, which is block 2.
+        assert SEQUENCE_CONTROL_BASELINE_TABLE == "Control block 1_presentations"
+        sequence = next(
+            config for config in NEURAL_SESSIONS if config.context == "sequence"
+        )
+        assert sequence.control_table == "Control block 2_presentations"
+        assert SEQUENCE_CONTROL_BASELINE_TABLE != sequence.control_table
+
+    def test_a_table_without_blanks_raises(self):
+        starts = [row * 0.2669 for row in range(10)]
+        stops = [start + 0.2669 for start in starts]
+        with pytest.raises(ValueError, match="No blank"):
+            adjacent_blank_windows(starts, stops, [4.0] * 10, 5.0)
+
+
+class TestSampleWindowsEvenly:
+    def _windows(self, count: int):
+        return [(float(index), index + 0.3336) for index in range(count)]
+
+    def test_one_window_is_returned_per_trial(self):
+        assert len(sample_windows_evenly(self._windows(543), 70)) == 70
+
+    def test_the_sample_spans_the_whole_repeat(self):
+        sampled = sample_windows_evenly(self._windows(543), 70)
+        assert sampled[0][0] == pytest.approx(0.0)
+        assert sampled[-1][0] > 530.0
+
+    def test_windows_are_distinct_when_there_are_enough_of_them(self):
+        assert len(set(sample_windows_evenly(self._windows(543), 70))) == 70
+
+    def test_more_trials_than_windows_reuses_windows_without_failing(self):
+        sampled = sample_windows_evenly(self._windows(3), 7)
+        assert len(sampled) == 7
+        assert set(sampled) <= set(self._windows(3))
+
+    def test_no_trials_needs_no_windows(self):
+        assert sample_windows_evenly(self._windows(10), 0) == []
+
+    def test_sampling_from_nothing_raises(self):
+        with pytest.raises(ValueError, match="empty"):
+            sample_windows_evenly([], 4)
+
+
+class TestSequenceReferenceIndices:
+    """The stimulus-matched control alignment for the comparison window."""
+
+    def _table(self):
+        types = ["single", "halt", "single", "omission", "single", "single"]
+        oris = [
+            0.0,
+            0.0,
+            math.radians(45),
+            0.0,
+            math.radians(90),
+            1e-5,
+        ]
+        return types, oris
+
+    def test_only_single_rows_at_zero_degrees_match(self):
+        assert sequence_reference_indices(*self._table()) == [0, 5]
+
+    def test_a_halt_at_zero_degrees_is_not_a_grating(self):
+        # halt and omission also carry orientation 0 but are not the stimulus.
+        types, oris = self._table()
+        assert 1 not in sequence_reference_indices(types, oris)
+        assert 3 not in sequence_reference_indices(types, oris)
+
+    def test_orientation_is_matched_within_tolerance(self):
+        # Stored orientations are radians and carry float error.
+        assert sequence_reference_indices(["single"], [1e-5]) == [0]
+        assert sequence_reference_indices(["single"], [0.01]) == []
+
+    def test_the_matched_orientation_is_element_three(self):
+        assert SEQUENCE_REFERENCE_ORIENTATION_DEGREES == 0.0
+        assert SEQUENCE_REFERENCE_TRIAL_TYPE == "single"
+
+    def test_mismatched_lengths_raise(self):
+        with pytest.raises(ValueError, match="same length"):
+            sequence_reference_indices(["single", "single"], [0.0])
+
+
+class TestSequenceComparisonSpan:
+    def _rows(self, count: int, period: float = 0.2669):
+        starts = [index * period for index in range(count)]
+        stops = [start + period for start in starts]
+        return starts, stops
+
+    def test_the_span_is_five_rows_back(self):
+        starts, stops = self._rows(12)
+        span = sequence_comparison_span(starts, stops, [7])
+        assert span == pytest.approx((-1.3345, -1.0676))
+
+    def test_the_span_width_is_one_element(self):
+        starts, stops = self._rows(12)
+        start, stop = sequence_comparison_span(starts, stops, [7])
+        assert stop - start == pytest.approx(0.2669)
+
+    def test_the_median_is_taken_across_trials(self):
+        starts, stops = self._rows(30)
+        span = sequence_comparison_span(starts, stops, [7, 12, 17])
+        assert span == pytest.approx((-1.3345, -1.0676))
+
+    def test_trials_without_a_comparison_row_are_skipped(self):
+        starts, stops = self._rows(12)
+        span = sequence_comparison_span(starts, stops, [2, 7])
+        assert span == pytest.approx((-1.3345, -1.0676))
+
+    def test_no_trial_with_a_comparison_row_raises(self):
+        starts, stops = self._rows(12)
+        with pytest.raises(ValueError, match="within the table"):
+            sequence_comparison_span(starts, stops, [1, 2])
+
+    def test_no_trials_raises(self):
+        starts, stops = self._rows(12)
+        with pytest.raises(ValueError, match="No trials"):
+            sequence_comparison_span(starts, stops, [])
+
+
+class TestSequenceControlSegments:
+    """Restricting the control trace to the two stimulus-matched windows."""
+
+    def _inputs(self):
+        # 1.0 s at 100 ms bins, comparison window at [-0.6, -0.4].
+        time = [round(-1.0 + index * 0.1, 3) for index in range(21)]
+        control = [1.0] * len(time)
+        sem = [0.1] * len(time)
+        reference = [5.0, 6.0]
+        reference_sem = [0.5, 0.6]
+        return time, control, sem, reference, reference_sem
+
+    def _call(self, **overrides):
+        time, control, sem, reference, reference_sem = self._inputs()
+        kwargs = dict(
+            comparison_span=(-0.6, -0.4),
+            mismatch_stop=0.2,
+            reference_bin_seconds=0.1,
+        )
+        kwargs.update(overrides)
+        return time, sequence_control_segments(
+            time, control, sem, reference, reference_sem, **kwargs
+        )
+
+    def test_the_mismatch_window_keeps_the_control_block_trace(self):
+        time, (values, _sem) = self._call()
+        for index, seconds in enumerate(time):
+            if 0.0 <= seconds <= 0.2:
+                assert values[index] == 1.0
+
+    def test_the_comparison_window_is_filled_from_the_reference(self):
+        time, (values, _sem) = self._call()
+        assert values[time.index(-0.6)] == 5.0
+        assert values[time.index(-0.5)] == 6.0
+
+    def test_everything_outside_both_windows_is_a_gap(self):
+        time, (values, _sem) = self._call()
+        for index, seconds in enumerate(time):
+            inside = (0.0 <= seconds <= 0.2) or (-0.6 <= seconds <= -0.4)
+            if not inside:
+                assert values[index] is None
+
+    def test_the_sem_follows_the_same_segmentation(self):
+        time, (values, sem) = self._call()
+        assert sem[time.index(-0.6)] == 0.5
+        assert sem[time.index(0.0)] == 0.1
+        assert sem[time.index(-1.0)] is None
+        assert len(sem) == len(values)
+
+    def test_a_reference_shorter_than_the_window_leaves_a_gap(self):
+        # Only two reference bins cover a 200 ms window at 100 ms bins.
+        time, (values, _sem) = self._call(comparison_span=(-0.6, -0.2))
+        assert values[time.index(-0.6)] == 5.0
+        assert values[time.index(-0.3)] is None
+
+    def test_absent_sem_is_propagated_as_absent(self):
+        time, control, _sem, reference, _reference_sem = self._inputs()
+        values, sem = sequence_control_segments(
+            time,
+            control,
+            None,
+            reference,
+            None,
+            comparison_span=(-0.6, -0.4),
+            mismatch_stop=0.2,
+            reference_bin_seconds=0.1,
+        )
+        assert sem is None
+        assert values[time.index(-0.6)] == 5.0
+
+    def test_mismatched_lengths_raise(self):
+        with pytest.raises(ValueError, match="same length"):
+            sequence_control_segments(
+                [0.0, 0.1],
+                [1.0],
+                None,
+                [1.0],
+                None,
+                comparison_span=(-0.6, -0.4),
+                mismatch_stop=0.2,
+                reference_bin_seconds=0.1,
+            )
+
+    def test_a_non_increasing_span_raises(self):
+        with pytest.raises(ValueError, match="increasing"):
+            self._call(comparison_span=(-0.4, -0.6))
+
+    def test_a_non_positive_bin_raises(self):
+        with pytest.raises(ValueError, match="positive"):
+            self._call(reference_bin_seconds=0.0)

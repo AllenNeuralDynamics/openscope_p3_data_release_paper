@@ -4807,10 +4807,18 @@ def load_unit_yield_data(
     summary = [
         {
             "day": day,
-            "meanPercent": sum(record["percentOfDay1"] for record in day_records)
-            / len(day_records),
-            "meanUnitsPerProbe": sum(record["unitsPerProbe"] for record in day_records)
-            / len(day_records),
+            # statistics.mean, not sum()/len(): naive summation is
+            # order-dependent in its last bits, so a change in record order
+            # silently rewrote these values and dirtied the committed HTML on
+            # every rebuild. The committed value 338.33125 is reachable by 54%
+            # of orderings and 338.33125000000007 by the rest; exact summation
+            # is reachable by all of them.
+            "meanPercent": statistics.mean(
+                record["percentOfDay1"] for record in day_records
+            ),
+            "meanUnitsPerProbe": statistics.mean(
+                record["unitsPerProbe"] for record in day_records
+            ),
             "sessionCount": len(day_records),
         }
         for day, day_records in sorted(summary_by_day.items())
@@ -6113,11 +6121,16 @@ def write_neuropixels_trajectory_svg(
 
 
 def main() -> None:
+    from .mismatch_adjacency_figure import write_mismatch_adjacency_svg
     from .neural_response_figure import (
         write_neuropixels_event_html,
         write_neuropixels_event_svg,
     )
     from .pupil_figure import write_pupil_event_html, write_pupil_event_svg
+    from .sensorimotor_running_figure import (
+        write_sensorimotor_running_html,
+        write_sensorimotor_running_svg,
+    )
 
     merged_figure_1_path = write_merged_figure_1_svg()
     figure_1_panel_c_path = write_figure_1_panel_c_svg()
@@ -6147,6 +6160,9 @@ def main() -> None:
     optotagging_svg_path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT
     svg_path = write_static_svg()
     unit_yield_svg_path = write_unit_yield_svg()
+    mismatch_adjacency_svg_path = write_mismatch_adjacency_svg()
+    sensorimotor_running_svg_path = write_sensorimotor_running_svg()
+    sensorimotor_running_html_path = write_sensorimotor_running_html()
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {figure_1_panel_c_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
@@ -6177,6 +6193,9 @@ def main() -> None:
     print(f"Wrote {optotagging_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {mismatch_adjacency_svg_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {sensorimotor_running_svg_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {sensorimotor_running_html_path.relative_to(REPO_ROOT)}")
 
 
 if __name__ == "__main__":

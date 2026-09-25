@@ -25,6 +25,7 @@
     eventIndex: 0,
     metric: "mismatch",
     qc: "qc",
+    responsiveness: "all",
     decoderLabels: new Set(["mua", "sua"]),
     minimumFiringRateHz: 1,
     neuronTypes: new Set(["RS", "FS", "SST"]),
@@ -43,6 +44,9 @@
   const eventSelect = document.getElementById("event-select");
   const areaSelect = document.getElementById("area-select");
   const qcTabs = document.getElementById("qc-tabs");
+  const sequenceControlNote = document.getElementById("sequence-control-note");
+  const responsivenessSelect = document.getElementById("responsiveness-select");
+  const unitCountReadout = document.getElementById("unit-count-readout");
   const decoderLabelFilter = document.getElementById("decoder-label-filter");
   const neuronTypeFilter = document.getElementById("neuron-type-filter");
   const baselineSubtractedControl = document.getElementById(
@@ -132,6 +136,17 @@
           responseControl: decodeFloat32Base64(session.responseControlHzBase64),
           traceEventIndex: -1,
           traces: [[], []],
+          reference: session.sequenceComparisonReference
+            ? {
+                ...session.sequenceComparisonReference,
+                baseline: decodeFloat32Base64(
+                  session.sequenceComparisonReference.baselineHzBase64,
+                ),
+                sdf: decodeUint16Base64(
+                  session.sequenceComparisonReference.sdfBase64,
+                ),
+              }
+            : null,
         })),
       );
     }
@@ -183,6 +198,95 @@
   function areaSourceUnits() {
     const session = currentSession();
     return session.units.filter(unitMatchesBaseFilters);
+  }
+
+  const responsivenessCache = new Map();
+
+  function responsiveness(session) {
+    if (!responsivenessCache.has(session.context)) {
+      const decoded = {};
+      const block = session.responsiveness || {};
+      Object.keys(block).forEach((key) => {
+        decoded[key] = decodeFloat32Base64(block[key].base64);
+      });
+      responsivenessCache.set(session.context, {
+        values: decoded,
+        unitCount: session.unitCount,
+      });
+    }
+    return responsivenessCache.get(session.context);
+  }
+
+  // The figure reports the uncorrected p with the chance expectation shown
+  // beside the count. Measured signal runs 7 to 12 times chance for most
+  // events, so the uncorrected false-discovery proportion is about 8 to 13
+  // percent, while correction discards roughly 40 percent of the excess.
+  // Element three of the previous sequence, five rows back.
+  const SEQUENCE_COMPARISON_OFFSET = -5;
+  const RESPONSIVE_P_MAX = 0.05;
+  const RESPONSIVE_MODULATION_MIN = 0.1;
+
+  function responsiveAt(session, eventIndex, unitIndex, kind) {
+    const store = responsiveness(session);
+    const offset = eventIndex * store.unitCount + unitIndex;
+    const prefix = kind === "q2" ? "q2_delta" : "q1";
+    const p = store.values[`${prefix}_p`]?.[offset];
+    const modulation = store.values[`${prefix}_modulation`]?.[offset];
+    if (!Number.isFinite(p) || !Number.isFinite(modulation)) return false;
+    return p <= RESPONSIVE_P_MAX
+      && Math.abs(modulation) > RESPONSIVE_MODULATION_MIN;
+  }
+
+  function unitMatchesResponsiveness(unitIndex) {
+    if (state.responsiveness === "all") return true;
+    const session = currentSession();
+    if (state.responsiveness === "q1-any") {
+      return session.events.some((_event, index) =>
+        responsiveAt(session, index, unitIndex, "q1"),
+      );
+    }
+    const kind = state.responsiveness === "q2-event" ? "q2" : "q1";
+    return responsiveAt(session, state.eventIndex, unitIndex, kind);
+  }
+
+  // Units that pass every filter except the responsiveness one. These are the
+  // units the test was applied to, and therefore the denominator the chance
+  // expectation must use.
+  function candidateUnitIndices() {
+    const session = currentSession();
+    return session.units
+      .map((unit, index) => ({ unit, index }))
+      .filter(({ unit }) => unitMatchesBaseFilters(unit) && areaMatches(unit))
+      .map(({ index }) => index);
+  }
+
+  // Expected false positives under the null: five percent of the tests run on
+  // units clearing the modulation floor. Computed over the candidates rather
+  // than the survivors, because using the survivors would understate the noise
+  // floor by the very factor the test selected for.
+  function chanceExpectation() {
+    if (state.responsiveness === "all") return null;
+    const session = currentSession();
+    const store = responsiveness(session);
+    const prefix = state.responsiveness === "q2-event" ? "q2_delta" : "q1";
+    const events =
+      state.responsiveness === "q1-any"
+        ? session.events.map((_event, index) => index)
+        : [state.eventIndex];
+    let eligible = 0;
+    candidateUnitIndices().forEach((unitIndex) => {
+      events.forEach((eventIndex) => {
+        const offset = eventIndex * store.unitCount + unitIndex;
+        const modulation = store.values[`${prefix}_modulation`]?.[offset];
+        if (
+          Number.isFinite(modulation)
+          && Math.abs(modulation) > RESPONSIVE_MODULATION_MIN
+        ) {
+          eligible += 1;
+        }
+      });
+    });
+    return eligible * RESPONSIVE_P_MAX;
   }
 
   function unitMatchesBaseFilters(unit) {
@@ -247,8 +351,10 @@
     return session.units
       .map((unit, index) => ({ unit, index }))
       .filter(
-        ({ unit }) =>
-          unitMatchesBaseFilters(unit) && areaMatches(unit),
+        ({ unit, index }) =>
+          unitMatchesBaseFilters(unit)
+          && areaMatches(unit)
+          && unitMatchesResponsiveness(index),
       )
       .map(({ index }) => index);
   }
@@ -290,6 +396,43 @@
       leftUnit.depthUm - rightUnit.depthUm ||
       leftUnit.id - rightUnit.id
     );
+  }
+
+  function embeddedUnitCount(atlas) {
+    // Must match the extractor's Rastermap eligibility, which is a sorter
+    // label of MUA or SUA *and* a usable baseline for this event. Counting the
+    // label alone overstates the embedded population by about 10%.
+    const session = currentSession();
+    let count = 0;
+    session.units.forEach((unit, unitIndex) => {
+      if (!["mua", "sua"].includes(unit.decoderLabel)) return;
+      const std = atlas.baselineStd[baselineOffset(unitIndex, 0)];
+      if (Number.isFinite(std) && std > 0) count += 1;
+    });
+    return count;
+  }
+
+  function renderUnitCount(indices, atlas) {
+    if (!unitCountReadout) return;
+    const session = currentSession();
+    const candidates = candidateUnitIndices().length;
+    const parts = [
+      `<strong>${indices.length.toLocaleString()}</strong> of `
+      + `${candidates.toLocaleString()} selected units`,
+    ];
+    const chance = chanceExpectation();
+    if (chance !== null) {
+      parts.push(`about ${Math.round(chance).toLocaleString()} expected by chance`);
+    }
+    if (state.sort === "rastermap" && atlas) {
+      const embedded = embeddedUnitCount(atlas);
+      parts.push(
+        `Rastermap order from ${embedded.toLocaleString()} embedded units, `
+        + "so a filtered view is a subsequence of that order rather than a "
+        + "re-embedding",
+      );
+    }
+    unitCountReadout.innerHTML = parts.join(" &middot; ");
   }
 
   function sortedUnitIndices(atlas) {
@@ -477,6 +620,21 @@
 
   function displayEnd() {
     return currentSession().windowSeconds[1];
+  }
+
+  // Derived from the window rather than hardcoded per context, so a widened
+  // window is labelled across its whole width. Reproduces the previous tick
+  // sets exactly for the 1.5 s and 3 s symmetric windows, and covers the
+  // sequence window's full [-2, 1] span.
+  function timeAxisTicks() {
+    const start = displayStart();
+    const end = displayEnd();
+    const step = end - start > 2 ? 1 : 0.5;
+    const values = new Set([start, 0, end]);
+    for (let value = Math.ceil(start / step) * step; value < end; value += step) {
+      if (value > start) values.add(Number(value.toFixed(3)));
+    }
+    return [...values].sort((left, right) => left - right);
   }
 
   function presentationTimingValues(timing) {
@@ -724,6 +882,7 @@
   function drawHeatmap(atlas) {
     const session = currentSession();
     state.sortedUnits = sortedUnitIndices(atlas);
+    renderUnitCount(state.sortedUnits, atlas);
     renderUnitSelect();
     const areaGroups = heatmapAreaGroups();
     configureHeatmapHeight(areaGroups);
@@ -796,10 +955,7 @@
         plot.bottom - plot.top,
       );
     }
-    const ticks =
-      state.context === "duration"
-        ? [-1.5, -1, 0, 1, 1.5]
-        : [-0.75, -0.5, 0, 0.5, 0.75];
+    const ticks = timeAxisTicks();
     for (const tick of ticks) {
       const x =
         plot.left +
@@ -859,9 +1015,13 @@
   }
 
   function meanAndSem(traces) {
+    return meanAndSemOf(traces, time.length);
+  }
+
+  function meanAndSemOf(traces, binCount) {
     const mean = [];
     const sem = [];
-    for (let bin = 0; bin < time.length; bin += 1) {
+    for (let bin = 0; bin < binCount; bin += 1) {
       const values = traces.map((trace) => trace[bin]).filter(Number.isFinite);
       if (!values.length) {
         mean.push(null);
@@ -952,6 +1112,92 @@
       contextSem: context.sem,
       controlSem: control.sem,
     };
+  }
+
+  function referenceUnitTrace(atlas, unitIndex, baselineSubtracted) {
+    const reference = atlas.reference;
+    const bins = reference.shape[1];
+    const baseline = baselineSubtracted ? reference.baseline[unitIndex] : 0;
+    const trace = [];
+    for (let bin = 0; bin < bins; bin += 1) {
+      trace.push(
+        reference.sdf[unitIndex * bins + bin] / reference.quantizationScalePerHz -
+          baseline,
+      );
+    }
+    return trace;
+  }
+
+  function sequenceControlSegments(atlas, traces, baselineSubtracted) {
+    // Control block 2 is randomly ordered, so a continuous control trace
+    // averages over an arbitrary draw of the fourteen orientations outside the
+    // two windows the statistics actually use. Draw only those two windows, and
+    // fill the comparison window from the stimulus-matched 0 degree alignment
+    // rather than from whatever randomly preceded the control block's own
+    // trials.
+    const session = currentSession();
+    if (session.context !== "sequence" || !atlas.reference) return traces;
+
+    const timing = session.events[state.eventIndex].timing.context;
+    const comparison = (timing.presentationWindows || []).find(
+      (window) => window.rowOffset === SEQUENCE_COMPARISON_OFFSET,
+    );
+    const mismatchStop = timing.presentationStopSeconds;
+
+    const inMismatch = (seconds) => seconds >= 0 && seconds <= mismatchStop;
+    const control = traces.control.map((value, index) =>
+      inMismatch(time[index]) ? value : null,
+    );
+    const controlSem = traces.controlSem
+      ? traces.controlSem.map((value, index) =>
+          inMismatch(time[index]) ? value : null,
+        )
+      : traces.controlSem;
+
+    if (comparison) {
+      const reference =
+        state.scope === "unit"
+          ? { mean: referenceUnitTrace(atlas, state.selectedUnit, baselineSubtracted), sem: null }
+          : meanAndSemOf(
+              filteredUnitIndices().map((unitIndex) =>
+                referenceUnitTrace(atlas, unitIndex, baselineSubtracted),
+              ),
+              atlas.reference.shape[1],
+            );
+      time.forEach((seconds, index) => {
+        if (seconds < comparison.startSeconds || seconds > comparison.stopSeconds) {
+          return;
+        }
+        const bin = Math.round(
+          (seconds - comparison.startSeconds) / atlas.reference.binSeconds,
+        );
+        if (bin < 0 || bin >= reference.mean.length) return;
+        control[index] = reference.mean[bin];
+        if (controlSem) {
+          controlSem[index] = reference.sem ? reference.sem[bin] : null;
+        }
+      });
+    }
+    return { ...traces, control, controlSem };
+  }
+
+  function renderSequenceControlNote() {
+    const session = currentSession();
+    const reference = session.sequenceComparisonReference;
+    if (session.context !== "sequence" || !reference) {
+      sequenceControlNote.hidden = true;
+      sequenceControlNote.textContent = "";
+      return;
+    }
+    const eventLabel = session.events[state.eventIndex].label.toLowerCase();
+    sequenceControlNote.hidden = false;
+    sequenceControlNote.textContent =
+      `Control block 2 presents single gratings in random order, so it has no ` +
+      `sequence structure to trace continuously. The control curve is therefore ` +
+      `drawn only inside the two shaded windows, matched on stimulus in each: a ` +
+      `single 0° grating (${reference.trials} trials) against element three of ` +
+      `the previous sequence on the left, and ${eventLabel} against the ` +
+      `substituted element on the right.`;
   }
 
   function responseValues(traces) {
@@ -1079,26 +1325,102 @@
       context.restore();
       return;
     }
-    visible.forEach((index, position) => {
-      const value = values[index];
-      const x = responseX(index, plot);
-      const y =
-        plot.bottom -
-        ((value + sem[index] - yRange[0]) / (yRange[1] - yRange[0])) *
-          (plot.bottom - plot.top);
-      if (position) context.lineTo(x, y);
-      else context.moveTo(x, y);
+    // One closed sub-path per contiguous run. The sequence control trace has a
+    // gap between its two windows, and a single path would fill straight
+    // across it.
+    const runs = [];
+    visible.forEach((index) => {
+      const previous = runs[runs.length - 1];
+      if (previous && index === previous[previous.length - 1] + 1) {
+        previous.push(index);
+      } else {
+        runs.push([index]);
+      }
     });
-    [...visible].reverse().forEach((index) => {
-      const x = responseX(index, plot);
-      const y =
-        plot.bottom -
-        ((values[index] - sem[index] - yRange[0]) / (yRange[1] - yRange[0])) *
-          (plot.bottom - plot.top);
-      context.lineTo(x, y);
+    const y = (value) =>
+      plot.bottom -
+      ((value - yRange[0]) / (yRange[1] - yRange[0])) *
+        (plot.bottom - plot.top);
+    runs.forEach((run) => {
+      run.forEach((index, position) => {
+        const x = responseX(index, plot);
+        const upper = y(values[index] + sem[index]);
+        if (position) context.lineTo(x, upper);
+        else context.moveTo(x, upper);
+      });
+      [...run].reverse().forEach((index) => {
+        context.lineTo(responseX(index, plot), y(values[index] - sem[index]));
+      });
+      context.closePath();
     });
-    context.closePath();
     context.fill();
+    context.restore();
+  }
+
+  // Sequences are five contiguous rows -- four gratings then a grey
+  // inter-sequence interval -- with the substitution always at element three.
+  // Marking every boundary lets a reader place the substituted element within
+  // its sequence, and shading the element that Q1 compares against shows the
+  // comparison directly rather than describing it.
+  function contextTint(alpha) {
+    const hex = contextColors[state.context] || "#5a6360";
+    const value = Number.parseInt(hex.slice(1), 16);
+    const red = (value >> 16) & 255;
+    const green = (value >> 8) & 255;
+    const blue = value & 255;
+    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+  }
+
+  function drawSequenceElementGuides(context, plot) {
+    const session = currentSession();
+    if (session.context !== "sequence") return;
+    const windows =
+      session.events[state.eventIndex].timing.context.presentationWindows || [];
+    if (!windows.length) return;
+
+    const span = displayEnd() - displayStart();
+    const toX = (seconds) =>
+      plot.left + ((seconds - displayStart()) / span) * (plot.right - plot.left);
+
+    // The compared element, shaded like the mismatch window but in grey so the
+    // two read as the same kind of interval playing different roles.
+    const comparison = windows.find(
+      (window) => window.rowOffset === SEQUENCE_COMPARISON_OFFSET,
+    );
+    if (comparison) {
+      const left = Math.max(toX(comparison.startSeconds), plot.left);
+      const right = Math.min(toX(comparison.stopSeconds), plot.right);
+      if (right > left) {
+        context.save();
+        context.fillStyle = "rgba(120, 128, 125, 0.16)";
+        context.fillRect(left, plot.top, right - left, plot.bottom - plot.top);
+        context.strokeStyle = "rgba(120, 128, 125, 0.7)";
+        context.lineWidth = 1;
+        context.setLineDash([4, 4]);
+        context.beginPath();
+        context.moveTo(left, plot.top);
+        context.lineTo(left, plot.bottom);
+        context.moveTo(right, plot.top);
+        context.lineTo(right, plot.bottom);
+        context.stroke();
+        context.restore();
+      }
+    }
+
+    context.save();
+    context.lineWidth = 1;
+    context.setLineDash([3, 4]);
+    context.strokeStyle = "rgba(120, 128, 125, 0.28)";
+    windows.forEach((window) => {
+      if (window.rowOffset === 0) return;
+      if (window.rowOffset === SEQUENCE_COMPARISON_OFFSET) return;
+      const x = toX(window.startSeconds);
+      if (x < plot.left || x > plot.right) return;
+      context.beginPath();
+      context.moveTo(x, plot.top);
+      context.lineTo(x, plot.bottom);
+      context.stroke();
+    });
     context.restore();
   }
 
@@ -1122,9 +1444,10 @@
         ((timing.presentationStopSeconds - displayStart()) /
           (displayEnd() - displayStart())) *
           (plot.right - plot.left);
-      context.fillStyle = "rgba(90, 99, 96, 0.09)";
+      context.fillStyle = contextTint(0.14);
       context.fillRect(startX, plot.top, stopX - startX, plot.bottom - plot.top);
     }
+    drawSequenceElementGuides(context, plot);
     context.strokeStyle = "#d5d9d7";
     context.fillStyle = "#59605e";
     context.lineWidth = 1;
@@ -1141,10 +1464,7 @@
       context.textAlign = "right";
       context.fillText(formatRateTick(value), plot.left - 10, y + 6);
     }
-    const ticks =
-      state.context === "duration"
-        ? [-1.5, -1, 0, 1, 1.5]
-        : [-0.75, -0.5, 0, 0.5, 0.75];
+    const ticks = timeAxisTicks();
     for (const tick of ticks) {
       const x =
         plot.left +
@@ -1248,15 +1568,21 @@
       if (sequence !== renderSequence) return;
       drawHeatmap(atlas);
       if (state.selectedUnit !== null) {
-        const traces = state.baselineSubtracted
-          ? baselineSubtractedTraces(atlas)
-          : responseTraces(atlas);
+        const traces = sequenceControlSegments(
+          atlas,
+          state.baselineSubtracted
+            ? baselineSubtractedTraces(atlas)
+            : responseTraces(atlas),
+          state.baselineSubtracted,
+        );
         drawResponsePanel(responseCanvas, traces, state.baselineSubtracted);
+        renderSequenceControlNote();
         responseTitle.textContent =
           state.scope === "area"
             ? `Mismatch response averaged over units in ${selectedAreaLabel()}`
             : `Mismatch response for unit ${session.units[state.selectedUnit].id}`;
       } else {
+        sequenceControlNote.hidden = true;
         const context = canvasContext(responseCanvas);
         context.fillStyle = "#68706d";
         context.textAlign = "center";
@@ -1356,6 +1682,11 @@
   });
   eventSelect.addEventListener("change", () => {
     state.eventIndex = Number(eventSelect.value);
+    render();
+  });
+  responsivenessSelect.addEventListener("change", () => {
+    state.responsiveness = responsivenessSelect.value;
+    state.selectedUnit = null;
     render();
   });
   areaSelect.addEventListener("change", () => {

@@ -17,7 +17,9 @@
 html,
 body {
   margin: 0;
-  background: transparent;
+  /* Opaque, not transparent: the figure renders in a MyST iframe and would
+     otherwise show the host page through it. Matches every other figure. */
+  background: var(--paper);
   color: var(--ink);
   font-family: var(--figure-font-sans);
 }
@@ -176,6 +178,7 @@ select {
 
 .checkbox-group {
   display: flex;
+  flex-wrap: wrap;
   min-height: 36px;
   align-items: center;
   gap: 14px;
@@ -266,6 +269,10 @@ select {
   padding: 0;
   border: 0;
   border-radius: 0;
+}
+
+.response-panel {
+  overflow-x: auto;
 }
 
 .panel-heading p {
@@ -386,4 +393,51 @@ canvas {
   #metric-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+@media (max-width: 400px) {
+  .control-grid,
+  #metric-tabs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.select-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--figure-type-control);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.select-control select {
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 400;
+}
+
+#unit-count-readout {
+  display: block;
+  padding: 8px 0 0;
+  color: var(--muted);
+  font-size: var(--figure-type-metadata);
+  font-variant-numeric: tabular-nums;
+}
+
+#unit-count-readout strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.sequence-control-note {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 6px 0 0;
+  max-width: 76ch;
 }

@@ -10,6 +10,11 @@ from pathlib import Path
 
 import pytest
 
+from openscope_p3_publication.neural_response_figure import (
+    load_neuropixels_event_responses,
+    response_matrix,
+)
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -346,9 +351,9 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
-    assert len(figures) == 6
+    assert len(figures) == 7
     assert manuscript.count(":::{figure} ./images/figures/imported/") == 1
-    assert manuscript.count(":::{figure} ./images/figures/generated/") == 5
+    assert manuscript.count(":::{figure} ./images/figures/generated/") == 6
     assert "./images/figures/generated/figure-01-overview.svg" in manuscript
     assert "./images/figures/generated/figure-01-panel-c-cohorts.svg" not in manuscript
     assert ":label: fig-experimental-design" not in manuscript
@@ -658,8 +663,8 @@ def test_supplementary_and_power_figures_are_current() -> None:
         "figure-10-neuropixels-event-responses.svg"
     ) in manuscript
     assert "units are distinct across sessions" in manuscript
-    assert "all 16 conditions" in manuscript
-    assert "Z-score limits default to ±3" in manuscript
+    assert "and the same 16 events" in manuscript
+    assert "z-score limits default to ±3" in manuscript
     assert "Rastermap 1.0 ordering" in manuscript
     assert "**Area** is the default row order" in manuscript
     assert "canonical parent area in Allen graph order" in manuscript
@@ -667,19 +672,53 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "minimum and maximum depth" in manuscript
     assert "shared Greys-scale limit computed from both conditions" in manuscript
     assert "causal exponential spike-density kernel" in manuscript
-    assert "standard-oddball, sensorimotor, and sequence windows span −0.75 to 0.75 s" in manuscript
-    assert "duration windows span −1.5 to 1.5 s" in manuscript
+    assert "Standard-oddball and sensorimotor windows span −0.75 to 0.75 s" in manuscript
+    assert "duration windows −1.5 to 1.5 s" in manuscript
+    # The sequence window was widened so the Q1 comparison element is visible.
+    assert "sequence windows −2 to 1 s" in manuscript
     assert "10τ (100 ms) support" in manuscript
     assert "native 2.5 ms SDF is retained" in manuscript
     assert "hidden 97.5 ms pre-window" in manuscript
     assert "without an uncertainty band" in manuscript
-    assert "Dashed guides mark only the selected mismatch presentation" in manuscript
+    assert "Dashed guides mark the selected mismatch presentation" in manuscript
     assert "SST units have a positive 5 Hz optotagging response" in manuscript
     assert "±1 SEM across neurons" in manuscript
     assert "**Subtract baseline** control" in manuscript
-    assert "48 frontal, visual, hippocampal, or thalamic areas" in manuscript
-    assert "13,682 sorted units" in manuscript
-    assert "7,266 passed the manuscript QC thresholds" in manuscript
+    matrix_areas, _matrix_columns = response_matrix(load_neuropixels_event_responses())
+    assert (
+        f"same {len(matrix_areas)} frontal, visual, hippocampal, and thalamic areas"
+        in manuscript
+    )
+    assert "at least 10 tested units in at least eight of the 16 events" in manuscript
+    assert "12,968 sorted units" in manuscript
+    assert "8,093 passed the manuscript QC thresholds" in manuscript
+    # The four sessions come from 830794, not the 830846 the figure first used.
+    # Scoped to the caption: 830846 is a real session listed under data records.
+    figure_caption = manuscript[
+        manuscript.index("Neuropixels mismatch responses by predictive-processing")
+    :]
+    figure_caption = figure_caption[: figure_caption.index("\n:::")]
+    assert "mouse 830794" in figure_caption
+    assert "830846" not in figure_caption
+    assert "sequence-cohort mouse" not in figure_caption
+    assert "Solid teal traces" in figure_caption
+    assert "dashed gray traces" in figure_caption
+    # Disclosures the caption must carry, each recording a real limitation.
+    assert "subsequence of that fixed order, not a re-embedding" in manuscript
+    assert "hatched, not shaded" in manuscript
+    assert "selected on the statistical test rather than on the plotted effect" in manuscript
+    assert "revised upstream in August 2026" in manuscript
+    # Responsiveness is defined in prose, not in the caption.
+    assert "### Defining responsiveness per mismatch event" in manuscript
+    assert "paired Wilcoxon signed-rank test across" in manuscript
+    assert "two-sided Mann-Whitney *U*" in manuscript
+    # The multiple-comparisons basis was re-measured; guard the corrected
+    # numbers so the superseded 7-12x claim cannot return.
+    assert "does a single" in manuscript
+    assert "0.6 to" in manuscript
+    assert "7 to 12 times chance" not in manuscript
+    assert "8 to 13 percent" not in manuscript
+    assert "with the difference in immediate stimulus history" in manuscript
     for obsolete in (
         "segmentation-neuropixels.html",
         "segmentation-mesoscope.html",
@@ -1043,3 +1082,48 @@ def test_interactive_figure_has_static_fallback() -> None:
     )
     assert "The **Interactive** view" in manuscript
     assert "control and system-identification stimuli" in manuscript
+
+def test_unit_yield_summary_means_are_order_independent() -> None:
+    """Summary means must not depend on record order.
+
+    Left-to-right accumulation reproduces the rounding drift that dirtied the
+    committed HTML. Do not use built-in sum() for this counterexample: Python
+    3.12 and later use a more accurate floating-point summation algorithm.
+    """
+    import random
+    import statistics
+
+    values = [
+        395.5,
+        387.0,
+        454.1666666666667,
+        315.1666666666667,
+        320.8333333333333,
+        312.8333333333333,
+        350.8333333333333,
+        260.8,
+        276.8333333333333,
+        295.8333333333333,
+        275.3333333333333,
+        297.6666666666667,
+        356.1666666666667,
+        405.6666666666667,
+        375.1666666666667,
+        333.5,
+    ]
+    rng = random.Random(0)
+    naive = set()
+    for _ in range(200):
+        order = rng.sample(values, len(values))
+        total = 0.0
+        for value in order:
+            total += value
+        naive.add(total / len(order))
+    exact = {
+        statistics.mean(order)
+        for order in (rng.sample(values, len(values)) for _ in range(200))
+    }
+    # The bug: naive summation gives more than one answer for one dataset.
+    assert len(naive) > 1
+    assert len(exact) == 1
+    assert exact == {338.33125}
