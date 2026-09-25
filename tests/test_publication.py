@@ -10,6 +10,11 @@ from pathlib import Path
 
 import pytest
 
+from openscope_p3_publication.neural_response_figure import (
+    load_neuropixels_event_responses,
+    response_matrix,
+)
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -679,7 +684,12 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "SST units have a positive 5 Hz optotagging response" in manuscript
     assert "±1 SEM across neurons" in manuscript
     assert "**Subtract baseline** control" in manuscript
-    assert "50 frontal, visual, hippocampal, and thalamic areas" in manuscript
+    matrix_areas, _matrix_columns = response_matrix(load_neuropixels_event_responses())
+    assert (
+        f"same {len(matrix_areas)} frontal, visual, hippocampal, and thalamic areas"
+        in manuscript
+    )
+    assert "at least 10 tested units in at least eight of the 16 events" in manuscript
     assert "12,968 sorted units" in manuscript
     assert "8,093 passed the manuscript QC thresholds" in manuscript
     # The four sessions come from 830794, not the 830846 the figure first used.
@@ -690,6 +700,9 @@ def test_supplementary_and_power_figures_are_current() -> None:
     figure_caption = figure_caption[: figure_caption.index("\n:::")]
     assert "mouse 830794" in figure_caption
     assert "830846" not in figure_caption
+    assert "sequence-cohort mouse" not in figure_caption
+    assert "Solid teal traces" in figure_caption
+    assert "dashed gray traces" in figure_caption
     # Disclosures the caption must carry, each recording a real limitation.
     assert "subsequence of that fixed order, not a re-embedding" in manuscript
     assert "hatched, not shaded" in manuscript
@@ -1073,9 +1086,9 @@ def test_interactive_figure_has_static_fallback() -> None:
 def test_unit_yield_summary_means_are_order_independent() -> None:
     """Summary means must not depend on record order.
 
-    Naive sum()/len() differs in its last bits with the summation order, so a
-    change in record order silently rewrote these values and dirtied the
-    committed HTML on every rebuild without any input changing.
+    Left-to-right accumulation reproduces the rounding drift that dirtied the
+    committed HTML. Do not use built-in sum() for this counterexample: Python
+    3.12 and later use a more accurate floating-point summation algorithm.
     """
     import random
     import statistics
@@ -1099,10 +1112,13 @@ def test_unit_yield_summary_means_are_order_independent() -> None:
         333.5,
     ]
     rng = random.Random(0)
-    naive = {
-        sum(order) / len(order)
-        for order in (rng.sample(values, len(values)) for _ in range(200))
-    }
+    naive = set()
+    for _ in range(200):
+        order = rng.sample(values, len(values))
+        total = 0.0
+        for value in order:
+            total += value
+        naive.add(total / len(order))
     exact = {
         statistics.mean(order)
         for order in (rng.sample(values, len(values)) for _ in range(200))

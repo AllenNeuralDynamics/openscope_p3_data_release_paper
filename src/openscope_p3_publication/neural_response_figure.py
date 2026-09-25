@@ -1150,18 +1150,23 @@ def append_static_rate_plot(
         return y + height - (value - lower) / (upper - lower) * height
 
     svg.append(
-        f'<rect x="{x:.2f}" y="{y:.2f}" width="{width:.2f}" '
-        f'height="{height:.2f}" fill="#FAFBFA" stroke="#D0D4D2"/>'
+        f'<path class="rate-axes" d="M {x:.2f} {y:.2f} '
+        f'V {y + height:.2f} H {x + width:.2f}" '
+        'fill="none" stroke="#646B68" stroke-width="1"/>'
     )
     for tick in y_ticks:
         tick_y = py(tick)
+        if abs(tick) < 1e-9 and lower < tick < upper:
+            svg.append(
+                f'<line x1="{x:.2f}" y1="{tick_y:.2f}" x2="{x + width:.2f}" '
+                f'y2="{tick_y:.2f}" stroke="#D0D4D2" stroke-width="1"/>'
+            )
         svg.extend(
             [
                 (
-                    f'<line x1="{x:.2f}" y1="{tick_y:.2f}" x2="{x + width:.2f}" '
-                    f'y2="{tick_y:.2f}" stroke="'
-                    f'{"#9CA29F" if abs(tick) < 1e-9 else "#E1E4E2"}" '
-                    'stroke-width="1"/>'
+                    f'<line class="rate-y-tick" x1="{x - 6:.2f}" '
+                    f'y1="{tick_y:.2f}" x2="{x:.2f}" y2="{tick_y:.2f}" '
+                    'stroke="#646B68" stroke-width="1"/>'
                 ),
                 svg_text(
                     x - 7,
@@ -1252,15 +1257,34 @@ def append_static_rate_plot(
     ticks = time_axis_ticks(display_start, display_end)
     for tick in ticks:
         svg.append(
+            f'<line class="rate-x-tick" x1="{px(tick):.2f}" '
+            f'y1="{y + height:.2f}" x2="{px(tick):.2f}" '
+            f'y2="{y + height + 6:.2f}" stroke="#646B68" stroke-width="1"/>'
+        )
+        svg.append(
             svg_text(
                 px(tick),
-                y + height + 22,
+                y + height + 34,
                 str(tick),
                 size=FIGURE_TYPE_SCALE["small"],
-                anchor="middle",
+                anchor=(
+                    "start" if tick == display_start
+                    else "end" if tick == display_end
+                    else "middle"
+                ),
                 fill="#646B68",
             )
         )
+    svg.append(
+        svg_text(
+            x + width / 2,
+            y + height + 66,
+            "Time from mismatch (s)",
+            size=FIGURE_TYPE_SCALE["small"],
+            anchor="middle",
+            fill="#646B68",
+        )
+    )
 
 
 def time_axis_ticks(start: float, stop: float) -> tuple[float, ...]:
@@ -1619,18 +1643,6 @@ def write_neuropixels_event_svg(
     sessions = {session["context"]: session for session in payload["sessions"]}
     panel_gap = 48
     panel_width = (width - left - right - 3 * panel_gap) / 4
-    svg.extend(
-        [
-            svg_text(
-                left - 80,
-                line_top + line_height / 2,
-                "Δ firing rate",
-                size=FIGURE_TYPE_SCALE["label"],
-                weight=700,
-                anchor="end",
-            ),
-        ]
-    )
     for group_index, (group_label, group_filter) in enumerate(
         STATIC_EXAMPLE_GROUPS
     ):
@@ -1645,6 +1657,16 @@ def write_neuropixels_event_svg(
                 size=FIGURE_TYPE_SCALE["label"],
                 weight=700,
                 anchor="end",
+            )
+        )
+        svg.append(
+            svg_text(
+                left - 80,
+                row_line_top + line_height / 2 + 26,
+                "(spikes/s)",
+                size=FIGURE_TYPE_SCALE["small"],
+                anchor="end",
+                fill="#646B68",
             )
         )
         # Rotated into the left margin: horizontal, the longer group names run
@@ -1916,6 +1938,23 @@ def write_neuropixels_event_svg(
                 unit_count=len(selected),
                 qualified_count=qualified_count,
             )
+    for legend_x, label, color, dash in (
+        (left, "Mismatch", "#315F73", ""),
+        (left + 310, "Matched control", "#8A918E", ' stroke-dasharray="8 6"'),
+    ):
+        svg.append(
+            f'<line x1="{legend_x:.2f}" y1="{height - 30:.2f}" '
+            f'x2="{legend_x + 64:.2f}" y2="{height - 30:.2f}" '
+            f'stroke="{color}" stroke-width="3"{dash}/>'
+        )
+        svg.append(
+            svg_text(
+                legend_x + 78,
+                height - 23,
+                label,
+                size=FIGURE_TYPE_SCALE["label"],
+            )
+        )
     svg.append("</svg>")
     output.parent.mkdir(parents=True, exist_ok=True)
     write_svg_output(output, svg)

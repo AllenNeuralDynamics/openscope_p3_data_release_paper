@@ -600,6 +600,13 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert "Mismatch response averaged over units in" in html
     assert "Mismatch response for unit" in html
     assert 'class="interactive-controls"' in html
+    assert ".response-panel {\n  overflow-x: auto;\n}" in html
+    assert "@media (max-width: 400px)" in html
+    assert (
+        ".control-grid,\n  #metric-tabs {\n"
+        "    grid-template-columns: minmax(0, 1fr);\n  }"
+    ) in html
+    assert ".checkbox-group {\n  display: flex;\n  flex-wrap: wrap;" in html
     assert "baselineSubtracted && yRange[0] <= 0" in html
     assert "function plotHorizontalBounds()" in html
     assert "const plot = { ...plotHorizontalBounds(), top: 22, bottom: 280 }" in html
@@ -627,7 +634,15 @@ def test_neuropixels_event_outputs_are_deterministic_and_accessible(
     assert 'id="minimum-firing-rate"' in html
     assert 'id="unit-count"' not in html
     assert "Δ firing rate" in html
-    assert "Δ firing rate" in svg
+    assert svg.count(">Δ firing rate</text>") == 2
+    assert svg.count('class="rate-axes"') == 8
+    assert 'class="rate-x-tick"' in svg
+    assert 'class="rate-y-tick"' in svg
+    assert svg.count(">Time from mismatch (s)</text>") == 8
+    assert 'fill="#FAFBFA" stroke="#D0D4D2"' not in svg
+    assert svg.count(">(spikes/s)</text>") == 2
+    assert ">Mismatch</text>" in svg
+    assert ">Matched control</text>" in svg
     assert "spike-density function" in html
     assert "spike-density functions" in svg
     assert "±1 SEM across the same" in svg
