@@ -1,0 +1,436 @@
+{
+  "analysis": {
+    "checkpoint_version": 2,
+    "note": "Scientific calculations are the approved notebook analysis; this block only serializes its final figure inputs.",
+    "qc": {
+      "AMP_CUTOFF_MAX": 0.1,
+      "ISI_MAX": 0.01,
+      "PRESENCE_MIN": 0.9,
+      "SNR_MIN": 3.0
+    },
+    "random_seed": null
+  },
+  "generated_utc": "2026-10-03T00:04:41.105060+00:00",
+  "snapshot": "wavemap-analysis.json.gz",
+  "snapshot_sha256": "3ccdf6ddaa3448199f9b2a912368291b73e64aa83fd53f38176c90a91150dcf1",
+  "source": {
+    "archive": "DANDI",
+    "assets": [
+      {
+        "asset_id": "21988ae7-fce0-41f2-a2af-b6c2ddcd6e52",
+        "context": "Standard oddball",
+        "path": "sub-820454/sub-820454_ses-ecephys-820454-2025-11-05-15-21-15_ecephys.nwb",
+        "session_key": "820454_2025-11-05",
+        "size_bytes": 14443031618
+      },
+      {
+        "asset_id": "50a50f11-dbf8-482f-bc8f-6629e91c2f06",
+        "context": "Standard oddball",
+        "path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-27-11-25-31_ecephys.nwb",
+        "session_key": "830794_2026-01-27",
+        "size_bytes": 11376942209
+      },
+      {
+        "asset_id": "bcd5353c-af8e-4a60-87b6-8b29568d84f5",
+        "context": "Standard oddball",
+        "path": "sub-830795/sub-830795_ses-ecephys-830795-2026-02-24-15-08-59_ecephys.nwb",
+        "session_key": "830795_2026-02-24",
+        "size_bytes": 12379407293
+      },
+      {
+        "asset_id": "680d1c0c-e338-4d0b-ba29-4329436d2ae2",
+        "context": "Standard oddball",
+        "path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-11-10-19-32_ecephys.nwb",
+        "session_key": "830846_2026-03-11",
+        "size_bytes": 13095960631
+      },
+      {
+        "asset_id": "156b6e72-c822-471a-be9b-69297f4eda78",
+        "context": "Standard oddball",
+        "path": "sub-830847/sub-830847_ses-ecephys-830847-2026-03-11-15-46-40_ecephys.nwb",
+        "session_key": "830847_2026-03-11",
+        "size_bytes": 13434010643
+      },
+      {
+        "asset_id": "e597fc7d-a8e5-4a1f-833e-4eee1c139e35",
+        "context": "Standard oddball",
+        "path": "sub-830848/sub-830848_ses-ecephys-830848-2026-03-04-15-34-54_ecephys.nwb",
+        "session_key": "830848_2026-03-04",
+        "size_bytes": 12852157417
+      },
+      {
+        "asset_id": "ce62d153-644b-4da9-b5a7-823353bb7ccb",
+        "context": "Standard oddball",
+        "path": "sub-830849/sub-830849_ses-ecephys-830849-2026-03-06-10-51-58_ecephys.nwb",
+        "session_key": "830849_2026-03-06",
+        "size_bytes": 12544938972
+      },
+      {
+        "asset_id": "9b9e8abe-7b43-47f1-b8e1-4114f87898a1",
+        "context": "Standard oddball",
+        "path": "sub-830851/sub-830851_ses-ecephys-830851-2026-03-17-10-46-04_ecephys.nwb",
+        "session_key": "830851_2026-03-17",
+        "size_bytes": 12793015545
+      },
+      {
+        "asset_id": "92ea6e6a-7525-4589-bfd3-839a48d27b7c",
+        "context": "Standard oddball",
+        "path": "sub-830852/sub-830852_ses-ecephys-830852-2026-02-24-10-20-58_ecephys.nwb",
+        "session_key": "830852_2026-02-24",
+        "size_bytes": 12490078288
+      },
+      {
+        "asset_id": "edfcb46c-943c-4ba7-b47f-2d3f24e1cf59",
+        "context": "Standard oddball",
+        "path": "sub-834686/sub-834686_ses-ecephys-834686-2026-03-25-15-47-48_ecephys.nwb",
+        "session_key": "834686_2026-03-25",
+        "size_bytes": 12754631214
+      },
+      {
+        "asset_id": "a7f50043-8883-4c0e-a956-2ff3e0f1b0ef",
+        "context": "Standard oddball",
+        "path": "sub-834687/sub-834687_ses-ecephys-834687-2026-03-18-15-50-10_ecephys.nwb",
+        "session_key": "834687_2026-03-18",
+        "size_bytes": 12819445281
+      },
+      {
+        "asset_id": "a909a36b-7f70-4e9f-b95e-7f913e5d724a",
+        "context": "Standard oddball",
+        "path": "sub-834691/sub-834691_ses-ecephys-834691-2026-02-17-10-49-35_ecephys.nwb",
+        "session_key": "834691_2026-02-17",
+        "size_bytes": 11195891728
+      },
+      {
+        "asset_id": "fedadbb4-0398-44bd-9678-f0bcc0e52fd3",
+        "context": "Standard oddball",
+        "path": "sub-848387/sub-848387_ses-ecephys-848387-2026-05-05-15-55-50_ecephys.nwb",
+        "session_key": "848387_2026-05-05",
+        "size_bytes": 12898130425
+      },
+      {
+        "asset_id": "81807807-957a-40bf-9b81-52a8d560c8e6",
+        "context": "Standard oddball",
+        "path": "sub-848390/sub-848390_ses-ecephys-848390-2026-05-05-10-08-25_ecephys.nwb",
+        "session_key": "848390_2026-05-05",
+        "size_bytes": 13493293847
+      },
+      {
+        "asset_id": "f8d9deb3-aea1-4dc7-a431-eaaf1234f41d",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-820454/sub-820454_ses-ecephys-820454-2025-11-04-14-59-22_ecephys.nwb",
+        "session_key": "820454_2025-11-04",
+        "size_bytes": 14269876564
+      },
+      {
+        "asset_id": "939c7b32-16fe-4eed-9daa-d5d068719d3f",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-820459/sub-820459_ses-ecephys-820459-2025-11-10-15-07-13_ecephys.nwb",
+        "session_key": "820459_2025-11-10",
+        "size_bytes": 14546728646
+      },
+      {
+        "asset_id": "0766996b-2afa-4c6f-a381-134c9e380edc",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys.nwb",
+        "session_key": "830794_2026-01-26",
+        "size_bytes": 14217076523
+      },
+      {
+        "asset_id": "7cd06d90-c19f-46b9-b55c-1f00d504d465",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-830795/sub-830795_ses-ecephys-830795-2026-02-23-15-03-59_ecephys.nwb",
+        "session_key": "830795_2026-02-23",
+        "size_bytes": 13368334931
+      },
+      {
+        "asset_id": "7b0e4734-f3e6-4733-8318-223a28687ec1",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-12-11-09-13_ecephys.nwb",
+        "session_key": "830846_2026-03-12",
+        "size_bytes": 12683310294
+      },
+      {
+        "asset_id": "84070a17-ae47-4b6d-a7d8-734d8d21dca3",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-830847/sub-830847_ses-ecephys-830847-2026-03-12-17-14-42_ecephys.nwb",
+        "session_key": "830847_2026-03-12",
+        "size_bytes": 12676054519
+      },
+      {
+        "asset_id": "2ed970d7-bd28-4329-bb84-b117f34666e1",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-830848/sub-830848_ses-ecephys-830848-2026-03-05-16-07-50_ecephys.nwb",
+        "session_key": "830848_2026-03-05",
+        "size_bytes": 12103183340
+      },
+      {
+        "asset_id": "ab8ec755-2b87-45c3-a29d-dd88955334b8",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-830849/sub-830849_ses-ecephys-830849-2026-03-07-09-48-16_ecephys.nwb",
+        "session_key": "830849_2026-03-07",
+        "size_bytes": 10330875850
+      },
+      {
+        "asset_id": "fc14f27c-4b7d-4332-8562-a4c824f757f3",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-830851/sub-830851_ses-ecephys-830851-2026-03-16-10-18-07_ecephys.nwb",
+        "session_key": "830851_2026-03-16",
+        "size_bytes": 13439021835
+      },
+      {
+        "asset_id": "a2117740-4bb3-43ba-9f6a-f924e0fe730e",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-830852/sub-830852_ses-ecephys-830852-2026-02-23-10-31-02_ecephys.nwb",
+        "session_key": "830852_2026-02-23",
+        "size_bytes": 13564802781
+      },
+      {
+        "asset_id": "e9d251dc-a14c-4734-b477-7b34c722f9ec",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-832691/sub-832691_ses-ecephys-832691-2026-03-26-10-51-37_ecephys.nwb",
+        "session_key": "832691_2026-03-26",
+        "size_bytes": 12127260332
+      },
+      {
+        "asset_id": "5def47b4-4462-4095-9499-4ba50743ee37",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-834686/sub-834686_ses-ecephys-834686-2026-03-26-16-15-13_ecephys.nwb",
+        "session_key": "834686_2026-03-26",
+        "size_bytes": 12866315174
+      },
+      {
+        "asset_id": "1383e4be-0adc-46ba-8277-b43a19940fbd",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-834687/sub-834687_ses-ecephys-834687-2026-03-19-16-06-07_ecephys.nwb",
+        "session_key": "834687_2026-03-19",
+        "size_bytes": 13158022734
+      },
+      {
+        "asset_id": "a61fd29f-3ac8-423b-b337-42cb63b6a312",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-834691/sub-834691_ses-ecephys-834691-2026-02-16-11-02-15_ecephys.nwb",
+        "session_key": "834691_2026-02-16",
+        "size_bytes": 14425000556
+      },
+      {
+        "asset_id": "47aabdea-219a-4b42-99d2-4b60b0b98d92",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-848387/sub-848387_ses-ecephys-848387-2026-05-04-16-19-01_ecephys.nwb",
+        "session_key": "848387_2026-05-04",
+        "size_bytes": 13374859802
+      },
+      {
+        "asset_id": "ca2adad7-2212-4915-a4d4-f3b869fa6da2",
+        "context": "Sensorimotor mismatch",
+        "path": "sub-848390/sub-848390_ses-ecephys-848390-2026-05-04-10-22-33_ecephys.nwb",
+        "session_key": "848390_2026-05-04",
+        "size_bytes": 14435558612
+      },
+      {
+        "asset_id": "f5b3a6c5-6353-40bf-99bf-8654459e40d0",
+        "context": "Sequence mismatch",
+        "path": "sub-820454/sub-820454_ses-ecephys-820454-2025-11-06-16-00-27_ecephys.nwb",
+        "session_key": "820454_2025-11-06",
+        "size_bytes": 14174058553
+      },
+      {
+        "asset_id": "8ebdc034-5acf-41cc-8a32-759faba6ab0e",
+        "context": "Sequence mismatch",
+        "path": "sub-820459/sub-820459_ses-ecephys-820459-2025-11-12-14-34-33_ecephys.nwb",
+        "session_key": "820459_2025-11-12",
+        "size_bytes": 11537651205
+      },
+      {
+        "asset_id": "f30a96cf-3d66-4975-8d43-65138633fb93",
+        "context": "Sequence mismatch",
+        "path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-28-11-01-44_ecephys.nwb",
+        "session_key": "830794_2026-01-28",
+        "size_bytes": 11278525755
+      },
+      {
+        "asset_id": "1811cdd7-c178-4882-b1eb-c9f1a74b1703",
+        "context": "Sequence mismatch",
+        "path": "sub-830795/sub-830795_ses-ecephys-830795-2026-02-25-16-03-31_ecephys.nwb",
+        "session_key": "830795_2026-02-25",
+        "size_bytes": 10345501565
+      },
+      {
+        "asset_id": "03973a42-cf55-476f-80d7-85bc402fa57b",
+        "context": "Sequence mismatch",
+        "path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-09-10-32-54_ecephys.nwb",
+        "session_key": "830846_2026-03-09",
+        "size_bytes": 13703955952
+      },
+      {
+        "asset_id": "3d958caf-28eb-4cfd-ad81-58921f7f4e76",
+        "context": "Sequence mismatch",
+        "path": "sub-830847/sub-830847_ses-ecephys-830847-2026-03-09-16-23-49_ecephys.nwb",
+        "session_key": "830847_2026-03-09",
+        "size_bytes": 13123620774
+      },
+      {
+        "asset_id": "236c72ab-7254-4887-ad31-f53d7d58178e",
+        "context": "Sequence mismatch",
+        "path": "sub-830848/sub-830848_ses-ecephys-830848-2026-03-02-15-05-26_ecephys.nwb",
+        "session_key": "830848_2026-03-02",
+        "size_bytes": 13813254379
+      },
+      {
+        "asset_id": "fe5b6b44-12a6-4f59-a91f-953850564fb0",
+        "context": "Sequence mismatch",
+        "path": "sub-830849/sub-830849_ses-ecephys-830849-2026-03-04-10-14-36_ecephys.nwb",
+        "session_key": "830849_2026-03-04",
+        "size_bytes": 10537232843
+      },
+      {
+        "asset_id": "24822bc8-01d9-473f-9eef-615fa01119d9",
+        "context": "Sequence mismatch",
+        "path": "sub-830851/sub-830851_ses-ecephys-830851-2026-03-18-10-24-59_ecephys.nwb",
+        "session_key": "830851_2026-03-18",
+        "size_bytes": 12943402571
+      },
+      {
+        "asset_id": "fd3752b1-4484-4911-a76f-9ff4117d0033",
+        "context": "Sequence mismatch",
+        "path": "sub-830852/sub-830852_ses-ecephys-830852-2026-02-25-10-32-11_ecephys.nwb",
+        "session_key": "830852_2026-02-25",
+        "size_bytes": 12418794543
+      },
+      {
+        "asset_id": "db209ca2-bbed-48cb-a892-1f488b3fd9f5",
+        "context": "Sequence mismatch",
+        "path": "sub-832691/sub-832691_ses-ecephys-832691-2026-03-23-11-28-47_ecephys.nwb",
+        "session_key": "832691_2026-03-23",
+        "size_bytes": 13383363061
+      },
+      {
+        "asset_id": "0b7227e9-0c03-46ea-be70-618a73efb67d",
+        "context": "Sequence mismatch",
+        "path": "sub-834686/sub-834686_ses-ecephys-834686-2026-03-23-17-08-31_ecephys.nwb",
+        "session_key": "834686_2026-03-23",
+        "size_bytes": 13156860075
+      },
+      {
+        "asset_id": "517c02b2-1ebb-4960-85d8-5ae16294b8c2",
+        "context": "Sequence mismatch",
+        "path": "sub-834687/sub-834687_ses-ecephys-834687-2026-03-16-16-33-30_ecephys.nwb",
+        "session_key": "834687_2026-03-16",
+        "size_bytes": 13765640246
+      },
+      {
+        "asset_id": "409f5707-a886-46d7-b392-578b55fa8517",
+        "context": "Sequence mismatch",
+        "path": "sub-848387/sub-848387_ses-ecephys-848387-2026-05-06-15-09-10_ecephys.nwb",
+        "session_key": "848387_2026-05-06",
+        "size_bytes": 10857556927
+      },
+      {
+        "asset_id": "fbfc5171-af65-408e-bfec-d72d9f7f0c4a",
+        "context": "Sequence mismatch",
+        "path": "sub-848390/sub-848390_ses-ecephys-848390-2026-05-06-09-54-56_ecephys.nwb",
+        "session_key": "848390_2026-05-06",
+        "size_bytes": 13309249183
+      },
+      {
+        "asset_id": "56125aec-75a4-4b31-a3bf-cbf5843f1513",
+        "context": "Duration mismatch",
+        "path": "sub-820454/sub-820454_ses-ecephys-820454-2025-11-07-10-54-23_ecephys.nwb",
+        "session_key": "820454_2025-11-07",
+        "size_bytes": 13649729637
+      },
+      {
+        "asset_id": "d8a2fb8e-d542-4c9b-9c71-38942b2049f0",
+        "context": "Duration mismatch",
+        "path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-29-11-12-57_ecephys.nwb",
+        "session_key": "830794_2026-01-29",
+        "size_bytes": 12762757920
+      },
+      {
+        "asset_id": "f8d5d0b7-c168-4b94-a35e-6f31a3263037",
+        "context": "Duration mismatch",
+        "path": "sub-830795/sub-830795_ses-ecephys-830795-2026-02-26-16-01-33_ecephys.nwb",
+        "session_key": "830795_2026-02-26",
+        "size_bytes": 10130492844
+      },
+      {
+        "asset_id": "77123ffa-5029-4485-a2e5-2eacac954f74",
+        "context": "Duration mismatch",
+        "path": "sub-830846/sub-830846_ses-ecephys-830846-2026-03-10-10-17-25_ecephys.nwb",
+        "session_key": "830846_2026-03-10",
+        "size_bytes": 13866851937
+      },
+      {
+        "asset_id": "bc2150b9-c9af-43af-a9ea-31f53fd4c89e",
+        "context": "Duration mismatch",
+        "path": "sub-830847/sub-830847_ses-ecephys-830847-2026-03-10-16-32-25_ecephys.nwb",
+        "session_key": "830847_2026-03-10",
+        "size_bytes": 13522638965
+      },
+      {
+        "asset_id": "888b9f69-91b1-4f61-8086-f8e8bd8d9dfb",
+        "context": "Duration mismatch",
+        "path": "sub-830848/sub-830848_ses-ecephys-830848-2026-03-03-14-02-09_ecephys.nwb",
+        "session_key": "830848_2026-03-03",
+        "size_bytes": 13346537888
+      },
+      {
+        "asset_id": "2c0d0e6c-4ae7-4457-b5ae-95fd6bff6539",
+        "context": "Duration mismatch",
+        "path": "sub-830849/sub-830849_ses-ecephys-830849-2026-03-05-10-41-20_ecephys.nwb",
+        "session_key": "830849_2026-03-05",
+        "size_bytes": 10371993988
+      },
+      {
+        "asset_id": "0167df0a-b5f1-45bd-9659-c32ac132d875",
+        "context": "Duration mismatch",
+        "path": "sub-830851/sub-830851_ses-ecephys-830851-2026-03-19-10-49-11_ecephys.nwb",
+        "session_key": "830851_2026-03-19",
+        "size_bytes": 12355834834
+      },
+      {
+        "asset_id": "1c0dcb79-5ee9-42d1-bed0-a63494f5fceb",
+        "context": "Duration mismatch",
+        "path": "sub-830852/sub-830852_ses-ecephys-830852-2026-02-26-10-49-56_ecephys.nwb",
+        "session_key": "830852_2026-02-26",
+        "size_bytes": 12237558197
+      },
+      {
+        "asset_id": "83f05015-64ee-4822-a968-ff89aa76d774",
+        "context": "Duration mismatch",
+        "path": "sub-832691/sub-832691_ses-ecephys-832691-2026-03-24-10-04-30_ecephys.nwb",
+        "session_key": "832691_2026-03-24",
+        "size_bytes": 13235798628
+      },
+      {
+        "asset_id": "8dd6fc70-7e57-47b7-83db-948c13673f83",
+        "context": "Duration mismatch",
+        "path": "sub-834686/sub-834686_ses-ecephys-834686-2026-03-24-15-41-18_ecephys.nwb",
+        "session_key": "834686_2026-03-24",
+        "size_bytes": 13878852902
+      },
+      {
+        "asset_id": "3cbaa2f1-687c-438f-adea-358b4893383f",
+        "context": "Duration mismatch",
+        "path": "sub-834687/sub-834687_ses-ecephys-834687-2026-03-17-16-18-25_ecephys.nwb",
+        "session_key": "834687_2026-03-17",
+        "size_bytes": 13650559026
+      },
+      {
+        "asset_id": "d591f984-d9b1-4d13-ad4f-10880ef62aa8",
+        "context": "Duration mismatch",
+        "path": "sub-848387/sub-848387_ses-ecephys-848387-2026-05-07-15-46-10_ecephys.nwb",
+        "session_key": "848387_2026-05-07",
+        "size_bytes": 13221443848
+      },
+      {
+        "asset_id": "d314e00a-b97a-48fc-98ee-81506fee0db8",
+        "context": "Duration mismatch",
+        "path": "sub-848390/sub-848390_ses-ecephys-848390-2026-05-07-10-22-45_ecephys.nwb",
+        "session_key": "848390_2026-05-07",
+        "size_bytes": 12792980877
+      }
+    ],
+    "dandiset_id": "001637",
+    "version": "draft"
+  }
+}
