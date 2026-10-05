@@ -6,10 +6,12 @@ import re
 import runpy
 import struct
 import urllib.parse
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
 
+from openscope_p3_publication.authorship import apply_author_review
 from openscope_p3_publication.neural_response_figure import (
     load_neuropixels_event_responses,
     response_matrix,
@@ -214,6 +216,99 @@ def test_manuscript_marks_unfinished_content() -> None:
         assert stale_marker not in manuscript
 
 
+@pytest.fixture(name="author_review_example")
+def author_review_data() -> tuple[dict, dict]:
+    payload = {
+        "project_name": "example-project",
+        "sections": ["Original section", "Corrected section", "Other section"],
+        "contributors": [
+            {
+                "author": {"name": "First Author", "affiliation": ["Example Institute"]},
+                "credit_levels": [{"role": "software", "level": "supporting"}],
+                "section_levels": [
+                    {"section": "Original section", "level": "supporting", "description": "QC"},
+                    {"section": "Other section", "level": "equal"},
+                ],
+            },
+            {"author": {"name": "Second Author"}},
+            {"author": {"name": "Third Author"}},
+        ],
+    }
+    review = {
+        "project": "example-project",
+        "commit": "reviewed-version",
+        "contributors": {
+            "Second Author": {"name": "Corrected Name"},
+            "First Author": {"sections": {"Original section": "Corrected section"}},
+        },
+    }
+    return payload, review
+
+
+def test_author_review_preserves_submissions_and_portal_order(author_review_example) -> None:
+    payload, review = author_review_example
+    original_payload = deepcopy(payload)
+    original_review = deepcopy(review)
+
+    reviewed = apply_author_review(payload, review, "reviewed-version")
+
+    assert payload == original_payload
+    assert review == original_review
+    assert [entry["author"]["name"] for entry in reviewed["contributors"]] == [
+        "First Author", "Corrected Name"
+    ]
+    expected = deepcopy(payload)
+    expected["contributors"] = expected["contributors"][:2]
+    expected["contributors"][0]["section_levels"][0]["section"] = "Corrected section"
+    expected["contributors"][1]["author"]["name"] = "Corrected Name"
+    assert reviewed == expected
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"project": "other-project"}, "project does not match"),
+        ({"commit": "other-version"}, "commit does not match"),
+        ({"contributors": {}}, "nonempty mapping"),
+        ({"contributors": []}, "nonempty mapping"),
+        ({"contributors": {"Unknown Author": {}}}, "unknown contributors"),
+        ({"contributors": {"First Author": {"roles": []}}}, "Unsupported"),
+        ({"contributors": {"First Author": {"name": " "}}}, "nonempty string"),
+        ({"contributors": {"First Author": {"sections": []}}}, "must be a mapping"),
+        (
+            {"contributors": {"First Author": {"sections": {"Absent": "Corrected section"}}}},
+            "not present",
+        ),
+        (
+            {"contributors": {"First Author": {"sections": {"Original section": "Absent"}}}},
+            "not a project section",
+        ),
+        (
+            {"contributors": {"First Author": {"sections": {"Original section": "Other section"}}}},
+            "would contain duplicates",
+        ),
+        (
+            {"contributors": {"First Author": {"name": "Second Author"}, "Second Author": {}}},
+            "names would contain duplicates",
+        ),
+    ],
+)
+def test_author_review_rejects_invalid_changes(author_review_example, changes, message) -> None:
+    payload, review = author_review_example
+    review.update(changes)
+
+    with pytest.raises(ValueError, match=message):
+        apply_author_review(payload, review, "reviewed-version")
+
+
+def test_author_review_rejects_ambiguous_portal_names(author_review_example) -> None:
+    payload, review = author_review_example
+    payload["contributors"][2]["author"]["name"] = "First Author"
+
+    with pytest.raises(ValueError, match="nonempty and unique"):
+        apply_author_review(payload, review, "reviewed-version")
+
+
 def test_authorship_snapshot_is_portal_backed() -> None:
     authors = (REPO_ROOT / "authors.yml").read_text(encoding="utf-8")
     avatars = json.loads((REPO_ROOT / "author_avatars.json").read_text(encoding="utf-8"))
@@ -222,7 +317,10 @@ def test_authorship_snapshot_is_portal_backed() -> None:
     assert commit
     assert 'project: "p3_data_release"' in authors
     assert f"commit={commit.group(1)}&format=json" in authors
-    assert authors.count('\n      name: "') == 19
+    author_ids = re.findall(r'^      id: "([^"]+)"$', authors, re.MULTILINE)
+    assert len(author_ids) == len(set(author_ids))
+    assert authors.count('\n      name: "') == len(author_ids)
+    assert len(author_ids) >= len(avatars["contributors"]) + len(avatars["unresolved"])
     for contributor in (
         "Jérôme Lecoq",
         "Peter A Groblewski",

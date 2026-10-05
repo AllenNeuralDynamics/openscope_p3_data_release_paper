@@ -21,6 +21,26 @@ After changing your portal record, notify the repository maintainer and request 
 
 The maintainer-run sync pins the newest portal commit and maps its ORCID, affiliation, CRediT-level, and section-level records into the structure consumed by [AuthorshipExtractor](https://github.com/AllenNeuralDynamics/AuthorshipExtractor). Do not infer or assign contributions on another person's behalf; authors should review their own portal record.
 
+For a one-time reviewed refresh, a maintainer may pass `--review-file /path/outside/the/clone/approval.json`. Keep this file outside the repository. It identifies the reviewed portal version and the approved contributors by their exact submitted names, with optional explicitly confirmed name or section corrections:
+
+```json
+{
+	"project": "p3_data_release",
+	"commit": "<reviewed portal commit>",
+	"contributors": {
+		"First Submitted Name": {},
+		"Second Submitted Name": {
+			"name": "Confirmed Publication Name",
+			"sections": {
+				"Neuropixels data validation": "Mesoscope data validation"
+			}
+		}
+	}
+}
+```
+
+Only the listed contributors are included, in portal order. The sync reads that exact version, preserves submitted records, roles, effort levels, and other metadata, and marks the generated snapshot as reviewed without recording the local review file or its approval list in provenance. Unknown names, ambiguous names, and invalid section corrections stop the refresh. The review applies only to that invocation: omitting `--review-file` restores the normal full-portal refresh. Run the publication checks after regenerating the snapshot.
+
 ## Figures
 
 Every figure needs:
