@@ -6131,6 +6131,7 @@ def main() -> None:
         write_sensorimotor_running_html,
         write_sensorimotor_running_svg,
     )
+    from .wavemap_figure import build_wavemap_publication
 
     merged_figure_1_path = write_merged_figure_1_svg()
     figure_1_panel_c_path = write_figure_1_panel_c_svg()
@@ -6163,6 +6164,7 @@ def main() -> None:
     mismatch_adjacency_svg_path = write_mismatch_adjacency_svg()
     sensorimotor_running_svg_path = write_sensorimotor_running_svg()
     sensorimotor_running_html_path = write_sensorimotor_running_html()
+    wavemap_paths = build_wavemap_publication()
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {figure_1_panel_c_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
@@ -6196,6 +6198,8 @@ def main() -> None:
     print(f"Wrote {mismatch_adjacency_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {sensorimotor_running_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {sensorimotor_running_html_path.relative_to(REPO_ROOT)}")
+    for path in wavemap_paths:
+        print(f"Wrote {path.relative_to(REPO_ROOT)}")
 
 
 if __name__ == "__main__":

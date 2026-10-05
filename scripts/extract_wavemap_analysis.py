@@ -9,14 +9,13 @@ This script writes the compact intermediate consumed by the publication figures.
 # ==================== ORIGINAL NOTEBOOK CELL 4 ====================
 # Cell 2: Imports, optional GPU acceleration, and local checkpoint storage
 
-import os
-import json
-import re
 import gc
-import math
 import gzip
+import json
+import os
 import pickle
 import random
+import re
 import shutil
 import warnings
 from pathlib import Path
@@ -29,33 +28,27 @@ from pathlib import Path
 GPU_ACCELERATION = False
 try:
     import cuml
+
     cuml.accel.install(log_level="warn")
     GPU_ACCELERATION = True
     print(f"Optional GPU acceleration enabled (cuML {cuml.__version__}).")
 except Exception:
-    print("cuML not available: using standard CPU umap-learn. This is scientifically equivalent for this workflow.")
+    print("cuML not available: using standard CPU umap-learn.")
 
-import numpy as np
-import pandas as pd
+import fsspec
+import h5py
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import seaborn as sns
-
-from scipy import stats
-from scipy.ndimage import gaussian_filter1d
-import sklearn.preprocessing
-
-import h5py
-import fsspec
-from fsspec.implementations.cached import CachingFileSystem
-from pynwb import NWBHDF5IO
-from dandi.dandiapi import DandiAPIClient
-
-import umap
 import networkx as nx
-import community as community_louvain
-
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import sklearn.preprocessing
+import umap
+from dandi.dandiapi import DandiAPIClient
+from fsspec.implementations.cached import CachingFileSystem
 from IPython.display import display
+from pynwb import NWBHDF5IO
 
 # ------------------------------------------------------------
 # Repository-safe local paths (infrastructure only)
@@ -113,33 +106,71 @@ CONTEXT_ORDER = [
 # Current Neuropixels session inventory from Table 1 of the data-release manuscript.
 SESSION_KEYS = {
     "Standard oddball": [
-        "820454_2025-11-05", "830794_2026-01-27", "830795_2026-02-24",
-        "830846_2026-03-11", "830847_2026-03-11", "830848_2026-03-04",
-        "830849_2026-03-06", "830851_2026-03-17", "830852_2026-02-24",
-        "834686_2026-03-25", "834687_2026-03-18", "834691_2026-02-17",
-        "848387_2026-05-05", "848390_2026-05-05",
+        "820454_2025-11-05",
+        "830794_2026-01-27",
+        "830795_2026-02-24",
+        "830846_2026-03-11",
+        "830847_2026-03-11",
+        "830848_2026-03-04",
+        "830849_2026-03-06",
+        "830851_2026-03-17",
+        "830852_2026-02-24",
+        "834686_2026-03-25",
+        "834687_2026-03-18",
+        "834691_2026-02-17",
+        "848387_2026-05-05",
+        "848390_2026-05-05",
     ],
     "Sensorimotor mismatch": [
-        "820454_2025-11-04", "820459_2025-11-10", "830794_2026-01-26",
-        "830795_2026-02-23", "830846_2026-03-12", "830847_2026-03-12",
-        "830848_2026-03-05", "830849_2026-03-07", "830851_2026-03-16",
-        "830852_2026-02-23", "832691_2026-03-26", "834686_2026-03-26",
-        "834687_2026-03-19", "834691_2026-02-16", "848387_2026-05-04",
+        "820454_2025-11-04",
+        "820459_2025-11-10",
+        "830794_2026-01-26",
+        "830795_2026-02-23",
+        "830846_2026-03-12",
+        "830847_2026-03-12",
+        "830848_2026-03-05",
+        "830849_2026-03-07",
+        "830851_2026-03-16",
+        "830852_2026-02-23",
+        "832691_2026-03-26",
+        "834686_2026-03-26",
+        "834687_2026-03-19",
+        "834691_2026-02-16",
+        "848387_2026-05-04",
         "848390_2026-05-04",
     ],
     "Sequence mismatch": [
-        "820454_2025-11-06", "820459_2025-11-12", "830794_2026-01-28",
-        "830795_2026-02-25", "830846_2026-03-09", "830847_2026-03-09",
-        "830848_2026-03-02", "830849_2026-03-04", "830851_2026-03-18",
-        "830852_2026-02-25", "832691_2026-03-23", "834686_2026-03-23",
-        "834687_2026-03-16", "848387_2026-05-06", "848390_2026-05-06",
+        "820454_2025-11-06",
+        "820459_2025-11-12",
+        "830794_2026-01-28",
+        "830795_2026-02-25",
+        "830846_2026-03-09",
+        "830847_2026-03-09",
+        "830848_2026-03-02",
+        "830849_2026-03-04",
+        "830851_2026-03-18",
+        "830852_2026-02-25",
+        "832691_2026-03-23",
+        "834686_2026-03-23",
+        "834687_2026-03-16",
+        "848387_2026-05-06",
+        "848390_2026-05-06",
     ],
     "Duration mismatch": [
-        "820454_2025-11-07", "830794_2026-01-29", "830795_2026-02-26",
-        "830846_2026-03-10", "830847_2026-03-10", "830848_2026-03-03",
-        "830849_2026-03-05", "830851_2026-03-19", "830852_2026-02-26",
-        "832691_2026-03-24", "834686_2026-03-24", "834687_2026-03-17",
-        "848387_2026-05-07", "848390_2026-05-07",
+        "820454_2025-11-07",
+        "830794_2026-01-29",
+        "830795_2026-02-26",
+        "830846_2026-03-10",
+        "830847_2026-03-10",
+        "830848_2026-03-03",
+        "830849_2026-03-05",
+        "830851_2026-03-19",
+        "830852_2026-02-26",
+        "832691_2026-03-24",
+        "834686_2026-03-24",
+        "834687_2026-03-17",
+        "848387_2026-05-07",
+        "848390_2026-05-07",
     ],
 }
 
@@ -153,9 +184,7 @@ session_inventory = pd.DataFrame(rows)
 session_inventory["date"] = pd.to_datetime(session_inventory["date"])
 
 first_context = (
-    session_inventory.sort_values("date")
-    .groupby("mouse_id", as_index=True)
-    .first()["context"]
+    session_inventory.sort_values("date").groupby("mouse_id", as_index=True).first()["context"]
 )
 cohort_map = {
     mouse: ("motor-first" if context == "Sensorimotor mismatch" else "sequence-first")
@@ -183,7 +212,7 @@ with DandiAPIClient() as client:
     dandiset = client.get_dandiset(DANDISET_ID)
 
     for row in session_inventory.itertuples(index=False):
-        date_str = row.date.strftime('%Y-%m-%d')
+        date_str = row.date.strftime("%Y-%m-%d")
         pattern = (
             f"sub-{row.mouse_id}/"
             f"sub-{row.mouse_id}_ses-ecephys-{row.mouse_id}-{date_str}-*_ecephys.nwb"
@@ -195,26 +224,28 @@ with DandiAPIClient() as client:
             resolved_paths.append(a.path)
             asset_ids.append(a.identifier)
             asset_sizes.append(a.size)
-            problems.append('')
+            problems.append("")
         else:
             resolved_paths.append(None)
             asset_ids.append(None)
             asset_sizes.append(np.nan)
             problems.append(f"{len(matches)} matches for {pattern}")
 
-session_inventory['filepath'] = resolved_paths
-session_inventory['asset_id'] = asset_ids
-session_inventory['asset_size_bytes'] = asset_sizes
-session_inventory['resolution_problem'] = problems
+session_inventory["filepath"] = resolved_paths
+session_inventory["asset_id"] = asset_ids
+session_inventory["asset_size_bytes"] = asset_sizes
+session_inventory["resolution_problem"] = problems
 
-bad = session_inventory[session_inventory['filepath'].isna()]
+bad = session_inventory[session_inventory["filepath"].isna()]
 if len(bad):
-    display(bad[['session_key', 'context', 'resolution_problem']])
-    raise RuntimeError('Some manuscript sessions could not be resolved uniquely on DANDI.')
+    display(bad[["session_key", "context", "resolution_problem"]])
+    raise RuntimeError("Some manuscript sessions could not be resolved uniquely on DANDI.")
 
 print(f"Resolved {len(session_inventory)}/{len(session_inventory)} manuscript sessions.")
-print(f"Total NWB asset size represented: {session_inventory['asset_size_bytes'].sum()/1e9:.1f} GB")
-display(session_inventory[['session_key','context','filepath','asset_size_bytes']].head())
+print(
+    f"Total NWB asset size represented: {session_inventory['asset_size_bytes'].sum() / 1e9:.1f} GB"
+)
+display(session_inventory[["session_key", "context", "filepath", "asset_size_bytes"]].head())
 
 
 # ==================== ORIGINAL NOTEBOOK CELL 10 ====================
@@ -244,16 +275,12 @@ for _qc_name, _qc_default in _QC_DEFAULTS.items():
         _missing_qc_settings.append(f"{_qc_name}={_qc_default}")
 
 if _missing_qc_settings:
-    print(
-        "[resume-safe] Restored missing QC settings: "
-        + ", ".join(_missing_qc_settings)
-    )
-
+    print("[resume-safe] Restored missing QC settings: " + ", ".join(_missing_qc_settings))
 
 
 def _decode_text(x):
     if isinstance(x, bytes):
-        return x.decode('utf-8', errors='replace')
+        return x.decode("utf-8", errors="replace")
     return str(x) if x is not None else None
 
 
@@ -277,7 +304,7 @@ def _safe_scalar(x):
     arr = np.asarray(x)
     if arr.size == 1:
         value = arr.reshape(-1)[0]
-        return value.item() if hasattr(value, 'item') else value
+        return value.item() if hasattr(value, "item") else value
     return x
 
 
@@ -318,9 +345,9 @@ def _select_peak_waveform(wf):
 
 
 def _get_waveform_sampling_rate(units_table):
-    wf_col = units_table['waveform_mean']
-    for obj in (wf_col, getattr(wf_col, 'target', None)):
-        if obj is not None and hasattr(obj, 'sampling_rate'):
+    wf_col = units_table["waveform_mean"]
+    for obj in (wf_col, getattr(wf_col, "target", None)):
+        if obj is not None and hasattr(obj, "sampling_rate"):
             try:
                 rate = float(obj.sampling_rate)
                 if np.isfinite(rate):
@@ -336,7 +363,7 @@ def _clean_area_label(x):
     if text is None:
         return None
     text = text.strip()
-    if text in {'', 'None', 'nan', 'unknown', 'Unknown', 'NONE', 'void'}:
+    if text in {"", "None", "nan", "unknown", "Unknown", "NONE", "void"}:
         return None
     return text
 
@@ -344,22 +371,26 @@ def _clean_area_label(x):
 def _build_ap_anatomy_lookup(nwb):
     """Map (probe/group name, AP channel index) -> electrode anatomical location."""
     if nwb.electrodes is None:
-        raise KeyError('NWB has no electrodes table; cannot assign anatomical areas.')
+        raise KeyError("NWB has no electrodes table; cannot assign anatomical areas.")
 
     et = nwb.electrodes
-    channel_col = _find_column(et, ['channel_name'])
-    group_col = _find_column(et, ['group_name', 'probe_name', 'device_name'])
-    location_col = _find_column(et, ['location', 'structure_acronym', 'brain_region'])
+    channel_col = _find_column(et, ["channel_name"])
+    group_col = _find_column(et, ["group_name", "probe_name", "device_name"])
+    location_col = _find_column(et, ["location", "structure_acronym", "brain_region"])
 
-    missing = [name for name, col in {
-        'channel_name': channel_col,
-        'group_name': group_col,
-        'location': location_col,
-    }.items() if col is None]
+    missing = [
+        name
+        for name, col in {
+            "channel_name": channel_col,
+            "group_name": group_col,
+            "location": location_col,
+        }.items()
+        if col is None
+    ]
     if missing:
         raise KeyError(
-            f'Electrode anatomy column(s) missing: {missing}. '
-            f'Available electrode columns: {list(et.colnames)}'
+            f"Electrode anatomy column(s) missing: {missing}. "
+            f"Available electrode columns: {list(et.colnames)}"
         )
 
     channel_names = np.asarray(et[channel_col][:], dtype=object)
@@ -367,13 +398,13 @@ def _build_ap_anatomy_lookup(nwb):
     locations = np.asarray(et[location_col][:], dtype=object)
 
     lookup = {}
-    for channel, group, location in zip(channel_names, group_names, locations):
+    for channel, group, location in zip(channel_names, group_names, locations, strict=False):
         channel = _decode_text(channel)
         group = _decode_text(group)
         if channel is None or group is None:
             continue
 
-        match = re.fullmatch(r'AP(\d+)', channel.strip())
+        match = re.fullmatch(r"AP(\d+)", channel.strip())
         if match is None:
             continue
 
@@ -382,41 +413,47 @@ def _build_ap_anatomy_lookup(nwb):
 
         if key in lookup and lookup[key] != location:
             raise ValueError(
-                f'Ambiguous anatomy for probe/channel {key}: '
-                f'{lookup[key]!r} versus {location!r}'
+                f"Ambiguous anatomy for probe/channel {key}: {lookup[key]!r} versus {location!r}"
             )
         lookup[key] = location
 
     if not lookup:
-        raise ValueError('No AP electrode channels could be mapped to anatomy.')
+        raise ValueError("No AP electrode channels could be mapped to anatomy.")
     return lookup
 
 
 def _preload_unit_anatomy(units, nwb):
     """Read device/extremum metadata once and assign anatomy for all units."""
-    probe_col = _find_column(units, ['device_name', 'probe_name', 'group_name'])
-    extremum_col = _find_column(units, ['extremum_channel_index'])
+    probe_col = _find_column(units, ["device_name", "probe_name", "group_name"])
+    extremum_col = _find_column(units, ["extremum_channel_index"])
 
-    missing = [name for name, col in {
-        'device_name': probe_col,
-        'extremum_channel_index': extremum_col,
-    }.items() if col is None]
+    missing = [
+        name
+        for name, col in {
+            "device_name": probe_col,
+            "extremum_channel_index": extremum_col,
+        }.items()
+        if col is None
+    ]
     if missing:
         raise KeyError(
-            f'Unit anatomy column(s) missing: {missing}. '
-            f'Available unit columns: {list(units.colnames)}'
+            f"Unit anatomy column(s) missing: {missing}. "
+            f"Available unit columns: {list(units.colnames)}"
         )
 
-    probes = np.array([
-        (_decode_text(x).strip() if _decode_text(x) is not None else None)
-        for x in np.asarray(units[probe_col][:], dtype=object)
-    ], dtype=object)
+    probes = np.array(
+        [
+            (_decode_text(x).strip() if _decode_text(x) is not None else None)
+            for x in np.asarray(units[probe_col][:], dtype=object)
+        ],
+        dtype=object,
+    )
     extremum = _numeric_array_or_nan(units[extremum_col][:], len(probes))
     lookup = _build_ap_anatomy_lookup(nwb)
 
     areas = np.empty(len(probes), dtype=object)
     areas[:] = None
-    for i, (probe, channel_idx) in enumerate(zip(probes, extremum)):
+    for i, (probe, channel_idx) in enumerate(zip(probes, extremum, strict=False)):
         if probe is not None and np.isfinite(channel_idx):
             areas[i] = lookup.get((probe, int(channel_idx)))
 
@@ -424,44 +461,48 @@ def _preload_unit_anatomy(units, nwb):
 
 
 METRIC_ALIASES = {
-    'isi_violations_ratio': ['isi_violations_ratio', 'isi_violations'],
-    'presence_ratio': ['presence_ratio'],
-    'amplitude_cutoff': ['amplitude_cutoff'],
-    'snr': ['snr'],
-    'firing_rate': ['firing_rate'],
-    'amplitude': ['amplitude'],
-    'd_prime': ['d_prime'],
-    'isolation_distance': ['isolation_distance'],
-    'silhouette_score': ['silhouette_score'],
+    "isi_violations_ratio": ["isi_violations_ratio", "isi_violations"],
+    "presence_ratio": ["presence_ratio"],
+    "amplitude_cutoff": ["amplitude_cutoff"],
+    "snr": ["snr"],
+    "firing_rate": ["firing_rate"],
+    "amplitude": ["amplitude"],
+    "d_prime": ["d_prime"],
+    "isolation_distance": ["isolation_distance"],
+    "silhouette_score": ["silhouette_score"],
     # OpenScope/DANDI names first; older aliases retained as fallbacks.
-    'waveform_duration': ['peak_to_valley', 'waveform_duration', 'duration'],
-    'waveform_halfwidth': ['half_width', 'waveform_halfwidth', 'halfwidth'],
-    'PT_ratio': ['peak_trough_ratio', 'PT_ratio', 'pt_ratio'],
-    'depth': ['depth'],
+    "waveform_duration": ["peak_to_valley", "waveform_duration", "duration"],
+    "waveform_halfwidth": ["half_width", "waveform_halfwidth", "halfwidth"],
+    "PT_ratio": ["peak_trough_ratio", "PT_ratio", "pt_ratio"],
+    "depth": ["depth"],
 }
 
 
 def _checkpoint_path(session_key):
     # Versioned path preserves older checkpoints instead of deleting/overwriting them.
-    return CHECKPOINT_DIR / f'{session_key}_v{CHECKPOINT_VERSION}.pkl.gz'
+    return CHECKPOINT_DIR / f"{session_key}_v{CHECKPOINT_VERSION}.pkl.gz"
 
 
 def _checkpoint_is_valid(path):
     if not path.exists() or path.stat().st_size == 0:
         return False
     try:
-        with gzip.open(path, 'rb') as f:
+        with gzip.open(path, "rb") as f:
             payload = pickle.load(f)
 
-        if payload.get('checkpoint_version') != CHECKPOINT_VERSION:
+        if payload.get("checkpoint_version") != CHECKPOINT_VERSION:
             return False
-        if not all(k in payload for k in ('all_df', 'qc_df', 'waveforms', 'summary')):
+        if not all(k in payload for k in ("all_df", "qc_df", "waveforms", "summary")):
             return False
 
-        qc_df = payload['qc_df']
+        qc_df = payload["qc_df"]
         required_qc_columns = {
-            'area', 'probe', 'extremum_channel_index',
-            'waveform_duration', 'waveform_halfwidth', 'PT_ratio',
+            "area",
+            "probe",
+            "extremum_channel_index",
+            "waveform_duration",
+            "waveform_halfwidth",
+            "PT_ratio",
         }
         if len(qc_df) and not required_qc_columns.issubset(qc_df.columns):
             return False
@@ -472,8 +513,8 @@ def _checkpoint_is_valid(path):
 
 
 def _save_checkpoint_atomic(path, payload):
-    tmp = path.with_suffix(path.suffix + '.tmp')
-    with gzip.open(tmp, 'wb', compresslevel=3) as f:
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with gzip.open(tmp, "wb", compresslevel=3) as f:
         pickle.dump(payload, f, protocol=pickle.HIGHEST_PROTOCOL)
     tmp.replace(path)
 
@@ -484,11 +525,11 @@ def _open_dandi_nwb_cached(filepath, cache_dir):
         asset = client.get_dandiset(DANDISET_ID).get_asset_by_path(filepath)
         url = asset.get_content_url(follow_redirects=1, strip_query=True)
 
-    http_fs = fsspec.filesystem('http')
+    http_fs = fsspec.filesystem("http")
     cached_fs = CachingFileSystem(fs=http_fs, cache_storage=str(cache_dir))
-    remote_file = cached_fs.open(url, 'rb')
-    h5_file = h5py.File(remote_file, 'r')
-    io = NWBHDF5IO(file=h5_file, mode='r', load_namespaces=True)
+    remote_file = cached_fs.open(url, "rb")
+    h5_file = h5py.File(remote_file, "r")
+    io = NWBHDF5IO(file=h5_file, mode="r", load_namespaces=True)
     return io, h5_file, remote_file
 
 
@@ -501,12 +542,12 @@ def _process_one_session(s):
     io = h5_file = remote_file = nwb = units = None
 
     try:
-        print('  -> opening cached remote NWB...')
+        print("  -> opening cached remote NWB...")
         io, h5_file, remote_file = _open_dandi_nwb_cached(s.filepath, session_cache)
 
         with warnings.catch_warnings():
             warnings.filterwarnings(
-                'ignore',
+                "ignore",
                 message=r"An attribute 'name' already exists on TimeIntervals.*",
                 category=UserWarning,
             )
@@ -514,12 +555,18 @@ def _process_one_session(s):
 
         if nwb.units is None:
             return {
-                'checkpoint_version': CHECKPOINT_VERSION,
-                'all_df': pd.DataFrame(), 'qc_df': pd.DataFrame(), 'waveforms': [],
-                'summary': {
-                    'session_key': s.session_key, 'mouse_id': s.mouse_id,
-                    'context': s.context, 'cohort': s.cohort,
-                    'n_total_units': 0, 'n_qc_pass': 0, 'n_qc_waveform': 0,
+                "checkpoint_version": CHECKPOINT_VERSION,
+                "all_df": pd.DataFrame(),
+                "qc_df": pd.DataFrame(),
+                "waveforms": [],
+                "summary": {
+                    "session_key": s.session_key,
+                    "mouse_id": s.mouse_id,
+                    "context": s.context,
+                    "cohort": s.cohort,
+                    "n_total_units": 0,
+                    "n_qc_pass": 0,
+                    "n_qc_waveform": 0,
                 },
             }
 
@@ -536,7 +583,7 @@ def _process_one_session(s):
             for canonical, candidates in METRIC_ALIASES.items()
         }
 
-        required_names = ['isi_violations_ratio', 'presence_ratio', 'amplitude_cutoff']
+        required_names = ["isi_violations_ratio", "presence_ratio", "amplitude_cutoff"]
         missing = [name for name in required_names if resolved_metric_cols[name] is None]
         if missing:
             raise KeyError(
@@ -554,12 +601,14 @@ def _process_one_session(s):
                 except Exception:
                     metrics[canonical] = np.full(n_units, np.nan, dtype=np.float64)
 
-        isi = metrics['isi_violations_ratio']
-        pr = metrics['presence_ratio']
-        ac = metrics['amplitude_cutoff']
+        isi = metrics["isi_violations_ratio"]
+        pr = metrics["presence_ratio"]
+        ac = metrics["amplitude_cutoff"]
 
         qc_mask = (
-            np.isfinite(isi) & np.isfinite(pr) & np.isfinite(ac)
+            np.isfinite(isi)
+            & np.isfinite(pr)
+            & np.isfinite(ac)
             & (isi < ISI_MAX)
             & (pr > PRESENCE_MIN)
             & (ac < AMP_CUTOFF_MAX)
@@ -567,18 +616,18 @@ def _process_one_session(s):
         qc_indices = np.flatnonzero(qc_mask)
 
         all_data = {
-            'unit_uid': [f'{s.session_key}_unit-{uid}' for uid in unit_ids],
-            'unit_id': unit_ids.astype(int),
-            'mouse_id': s.mouse_id,
-            'session_key': s.session_key,
-            'date': s.date,
-            'context': s.context,
-            'cohort': s.cohort,
-            'filepath': s.filepath,
-            'probe': probes,
-            'extremum_channel_index': extremum_indices,
-            'area': areas,
-            'qc_pass_manuscript': qc_mask,
+            "unit_uid": [f"{s.session_key}_unit-{uid}" for uid in unit_ids],
+            "unit_id": unit_ids.astype(int),
+            "mouse_id": s.mouse_id,
+            "session_key": s.session_key,
+            "date": s.date,
+            "context": s.context,
+            "cohort": s.cohort,
+            "filepath": s.filepath,
+            "probe": probes,
+            "extremum_channel_index": extremum_indices,
+            "area": areas,
+            "qc_pass_manuscript": qc_mask,
         }
         all_data.update(metrics)
         all_df = pd.DataFrame(all_data)
@@ -586,8 +635,8 @@ def _process_one_session(s):
         qc_rows = []
         qc_waveforms = []
 
-        if 'waveform_mean' in units.colnames and len(qc_indices):
-            wf_col = units['waveform_mean']
+        if "waveform_mean" in units.colnames and len(qc_indices):
+            wf_col = units["waveform_mean"]
             wf_rate = _get_waveform_sampling_rate(units)
             # Read only bounded ranges containing QC units.
             for start in range(0, n_units, WAVEFORM_READ_CHUNK):
@@ -604,25 +653,30 @@ def _process_one_session(s):
                 for i in chunk_qc:
                     i = int(i)
                     try:
-                        wf_raw = wf_chunk[i-start] if wf_chunk is not None else wf_col[i]
-                        wf_1d, local_peak_idx = _select_peak_waveform(wf_raw)
+                        wf_raw = wf_chunk[i - start] if wf_chunk is not None else wf_col[i]
+                        wf_1d, _local_peak_idx = _select_peak_waveform(wf_raw)
                     except Exception:
-                        wf_1d, local_peak_idx = None, None
+                        wf_1d, _local_peak_idx = None, None
 
                     if wf_1d is None:
                         continue
 
                     wf_1d = np.asarray(wf_1d, dtype=np.float32)
-                    if (wf_1d.ndim != 1 or len(wf_1d) < 3
-                            or not np.all(np.isfinite(wf_1d))
-                            or np.ptp(wf_1d) == 0):
+                    if (
+                        wf_1d.ndim != 1
+                        or len(wf_1d) < 3
+                        or not np.all(np.isfinite(wf_1d))
+                        or np.ptp(wf_1d) == 0
+                    ):
                         continue
 
                     row = all_df.iloc[i].to_dict()
-                    row.update({
-                        'waveform_sampling_rate_hz': wf_rate,
-                        'waveform_n_samples': len(wf_1d),
-                    })
+                    row.update(
+                        {
+                            "waveform_sampling_rate_hz": wf_rate,
+                            "waveform_n_samples": len(wf_1d),
+                        }
+                    )
                     qc_rows.append(row)
                     qc_waveforms.append(wf_1d)
 
@@ -631,19 +685,21 @@ def _process_one_session(s):
 
         qc_df = pd.DataFrame(qc_rows)
         summary = {
-            'session_key': s.session_key,
-            'mouse_id': s.mouse_id,
-            'context': s.context,
-            'cohort': s.cohort,
-            'n_total_units': int(n_units),
-            'n_qc_pass': int(qc_mask.sum()),
-            'n_qc_waveform': int(len(qc_waveforms)),
+            "session_key": s.session_key,
+            "mouse_id": s.mouse_id,
+            "context": s.context,
+            "cohort": s.cohort,
+            "n_total_units": int(n_units),
+            "n_qc_pass": int(qc_mask.sum()),
+            "n_qc_waveform": int(len(qc_waveforms)),
         }
 
         return {
-            'checkpoint_version': CHECKPOINT_VERSION,
-            'all_df': all_df, 'qc_df': qc_df,
-            'waveforms': qc_waveforms, 'summary': summary,
+            "checkpoint_version": CHECKPOINT_VERSION,
+            "all_df": all_df,
+            "qc_df": qc_df,
+            "waveforms": qc_waveforms,
+            "summary": summary,
         }
 
     finally:
@@ -672,18 +728,21 @@ def extract_wavemap_units_stream(session_table):
         ckpt = _checkpoint_path(s.session_key)
 
         if _checkpoint_is_valid(ckpt):
-            print(f'[{s_idx:02d}/{n_sessions}] {s.session_key} | {s.context} -> checkpoint exists, skipping')
+            print(
+                f"[{s_idx:02d}/{n_sessions}] {s.session_key} | {s.context} "
+                "-> checkpoint exists, skipping"
+            )
             continue
 
         if ckpt.exists():
-            print(f'[{s_idx:02d}/{n_sessions}] {s.session_key} | invalid checkpoint removed')
+            print(f"[{s_idx:02d}/{n_sessions}] {s.session_key} | invalid checkpoint removed")
             ckpt.unlink()
 
-        print(f'[{s_idx:02d}/{n_sessions}] {s.session_key} | {s.context}')
+        print(f"[{s_idx:02d}/{n_sessions}] {s.session_key} | {s.context}")
         payload = _process_one_session(s)
         _save_checkpoint_atomic(ckpt, payload)
 
-        sm = payload['summary']
+        sm = payload["summary"]
         print(
             f"  -> total={sm['n_total_units']}, QC pass={sm['n_qc_pass']}, "
             f"QC + usable waveform={sm['n_qc_waveform']} | saved to Drive"
@@ -692,7 +751,7 @@ def extract_wavemap_units_stream(session_table):
         gc.collect()
 
     # Stage 2: compact assembly after all checkpoints exist.
-    print('\nAll session checkpoints present. Assembling final analysis objects...')
+    print("\nAll session checkpoints present. Assembling final analysis objects...")
 
     all_parts = []
     qc_parts = []
@@ -702,17 +761,17 @@ def extract_wavemap_units_stream(session_table):
     for s in session_table.itertuples(index=False):
         ckpt = _checkpoint_path(s.session_key)
         if not _checkpoint_is_valid(ckpt):
-            raise RuntimeError(f'Missing/invalid checkpoint after extraction: {ckpt}')
+            raise RuntimeError(f"Missing/invalid checkpoint after extraction: {ckpt}")
 
-        with gzip.open(ckpt, 'rb') as f:
+        with gzip.open(ckpt, "rb") as f:
             payload = pickle.load(f)
 
-        if len(payload['all_df']):
-            all_parts.append(payload['all_df'])
-        if len(payload['qc_df']):
-            qc_parts.append(payload['qc_df'])
-        waveform_parts.extend(payload['waveforms'])
-        summaries.append(payload['summary'])
+        if len(payload["all_df"]):
+            all_parts.append(payload["all_df"])
+        if len(payload["qc_df"]):
+            qc_parts.append(payload["qc_df"])
+        waveform_parts.extend(payload["waveforms"])
+        summaries.append(payload["summary"])
         del payload
 
     all_units_df = pd.concat(all_parts, ignore_index=True) if all_parts else pd.DataFrame()
@@ -722,12 +781,12 @@ def extract_wavemap_units_stream(session_table):
     return all_units_df, units_df, waveform_parts, session_summary
 
 
-print('Extraction helpers ready.')
-print('Persistent checkpoints:', CHECKPOINT_DIR)
-print('Disposable NWB cache:', LOCAL_CACHE_DIR)
-print('Waveform read chunk:', WAVEFORM_READ_CHUNK)
-print('Checkpoint schema version:', CHECKPOINT_VERSION)
-print('Anatomy + waveform-shape metrics are captured in this same NWB pass.')
+print("Extraction helpers ready.")
+print("Persistent checkpoints:", CHECKPOINT_DIR)
+print("Disposable NWB cache:", LOCAL_CACHE_DIR)
+print("Waveform read chunk:", WAVEFORM_READ_CHUNK)
+print("Checkpoint schema version:", CHECKPOINT_VERSION)
+print("Anatomy + waveform-shape metrics are captured in this same NWB pass.")
 
 
 # ==================== ORIGINAL NOTEBOOK CELL 12 ====================
@@ -750,26 +809,33 @@ for _qc_name, _qc_default in _QC_DEFAULTS.items():
         _missing_qc_settings.append(f"{_qc_name}={_qc_default}")
 
 if _missing_qc_settings:
-    print(
-        "[Cell 6 preflight] Restored missing QC settings: "
-        + ", ".join(_missing_qc_settings)
-    )
+    print("[Cell 6 preflight] Restored missing QC settings: " + ", ".join(_missing_qc_settings))
 
 
 all_units_df, units_df, raw_waveform_list, session_summary = extract_wavemap_units_stream(
     session_inventory
 )
 
-print('\n=== Extraction complete ===')
-print('All units:', len(all_units_df))
-print('Manuscript-QC units with usable waveform:', len(units_df))
-print('Sessions represented:', units_df['session_key'].nunique())
-print('Mice represented:', units_df['mouse_id'].nunique())
-print('Valid local checkpoints:', sum(_checkpoint_is_valid(_checkpoint_path(k)) for k in session_inventory['session_key']))
-print('Anatomical area assigned:', units_df['area'].notna().sum(), '/', len(units_df))
-print('Waveform duration available:', units_df['waveform_duration'].notna().sum(), '/', len(units_df))
-print('Waveform half-width available:', units_df['waveform_halfwidth'].notna().sum(), '/', len(units_df))
-print('Peak/trough ratio available:', units_df['PT_ratio'].notna().sum(), '/', len(units_df))
+print("\n=== Extraction complete ===")
+print("All units:", len(all_units_df))
+print("Manuscript-QC units with usable waveform:", len(units_df))
+print("Sessions represented:", units_df["session_key"].nunique())
+print("Mice represented:", units_df["mouse_id"].nunique())
+print(
+    "Valid local checkpoints:",
+    sum(_checkpoint_is_valid(_checkpoint_path(k)) for k in session_inventory["session_key"]),
+)
+print("Anatomical area assigned:", units_df["area"].notna().sum(), "/", len(units_df))
+print(
+    "Waveform duration available:", units_df["waveform_duration"].notna().sum(), "/", len(units_df)
+)
+print(
+    "Waveform half-width available:",
+    units_df["waveform_halfwidth"].notna().sum(),
+    "/",
+    len(units_df),
+)
+print("Peak/trough ratio available:", units_df["PT_ratio"].notna().sum(), "/", len(units_df))
 
 
 # ==================== ORIGINAL NOTEBOOK CELL 14 ====================
@@ -779,8 +845,7 @@ display(session_summary.head())
 
 print("\nTotal units by context:")
 display(
-    session_summary
-    .groupby("context")[["n_total_units", "n_qc_pass", "n_qc_waveform"]]
+    session_summary.groupby("context")[["n_total_units", "n_qc_pass", "n_qc_waveform"]]
     .sum()
     .reindex(CONTEXT_ORDER)
 )
@@ -795,7 +860,7 @@ print(units_df["waveform_n_samples"].value_counts().sort_index())
 # (peak-channel amp / (2*STD noise)); per-spike snippets are not stored,
 # so it cannot be recomputed and must be thresholded as-is.
 # ------------------------------------------------------------------
-SNR_MIN = float(globals().get("SNR_MIN", 3.0))   # ideally define in the settings cell
+SNR_MIN = float(globals().get("SNR_MIN", 3.0))  # ideally define in the settings cell
 
 # 1) common waveform length — do not interpolate silently
 modal_n_samples = int(units_df["waveform_n_samples"].mode().iloc[0])
@@ -807,12 +872,18 @@ if "snr" not in units_df.columns:
 snr_vals = pd.to_numeric(units_df["snr"], errors="coerce").to_numpy()
 snr_pass = np.isfinite(snr_vals) & (snr_vals >= SNR_MIN)
 
+
 # 3) re-apply current settings-cell QC thresholds post-hoc, so tightening
 #    ISI_MAX / PRESENCE_MIN / AMP_CUTOFF_MAX in settings takes effect from
 #    cache. No-op if unchanged since extraction.
 def _num(col):
-    return pd.to_numeric(units_df[col], errors="coerce").to_numpy() if col in units_df.columns \
+    return (
+        pd.to_numeric(units_df[col], errors="coerce").to_numpy()
+        if col in units_df.columns
         else np.full(len(units_df), np.nan)
+    )
+
+
 isi_v, pr_v, ac_v = _num("isi_violations_ratio"), _num("presence_ratio"), _num("amplitude_cutoff")
 extra_qc = (
     (np.isnan(isi_v) | (isi_v < ISI_MAX))
@@ -826,31 +897,42 @@ keep = same_length & snr_pass & extra_qc
 n0 = len(units_df)
 print(f"\nPost-hoc gating on {n0} extraction-QC units:")
 print(f"  wrong waveform length : -{int((~same_length).sum())}")
-print(f"  SNR < {SNR_MIN:g}            : -{int((~snr_pass).sum())} "
-      f"(among length-ok: -{int((~snr_pass & same_length).sum())})")
+print(
+    f"  SNR < {SNR_MIN:g}            : -{int((~snr_pass).sum())} "
+    f"(among length-ok: -{int((~snr_pass & same_length).sum())})"
+)
 print(f"  tightened ISI/PR/AC   : -{int((~extra_qc & same_length & snr_pass).sum())}")
-print(f"  --> kept              : {int(keep.sum())} "
-      f"({100*keep.mean():.1f}% of extraction-QC units)")
+print(
+    f"  --> kept              : {int(keep.sum())} ({100 * keep.mean():.1f}% of extraction-QC units)"
+)
 
 # ---- reviewer caveat: ISI-violation rate is correlated with firing rate,
 #      so any ISI cut preferentially removes high-FR units. Report it. ----
 if {"firing_rate", "isi_violations_ratio"}.issubset(units_df.columns):
     from scipy.stats import spearmanr
-    _d = units_df[["firing_rate", "isi_violations_ratio"]].apply(
-        pd.to_numeric, errors="coerce").replace([np.inf, -np.inf], np.nan).dropna()
+
+    _d = (
+        units_df[["firing_rate", "isi_violations_ratio"]]
+        .apply(pd.to_numeric, errors="coerce")
+        .replace([np.inf, -np.inf], np.nan)
+        .dropna()
+    )
     if len(_d) > 10:
         _r, _p = spearmanr(_d["firing_rate"], _d["isi_violations_ratio"])
-        print(f"\nISI-vr vs firing rate: Spearman r={_r:+.2f} (p={_p:.1e}) "
-              f"— a flat ISI cut biases against high-FR units; interpret FR maps accordingly.")
+        print(
+            f"\nISI-vr vs firing rate: Spearman r={_r:+.2f} (p={_p:.1e}) "
+            f"— a flat ISI cut biases against high-FR units; interpret FR maps accordingly."
+        )
 
 # ---- apply the combined mask to units_df AND waveforms in lockstep ----
 units_df = units_df.loc[keep].reset_index(drop=True)
-raw_waveforms = np.vstack([wf for wf, k in zip(raw_waveform_list, keep) if k])
+raw_waveforms = np.vstack([wf for wf, k in zip(raw_waveform_list, keep, strict=False) if k])
 
 assert len(units_df) == raw_waveforms.shape[0]
 assert raw_waveforms.shape[1] == modal_n_samples
-assert (pd.to_numeric(units_df["snr"], errors="coerce") >= SNR_MIN).all(), \
+assert (pd.to_numeric(units_df["snr"], errors="coerce") >= SNR_MIN).all(), (
     "an SNR-failing unit survived the mask"
+)
 
 finite_rates = units_df["waveform_sampling_rate_hz"].dropna().astype(float)
 WF_SAMPLING_RATE = float(finite_rates.mode().iloc[0]) if len(finite_rates) else 30000.0
@@ -866,22 +948,30 @@ np.save(OUT_DIR / "raw_qc_waveforms.npy", raw_waveforms)
 print("Cached extraction in:", OUT_DIR)
 
 # Reproducibility / integrity checks
-assert session_summary['session_key'].nunique() == len(session_inventory), 'Not all manuscript sessions were summarized.'
-assert units_df['unit_uid'].is_unique, 'Duplicate unit_uid values detected.'
-assert set(units_df['session_key']).issubset(set(session_inventory['session_key'])), 'Unexpected session detected.'
-assert units_df['qc_pass_manuscript'].all(), 'A non-QC unit entered the WaveMAP table.'
+assert session_summary["session_key"].nunique() == len(session_inventory), (
+    "Not all manuscript sessions were summarized."
+)
+assert units_df["unit_uid"].is_unique, "Duplicate unit_uid values detected."
+assert set(units_df["session_key"]).issubset(set(session_inventory["session_key"])), (
+    "Unexpected session detected."
+)
+assert units_df["qc_pass_manuscript"].all(), "A non-QC unit entered the WaveMAP table."
 
-missing_context_sessions = set(session_inventory['session_key']) - set(session_summary['session_key'])
-assert not missing_context_sessions, f'Missing sessions: {sorted(missing_context_sessions)}'
+missing_context_sessions = set(session_inventory["session_key"]) - set(
+    session_summary["session_key"]
+)
+assert not missing_context_sessions, f"Missing sessions: {sorted(missing_context_sessions)}"
 
-print('\nSanity checks passed:')
-print('✓ every intended manuscript session summarized')
-print(f'✓ every WaveMAP unit has SNR >= {SNR_MIN:g}')
-print('✓ no duplicate unit identifiers')
-print('✓ every WaveMAP unit passed manuscript QC')
-print('✓ waveform array and unit metadata are aligned')
-print(f"✓ anatomy populated for {units_df['area'].notna().sum():,}/{len(units_df):,} retained units")
-for _metric in ['waveform_duration', 'waveform_halfwidth', 'PT_ratio']:
+print("\nSanity checks passed:")
+print("✓ every intended manuscript session summarized")
+print(f"✓ every WaveMAP unit has SNR >= {SNR_MIN:g}")
+print("✓ no duplicate unit identifiers")
+print("✓ every WaveMAP unit passed manuscript QC")
+print("✓ waveform array and unit metadata are aligned")
+print(
+    f"✓ anatomy populated for {units_df['area'].notna().sum():,}/{len(units_df):,} retained units"
+)
+for _metric in ["waveform_duration", "waveform_halfwidth", "PT_ratio"]:
     print(f"✓ {_metric}: {units_df[_metric].notna().sum():,}/{len(units_df):,} values available")
 
 # ==================== ORIGINAL NOTEBOOK CELL 19 ====================
@@ -950,7 +1040,6 @@ plt.show()
 
 from community import community_louvain
 
-
 # ------------------------------------------------------------
 # Resolution sweep
 # ------------------------------------------------------------
@@ -1008,10 +1097,7 @@ def _pareto_frontier_by_cluster_count(feasible):
             keep.append(i)
             best_q_so_far = q
 
-    return (
-        best_per_k.loc[keep]
-        .reset_index(drop=True)
-    )
+    return best_per_k.loc[keep].reset_index(drop=True)
 
 
 def _add_knee_score(frontier):
@@ -1065,37 +1151,26 @@ def _choose_conservative_solution(
     """
 
     if feasible.empty:
-        raise ValueError(
-            "Cannot select from an empty feasible set."
-        )
+        raise ValueError("Cannot select from an empty feasible set.")
 
-    q_max = float(
-        feasible["modularity"].max()
-    )
+    q_max = float(feasible["modularity"].max())
 
-    q_threshold = (
-        q_max - float(modularity_tol)
-    )
+    q_threshold = q_max - float(modularity_tol)
 
-    near_optimal = feasible.loc[
-        feasible["modularity"] >= q_threshold
-    ].copy()
+    near_optimal = feasible.loc[feasible["modularity"] >= q_threshold].copy()
 
-    pick = (
-        near_optimal.sort_values(
-            [
-                "n_clusters",
-                "modularity",
-                "min_size",
-            ],
-            ascending=[
-                True,
-                False,
-                False,
-            ],
-        )
-        .iloc[0]
-    )
+    pick = near_optimal.sort_values(
+        [
+            "n_clusters",
+            "modularity",
+            "min_size",
+        ],
+        ascending=[
+            True,
+            False,
+            False,
+        ],
+    ).iloc[0]
 
     return pick, q_max, q_threshold
 
@@ -1129,7 +1204,6 @@ def choose_resolution(
     rows = []
 
     for r in grid:
-
         part = community_louvain.best_partition(
             G,
             weight="weight",
@@ -1158,15 +1232,9 @@ def choose_resolution(
             }
         )
 
-    df = (
-        pd.DataFrame(rows)
-        .sort_values("res")
-        .reset_index(drop=True)
-    )
+    df = pd.DataFrame(rows).sort_values("res").reset_index(drop=True)
 
-    df["feasible"] = (
-        df["min_size"] > min_cluster_n
-    )
+    df["feasible"] = df["min_size"] > min_cluster_n
 
     df["pareto"] = False
     df["near_optimal"] = False
@@ -1174,32 +1242,24 @@ def choose_resolution(
     df["knee_score"] = np.nan
     df["delta_q_from_best"] = np.nan
 
-    feasible = df.loc[
-        df["feasible"]
-    ].copy()
+    feasible = df.loc[df["feasible"]].copy()
 
     if feasible.empty:
-
-        pick = (
-            df.sort_values(
-                [
-                    "n_clusters",
-                    "modularity",
-                    "min_size",
-                ],
-                ascending=[
-                    True,
-                    False,
-                    False,
-                ],
-            )
-            .iloc[0]
-        )
+        pick = df.sort_values(
+            [
+                "n_clusters",
+                "modularity",
+                "min_size",
+            ],
+            ascending=[
+                True,
+                False,
+                False,
+            ],
+        ).iloc[0]
 
         df.loc[
-            df["res"].eq(
-                float(pick["res"])
-            ),
+            df["res"].eq(float(pick["res"])),
             "selected",
         ] = True
 
@@ -1213,11 +1273,9 @@ def choose_resolution(
 
         return float(pick["res"]), df
 
-    pick, q_max, q_threshold = (
-        _choose_conservative_solution(
-            feasible,
-            modularity_tol=modularity_tol,
-        )
+    pick, q_max, q_threshold = _choose_conservative_solution(
+        feasible,
+        modularity_tol=modularity_tol,
     )
 
     df.loc[
@@ -1232,36 +1290,16 @@ def choose_resolution(
     )
 
     df.loc[
-        (
-            df["feasible"]
-            & (
-                df["modularity"]
-                >= q_threshold
-            )
-        ),
+        (df["feasible"] & (df["modularity"] >= q_threshold)),
         "near_optimal",
     ] = True
 
-    frontier = (
-        _pareto_frontier_by_cluster_count(
-            feasible
-        )
-    )
+    frontier = _pareto_frontier_by_cluster_count(feasible)
 
-    frontier = _add_knee_score(
-        frontier
-    )
+    frontier = _add_knee_score(frontier)
 
     for _, prow in frontier.iterrows():
-
-        mask = (
-            df["res"].eq(
-                float(prow["res"])
-            )
-            & df["n_clusters"].eq(
-                int(prow["n_clusters"])
-            )
-        )
+        mask = df["res"].eq(float(prow["res"])) & df["n_clusters"].eq(int(prow["n_clusters"]))
 
         df.loc[
             mask,
@@ -1277,18 +1315,9 @@ def choose_resolution(
             df.loc[
                 mask,
                 "knee_score",
-            ] = float(
-                prow["knee_score"]
-            )
+            ] = float(prow["knee_score"])
 
-    selected_mask = (
-        df["res"].eq(
-            float(pick["res"])
-        )
-        & df["n_clusters"].eq(
-            int(pick["n_clusters"])
-        )
-    )
+    selected_mask = df["res"].eq(float(pick["res"])) & df["n_clusters"].eq(int(pick["n_clusters"]))
 
     df.loc[
         selected_mask,
@@ -1302,9 +1331,9 @@ def choose_resolution(
 # Cell 10: Run WaveMAP PER FUNCTIONAL AREA-GROUP — separate UMAP + Louvain each
 # Reviewer point 2: cluster within functional groups (MO vs CA vs ...), not pooled.
 
-from community import community_louvain
 
-np.random.seed(RAND_STATE); random.seed(RAND_STATE)
+np.random.seed(RAND_STATE)
+random.seed(RAND_STATE)
 os.environ["PYTHONHASHSEED"] = str(RAND_STATE)
 
 # PREREQUISITE: anatomy is populated during the initial NWB extraction pass.
@@ -1317,23 +1346,26 @@ if missing_metadata:
     )
 
 area_fraction = units_df["area"].notna().mean()
-print(f"Anatomy available for {units_df['area'].notna().sum()}/{len(units_df)} units "
-      f"({100*area_fraction:.1f}%).")
+print(
+    f"Anatomy available for {units_df['area'].notna().sum()}/{len(units_df)} units "
+    f"({100 * area_fraction:.1f}%)."
+)
 assert area_fraction >= 0.5, (
     "'area' is <50% populated; inspect device_name/extremum_channel_index mapping "
     "in the single-pass extractor."
 )
 
 AREA_GROUPS = {
-    "MO":   ("MOs", "MOp"),
-    "HPC":  ("CA1", "CA3"),
-    "VIS":  ("VISp", "VISl"),
+    "MO": ("MOs", "MOp"),
+    "HPC": ("CA1", "CA3"),
+    "VIS": ("VISp", "VISl"),
     "THAL": ("LGd", "LD"),
-    "PFC":  ("PL", "ACAd"),
-    "STR":  ("STR", "LSr"),
+    "PFC": ("PL", "ACAd"),
+    "STR": ("STR", "LSr"),
 }
 EXCLUDE_FROM_CLUSTERING = {"or"}
 MIN_UNITS_TO_CLUSTER = 40
+
 
 def _group_of(area):
     if area is None or (isinstance(area, float) and np.isnan(area)):
@@ -1344,6 +1376,7 @@ def _group_of(area):
         if str(area).startswith(prefixes):
             return g
     return None
+
 
 units_df["wavemap_group"] = units_df["area"].map(_group_of)
 print("Units per functional group:")
@@ -1384,8 +1417,9 @@ for g in [x for x in units_df["wavemap_group"].unique() if x is not None]:
     RES_g, sweep_g = choose_resolution(G, seed=RAND_STATE)
     group_resolutions[g] = RES_g
     group_resolution_sweeps[g] = sweep_g
-    part = community_louvain.best_partition(G, weight="weight",
-                                            resolution=RES_g, random_state=RAND_STATE)
+    part = community_louvain.best_partition(
+        G, weight="weight", resolution=RES_g, random_state=RAND_STATE
+    )
     group_graphs[g] = G
     local = np.array([part[i] for i in range(len(idx))], dtype=int) + 1
     units_df.iloc[idx, units_df.columns.get_loc("wavemap_local")] = local
@@ -1401,15 +1435,16 @@ for g in [x for x in units_df["wavemap_group"].unique() if x is not None]:
     )
 
 clustered = units_df["wavemap_group"].notna()
-pairs = list(units_df.loc[clustered, ["wavemap_group", "wavemap_local"]]
-             .itertuples(index=False, name=None))
+pairs = list(
+    units_df.loc[clustered, ["wavemap_group", "wavemap_local"]].itertuples(index=False, name=None)
+)
 uniq = sorted(set(pairs), key=lambda t: (t[0], t[1]))
 gid = {p: i + 1 for i, p in enumerate(uniq)}
 units_df["wavemap_class"] = -1
 units_df.loc[clustered, "wavemap_class"] = [gid[p] for p in pairs]
 units_df["wavemap_label"] = [
     f"{grp}-{int(loc)}" if grp is not None else "unclustered"
-    for grp, loc in zip(units_df["wavemap_group"], units_df["wavemap_local"])
+    for grp, loc in zip(units_df["wavemap_group"], units_df["wavemap_local"], strict=False)
 ]
 n_unclustered = int((~clustered).sum())
 print(f"\nTotal WaveMAP classes across groups: {len(uniq)}")
@@ -1419,10 +1454,14 @@ if n_unclustered:
 assert sorted(units_df.loc[clustered, "wavemap_class"].unique()) == list(range(1, len(uniq) + 1))
 assert (units_df.loc[clustered, "wavemap_local"] >= 1).all()
 
-MERGE_WF_CORR   = 0.95
+MERGE_WF_CORR = 0.95
 MERGE_FEAT_DIST = 0.75
-_FEAT_COLS = [c for c in ["firing_rate","waveform_duration","waveform_halfwidth","snr","amplitude"]
-              if c in units_df.columns]
+_FEAT_COLS = [
+    c
+    for c in ["firing_rate", "waveform_duration", "waveform_halfwidth", "snr", "amplitude"]
+    if c in units_df.columns
+]
+
 
 def _merge_candidates(g):
     idx = np.where(units_df["wavemap_group"].values == g)[0]
@@ -1441,21 +1480,28 @@ def _merge_candidates(g):
             corr = np.corrcoef(wf_mean[a], wf_mean[b])[0, 1]
             dist = np.linalg.norm(fmean[a] - fmean[b])
             if corr >= MERGE_WF_CORR and dist <= MERGE_FEAT_DIST:
-                out.append((f"{g}-{a}", f"{g}-{b}", round(float(corr),3), round(float(dist),3)))
+                out.append((f"{g}-{a}", f"{g}-{b}", round(float(corr), 3), round(float(dist), 3)))
     return out
 
+
 merge_rows = [r for g in group_cluster_counts for r in _merge_candidates(g)]
-print(f"\nOPTIONAL diagnostic only — not used to alter WaveMAP labels. "
-      f"Similar cluster pairs (wf_corr>={MERGE_WF_CORR}, "
-      f"feat_dist<={MERGE_FEAT_DIST}, features={_FEAT_COLS}):")
+print(
+    f"\nOPTIONAL diagnostic only — not used to alter WaveMAP labels. "
+    f"Similar cluster pairs (wf_corr>={MERGE_WF_CORR}, "
+    f"feat_dist<={MERGE_FEAT_DIST}, features={_FEAT_COLS}):"
+)
 if merge_rows:
-    display(pd.DataFrame(merge_rows, columns=["class_a","class_b","wf_corr","feat_dist"]))
-    print("-> inspect these pairs, but do not merge automatically; use the resolution sweep as the primary control.")
+    display(pd.DataFrame(merge_rows, columns=["class_a", "class_b", "wf_corr", "feat_dist"]))
+    print(
+        "-> inspect these pairs, but do not merge automatically; "
+        "use the resolution sweep as the primary control."
+    )
 else:
     print("  none — clusters are distinct on shape+physiology at these thresholds.")
 
 class_counts = units_df.loc[clustered, "wavemap_class"].value_counts().sort_index()
-print("\nUnits per class:"); print(class_counts)
+print("\nUnits per class:")
+print(class_counts)
 
 
 # ==================== ORIGINAL NOTEBOOK CELL 28 ====================
@@ -1489,16 +1535,9 @@ if _missing_wavemap_cols:
         f"Missing columns: {sorted(_missing_wavemap_cols)}"
     )
 
-import matplotlib.colors as mcolors
 from matplotlib.patches import Patch
-from sklearn.preprocessing import RobustScaler
 
-CLASS_ORDER = sorted(
-    units_df.loc[
-        units_df["wavemap_class"] > 0,
-        "wavemap_class"
-    ].unique()
-)
+CLASS_ORDER = sorted(units_df.loc[units_df["wavemap_class"] > 0, "wavemap_class"].unique())
 N_CLASSES = len(CLASS_ORDER)
 
 # ------------------------------------------------------------
@@ -1515,10 +1554,7 @@ N_CLASSES = len(CLASS_ORDER)
 _COLORBLIND10 = list(sns.color_palette("colorblind", 10))
 
 _TAB20 = [plt.colormaps["tab20"](i) for i in range(20)]
-_TAB20_REORDERED = [
-    _TAB20[i]
-    for i in list(range(0, 20, 2)) + list(range(1, 20, 2))
-]
+_TAB20_REORDERED = [_TAB20[i] for i in list(range(0, 20, 2)) + list(range(1, 20, 2))]
 
 _BIG_PALETTE = (
     _TAB20_REORDERED
@@ -1552,16 +1588,15 @@ def _cluster_palette(k):
 AREA_CLUSTER_COLORS = {}
 
 _GROUP_ORDER_FOR_COLOURS = [
-    g for g in ["MO", "PFC", "VIS", "STR", "HPC", "THAL"]
+    g
+    for g in ["MO", "PFC", "VIS", "STR", "HPC", "THAL"]
     if g in units_df["wavemap_group"].dropna().unique()
 ]
 
 for g in _GROUP_ORDER_FOR_COLOURS:
-
     local_clusters = sorted(
         units_df.loc[
-            (units_df["wavemap_group"] == g)
-            & (units_df["wavemap_local"] > 0),
+            (units_df["wavemap_group"] == g) & (units_df["wavemap_local"] > 0),
             "wavemap_local",
         ]
         .dropna()
@@ -1571,7 +1606,7 @@ for g in _GROUP_ORDER_FOR_COLOURS:
 
     palette = _cluster_palette(len(local_clusters))
 
-    for local, colour in zip(local_clusters, palette):
+    for local, colour in zip(local_clusters, palette, strict=False):
         AREA_CLUSTER_COLORS[(g, int(local))] = colour
 
 
@@ -1584,10 +1619,7 @@ CLASS_LABEL = {}
 CLASS_COLORS = {}
 
 for cl in CLASS_ORDER:
-
-    row = units_df.loc[
-        units_df["wavemap_class"] == cl
-    ].iloc[0]
+    row = units_df.loc[units_df["wavemap_class"] == cl].iloc[0]
 
     group = row["wavemap_group"]
     local = int(row["wavemap_local"])
@@ -1604,19 +1636,21 @@ class_colors = CLASS_COLORS
 
 CONTEXT_ORDER = list(CONTEXT_ORDER)
 
-plt.rcParams.update({
-    "font.size": 10,
-    "axes.titlesize": 12,
-    "axes.labelsize": 11,
-    "xtick.labelsize": 9,
-    "ytick.labelsize": 9,
-    "legend.fontsize": 8,
-    "figure.dpi": 150,
-    "savefig.dpi": 300,
-    "savefig.bbox": "tight",
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
-})
+plt.rcParams.update(
+    {
+        "font.size": 10,
+        "axes.titlesize": 12,
+        "axes.labelsize": 11,
+        "xtick.labelsize": 9,
+        "ytick.labelsize": 9,
+        "legend.fontsize": 8,
+        "figure.dpi": 150,
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+    }
+)
 
 CLASS_LEGEND = [
     Patch(
@@ -1648,61 +1682,57 @@ print(
 # - Each recording session contributes equally.
 # ============================================================
 
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-from pathlib import Path
 
 # ------------------------------------------------------------
 # Settings
 # ------------------------------------------------------------
 
 GROUP_ORDER = ["MO", "PFC", "VIS", "STR", "HPC", "THAL"]
-GROUP_ORDER = [
-    g for g in GROUP_ORDER
-    if g in group_embeddings
-]
+GROUP_ORDER = [g for g in GROUP_ORDER if g in group_embeddings]
 
 GROUP_NAMES = {
-    "MO":   "Motor cortex",
-    "PFC":  "Prefrontal cortex",
-    "VIS":  "Visual cortex",
-    "STR":  "Striatum",
-    "HPC":  "Hippocampus",
+    "MO": "Motor cortex",
+    "PFC": "Prefrontal cortex",
+    "VIS": "Visual cortex",
+    "STR": "Striatum",
+    "HPC": "Hippocampus",
     "THAL": "Thalamus",
 }
 
 # Shorter labels for manuscript figure
 CONTEXT_SHORT = {
-    "Standard oddball":        "Standard",
-    "Sensorimotor mismatch":   "Sensorimotor",
-    "Sequence mismatch":       "Sequence",
-    "Duration mismatch":       "Duration",
+    "Standard oddball": "Standard",
+    "Sensorimotor mismatch": "Sensorimotor",
+    "Sequence mismatch": "Sequence",
+    "Duration mismatch": "Duration",
 }
 
-context_order = [
-    c for c in CONTEXT_ORDER
-    if c in units_df["context"].dropna().unique()
-]
+context_order = [c for c in CONTEXT_ORDER if c in units_df["context"].dropna().unique()]
 
 # ------------------------------------------------------------
 # Figure styling
 # ------------------------------------------------------------
 
-plt.rcParams.update({
-    "font.family": "sans-serif",
-    "font.size": 9,
-    "axes.titlesize": 10,
-    "axes.labelsize": 9,
-    "xtick.labelsize": 8,
-    "ytick.labelsize": 8,
-    "figure.dpi": 150,
-    "savefig.dpi": 300,
-    "savefig.bbox": "tight",
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
-})
+plt.rcParams.update(
+    {
+        "font.family": "sans-serif",
+        "font.size": 9,
+        "axes.titlesize": 10,
+        "axes.labelsize": 9,
+        "xtick.labelsize": 8,
+        "ytick.labelsize": 8,
+        "figure.dpi": 150,
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+    }
+)
 
 TEXT_GREY = "#666666"
 
@@ -1723,10 +1753,7 @@ required = [
     "wavemap_local",
 ]
 
-missing = [
-    c for c in required
-    if c not in units_df.columns
-]
+missing = [c for c in required if c not in units_df.columns]
 
 if missing:
     raise KeyError(
@@ -1735,14 +1762,9 @@ if missing:
         + "\nRun Sarah's area-specific WaveMAP clustering cells first."
     )
 
-ctx_df = units_df[
-    required
-].copy()
+ctx_df = units_df[required].copy()
 
-ctx_df["wavemap_local"] = pd.to_numeric(
-    ctx_df["wavemap_local"],
-    errors="coerce"
-)
+ctx_df["wavemap_local"] = pd.to_numeric(ctx_df["wavemap_local"], errors="coerce")
 
 ctx_df = ctx_df[
     ctx_df["wavemap_group"].isin(GROUP_ORDER)
@@ -1751,16 +1773,9 @@ ctx_df = ctx_df[
     & ctx_df["context"].isin(context_order)
 ].copy()
 
-ctx_df["wavemap_local"] = (
-    ctx_df["wavemap_local"]
-    .astype(int)
-)
+ctx_df["wavemap_local"] = ctx_df["wavemap_local"].astype(int)
 
-ctx_df["wavemap_label"] = (
-    ctx_df["wavemap_group"]
-    + "-"
-    + ctx_df["wavemap_local"].astype(str)
-)
+ctx_df["wavemap_label"] = ctx_df["wavemap_group"] + "-" + ctx_df["wavemap_local"].astype(str)
 
 
 # ------------------------------------------------------------
@@ -1779,37 +1794,19 @@ all_session_rows = []
 summary_rows = []
 
 for group in GROUP_ORDER:
-
-    gdf = ctx_df[
-        ctx_df["wavemap_group"] == group
-    ].copy()
+    gdf = ctx_df[ctx_df["wavemap_group"] == group].copy()
 
     if len(gdf) == 0:
         continue
 
-    local_classes = sorted(
-        gdf["wavemap_local"].unique()
-    )
+    local_classes = sorted(gdf["wavemap_local"].unique())
 
     # Sessions in which this region actually contributed units
-    session_meta = (
-        gdf[
-            ["session_key", "mouse_id", "context"]
-        ]
-        .drop_duplicates()
-    )
+    session_meta = gdf[["session_key", "mouse_id", "context"]].drop_duplicates()
 
     # observed counts
     counts = (
-        gdf
-        .groupby(
-            [
-                "session_key",
-                "mouse_id",
-                "context",
-                "wavemap_local"
-            ]
-        )
+        gdf.groupby(["session_key", "mouse_id", "context", "wavemap_local"])
         .size()
         .rename("n_units")
         .reset_index()
@@ -1818,16 +1815,10 @@ for group in GROUP_ORDER:
     # Fill missing local classes with zero inside every observed
     # session × region block.
     for row in session_meta.itertuples(index=False):
-
         sub = (
-            counts[
-                counts["session_key"] == row.session_key
-            ]
+            counts[counts["session_key"] == row.session_key]
             .set_index("wavemap_local")["n_units"]
-            .reindex(
-                local_classes,
-                fill_value=0
-            )
+            .reindex(local_classes, fill_value=0)
         )
 
         total = int(sub.sum())
@@ -1835,31 +1826,25 @@ for group in GROUP_ORDER:
         if total == 0:
             continue
 
-        tmp = pd.DataFrame({
-            "group": group,
-            "session_key": row.session_key,
-            "mouse_id": row.mouse_id,
-            "context": row.context,
-            "wavemap_local": local_classes,
-            "n_units": sub.to_numpy(),
-            "region_total": total,
-            "class_proportion":
-                sub.to_numpy() / total,
-        })
-
-        tmp["wavemap_label"] = (
-            group
-            + "-"
-            + tmp["wavemap_local"].astype(str)
+        tmp = pd.DataFrame(
+            {
+                "group": group,
+                "session_key": row.session_key,
+                "mouse_id": row.mouse_id,
+                "context": row.context,
+                "wavemap_local": local_classes,
+                "n_units": sub.to_numpy(),
+                "region_total": total,
+                "class_proportion": sub.to_numpy() / total,
+            }
         )
+
+        tmp["wavemap_label"] = group + "-" + tmp["wavemap_local"].astype(str)
 
         all_session_rows.append(tmp)
 
 
-region_session_prop = pd.concat(
-    all_session_rows,
-    ignore_index=True
-)
+region_session_prop = pd.concat(all_session_rows, ignore_index=True)
 
 
 # ------------------------------------------------------------
@@ -1867,37 +1852,20 @@ region_session_prop = pd.concat(
 # ------------------------------------------------------------
 
 region_context_summary = (
-    region_session_prop
-    .groupby(
-        [
-            "group",
-            "context",
-            "wavemap_local",
-            "wavemap_label"
-        ]
-    )["class_proportion"]
-    .agg(
-        mean="mean",
-        std="std",
-        n_sessions="count"
-    )
+    region_session_prop.groupby(["group", "context", "wavemap_local", "wavemap_label"])[
+        "class_proportion"
+    ]
+    .agg(mean="mean", std="std", n_sessions="count")
     .reset_index()
 )
 
-region_context_summary["sem"] = (
-    region_context_summary["std"]
-    / np.sqrt(
-        region_context_summary["n_sessions"]
-    )
+region_context_summary["sem"] = region_context_summary["std"] / np.sqrt(
+    region_context_summary["n_sessions"]
 )
 
-region_context_summary["mean_percent"] = (
-    region_context_summary["mean"] * 100
-)
+region_context_summary["mean_percent"] = region_context_summary["mean"] * 100
 
-region_context_summary["sem_percent"] = (
-    region_context_summary["sem"] * 100
-)
+region_context_summary["sem_percent"] = region_context_summary["sem"] * 100
 
 
 # ------------------------------------------------------------
@@ -1907,35 +1875,18 @@ region_context_summary["sem_percent"] = (
 matrices = {}
 
 for group in GROUP_ORDER:
-
-    sub = region_context_summary[
-        region_context_summary["group"] == group
-    ].copy()
+    sub = region_context_summary[region_context_summary["group"] == group].copy()
 
     if len(sub) == 0:
         continue
 
-    local_order = sorted(
-        sub["wavemap_local"].unique()
+    local_order = sorted(sub["wavemap_local"].unique())
+
+    matrix = sub.pivot(index="wavemap_local", columns="context", values="mean_percent").reindex(
+        index=local_order, columns=context_order
     )
 
-    matrix = (
-        sub
-        .pivot(
-            index="wavemap_local",
-            columns="context",
-            values="mean_percent"
-        )
-        .reindex(
-            index=local_order,
-            columns=context_order
-        )
-    )
-
-    matrix.index = [
-        f"{group}-{int(x)}"
-        for x in matrix.index
-    ]
+    matrix.index = [f"{group}-{int(x)}" for x in matrix.index]
 
     matrices[group] = matrix
 
@@ -1948,42 +1899,25 @@ for group in GROUP_ORDER:
 # flatten all remaining structure.
 # ------------------------------------------------------------
 
-all_vals = np.concatenate([
-    m.to_numpy().ravel()
-    for m in matrices.values()
-])
+all_vals = np.concatenate([m.to_numpy().ravel() for m in matrices.values()])
 
-all_vals = all_vals[
-    np.isfinite(all_vals)
-]
+all_vals = all_vals[np.isfinite(all_vals)]
 
 vmin = 0
 
 # Robust high limit, while never clipping below the actual
 # majority of values.
-vmax = float(
-    np.nanpercentile(
-        all_vals,
-        97.5
-    )
-)
+vmax = float(np.nanpercentile(all_vals, 97.5))
 
 # Round to a clean number
-vmax = max(
-    5,
-    np.ceil(vmax / 5) * 5
-)
+vmax = max(5, np.ceil(vmax / 5) * 5)
 
-print(
-    f"Shared heatmap scale: "
-    f"{vmin:.0f}–{vmax:.0f}%"
-)
+print(f"Shared heatmap scale: {vmin:.0f}–{vmax:.0f}%")
 
 
 # ------------------------------------------------------------
 # 6. Plot six compact heatmaps
 # ------------------------------------------------------------
-
 
 
 # ==================== ORIGINAL NOTEBOOK CELL 45 ====================
@@ -2011,60 +1945,56 @@ print(
 # This is a descriptive sampling-composition analysis.
 # ============================================================
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-from matplotlib.colors import TwoSlopeNorm
 from pathlib import Path
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.colors import TwoSlopeNorm
 
 # ------------------------------------------------------------
 # Settings
 # ------------------------------------------------------------
 
 GROUP_ORDER = ["MO", "PFC", "VIS", "STR", "HPC", "THAL"]
-GROUP_ORDER = [
-    g for g in GROUP_ORDER
-    if g in region_session_prop["group"].unique()
-]
+GROUP_ORDER = [g for g in GROUP_ORDER if g in region_session_prop["group"].unique()]
 
 GROUP_NAMES = {
-    "MO":   "Motor cortex",
-    "PFC":  "Prefrontal cortex",
-    "VIS":  "Visual cortex",
-    "STR":  "Striatum",
-    "HPC":  "Hippocampus",
+    "MO": "Motor cortex",
+    "PFC": "Prefrontal cortex",
+    "VIS": "Visual cortex",
+    "STR": "Striatum",
+    "HPC": "Hippocampus",
     "THAL": "Thalamus",
 }
 
 CONTEXT_SHORT = {
-    "Standard oddball":      "Standard",
+    "Standard oddball": "Standard",
     "Sensorimotor mismatch": "Sensorimotor",
-    "Sequence mismatch":     "Sequence",
-    "Duration mismatch":     "Duration",
+    "Sequence mismatch": "Sequence",
+    "Duration mismatch": "Duration",
 }
 
-context_order = [
-    c for c in CONTEXT_ORDER
-    if c in region_session_prop["context"].unique()
-]
+context_order = [c for c in CONTEXT_ORDER if c in region_session_prop["context"].unique()]
 
 TEXT_GREY = "#666666"
 
-plt.rcParams.update({
-    "font.family": "sans-serif",
-    "font.size": 9,
-    "axes.titlesize": 10,
-    "axes.labelsize": 9,
-    "xtick.labelsize": 8,
-    "ytick.labelsize": 8,
-    "figure.dpi": 150,
-    "savefig.dpi": 300,
-    "savefig.bbox": "tight",
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
-})
+plt.rcParams.update(
+    {
+        "font.family": "sans-serif",
+        "font.size": 9,
+        "axes.titlesize": 10,
+        "axes.labelsize": 9,
+        "xtick.labelsize": 8,
+        "ytick.labelsize": 8,
+        "figure.dpi": 150,
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+    }
+)
 
 
 # ------------------------------------------------------------
@@ -2072,19 +2002,10 @@ plt.rcParams.update({
 # ------------------------------------------------------------
 
 ctx_mean = (
-    region_session_prop
-    .groupby(
-        [
-            "group",
-            "context",
-            "wavemap_local",
-            "wavemap_label"
-        ]
-    )["class_proportion"]
-    .agg(
-        mean_context="mean",
-        n_sessions="count"
-    )
+    region_session_prop.groupby(["group", "context", "wavemap_local", "wavemap_label"])[
+        "class_proportion"
+    ]
+    .agg(mean_context="mean", n_sessions="count")
     .reset_index()
 )
 
@@ -2100,28 +2021,13 @@ ctx_mean = (
 # ------------------------------------------------------------
 
 baseline = (
-    region_session_prop
-    .groupby(
-        [
-            "group",
-            "wavemap_local",
-            "wavemap_label"
-        ]
-    )["class_proportion"]
+    region_session_prop.groupby(["group", "wavemap_local", "wavemap_label"])["class_proportion"]
     .mean()
     .rename("regional_baseline")
     .reset_index()
 )
 
-enrich_df = ctx_mean.merge(
-    baseline,
-    on=[
-        "group",
-        "wavemap_local",
-        "wavemap_label"
-    ],
-    how="left"
-)
+enrich_df = ctx_mean.merge(baseline, on=["group", "wavemap_local", "wavemap_label"], how="left")
 
 
 # ------------------------------------------------------------
@@ -2131,33 +2037,17 @@ enrich_df = ctx_mean.merge(
 # ratio >1 = enriched
 # ratio <1 = depleted
 
-enrich_df["fold_change"] = (
-    enrich_df["mean_context"]
-    / enrich_df["regional_baseline"]
-)
+enrich_df["fold_change"] = enrich_df["mean_context"] / enrich_df["regional_baseline"]
 
 # Protect against exact zero values
 EPS = 1e-9
 
 enrich_df["log2_enrichment"] = np.log2(
-    np.maximum(
-        enrich_df["mean_context"],
-        EPS
-    )
-    /
-    np.maximum(
-        enrich_df["regional_baseline"],
-        EPS
-    )
+    np.maximum(enrich_df["mean_context"], EPS) / np.maximum(enrich_df["regional_baseline"], EPS)
 )
 
 # Also keep intuitive percentage change for exported table
-enrich_df["percent_change_from_baseline"] = (
-    (
-        enrich_df["fold_change"] - 1
-    )
-    * 100
-)
+enrich_df["percent_change_from_baseline"] = (enrich_df["fold_change"] - 1) * 100
 
 
 # ------------------------------------------------------------
@@ -2167,35 +2057,18 @@ enrich_df["percent_change_from_baseline"] = (
 matrices = {}
 
 for group in GROUP_ORDER:
-
-    sub = enrich_df[
-        enrich_df["group"] == group
-    ].copy()
+    sub = enrich_df[enrich_df["group"] == group].copy()
 
     if len(sub) == 0:
         continue
 
-    local_order = sorted(
-        sub["wavemap_local"].unique()
+    local_order = sorted(sub["wavemap_local"].unique())
+
+    m = sub.pivot(index="wavemap_local", columns="context", values="log2_enrichment").reindex(
+        index=local_order, columns=context_order
     )
 
-    m = (
-        sub
-        .pivot(
-            index="wavemap_local",
-            columns="context",
-            values="log2_enrichment"
-        )
-        .reindex(
-            index=local_order,
-            columns=context_order
-        )
-    )
-
-    m.index = [
-        f"{group}-{int(i)}"
-        for i in m.index
-    ]
+    m.index = [f"{group}-{int(i)}" for i in m.index]
 
     matrices[group] = m
 
@@ -2207,41 +2080,22 @@ for group in GROUP_ORDER:
 # destroying contrast everywhere else.
 # ------------------------------------------------------------
 
-all_values = np.concatenate([
-    m.to_numpy().ravel()
-    for m in matrices.values()
-])
+all_values = np.concatenate([m.to_numpy().ravel() for m in matrices.values()])
 
-all_values = all_values[
-    np.isfinite(all_values)
-]
+all_values = all_values[np.isfinite(all_values)]
 
-robust_abs = np.nanpercentile(
-    np.abs(all_values),
-    97.5
-)
+robust_abs = np.nanpercentile(np.abs(all_values), 97.5)
 
 # sensible lower limit so small differences don't look enormous
-lim = max(
-    0.5,
-    robust_abs
-)
+lim = max(0.5, robust_abs)
 
 # keep visual scale reasonable
-lim = min(
-    lim,
-    2.0
-)
+lim = min(lim, 2.0)
 
 # round upward to nearest 0.25
-lim = np.ceil(
-    lim / 0.25
-) * 0.25
+lim = np.ceil(lim / 0.25) * 0.25
 
-print(
-    f"Shared log2 enrichment scale: "
-    f"{-lim:.2f} to +{lim:.2f}"
-)
+print(f"Shared log2 enrichment scale: {-lim:.2f} to +{lim:.2f}")
 
 
 # ------------------------------------------------------------
@@ -2256,17 +2110,12 @@ print(
 
 CMAP = mpl.colormaps["RdBu_r"]
 
-norm = TwoSlopeNorm(
-    vmin=-lim,
-    vcenter=0,
-    vmax=lim
-)
+norm = TwoSlopeNorm(vmin=-lim, vcenter=0, vmax=lim)
 
 
 # ------------------------------------------------------------
 # 7. Plot
 # ------------------------------------------------------------
-
 
 
 # ==================== ORIGINAL NOTEBOOK CELL 48 ====================
@@ -2300,16 +2149,12 @@ norm = TwoSlopeNorm(
 #   previously computed SST checkpoints can be resumed unchanged.
 # ============================================================
 
-import gc
-import re
 import time
-import shutil
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy.stats import wilcoxon
-
 
 # ------------------------------------------------------------
 # SETTINGS
@@ -2332,6 +2177,7 @@ SST_GENOTYPE = "Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)_EYFP)/wt"
 # ============================================================
 # BASIC HELPERS
 # ============================================================
+
 
 def _count_spikes_windows(spike_times, starts, width):
     """Count spikes in [start, start + width) for every start."""
@@ -2356,12 +2202,15 @@ def _paired_greater_p(stim, baseline):
     if not np.any(diff != 0):
         return 1.0
     try:
-        return float(wilcoxon(
-            stim, baseline,
-            alternative="greater",
-            zero_method="wilcox",
-            method="auto",
-        ).pvalue)
+        return float(
+            wilcoxon(
+                stim,
+                baseline,
+                alternative="greater",
+                zero_method="wilcox",
+                method="auto",
+            ).pvalue
+        )
     except Exception:
         return np.nan
 
@@ -2409,18 +2258,22 @@ def _median_first_spike_latency_ms(spike_times, pulse_starts, search_width=LATEN
     return float(np.median(vals)), int(len(vals))
 
 
-
 # ============================================================
 # SUBJECT METADATA — retained for provenance only
 # ============================================================
+
 
 def _subject_text(nwb):
     vals = []
     subject = getattr(nwb, "subject", None)
     if subject is not None:
         for attr in [
-            "genotype", "strain", "description", "subject_id",
-            "species", "sex",
+            "genotype",
+            "strain",
+            "description",
+            "subject_id",
+            "species",
+            "sex",
         ]:
             try:
                 v = getattr(subject, attr, None)
@@ -2437,9 +2290,11 @@ def _subject_text(nwb):
             pass
     return " | ".join(vals)
 
+
 # ============================================================
 # FIND THE THREE OPTO INTERVAL TABLES ROBUSTLY
 # ============================================================
+
 
 def _norm(s):
     return re.sub(r"[_\-]+", " ", str(s).lower()).strip()
@@ -2484,10 +2339,11 @@ def _get_protocol_df(nwb, kind):
             continue
         if len(df) == 0:
             continue
-        str_cols = [c for c in df.columns if (
-            pd.api.types.is_object_dtype(df[c])
-            or isinstance(df[c].dtype, pd.CategoricalDtype)
-        )]
+        str_cols = [
+            c
+            for c in df.columns
+            if (pd.api.types.is_object_dtype(df[c]) or isinstance(df[c].dtype, pd.CategoricalDtype))
+        ]
         if not str_cols:
             continue
         row_text = df[str_cols].astype(str).agg(" | ".join, axis=1)
@@ -2508,6 +2364,7 @@ def _finite_starts(df):
 # ============================================================
 # PRESENTATION-LEVEL SHORT-LATENCY METRICS
 # ============================================================
+
 
 def _early_rates_by_presentation(spike_times, starts, frequency_hz):
     """
@@ -2530,9 +2387,9 @@ def _early_rates_by_presentation(spike_times, starts, frequency_hz):
     pulse_matrix = starts[:, None] + offsets[None, :]
     pulse_starts = pulse_matrix.reshape(-1)
 
-    stim_counts = _count_spikes_windows(
-        spike_times, pulse_starts, SHORT_LATENCY_S
-    ).reshape(len(starts), n_pulses)
+    stim_counts = _count_spikes_windows(spike_times, pulse_starts, SHORT_LATENCY_S).reshape(
+        len(starts), n_pulses
+    )
 
     baseline_counts = _count_spikes_windows(
         spike_times, pulse_starts - SHORT_LATENCY_S, SHORT_LATENCY_S
@@ -2551,16 +2408,13 @@ def _early_rates_by_presentation(spike_times, starts, frequency_hz):
 # ONE-UNIT SST OPTO-TAGGING CLASSIFIER
 # ============================================================
 
+
 def _classify_one_unit_opto(spike_times, raised_starts, hz5_starts, hz40_starts):
     # --------------------------------------------------------
     # A. Short-latency pulse response: 5 Hz + 40 Hz
     # --------------------------------------------------------
-    r5, b5, pulses5, raw5 = _early_rates_by_presentation(
-        spike_times, hz5_starts, 5.0
-    )
-    r40, b40, pulses40, raw40 = _early_rates_by_presentation(
-        spike_times, hz40_starts, 40.0
-    )
+    r5, b5, pulses5, raw5 = _early_rates_by_presentation(spike_times, hz5_starts, 5.0)
+    r40, b40, pulses40, raw40 = _early_rates_by_presentation(spike_times, hz40_starts, 40.0)
 
     early_rates = np.concatenate([r5, r40])
     early_baselines = np.concatenate([b5, b40])
@@ -2568,9 +2422,7 @@ def _classify_one_unit_opto(spike_times, raised_starts, hz5_starts, hz40_starts)
 
     early_p = _paired_greater_p(early_rates, early_baselines)
     early_rate_hz = float(np.mean(early_rates)) if len(early_rates) else np.nan
-    early_baseline_rate_hz = (
-        float(np.mean(early_baselines)) if len(early_baselines) else np.nan
-    )
+    early_baseline_rate_hz = float(np.mean(early_baselines)) if len(early_baselines) else np.nan
     early_mi = (
         _modulation_index(early_rate_hz, early_baseline_rate_hz)
         if np.isfinite(early_rate_hz) and np.isfinite(early_baseline_rate_hz)
@@ -2582,9 +2434,7 @@ def _classify_one_unit_opto(spike_times, raised_starts, hz5_starts, hz40_starts)
     pulse_baseline_counts = _count_spikes_windows(
         spike_times, all_pulses - SHORT_LATENCY_S, SHORT_LATENCY_S
     )
-    early_response_probability = (
-        float(np.mean(pulse_counts > 0)) if len(pulse_counts) else np.nan
-    )
+    early_response_probability = float(np.mean(pulse_counts > 0)) if len(pulse_counts) else np.nan
     early_baseline_probability = (
         float(np.mean(pulse_baseline_counts > 0)) if len(pulse_baseline_counts) else np.nan
     )
@@ -2606,7 +2456,8 @@ def _classify_one_unit_opto(spike_times, raised_starts, hz5_starts, hz40_starts)
     full_rate_hz = float(np.mean(full_counts) / FULL_STIM_S) if len(full_counts) else np.nan
     full_baseline_rate_hz = (
         float(np.mean(full_baseline_counts) / FULL_BASELINE_S)
-        if len(full_baseline_counts) else np.nan
+        if len(full_baseline_counts)
+        else np.nan
     )
     full_mi = (
         _modulation_index(full_rate_hz, full_baseline_rate_hz)
@@ -2654,7 +2505,6 @@ def _classify_one_unit_opto(spike_times, raised_starts, hz5_starts, hz40_starts)
     return out
 
 
-
 # ============================================================
 # SESSION INVENTORY / TARGET UNITS
 # ============================================================
@@ -2664,12 +2514,11 @@ if ONLY_WAVEMAP_UNITS and "wavemap_group" in units_df.columns:
 else:
     opto_units = units_df.copy()
 
-print(
-    f"SST optotagging restricted to WaveMAP/UMAP units: "
-    f"{len(opto_units):,}/{len(units_df):,}"
-)
+print(f"SST optotagging restricted to WaveMAP/UMAP units: {len(opto_units):,}/{len(units_df):,}")
 
-if "session_inventory" in globals() and {"session_key", "filepath"}.issubset(session_inventory.columns):
+if "session_inventory" in globals() and {"session_key", "filepath"}.issubset(
+    session_inventory.columns
+):
     _session_paths = session_inventory[["session_key", "filepath"]].drop_duplicates("session_key")
 elif "all_units_df" in globals() and {"session_key", "filepath"}.issubset(all_units_df.columns):
     _session_paths = all_units_df[["session_key", "filepath"]].drop_duplicates("session_key")
@@ -2706,7 +2555,9 @@ for session_number, s in enumerate(session_rows.itertuples(index=False), start=1
             opto_units.loc[opto_units["session_key"].eq(session_key), "unit_id"],
             errors="coerce",
         )
-        .dropna().astype(np.int64).unique()
+        .dropna()
+        .astype(np.int64)
+        .unique()
     )
     if len(target_unit_ids) == 0:
         continue
@@ -2759,20 +2610,24 @@ for session_number, s in enumerate(session_rows.itertuples(index=False), start=1
         hz40_name, hz40_df = _get_protocol_df(nwb, "40hz")
 
         missing_blocks = [
-            label for label, df in [
+            label
+            for label, df in [
                 ("raised cosine", raised_df),
                 ("5 Hz", hz5_df),
                 ("40 Hz", hz40_df),
-            ] if df is None or len(df) == 0
+            ]
+            if df is None or len(df) == 0
         ]
         if missing_blocks:
             print("  missing protocol block(s):", missing_blocks)
             print("  available interval tables:", list(nwb.intervals.keys()))
-            skipped_sessions.append({
-                "session_key": session_key,
-                "cell_type": "SST",
-                "reason": "missing_protocol_blocks: " + ", ".join(missing_blocks),
-            })
+            skipped_sessions.append(
+                {
+                    "session_key": session_key,
+                    "cell_type": "SST",
+                    "reason": "missing_protocol_blocks: " + ", ".join(missing_blocks),
+                }
+            )
             session_success = True
             continue
 
@@ -2783,8 +2638,8 @@ for session_number, s in enumerate(session_rows.itertuples(index=False), start=1
         print(
             f"  [SST] protocol: "
             f"raised={len(raised_starts)} presentations; "
-            f"5Hz={len(hz5_starts)} presentations/{len(hz5_starts)*5} pulses; "
-            f"40Hz={len(hz40_starts)} presentations/{len(hz40_starts)*40} pulses"
+            f"5Hz={len(hz5_starts)} presentations/{len(hz5_starts) * 5} pulses; "
+            f"40Hz={len(hz40_starts)} presentations/{len(hz40_starts) * 40} pulses"
         )
         print("  tables:", raised_name, "|", hz5_name, "|", hz40_name)
 
@@ -2798,11 +2653,13 @@ for session_number, s in enumerate(session_rows.itertuples(index=False), start=1
             dtype=np.int64,
         )
         if len(matched_unit_ids) == 0:
-            skipped_sessions.append({
-                "session_key": session_key,
-                "cell_type": "SST",
-                "reason": "no_unit_matches",
-            })
+            skipped_sessions.append(
+                {
+                    "session_key": session_key,
+                    "cell_type": "SST",
+                    "reason": "no_unit_matches",
+                }
+            )
             session_success = True
             continue
         matched_indices = np.asarray(
@@ -2827,12 +2684,13 @@ for session_number, s in enumerate(session_rows.itertuples(index=False), start=1
                 dtype=np.float64,
             )
 
-            def spike_getter(unit_index):
+            def spike_getter(unit_index, stops=stops, block=block, block_start=block_start):
                 gs = 0 if unit_index == 0 else int(stops[unit_index - 1])
                 ge = int(stops[unit_index])
-                return block[(gs - block_start):(ge - block_start)]
+                return block[(gs - block_start) : (ge - block_start)]
         else:
-            def spike_getter(unit_index):
+
+            def spike_getter(unit_index, nwb=nwb):
                 return np.asarray(
                     nwb.units["spike_times"][unit_index],
                     dtype=np.float64,
@@ -2843,7 +2701,7 @@ for session_number, s in enumerate(session_rows.itertuples(index=False), start=1
         # ----------------------------------------------------
         rows = []
 
-        for unit_id, unit_index in zip(matched_unit_ids, matched_indices):
+        for unit_id, unit_index in zip(matched_unit_ids, matched_indices, strict=False):
             spike_times = spike_getter(int(unit_index))
 
             result = _classify_one_unit_opto(
@@ -2853,15 +2711,17 @@ for session_number, s in enumerate(session_rows.itertuples(index=False), start=1
                 hz40_starts,
             )
 
-            result.update({
-                "session_key": session_key,
-                "unit_id": int(unit_id),
-                "unit_uid": f"{session_key}_unit-{int(unit_id)}",
-                "cell_type": "SST",
-                "genotype": SST_GENOTYPE,
-                "subject_metadata": subject_meta,
-                "opto_tested": True,
-            })
+            result.update(
+                {
+                    "session_key": session_key,
+                    "unit_id": int(unit_id),
+                    "unit_uid": f"{session_key}_unit-{int(unit_id)}",
+                    "cell_type": "SST",
+                    "genotype": SST_GENOTYPE,
+                    "subject_metadata": subject_meta,
+                    "opto_tested": True,
+                }
+            )
             rows.append(result)
 
         session_df = pd.DataFrame(rows)
@@ -2890,9 +2750,9 @@ for session_number, s in enumerate(session_rows.itertuples(index=False), start=1
 
         print(
             f"  optotagged SST: {int(positive.sum())}/{len(session_df)} "
-            f"({100*positive.mean():.2f}%)"
+            f"({100 * positive.mean():.2f}%)"
         )
-        print(f"  total session: {time.perf_counter()-session_t0:.1f} s")
+        print(f"  total session: {time.perf_counter() - session_t0:.1f} s")
         session_success = True
 
         # free large arrays if bulk mode was used
@@ -2905,10 +2765,12 @@ for session_number, s in enumerate(session_rows.itertuples(index=False), start=1
 
     except Exception as exc:
         print(f"  ERROR {session_key}: {type(exc).__name__}: {exc}")
-        skipped_sessions.append({
-            "session_key": session_key,
-            "reason": f"{type(exc).__name__}: {exc}",
-        })
+        skipped_sessions.append(
+            {
+                "session_key": session_key,
+                "reason": f"{type(exc).__name__}: {exc}",
+            }
+        )
 
     finally:
         try:
@@ -2937,24 +2799,16 @@ for session_number, s in enumerate(session_rows.itertuples(index=False), start=1
 
 if not all_session_results:
     # Resume entirely from the SAME legacy v2 cache, but only SST checkpoints.
-    checkpoint_files = sorted(
-        OPTO_CACHE_DIR.glob("SST/*_sst_three_stim_optotagging.csv")
-    )
-    all_session_results = [
-        pd.read_csv(p)
-        for p in checkpoint_files
-        if p.stat().st_size > 0
-    ]
+    checkpoint_files = sorted(OPTO_CACHE_DIR.glob("SST/*_sst_three_stim_optotagging.csv"))
+    all_session_results = [pd.read_csv(p) for p in checkpoint_files if p.stat().st_size > 0]
 
 if not all_session_results:
     raise RuntimeError(
-        "No SST optotagging results were produced. "
-        "Inspect interval-table names printed above."
+        "No SST optotagging results were produced. Inspect interval-table names printed above."
     )
 
-sst_opto_df = (
-    pd.concat(all_session_results, ignore_index=True)
-    .drop_duplicates("unit_uid", keep="last")
+sst_opto_df = pd.concat(all_session_results, ignore_index=True).drop_duplicates(
+    "unit_uid", keep="last"
 )
 
 # Backward compatibility with old cached SST checkpoints.
@@ -2965,11 +2819,7 @@ if "is_sst_optotagged" not in sst_opto_df.columns:
         raise RuntimeError(
             "Cached SST results contain neither is_sst_optotagged nor is_optotagged."
         )
-    sst_opto_df["is_sst_optotagged"] = (
-        sst_opto_df["is_optotagged"]
-        .fillna(False)
-        .astype(bool)
-    )
+    sst_opto_df["is_sst_optotagged"] = sst_opto_df["is_optotagged"].fillna(False).astype(bool)
 
 # Keep opto_all_df as a compatibility alias for downstream code,
 # but it now contains SST optotagging results only.
@@ -2996,20 +2846,26 @@ print("=" * 90)
 print(f"Genotype: {SST_GENOTYPE}")
 print(f"Tested: {n_tested:,}")
 print(
-    f"Optotagged SST: {n_tagged:,} "
-    f"({100*n_tagged/n_tested:.2f}%)"
-    if n_tested else
-    "Optotagged SST: 0"
+    f"Optotagged SST: {n_tagged:,} ({100 * n_tagged / n_tested:.2f}%)"
+    if n_tested
+    else "Optotagged SST: 0"
 )
 print("Cache retained at:", OPTO_CACHE_DIR)
 print("Saved:", sst_csv)
 
 _display_cols = [
     "unit_uid",
-    "early_rate_hz", "early_baseline_rate_hz", "early_q",
-    "early_response_probability", "median_first_spike_latency_ms",
-    "full_rate_hz", "full_baseline_rate_hz", "full_q",
-    "raised_full_rate_hz", "hz5_full_rate_hz", "hz40_full_rate_hz",
+    "early_rate_hz",
+    "early_baseline_rate_hz",
+    "early_q",
+    "early_response_probability",
+    "median_first_spike_latency_ms",
+    "full_rate_hz",
+    "full_baseline_rate_hz",
+    "full_q",
+    "raised_full_rate_hz",
+    "hz5_full_rate_hz",
+    "hz40_full_rate_hz",
     "is_sst_optotagged",
 ]
 _display_cols = [c for c in _display_cols if c in sst_opto_df.columns]
@@ -3046,17 +2902,17 @@ display(
 # Row 3 isolates the intersection.
 # ============================================================
 
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-from pathlib import Path
 
 FS_T2P_MAX_MS = 0.40
 FS_FR_MIN_HZ = 10.0
 
-PV_COLOR = "#377EB8"       # blue
-SST_COLOR = "#CC2F8A"      # magenta
+PV_COLOR = "#377EB8"  # blue
+SST_COLOR = "#CC2F8A"  # magenta
 OVERLAP_COLOR = "#F28E2B"  # orange
 BACKGROUND_COLOR = "0.82"
 
@@ -3070,10 +2926,7 @@ PV_SIZE = 27
 SST_SIZE = 29
 OVERLAP_SIZE = 34
 
-GROUP_ORDER = [
-    g for g in ["MO", "PFC", "VIS", "STR", "HPC", "THAL"]
-    if g in group_embeddings
-]
+GROUP_ORDER = [g for g in ["MO", "PFC", "VIS", "STR", "HPC", "THAL"] if g in group_embeddings]
 
 GROUP_NAMES = {
     "MO": "Motor cortex",
@@ -3105,27 +2958,18 @@ if "is_sst_optotagged" not in sst_opto_df.columns:
 
 map_df = units_df.copy()
 
-map_df["t2p_ms"] = (
-    pd.to_numeric(map_df["waveform_duration"], errors="coerce") * 1000.0
-)
-map_df["firing_rate_hz"] = pd.to_numeric(
-    map_df["firing_rate"], errors="coerce"
-)
+map_df["t2p_ms"] = pd.to_numeric(map_df["waveform_duration"], errors="coerce") * 1000.0
+map_df["firing_rate_hz"] = pd.to_numeric(map_df["firing_rate"], errors="coerce")
 
-map_df["putative_fs"] = (
-    map_df["t2p_ms"].lt(FS_T2P_MAX_MS)
-    & map_df["firing_rate_hz"].ge(FS_FR_MIN_HZ)
+map_df["putative_fs"] = map_df["t2p_ms"].lt(FS_T2P_MAX_MS) & map_df["firing_rate_hz"].ge(
+    FS_FR_MIN_HZ
 )
 
 # ============================================================
 # 3. ATTACH SST OPTO-TAGGING
 # ============================================================
 
-sst_lookup = (
-    sst_opto_df
-    .drop_duplicates("unit_uid")
-    .set_index("unit_uid")
-)
+sst_lookup = sst_opto_df.drop_duplicates("unit_uid").set_index("unit_uid")
 
 map_df["sst_opto_available"] = map_df["unit_uid"].isin(sst_lookup.index)
 map_df["sst_optotagged"] = False
@@ -3133,10 +2977,7 @@ map_df["sst_optotagged"] = False
 m = map_df["sst_opto_available"]
 
 map_df.loc[m, "sst_optotagged"] = (
-    map_df.loc[m, "unit_uid"]
-    .map(sst_lookup["is_sst_optotagged"])
-    .fillna(False)
-    .astype(bool)
+    map_df.loc[m, "unit_uid"].map(sst_lookup["is_sst_optotagged"]).fillna(False).astype(bool)
 )
 
 for c in [
@@ -3160,17 +3001,11 @@ for c in [
 # 4. OVERLAP / EXCLUSIVE GROUPS
 # ============================================================
 
-map_df["sst_fs_overlap"] = (
-    map_df["sst_optotagged"] & map_df["putative_fs"]
-)
+map_df["sst_fs_overlap"] = map_df["sst_optotagged"] & map_df["putative_fs"]
 
 # Retained for the waveform-comparison cell below.
-map_df["putative_fs_only"] = (
-    map_df["putative_fs"] & ~map_df["sst_optotagged"]
-)
-map_df["sst_only"] = (
-    map_df["sst_optotagged"] & ~map_df["putative_fs"]
-)
+map_df["putative_fs_only"] = map_df["putative_fs"] & ~map_df["sst_optotagged"]
+map_df["sst_only"] = map_df["sst_optotagged"] & ~map_df["putative_fs"]
 
 # ============================================================
 # 5. OVERALL SUMMARY
@@ -3188,14 +3023,11 @@ print(f"Total units: {n_total:,}")
 print(
     f"Putative FS/PV-like "
     f"(t2p < {FS_T2P_MAX_MS:.2f} ms, FR >= {FS_FR_MIN_HZ:.1f} Hz): "
-    f"{n_fs:,} ({100*n_fs/n_total:.2f}%)"
+    f"{n_fs:,} ({100 * n_fs / n_total:.2f}%)"
 )
-print(f"Optotagged SST: {n_sst:,} ({100*n_sst/n_total:.2f}%)")
+print(f"Optotagged SST: {n_sst:,} ({100 * n_sst / n_total:.2f}%)")
 if n_sst:
-    print(
-        f"SST ∩ FS: {n_overlap:,}/{n_sst:,} optotagged SST "
-        f"({100*n_overlap/n_sst:.2f}%)"
-    )
+    print(f"SST ∩ FS: {n_overlap:,}/{n_sst:,} optotagged SST ({100 * n_overlap / n_sst:.2f}%)")
 
 # ============================================================
 # 6. REGIONAL SUMMARY
@@ -3211,23 +3043,21 @@ for group in GROUP_ORDER:
     n_sst_area = int(sub["sst_optotagged"].sum())
     n_overlap_area = int(sub["sst_fs_overlap"].sum())
 
-    summary_rows.append({
-        "wavemap_group": group,
-        "region": GROUP_NAMES.get(group, group),
-        "n_units": n_area,
-        "n_putative_fs": n_fs_area,
-        "putative_fs_percent_all": (
-            100 * n_fs_area / n_area if n_area else np.nan
-        ),
-        "n_optotagged_sst": n_sst_area,
-        "sst_percent_all": (
-            100 * n_sst_area / n_area if n_area else np.nan
-        ),
-        "n_sst_meeting_fs_criterion": n_overlap_area,
-        "percent_sst_meeting_fs_criterion": (
-            100 * n_overlap_area / n_sst_area if n_sst_area else np.nan
-        ),
-    })
+    summary_rows.append(
+        {
+            "wavemap_group": group,
+            "region": GROUP_NAMES.get(group, group),
+            "n_units": n_area,
+            "n_putative_fs": n_fs_area,
+            "putative_fs_percent_all": (100 * n_fs_area / n_area if n_area else np.nan),
+            "n_optotagged_sst": n_sst_area,
+            "sst_percent_all": (100 * n_sst_area / n_area if n_area else np.nan),
+            "n_sst_meeting_fs_criterion": n_overlap_area,
+            "percent_sst_meeting_fs_criterion": (
+                100 * n_overlap_area / n_sst_area if n_sst_area else np.nan
+            ),
+        }
+    )
 
 regional_summary = pd.DataFrame(summary_rows)
 
@@ -3275,15 +3105,28 @@ PUBLICATION_SNAPSHOT = PUBLICATION_DATA_DIR / "wavemap-analysis.json.gz"
 PUBLICATION_PROVENANCE = PUBLICATION_DATA_DIR / "wavemap-analysis.provenance.json"
 
 _snapshot_names = [
-    "units_df", "normWFs", "group_embeddings", "CLASS_COLORS",
-    "AREA_CLUSTER_COLORS", "map_df", "sst_opto_df",
-    "region_context_summary", "enrich_df", "WAVEFORM_SAMPLING_RATE",
-    "WF_SAMPLING_RATE", "CONTEXT_ORDER",
+    "units_df",
+    "normWFs",
+    "group_embeddings",
+    "CLASS_COLORS",
+    "AREA_CLUSTER_COLORS",
+    "map_df",
+    "sst_opto_df",
+    "region_context_summary",
+    "enrich_df",
+    "WAVEFORM_SAMPLING_RATE",
+    "WF_SAMPLING_RATE",
+    "CONTEXT_ORDER",
 ]
 _snapshot = {name: globals()[name] for name in _snapshot_names if name in globals()}
 _required_snapshot = {
-    "units_df", "normWFs", "group_embeddings", "CLASS_COLORS",
-    "map_df", "region_context_summary", "enrich_df",
+    "units_df",
+    "normWFs",
+    "group_embeddings",
+    "CLASS_COLORS",
+    "map_df",
+    "region_context_summary",
+    "enrich_df",
 }
 _missing_snapshot = sorted(_required_snapshot - set(_snapshot))
 if _missing_snapshot:
@@ -3314,11 +3157,24 @@ def _encode_publication(value):
         records = []
         for row in value.to_dict(orient="records"):
             records.append({str(k): _encode_publication(v) for k, v in row.items()})
-        return {"__type__": "dataframe", "columns": list(map(str, value.columns)), "records": records}
+        return {
+            "__type__": "dataframe",
+            "columns": list(map(str, value.columns)),
+            "records": records,
+        }
     if isinstance(value, pd.Series):
-        return {"__type__": "series", "name": value.name, "values": [_encode_publication(v) for v in value.tolist()]}
+        return {
+            "__type__": "series",
+            "name": value.name,
+            "values": [_encode_publication(v) for v in value.tolist()],
+        }
     if isinstance(value, np.ndarray):
-        return {"__type__": "ndarray", "dtype": str(value.dtype), "shape": list(value.shape), "data": [_encode_publication(v) for v in value.tolist()]}
+        return {
+            "__type__": "ndarray",
+            "dtype": str(value.dtype),
+            "shape": list(value.shape),
+            "data": [_encode_publication(v) for v in value.tolist()],
+        }
     if isinstance(value, tuple):
         return {"__type__": "tuple", "items": [_encode_publication(v) for v in value]}
     if isinstance(value, list):
@@ -3356,18 +3212,20 @@ _snapshot_sha256 = _hashlib.sha256(PUBLICATION_SNAPSHOT.read_bytes()).hexdigest(
 
 _asset_records = []
 for _row in session_inventory.itertuples(index=False):
-    _asset_records.append({
-        "session_key": str(_row.session_key),
-        "context": str(_row.context),
-        "asset_id": str(_row.asset_id),
-        "path": str(_row.filepath),
-        "size_bytes": int(_row.asset_size_bytes),
-    })
+    _asset_records.append(
+        {
+            "session_key": str(_row.session_key),
+            "context": str(_row.context),
+            "asset_id": str(_row.asset_id),
+            "path": str(_row.filepath),
+            "size_bytes": int(_row.asset_size_bytes),
+        }
+    )
 
 _provenance = {
     "snapshot": PUBLICATION_SNAPSHOT.name,
     "snapshot_sha256": _snapshot_sha256,
-    "generated_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+    "generated_utc": _dt.datetime.now(_dt.UTC).isoformat(),
     "source": {
         "archive": "DANDI",
         "dandiset_id": DANDISET_ID,
@@ -3376,9 +3234,12 @@ _provenance = {
     },
     "analysis": {
         "checkpoint_version": CHECKPOINT_VERSION,
-        "random_seed": globals().get("RANDOM_SEED", globals().get("SEED")),
+        "random_seed": RAND_STATE,
         "qc": {k: globals().get(k) for k in _QC_DEFAULTS},
-        "note": "Scientific calculations are the approved notebook analysis; this block only serializes its final figure inputs.",
+        "note": (
+            "Scientific calculations follow the contributed notebook analysis; "
+            "this block serializes its final figure inputs."
+        ),
     },
 }
 PUBLICATION_PROVENANCE.write_text(

@@ -1,13 +1,21 @@
 from __future__ import annotations
 
+import base64
+from pathlib import Path
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.colors import TwoSlopeNorm
+from PIL import Image
 
-from .wavemap_figure import REPO_ROOT, load_wavemap_snapshot
-
+from openscope_p3_publication.wavemap_figure import (
+    REPO_ROOT,
+    load_wavemap_snapshot,
+    verified_waveform_sampling_rate,
+)
 
 OUT = REPO_ROOT / "images" / "figures" / "generated"
 
@@ -37,27 +45,31 @@ CONTEXT_SHORT = {
 }
 
 
-mpl.rcParams.update({
-    "font.family": "sans-serif",
-    "font.sans-serif": ["Arial", "DejaVu Sans"],
-    "font.size": 8,
-    "axes.titlesize": 9,
-    "axes.labelsize": 8,
-    "xtick.labelsize": 7,
-    "ytick.labelsize": 7,
-    "legend.fontsize": 6,
-    "axes.linewidth": 0.6,
-    "xtick.major.width": 0.6,
-    "ytick.major.width": 0.6,
-    "pdf.fonttype": 42,
-    "ps.fonttype": 42,
-    "savefig.dpi": 600,
-})
+mpl.rcParams.update(
+    {
+        "font.family": "sans-serif",
+        "font.sans-serif": ["DejaVu Sans"],
+        "font.size": 8,
+        "axes.titlesize": 9,
+        "axes.labelsize": 8,
+        "xtick.labelsize": 7,
+        "ytick.labelsize": 7,
+        "legend.fontsize": 6,
+        "axes.linewidth": 0.6,
+        "xtick.major.width": 0.6,
+        "ytick.major.width": 0.6,
+        "pdf.fonttype": 42,
+        "ps.fonttype": 42,
+        "savefig.dpi": 600,
+    }
+)
 
 
 def _panel_letter(fig, letter, x=0.018, y=0.985):
     fig.text(
-        x, y, letter,
+        x,
+        y,
+        letter,
         ha="left",
         va="top",
         fontsize=12,
@@ -77,11 +89,12 @@ def _clean_umap(ax):
         spine.set_visible(False)
 
 
-def _save(fig, stem):
-    OUT.mkdir(parents=True, exist_ok=True)
+def _save(fig, stem, output_dir=None, pages=None):
+    output_dir = OUT if output_dir is None else output_dir
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    png = OUT / f"{stem}.png"
-    pdf = OUT / f"{stem}.pdf"
+    png = output_dir / f"{stem}.png"
+    pdf = output_dir / f"{stem}.pdf"
 
     fig.savefig(
         png,
@@ -94,12 +107,12 @@ def _save(fig, stem):
         pdf,
         bbox_inches="tight",
         facecolor="white",
+        metadata={"CreationDate": None, "ModDate": None},
     )
 
+    if pages is not None:
+        pages.savefig(fig, bbox_inches="tight", facecolor="white")
     plt.close(fig)
-
-    print(f"Wrote {png.relative_to(REPO_ROOT)}")
-    print(f"Wrote {pdf.relative_to(REPO_ROOT)}")
 
     return png, pdf
 
@@ -107,11 +120,7 @@ def _save(fig, stem):
 def _context_matrix(df, group, value):
     sub = df[df["group"] == group].copy()
 
-    classes = (
-        sub[["wavemap_local", "wavemap_label"]]
-        .drop_duplicates()
-        .sort_values("wavemap_local")
-    )
+    classes = sub[["wavemap_local", "wavemap_label"]].drop_duplicates().sort_values("wavemap_local")
 
     order = classes["wavemap_local"].tolist()
     labels = classes["wavemap_label"].astype(str).tolist()
@@ -136,7 +145,9 @@ def _context_matrix(df, group, value):
 # A — WAVEMAP UMAPS
 # ============================================================
 
-def build_umap_figure(snapshot):
+
+def build_umap_figure(snapshot: dict, output_dir: Path | None = None, pages=None) -> tuple:
+    """Render the contributed region-specific embeddings without re-embedding."""
     units = snapshot["units_df"]
     colours = snapshot["AREA_CLUSTER_COLORS"]
 
@@ -155,20 +166,15 @@ def build_umap_figure(snapshot):
         hspace=0.16,
     )
 
-    for ax, group in zip(axes.flat, GROUP_ORDER):
-
+    for ax, group in zip(axes.flat, GROUP_ORDER, strict=False):
         sub = units[
             (units["wavemap_group"] == group)
             & units["wavemap_local"].notna()
             & (units["wavemap_local"] > 0)
         ].copy()
 
-        for local in sorted(
-            sub["wavemap_local"].astype(int).unique()
-        ):
-            pts = sub[
-                sub["wavemap_local"].astype(int) == local
-            ]
+        for local in sorted(sub["wavemap_local"].astype(int).unique()):
+            pts = sub[sub["wavemap_local"].astype(int) == local]
 
             ax.scatter(
                 pts["umap_x"],
@@ -190,22 +196,22 @@ def build_umap_figure(snapshot):
 
     _panel_letter(fig, "A")
 
-    return _save(fig, "wavemap-umap")
+    return _save(fig, "wavemap-umap", output_dir, pages)
 
 
 # ============================================================
 # B — MEAN WAVEMAP WAVEFORMS
 # ============================================================
 
-def build_waveform_figure(snapshot):
+
+def build_waveform_figure(snapshot: dict, output_dir: Path | None = None, pages=None) -> tuple:
+    """Render cluster-mean waveforms with only source-supported time calibration."""
     units = snapshot["units_df"]
     norm_wfs = np.asarray(snapshot["normWFs"])
     colours = snapshot["AREA_CLUSTER_COLORS"]
 
     if len(units) != len(norm_wfs):
-        raise RuntimeError(
-            "Waveform matrix and unit metadata are not row-aligned."
-        )
+        raise RuntimeError("Waveform matrix and unit metadata are not row-aligned.")
 
     # Taller figure deliberately gives each waveform panel room
     # for its own legend underneath.
@@ -224,10 +230,10 @@ def build_waveform_figure(snapshot):
         hspace=0.68,
     )
 
-    sampling_rate = float(snapshot["WF_SAMPLING_RATE"])
+    sampling_rate = verified_waveform_sampling_rate(snapshot)
     n_samples = norm_wfs.shape[1]
 
-    if np.isfinite(sampling_rate) and sampling_rate > 0:
+    if sampling_rate is not None:
         x = np.arange(n_samples) / sampling_rate * 1000.0
         xlabel = "Time (ms)"
     else:
@@ -241,15 +247,12 @@ def build_waveform_figure(snapshot):
         errors="coerce",
     ).to_numpy()
 
-    for ax, group in zip(axes.flat, GROUP_ORDER):
-
+    for ax, group in zip(axes.flat, GROUP_ORDER, strict=False):
         group_mask = groups == group
 
         local_classes = sorted(
             units.loc[
-                group_mask
-                & units["wavemap_local"].notna()
-                & (units["wavemap_local"] > 0),
+                group_mask & units["wavemap_local"].notna() & (units["wavemap_local"] > 0),
                 "wavemap_local",
             ]
             .astype(int)
@@ -257,12 +260,7 @@ def build_waveform_figure(snapshot):
         )
 
         for local in local_classes:
-
-            mask = (
-                group_mask
-                & np.isfinite(local_values)
-                & (local_values == local)
-            )
+            mask = group_mask & np.isfinite(local_values) & (local_values == local)
 
             # Same mean-waveform definition already used in the
             # approved WaveMAP analysis.
@@ -314,19 +312,19 @@ def build_waveform_figure(snapshot):
 
     _panel_letter(fig, "B")
 
-    return _save(fig, "wavemap-waveforms")
+    return _save(fig, "wavemap-waveforms", output_dir, pages)
 
 
 # ============================================================
 # C — FS / SST
 # ============================================================
 
-def build_fs_sst_figure(snapshot):
+
+def build_fs_sst_figure(snapshot: dict, output_dir: Path | None = None, pages=None) -> tuple:
+    """Locate the existing operational cell labels within waveform space."""
     df = snapshot["map_df"]
 
-    # More vertical room than previous version so each UMAP can
-    # retain equal aspect without becoming tiny.
-    fig = plt.figure(figsize=(7.2, 6.5))
+    fig = plt.figure(figsize=(7.2, 3.8))
 
     gs = fig.add_gridspec(
         3,
@@ -347,7 +345,6 @@ def build_fs_sst_figure(snapshot):
     ]
 
     for row, (column, label, colour) in enumerate(rows):
-
         label_ax = fig.add_subplot(gs[row, 0])
         label_ax.axis("off")
 
@@ -362,16 +359,9 @@ def build_fs_sst_figure(snapshot):
         )
 
         for col, group in enumerate(GROUP_ORDER):
+            ax = fig.add_subplot(gs[row, col + 1])
 
-            ax = fig.add_subplot(
-                gs[row, col + 1]
-            )
-
-            sub = df[
-                (df["wavemap_group"] == group)
-                & df["umap_x"].notna()
-                & df["umap_y"].notna()
-            ]
+            sub = df[(df["wavemap_group"] == group) & df["umap_x"].notna() & df["umap_y"].notna()]
 
             ax.scatter(
                 sub["umap_x"],
@@ -383,11 +373,7 @@ def build_fs_sst_figure(snapshot):
                 rasterized=True,
             )
 
-            selected = sub[
-                sub[column]
-                .fillna(False)
-                .astype(bool)
-            ]
+            selected = sub[sub[column].fillna(False).astype(bool)]
 
             ax.scatter(
                 selected["umap_x"],
@@ -401,7 +387,7 @@ def build_fs_sst_figure(snapshot):
 
             if row == 0:
                 ax.set_title(
-                    GROUP_NAMES[group],
+                    GROUP_NAMES[group].replace(" cortex", "\ncortex"),
                     fontweight="bold",
                     fontsize=7.5,
                     pad=3,
@@ -411,7 +397,7 @@ def build_fs_sst_figure(snapshot):
 
     _panel_letter(fig, "C")
 
-    return _save(fig, "wavemap-fs-sst")
+    return _save(fig, "wavemap-fs-sst", output_dir, pages)
 
 
 # ============================================================
@@ -420,12 +406,18 @@ def build_fs_sst_figure(snapshot):
 # D2 = enrichment
 # ============================================================
 
-def build_context_figure(snapshot):
 
+def build_context_figure(snapshot: dict, output_dir: Path | None = None, pages=None) -> tuple:
+    """Render the saved context summaries with row spacing based on class counts."""
     absolute = snapshot["region_context_summary"]
     enrichment = snapshot["enrich_df"]
 
-    fig = plt.figure(figsize=(7.2, 8.1))
+    class_counts = absolute.groupby("group")["wavemap_local"].nunique()
+    row_heights = [
+        max(int(class_counts[group]) for group in GROUP_ORDER[start:start + 3]) * 0.18 + 0.5
+        for start in (0, 3)
+    ]
+    fig = plt.figure(figsize=(7.2, max(10.0, 2 * sum(row_heights) + 1.0)))
 
     outer = fig.add_gridspec(
         2,
@@ -440,6 +432,7 @@ def build_context_figure(snapshot):
     gs_top = outer[0].subgridspec(
         2,
         3,
+        height_ratios=row_heights,
         wspace=0.34,
         hspace=0.46,
     )
@@ -447,6 +440,7 @@ def build_context_figure(snapshot):
     gs_bottom = outer[1].subgridspec(
         2,
         3,
+        height_ratios=row_heights,
         wspace=0.34,
         hspace=0.46,
     )
@@ -454,10 +448,7 @@ def build_context_figure(snapshot):
     im_abs = None
 
     for i, group in enumerate(GROUP_ORDER):
-
-        ax = fig.add_subplot(
-            gs_top[i // 3, i % 3]
-        )
+        ax = fig.add_subplot(gs_top[i // 3, i % 3])
 
         matrix, labels = _context_matrix(
             absolute,
@@ -507,10 +498,7 @@ def build_context_figure(snapshot):
     im_enr = None
 
     for i, group in enumerate(GROUP_ORDER):
-
-        ax = fig.add_subplot(
-            gs_bottom[i // 3, i % 3]
-        )
+        ax = fig.add_subplot(gs_bottom[i // 3, i % 3])
 
         matrix, labels = _context_matrix(
             enrichment,
@@ -551,9 +539,7 @@ def build_context_figure(snapshot):
             spine.set_visible(False)
 
     # Colourbars have their own columns outside all heatmaps.
-    cax1 = fig.add_axes(
-        [0.91, 0.575, 0.016, 0.27]
-    )
+    cax1 = fig.add_axes([0.91, 0.575, 0.016, 0.27])
 
     cb1 = fig.colorbar(
         im_abs,
@@ -570,9 +556,7 @@ def build_context_figure(snapshot):
         width=0.5,
     )
 
-    cax2 = fig.add_axes(
-        [0.91, 0.155, 0.016, 0.27]
-    )
+    cax2 = fig.add_axes([0.91, 0.155, 0.016, 0.27])
 
     cb2 = fig.colorbar(
         im_enr,
@@ -584,9 +568,7 @@ def build_context_figure(snapshot):
         fontsize=7,
     )
 
-    cb2.set_ticks(
-        [-1, -0.5, 0, 0.5, 1]
-    )
+    cb2.set_ticks([-1, -0.5, 0, 0.5, 1])
 
     cb2.ax.tick_params(
         labelsize=6.5,
@@ -597,8 +579,8 @@ def build_context_figure(snapshot):
     _panel_letter(fig, "D")
 
     fig.text(
-        0.055,
-        0.94,
+        0.075,
+        0.973,
         "D1",
         fontsize=9,
         fontweight="bold",
@@ -607,8 +589,8 @@ def build_context_figure(snapshot):
     )
 
     fig.text(
-        0.055,
-        0.505,
+        0.075,
+        gs_bottom[0, 0].get_position(fig).y1 + 0.035,
         "D2",
         fontsize=9,
         fontweight="bold",
@@ -616,16 +598,58 @@ def build_context_figure(snapshot):
         va="top",
     )
 
-    return _save(fig, "wavemap-context")
+    return _save(fig, "wavemap-context", output_dir, pages)
 
 
-def main():
-    snapshot = load_wavemap_snapshot()
+def build_wavemap_static_figures(
+    snapshot: dict | None = None, output_dir: Path = OUT
+) -> tuple[Path, ...]:
+    """Build four panels, a self-contained SVG, and a four-page supplementary PDF."""
+    snapshot = load_wavemap_snapshot() if snapshot is None else snapshot
+    output_dir.mkdir(parents=True, exist_ok=True)
+    supplementary_pdf = output_dir / "supplementary-wavemap.pdf"
+    outputs = []
+    with PdfPages(
+        supplementary_pdf,
+        metadata={"CreationDate": None, "ModDate": None, "Title": "Supplementary Figure 9"},
+    ) as pages:
+        for builder in (
+            build_umap_figure, build_waveform_figure, build_fs_sst_figure, build_context_figure
+        ):
+            outputs.extend(builder(snapshot, output_dir, pages))
+    images = []
+    top = 0.0
+    for image_path in outputs:
+        if image_path.suffix != ".png":
+            continue
+        with Image.open(image_path) as image:
+            height = image.height * 1200 / image.width
+        encoded = base64.b64encode(image_path.read_bytes()).decode("ascii")
+        images.append(
+            f'<image x="0" y="{top:.3f}" width="1200" height="{height:.3f}" '
+            f'href="data:image/png;base64,{encoded}"/>'
+        )
+        top += height + 24
+    svg_path = output_dir / "supplementary-wavemap.svg"
+    svg_path.write_text(
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="{top:.3f}" '
+        f'viewBox="0 0 1200 {top:.3f}" role="img" aria-labelledby="wavemap-title">\n'
+        '<title id="wavemap-title">Supplementary Figure 9. '
+        'WaveMAP waveform characterization</title>\n'
+        '<desc>A: regional embeddings. B: cluster mean waveforms in sample coordinates. '
+        'C: putative FS and optotagged SST overlays. D: saved context composition and enrichment.'
+        '</desc>\n<rect width="100%" height="100%" fill="white"/>\n'
+        + "\n".join(images) + "\n</svg>\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return (*outputs, supplementary_pdf, svg_path)
 
-    build_umap_figure(snapshot)
-    build_waveform_figure(snapshot)
-    build_fs_sst_figure(snapshot)
-    build_context_figure(snapshot)
+
+def main() -> None:
+    """Regenerate the static supplementary figure from the committed snapshot."""
+    for output in build_wavemap_static_figures():
+        print(f"Wrote {output.name}")
 
 
 if __name__ == "__main__":

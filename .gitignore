@@ -3,6 +3,8 @@ _build/
 
 # Generated deployment copies of canonical figure data
 interactive/media/neuropixels-event-responses/
+interactive/vendor/plotly.min.js
+interactive/media/wavemap/
 
 # Operating-system metadata
 .DS_Store
