@@ -1,15 +1,15 @@
 {
   "export_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/export?format=csv&gid=2007007400",
   "modality_rows": {
-    "Mesoscope": 64,
+    "Mesoscope": 86,
     "Neuropixels": 60,
     "SLAP2": 17
   },
   "notes": "Released-session snapshot of DATA ACCESS SUMMARY. Publication builds read this local CSV and never query Google Sheets.",
-  "retrieved_date": "2026-08-03",
-  "rows": 141,
-  "source_sha256": "65fa5507f69c25184af5c11c80f79b5dd9e736769baff4e0edf04b27563619c6",
+  "retrieved_date": "2026-08-14",
+  "rows": 163,
+  "source_sha256": "4fb9e58964e34bc85899081869cf63fab0b7ec370f5cefe919530d47dee6b73a",
   "source_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/export?format=csv&gid=2007007400",
-  "vendored_sha256": "6e4609df4986f83d54d17679929caefc086c3fad4de351f32c1bbc009774a6c2",
+  "vendored_sha256": "8067f7d91c65e0c0314a623cffbfcc913acd13636f517036a0f0c4e50d9765d2",
   "version": 1
 }

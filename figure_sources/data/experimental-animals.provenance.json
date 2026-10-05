@@ -1,7 +1,7 @@
 {
   "export_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/export?format=csv&gid=520414570",
   "notes": "Complete public MICE TABLE snapshot, normalized to UTF-8 CSV with LF line endings. Publication builds read only this local file.",
-  "retrieved_date": "2026-08-03",
+  "retrieved_date": "2026-08-14",
   "rows": 39,
   "source_sha256": "37dca73fd42f18950aa194bc58799177092936dc537290494cecf1a26922e213",
   "source_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/edit?gid=520414570",

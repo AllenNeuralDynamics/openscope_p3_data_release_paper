@@ -12,7 +12,7 @@ The experimental-design generator writes:
 - `images/figures/generated/figure-01-panel-c-cohorts.svg`: context allocation across Neuropixels, mesoscope, and SLAP2 cohorts, embedded as Figure 1C.
 - `images/figures/generated/figure-02-context-controls.svg`: static session timeline and detailed control architecture.
 - `images/figures/generated/multimodal-hardware.svg`: Figure 3 rig, mouse-platform, and targeting composition built from nine checksum-verified PowerPoint PNG sources.
-- `images/figures/generated/figure-07-unit-extraction-plan.svg`, `figure-08-basic-stimuli-plan.svg`, and `figure-10-standard-oddball-plan.svg`: clean wrappers around preserved draft PNGs that mask obsolete embedded figure numbers while retaining their analysis-plan content.
+- `images/figures/generated/figure-07-unit-extraction-plan.svg`, `figure-08-basic-stimuli-plan.svg`, and `figure-11-standard-oddball-plan.svg`: clean wrappers around preserved draft PNGs that mask obsolete embedded figure numbers while retaining their analysis-plan content.
 - `interactive/experimental-design.html`: self-contained JavaScript stimulus viewer for the MyST site.
 - `images/figures/generated/experimental-design.svg`: accessible generated timeline summary.
 
@@ -27,5 +27,9 @@ The raw-data viewer uses `images/figures/generated/raw-neural-recordings.svg` as
 The Neuropixels trajectory viewer uses `images/figures/generated/supplementary-neuropixels-trajectories.svg` as its static HTML view and PDF placeholder. Its Three.js view renders all CCF-localized session-probe trajectories inside a decimated Allen CCF whole-brain surface and exposes each selected insertion's contiguous area profile. Its source payload and exclusions are recorded in `figure_sources/data/neuropixels-trajectories.json` and `neuropixels-trajectories.provenance.json`.
 
 The behavior viewer uses `images/figures/generated/synchronized-behavior.svg` as its static HTML view and PDF placeholder. It combines 10 ETag-verified camera stills with source-backed, same-session block-annotated running profiles and ordered mouse-level block means from `figure_sources/data/running-statistics.json`. The SLAP2 profile and aggregate are calibrated to cm/s with the pinned public acquisition convention.
+
+The supplementary pupil-response viewer uses `images/figures/generated/supplementary-pupil-event-responses.svg` as its static HTML view and PDF placeholder. Both outputs are generated offline from the checksum-verified `figure_sources/data/pupil-event-responses.json` snapshot.
+
+The main-text Neuropixels mismatch-response explorer uses `images/figures/generated/figure-10-neuropixels-event-responses.svg` as its static HTML view and PDF placeholder. It reads checksum-verified unit metadata, RS/FS/SST classifications, firing rates, Rastermap ranks, and offline-computed native 2.5 ms mean-SDF atlases without network access. The extractor performs the τ=10 ms, 10τ causal convolution with hidden pre-padding and stores every quantized 2.5 ms sample used identically by static and browser renderers.
 
 Keep data-loading, transformation, and rendering logic in the package. Store small figure inputs under `figure_sources/data/`; large or externally archived inputs should be represented by a manifest containing their URL, version, and checksum.

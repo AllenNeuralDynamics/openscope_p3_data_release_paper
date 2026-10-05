@@ -264,6 +264,6 @@
   ],
   "local_time_seconds": 8.0,
   "notes": "Camera frames decoded from ETag-pinned public MP4 sources for Figure 8's static view. Neuropixels and mesoscope retain the common synchronized excerpt time; SLAP2 uses the same session and mouse as its full-session running profile. Each still is independently illuminated from luminance percentiles.",
-  "running_statistics_sha256": "6d9273e687ef5626f3c12455bf4d5bbb656948cf47ee32c774476d62383f9693",
+  "running_statistics_sha256": "2e5ab9cf5a85e494f2f61db2a8a856afd6c5a4f9edf212b06ee377720c966bef",
   "version": 2
 }
