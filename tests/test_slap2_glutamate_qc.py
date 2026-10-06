@@ -1,11 +1,15 @@
+import base64
 import hashlib
+import io
 import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
+from PIL import Image
 
+from openscope_p3_publication.image_encoding import canonical_png, canonical_svg_images
 from openscope_p3_publication.slap2_glutamate_figure7_panels import (
     EXAMPLE_PATH,
     event_table,
@@ -31,6 +35,23 @@ def test_compact_traces_preserve_original_roi_identity() -> None:
     np.testing.assert_array_equal(source_trace({"data": full}, 4), full[:, 4])
     with pytest.raises(KeyError, match="ROI 3"):
         source_trace(compact, 3)
+
+
+def test_image_encoding_preserves_pixels_and_normalizes_svg_ids() -> None:
+    pixels = np.arange(400, dtype=np.uint8).reshape(10, 10, 4)
+    original = io.BytesIO()
+    Image.fromarray(pixels).save(original, format="PNG")
+    normalized = canonical_png(original.getvalue())
+    np.testing.assert_array_equal(np.asarray(Image.open(io.BytesIO(normalized))), pixels)
+    assert canonical_png(normalized) == normalized
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">'
+        '<image id="{identifier}" xlink:href="data:image/png;base64,{encoded}"/>'
+        '<use xlink:href="#{identifier}"/></svg>'
+    )
+    first = svg.format(identifier="first", encoded=base64.b64encode(original.getvalue()).decode())
+    second = svg.format(identifier="second", encoded=base64.b64encode(normalized).decode())
+    assert canonical_svg_images(first) == canonical_svg_images(second)
 
 
 def test_example_snapshot_checks_checksum_and_numeric_arrays(tmp_path: Path) -> None:
@@ -139,7 +160,7 @@ def test_notebook_is_thin_offline_and_has_no_saved_outputs() -> None:
         assert cell.get("execution_count") is None
 
 
-def test_publication_figure_builds_without_network(tmp_path: Path, monkeypatch) -> None:
+def test_publication_figure_builds_without_network(tmp_path: Path, monkeypatch, capsys) -> None:
     import socket
 
     def reject_network(*args, **kwargs):
@@ -155,3 +176,4 @@ def test_publication_figure_builds_without_network(tmp_path: Path, monkeypatch) 
     first_build = {asset.name: asset.read_bytes() for asset in tmp_path.iterdir()}
     write_slap2_glutamate_figure(output)
     assert {asset.name: asset.read_bytes() for asset in tmp_path.iterdir()} == first_build
+    assert capsys.readouterr().out.isascii()

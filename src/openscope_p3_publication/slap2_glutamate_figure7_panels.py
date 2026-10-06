@@ -50,6 +50,10 @@ from matplotlib.colors import Normalize  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
+from openscope_p3_publication.image_encoding import (  # noqa: E402
+    canonical_png,
+    canonical_svg_images,
+)
 from openscope_p3_publication.slap2_glutamate_qc_events import (  # noqa: E402
     SD_DETECT,
     SD_LARGE,
@@ -140,9 +144,12 @@ def save_panel(fig, out: Path, name: str) -> None:
     out.mkdir(parents=True, exist_ok=True)
     svg = io.StringIO()
     fig.savefig(svg, format="svg", dpi=300, metadata={"Date": None})
-    svg_text = "\n".join(line.rstrip() for line in svg.getvalue().splitlines()) + "\n"
+    svg_text = canonical_svg_images(svg.getvalue())
+    svg_text = "\n".join(line.rstrip() for line in svg_text.splitlines()) + "\n"
     (out / f"{name}.svg").write_text(svg_text, encoding="utf-8", newline="\n")
-    fig.savefig(out / f"{name}.png", dpi=300, metadata={"Software": "OpenScope P3 publication"})
+    png = io.BytesIO()
+    fig.savefig(png, format="png", dpi=300, metadata={"Software": "OpenScope P3 publication"})
+    (out / f"{name}.png").write_bytes(canonical_png(png.getvalue()))
     plt.close(fig)
 
 
@@ -639,7 +646,7 @@ def render_panel_c(sess: dict, metrics: pd.DataFrame, out: Path, dmd: int = 1,
 
     panel_tag(fig, "C")
     save_panel(fig, out, "figure7_panelC_slap2_glutamate" + gradient_suffix(color_by))
-    print(f"panel C  → example synapse {ex} (DMD{dmd}), {ev['idx'].size} events, "
+    print(f"panel C -> example synapse {ex} (DMD{dmd}), {ev['idx'].size} events, "
           f"class {metrics[(metrics.dmd == dmd) & (metrics.roi == ex)].quality_class.iloc[0]}")
     return ex
 
@@ -841,7 +848,7 @@ def render_panel_g(sess: dict, m_ex: pd.DataFrame, m_all: pd.DataFrame,
 
     panel_tag(fig, "G")
     save_panel(fig, out, "figure7_panelG_slap2_glutamate" + gradient_suffix(color_by))
-    print(f"panel G  → trace window from {t0 - np.nanmin(sess['traces'][dmd]['ts']):.0f} s; "
+    print(f"panel G -> trace window from {t0 - np.nanmin(sess['traces'][dmd]['ts']):.0f} s; "
           f"class examples {examples}")
 
 
@@ -996,7 +1003,7 @@ def render_panel_k(m_all: pd.DataFrame, ctx: pd.DataFrame, out: Path) -> None:
     panel_tag(fig, "K")
     save_panel(fig, out, "figure7_panelK_slap2_glutamate")
 
-    print("panel K  → event rate (Hz/synapse) by context and class:")
+    print("panel K -> event rate (Hz/synapse) by context and class:")
     piv = (ctx.assign(cohort=ctx.session.isin(dual).map({False: "glut", True: "glut+ca"}))
               .pivot_table(index=["cohort", "context"], columns="quality_class",
                            values="rate_hz", aggfunc="mean")
