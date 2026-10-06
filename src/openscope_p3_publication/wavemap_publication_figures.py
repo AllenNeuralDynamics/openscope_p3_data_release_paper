@@ -656,14 +656,18 @@ def build_context_figure(snapshot: dict, output_dir: Path | None = None, pages=N
 def build_wavemap_static_figures(
     snapshot: dict | None = None, output_dir: Path = OUT
 ) -> tuple[Path, ...]:
-    """Build four panels, a self-contained SVG, and a four-page supplementary PDF."""
+    """Build four panels, a self-contained SVG, and a four-page PDF."""
     snapshot = load_wavemap_snapshot() if snapshot is None else snapshot
     output_dir.mkdir(parents=True, exist_ok=True)
     supplementary_pdf = output_dir / "supplementary-wavemap.pdf"
     outputs = []
     with _CanonicalPdfPages(
         supplementary_pdf,
-        metadata={"CreationDate": None, "ModDate": None, "Title": "Supplementary Figure 9"},
+        metadata={
+            "CreationDate": None,
+            "ModDate": None,
+            "Title": "WaveMAP waveform characterization",
+        },
     ) as pages:
         for builder in (
             build_umap_figure, build_waveform_figure, build_fs_sst_figure, build_context_figure
@@ -686,8 +690,7 @@ def build_wavemap_static_figures(
     svg_path.write_text(
         f'<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="{top:.3f}" '
         f'viewBox="0 0 1200 {top:.3f}" role="img" aria-labelledby="wavemap-title">\n'
-        '<title id="wavemap-title">Supplementary Figure 9. '
-        'WaveMAP waveform characterization</title>\n'
+        '<title id="wavemap-title">WaveMAP waveform characterization</title>\n'
         '<desc>A: regional embeddings. B: cluster mean waveforms in sample coordinates. '
         'C: putative FS and optotagged SST overlays. D: saved context composition and enrichment.'
         '</desc>\n<rect width="100%" height="100%" fill="white"/>\n'
@@ -699,7 +702,7 @@ def build_wavemap_static_figures(
 
 
 def main() -> None:
-    """Regenerate the static supplementary figure from the committed snapshot."""
+    """Regenerate the static WaveMAP figure from the committed snapshot."""
     for output in build_wavemap_static_figures():
         print(f"Wrote {output.name}")
 

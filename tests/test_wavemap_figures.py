@@ -97,10 +97,11 @@ def test_wavemap_time_axis_requires_recorded_rate(snapshot: dict) -> None:
     assert verified_waveform_sampling_rate(recorded) is None
 
 
-def test_wavemap_is_a_supplement_not_a_replacement() -> None:
+def test_wavemap_complements_optotagging_as_a_main_figure() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     assert manuscript.count(":label: fig-supp-wavemap") == 1
-    assert "[Supplementary Figure 9](#fig-supp-wavemap)" in manuscript
+    assert "[Figure 10](#fig-supp-wavemap)" in manuscript
+    assert ":label: fig-supp-wavemap\n:width: 100%" in manuscript
     assert ":placeholder: ./images/figures/generated/supplementary-wavemap.svg" in manuscript
     assert ":label: fig-unit-extraction-plan" in manuscript
     assert ":label: fig-supp-optotagging-heatmaps" in manuscript
@@ -119,6 +120,8 @@ def test_wavemap_viewer_has_no_pdf_download_control() -> None:
     assert "supplementary-wavemap.pdf" not in template
     assert template.count('role="tab"') == 4
     assert "__WAVEMAP_STATIC__" in template
+    assert 'alt="WaveMAP:' in template
+    assert "Supplementary Figure 9" not in template
 
 
 def test_wavemap_explorers_build_offline_deterministically(tmp_path: Path, snapshot: dict) -> None:
@@ -200,8 +203,12 @@ def test_wavemap_static_supplement_is_complete_and_deterministic(
     pdf = PdfReader(tmp_path / "supplementary-wavemap.pdf")
     assert len(pdf.pages) == 4
     assert pdf.metadata.creation_date is None
+    assert pdf.metadata.title == "WaveMAP waveform characterization"
     assert "Waveform sample" in pdf.pages[1].extract_text()
     svg = ET.parse(tmp_path / "supplementary-wavemap.svg")
+    assert svg.findtext(".//{http://www.w3.org/2000/svg}title") == (
+        "WaveMAP waveform characterization"
+    )
     images = svg.findall(".//{http://www.w3.org/2000/svg}image")
     assert len(images) == 4
     assert all(image.attrib["href"].startswith("data:image/png;base64,") for image in images)

@@ -1390,9 +1390,13 @@ def add_segmentation_viewer_figures(markdown: str) -> str:
 
 def add_slap2_nwb_contents(markdown: str) -> str:
     heading = "## NWB file contents"
-    end_heading = "# Data validation"
+    end_heading = (
+        "# Data validation"
+        if "# Data validation" in markdown
+        else "## Raw data across recording modalities"
+    )
     if markdown.count(heading) != 1 or markdown.count(end_heading) != 1:
-        raise RuntimeError("Expected one NWB contents and Data validation heading.")
+        raise RuntimeError("Expected one NWB contents heading and one section boundary.")
     start = markdown.index(heading)
     stop = markdown.index(end_heading, start)
     section = markdown[start:stop]
