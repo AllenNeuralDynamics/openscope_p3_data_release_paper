@@ -1,0 +1,18 @@
+{
+  "asset_api_url": "https://api.dandiarchive.org/api/dandisets/001637/versions/draft/assets/?page_size=100",
+  "asset_count": 60,
+  "asset_manifest_sha256": "18053523902d69d56f102855b779007d7f6da0a15583c450412fe852ca0d5889",
+  "dandiset_id": "001637",
+  "dandiset_version": "draft",
+  "notes": "Interval tables are streamed with remfile; no spike or running data is read. Each context block uses one pre-generated stimulus schedule, verified by hashing the trial-type order, orientation, and delay columns and requiring agreement across every session, so one canonical result is stored per context. Sensorimotor adjacency is measured in elapsed time because mismatch events are embedded in a continuous 30 Hz phase-update stream.",
+  "output_sha256": "34e71465c255d3ad1f374e5755b24b449e100508d03334a45491692fd8398a77",
+  "retrieved_date": "2026-09-14",
+  "script_sha256": "3c672391e6bb16f6408a2bd7780af3e769db36056b09fcc6082d496864afd013",
+  "sessions_per_context": {
+    "duration": 14,
+    "sensorimotor": 16,
+    "sequence": 15,
+    "standard": 15
+  },
+  "source_module_sha256": "9c8a99ab19b05637c44af799476fcd5b75d381c235acdccb6b8e4204db11058a"
+}

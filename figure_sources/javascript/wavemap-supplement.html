@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WaveMAP waveform characterization</title>
+  <style>
+__WAVEMAP_STYLE__
+  </style>
+</head>
+<body>
+  <main class="wavemap-supplement">
+    <nav class="view-tabs" role="tablist" aria-label="WaveMAP figure view">
+      <button id="tab-area" role="tab" aria-selected="true" aria-controls="panel-area" tabindex="0" data-view="area">Waveforms</button>
+      <button id="tab-labels" role="tab" aria-selected="false" aria-controls="panel-labels" tabindex="-1" data-view="labels">FS/SST</button>
+      <button id="tab-context" role="tab" aria-selected="false" aria-controls="panel-context" tabindex="-1" data-view="context">Context</button>
+      <button id="tab-static" role="tab" aria-selected="false" aria-controls="panel-static" tabindex="-1" data-view="static">Static</button>
+    </nav>
+    <section id="panel-area" role="tabpanel" aria-labelledby="tab-area">
+      <iframe src="./wavemap-area-explorer.html" title="Area-specific WaveMAP embeddings and waveforms"></iframe>
+    </section>
+    <section id="panel-labels" role="tabpanel" aria-labelledby="tab-labels" hidden>
+      <iframe data-src="./fs-sst-wavemap-explorer.html" title="Putative FS and optotagged SST populations in waveform space"></iframe>
+    </section>
+    <section id="panel-context" role="tabpanel" aria-labelledby="tab-context" hidden>
+      <iframe data-src="./wavemap-context-explorer.html" title="Session-normalized WaveMAP context composition"></iframe>
+    </section>
+    <section id="panel-static" role="tabpanel" aria-labelledby="tab-static" hidden>
+      <img src="__WAVEMAP_STATIC__" alt="Supplementary Figure 9: regional embeddings, mean waveforms, FS/SST overlays, and context-composition matrices.">
+    </section>
+  </main>
+  <script>
+__WAVEMAP_SCRIPT__
+  </script>
+  <script>
+__EMBED_AUTO_HEIGHT_JS__
+  </script>
+</body>
+</html>

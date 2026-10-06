@@ -1,0 +1,1541 @@
+
+<!doctype html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="utf-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+>
+
+<title>
+WaveMAP populations across predictive contexts
+</title>
+
+<script src="./vendor/plotly.min.js"></script>
+
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    background: #ffffff;
+    color: #222222;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+#app {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 26px 32px 30px 32px;
+}
+
+
+/* ==========================================================
+   HEADER
+   ========================================================== */
+
+.header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 215px;
+    gap: 32px;
+    align-items: end;
+
+    width: 100%;
+
+    padding-bottom: 17px;
+
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.header-copy {
+    min-width: 0;
+}
+
+.header h1 {
+    margin: 0 0 6px 0;
+
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.25;
+
+    color: #222222;
+}
+
+.header p {
+    margin: 0;
+
+    max-width: 760px;
+
+    font-size: 12.5px;
+    line-height: 1.5;
+
+    color: #666666;
+}
+
+
+/* ==========================================================
+   AREA SELECTOR
+   ========================================================== */
+
+.control {
+    width: 100%;
+}
+
+.control-label {
+    display: block;
+
+    margin: 0 0 7px 0;
+
+    font-size: 9.5px;
+    font-weight: 600;
+
+    letter-spacing: 0.065em;
+
+    color: #666666;
+}
+
+select {
+    display: block;
+
+    width: 100%;
+    height: 39px;
+
+    margin: 0;
+
+    padding: 0 34px 0 11px;
+
+    border: 1px solid #bdbdbd;
+    border-radius: 3px;
+
+    background: #ffffff;
+
+    color: #222222;
+
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 12.5px;
+
+    cursor: pointer;
+}
+
+
+/* ==========================================================
+   VIEW CONTROLS
+   ========================================================== */
+
+.toolbar {
+    display: grid;
+
+    grid-template-columns: auto minmax(0, 1fr);
+
+    align-items: center;
+
+    gap: 26px;
+
+    width: 100%;
+
+    min-height: 62px;
+
+    padding: 13px 0;
+
+    border-bottom: 1px solid #eeeeee;
+}
+
+.segmented {
+    display: inline-flex;
+
+    align-items: center;
+
+    padding: 3px;
+
+    background: #f3f3f3;
+
+    border-radius: 4px;
+}
+
+.segment-button {
+    display: block;
+
+    height: 34px;
+
+    padding: 0 15px;
+
+    border: 0;
+    border-radius: 3px;
+
+    background: transparent;
+
+    color: #666666;
+
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11.5px;
+    font-weight: 400;
+
+    white-space: nowrap;
+
+    cursor: pointer;
+}
+
+.segment-button.active {
+    background: #ffffff;
+
+    color: #222222;
+
+    font-weight: 600;
+
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.13);
+}
+
+.toolbar-description {
+    min-width: 0;
+
+    margin: 0;
+
+    text-align: right;
+
+    font-size: 11px;
+    line-height: 1.45;
+
+    color: #666666;
+}
+
+
+/* ==========================================================
+   REGION INFORMATION
+   ========================================================== */
+
+.region-line {
+    display: flex;
+
+    align-items: baseline;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    width: 100%;
+
+    padding: 19px 0 4px 0;
+}
+
+#region-name {
+    margin: 0;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    color: #222222;
+}
+
+#region-meta {
+    margin: 0;
+
+    font-size: 10.5px;
+
+    color: #777777;
+
+    white-space: nowrap;
+}
+
+
+/* ==========================================================
+   PLOT
+   ========================================================== */
+
+.plot-wrap {
+    position: relative;
+
+    width: 100%;
+
+    min-width: 0;
+
+    margin: 0;
+
+    overflow: visible;
+}
+
+#plot {
+    width: 100%;
+
+    min-width: 0;
+
+    height: 590px;
+}
+
+
+/* ==========================================================
+   CLICKED CELL PANEL
+   ========================================================== */
+
+#selection {
+    display: none;
+
+    width: 100%;
+
+    margin: 10px 0 0 0;
+
+    padding: 14px 17px;
+
+    background: #fafafa;
+
+    border: 1px solid #e8e8e8;
+    border-radius: 3px;
+}
+
+.selection-grid {
+    display: grid;
+
+    grid-template-columns:
+        0.85fr
+        1.45fr
+        0.85fr
+        2.25fr;
+
+    gap: 25px;
+
+    align-items: start;
+}
+
+.selection-block {
+    min-width: 0;
+}
+
+.selection-label {
+    display: block;
+
+    margin: 0 0 5px 0;
+
+    font-size: 8.5px;
+    font-weight: 600;
+
+    letter-spacing: 0.06em;
+
+    color: #777777;
+}
+
+.selection-value {
+    display: block;
+
+    margin: 0;
+
+    font-size: 11.5px;
+    line-height: 1.4;
+
+    color: #222222;
+
+    overflow-wrap: anywhere;
+}
+
+.selection-value.main {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+
+/* ==========================================================
+   FOOTNOTE
+   ========================================================== */
+
+.note {
+    width: 100%;
+
+    margin: 17px 0 0 0;
+
+    padding: 12px 0 0 0;
+
+    border-top: 1px solid #eeeeee;
+
+    font-size: 10px;
+    line-height: 1.55;
+
+    color: #707070;
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media (max-width: 760px) {
+
+    #app {
+        padding: 20px 16px 24px 16px;
+    }
+
+    .header {
+        grid-template-columns: 1fr;
+
+        gap: 18px;
+    }
+
+    .toolbar {
+        grid-template-columns: 1fr;
+
+        gap: 10px;
+    }
+
+    .toolbar-description {
+        text-align: left;
+    }
+
+    .region-line {
+        align-items: flex-start;
+
+        flex-direction: column;
+
+        gap: 4px;
+    }
+
+    .selection-grid {
+        grid-template-columns: 1fr 1fr;
+
+        gap: 16px;
+    }
+
+    #plot {
+        height: 560px;
+    }
+}
+
+</style>
+
+<style>:root {
+  --figure-font-sans: "Myriad Pro", Arial, sans-serif;
+  --figure-font-mono: "IBM Plex Mono", monospace;
+  --figure-type-panel-title: 1.25rem;
+  --figure-type-section-title: 1rem;
+  --figure-type-body: 0.875rem;
+  --figure-type-control: 0.8125rem;
+  --figure-type-metadata: 0.75rem;
+  --figure-type-axis: 0.75rem;
+  --figure-line-body: 1.45;
+  --figure-line-compact: 1.3;
+}
+
+body {
+  font-family: var(--figure-font-sans);
+  font-size: var(--figure-type-body);
+  line-height: var(--figure-line-body);
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+  font-size: var(--figure-type-control);
+}
+
+:root {
+  --figure-font-sans: "Myriad Pro", Arial, sans-serif;
+  --figure-font-mono: "IBM Plex Mono", monospace;
+  --figure-type-panel-title: 1.25rem;
+  --figure-type-section-title: 1rem;
+  --figure-type-body: 0.875rem;
+  --figure-type-control: 0.8125rem;
+  --figure-type-metadata: 0.75rem;
+  --figure-type-axis: 0.75rem;
+  --figure-line-body: 1.45;
+  --figure-line-compact: 1.3;
+}
+
+body {
+  font-family: var(--figure-font-sans);
+  font-size: var(--figure-type-body);
+  line-height: var(--figure-line-body);
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+  font-size: var(--figure-type-control);
+}</style>
+</head>
+
+
+<body>
+
+
+<div id="app">
+
+
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+
+    <div class="header">
+
+
+        <div class="header-copy">
+
+            <h1>
+                WaveMAP populations across predictive contexts
+            </h1>
+
+            <p>
+                Session-normalized composition of local waveform
+                populations across predictive-processing contexts.
+            </p>
+
+        </div>
+
+
+        <div class="control">
+
+            <label
+                class="control-label"
+                for="area-select"
+            >
+                ANATOMICAL GROUP
+            </label>
+
+            <select id="area-select">
+                <option value="MO">Motor cortex</option><option value="PFC">Prefrontal cortex</option><option value="VIS">Visual cortex</option><option value="STR">Striatum</option><option value="HPC">Hippocampus</option><option value="THAL">Thalamus</option>
+            </select>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         VIEW SWITCH
+         ===================================================== -->
+
+    <div class="toolbar">
+
+
+        <div class="segmented">
+
+            <button
+                id="absolute-button"
+                class="segment-button active"
+                type="button"
+            >
+                Absolute composition
+            </button>
+
+            <button
+                id="enrichment-button"
+                class="segment-button"
+                type="button"
+            >
+                Enrichment / depletion
+            </button>
+
+        </div>
+
+
+        <p
+            class="toolbar-description"
+            id="toolbar-description"
+        >
+            Mean within-session class proportion, averaged across sessions.
+        </p>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         REGION LABEL
+         ===================================================== -->
+
+    <div class="region-line">
+
+        <p id="region-name">
+            —
+        </p>
+
+        <p id="region-meta">
+            —
+        </p>
+
+    </div>
+
+
+    <!-- =====================================================
+         HEATMAP
+         ===================================================== -->
+
+    <div class="plot-wrap">
+
+        <div id="plot"></div>
+
+    </div>
+
+
+    <!-- =====================================================
+         CLICKED CELL INFORMATION
+         ===================================================== -->
+
+    <div id="selection">
+
+        <div class="selection-grid">
+
+
+            <div class="selection-block">
+
+                <span class="selection-label">
+                    WAVEMAP CLASS
+                </span>
+
+                <span
+                    class="selection-value"
+                    id="selected-class"
+                >
+                    —
+                </span>
+
+            </div>
+
+
+            <div class="selection-block">
+
+                <span class="selection-label">
+                    PREDICTIVE CONTEXT
+                </span>
+
+                <span
+                    class="selection-value"
+                    id="selected-context"
+                >
+                    —
+                </span>
+
+            </div>
+
+
+            <div class="selection-block">
+
+                <span class="selection-label">
+                    VALUE
+                </span>
+
+                <span
+                    class="selection-value main"
+                    id="selected-value"
+                >
+                    —
+                </span>
+
+            </div>
+
+
+            <div class="selection-block">
+
+                <span class="selection-label">
+                    INTERPRETATION
+                </span>
+
+                <span
+                    class="selection-value"
+                    id="selected-interpretation"
+                >
+                    —
+                </span>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         NOTE
+         ===================================================== -->
+
+    <div class="note">
+
+        Values are normalized within recording session before
+        averaging across sessions. WaveMAP was fitted independently
+        within each anatomical group; class labels therefore denote
+        local waveform populations within the selected region.
+
+    </div>
+
+
+</div>
+
+
+<script>
+
+// ============================================================
+// DATA
+// ============================================================
+
+const DATA =
+    {"MO":{"name":"Motor cortex","classes":["MO-1","MO-2","MO-3","MO-4","MO-5","MO-6","MO-7","MO-8","MO-9","MO-10","MO-11","MO-12","MO-13","MO-14","MO-15"],"contexts":["Standard oddball","Sensorimotor mismatch","Sequence mismatch","Duration mismatch"],"contextShort":["Standard","Sensorimotor","Sequence","Duration"],"absolute":[[8.663613294123932,7.854844630719465,8.702270867696635,9.384350188540012],[3.5468676419082925,2.8609412179227323,4.575563319217511,2.8113233308581234],[6.544959470528135,5.363075472290711,5.8190302052361265,5.636432018098251],[6.9167745035920145,6.361820405194692,6.821762615903819,6.598878638249031],[8.478411613696453,7.750762449785245,8.855301441838158,10.181990320110891],[2.735279147275946,2.775951926733123,3.0363111973015458,2.7360095795716965],[0.6076348034719905,0.8938855610517648,1.0779463698890996,0.5670843083863463],[7.578548011670863,8.307782322177564,7.963588776926983,6.866987668836328],[8.173078429901283,9.890228230223013,8.984216241275776,8.66496156158361],[5.658752397319844,7.606239788152883,6.1564691103533224,7.163980882932607],[10.815886303297182,9.199407662290177,8.960060397328034,8.431647558220819],[6.5916113212923815,8.71342729664324,8.16981530393642,6.730657162326338],[9.09411981954025,10.798414417410209,9.627691604080871,10.452093134758323],[6.19301057079501,5.616786924696349,5.032836867947198,5.365404764786101],[8.401452671586421,6.006431694708834,6.217135681068499,8.40819888274152]],"enrichment":[[0.0086126856008487,-0.132773423963592,0.015035759864007322,0.12390068713223265],[0.036263403515849967,-0.27379223510185624,0.4036672804731,-0.2990327029551433],[0.16749559401578873,-0.11982810839422725,-0.0021099295311435887,-0.048106469564596334],[0.05287579240165408,-0.06778398590339539,0.0329209219028623,-0.015002745931644022],[-0.046640878080201405,-0.17609665013919137,0.01610653158044546,0.21751280727679848],[-0.04631562899992383,-0.025021119022663418,0.10431595997631421,-0.045930421378957156],[-0.3952508531945375,0.16163478482792298,0.4317581390531178,-0.4948921220932416],[-0.026643489605750935,0.10589845983995716,0.0448537694170002,-0.16888758286382308],[-0.13371390034614059,0.14141033427136468,0.0027991731997788726,-0.04940012971495168],[-0.23549060089457113,0.19120880735752466,-0.11387144729716955,0.10478687393756944],[0.20924859581486657,-0.024290419328705924,-0.06232293313033591,-0.15001682649149875],[-0.20845184102779582,0.19415727643497319,0.1012204469549731,-0.17833564421711331],[-0.13795114971248928,0.10986242290396447,-0.05569523225305658,0.06283481789713388],[0.15854062493642507,0.01764479103368597,-0.14072844790345862,-0.04841327200616739],[0.22718556825119135,-0.256945065449022,-0.2072031693556669,0.22834356083293314]],"nClasses":15,"nSessions":58},"PFC":{"name":"Prefrontal cortex","classes":["PFC-1","PFC-2","PFC-3","PFC-4","PFC-5","PFC-6","PFC-7","PFC-8","PFC-9","PFC-10","PFC-11","PFC-12","PFC-13"],"contexts":["Standard oddball","Sensorimotor mismatch","Sequence mismatch","Duration mismatch"],"contextShort":["Standard","Sensorimotor","Sequence","Duration"],"absolute":[[4.585334846189188,9.884890149903052,4.4025438852295995,2.858104205748102],[11.47725223647259,14.222978508754974,14.237056644842843,15.107036959677608],[6.72583286962372,7.136438390862638,6.141278829931387,9.536096190437073],[4.838042119204584,6.12315309585121,5.080511875174178,10.588161851431677],[6.693011530779971,4.636635950083833,5.494006442917088,4.777952810560209],[4.024530417796058,5.046309907966557,3.136522910386213,2.3414605452412514],[12.768783158605753,9.725522071469067,8.031259840132408,10.98720475593006],[13.37663702276214,12.556546419828118,9.137476279321042,11.339144289445901],[8.331344494976616,8.212577304512273,6.595750501457394,7.205234759522237],[5.995957316277111,3.2620495495659867,4.29934743785834,7.551191710355419],[0.8259680134680135,2.37055648729335,4.5601482214892375,1.0485793501330223],[12.817430725635672,12.602945898822762,13.876827393013153,12.284840359934192],[7.539875248208581,4.219396265086173,15.007269738247114,4.374992211583245]],"enrichment":[[-0.2942691440283864,0.813928698308362,-0.35295885003293564,-0.9762377174807947],[-0.2672687363550567,0.04217759418426832,0.04360489100002551,0.12917469842132456],[-0.1185820576746256,-0.03309074479607512,-0.24975588076904756,0.38510380089121105],[-0.4349057966823812,-0.09505437099251526,-0.3643552662138084,0.6950511222235415],[0.31956937619634773,-0.2100076670218136,0.03477247869148507,-0.16669351850648736],[0.1261094241488349,0.45251777371858176,-0.23354493454854092,-0.6553023071200691],[0.3224194818980122,-0.07035396155939584,-0.3465033415875873,0.10562283479929344],[0.21576094335110962,0.12448520186863424,-0.3340868539199406,-0.022642743750833586],[0.13901902270766428,0.11830473471925754,-0.19799348403994224,-0.07048487401613553],[0.23042245590799187,-0.6477889609022157,-0.24944995546253726,0.5631366877319002],[-1.503436537445761,0.01763141571838365,0.9614863627041466,-1.159158315324821],[-0.013036322685828215,-0.037382424552640056,0.10153434455180532,-0.07426431294030064],[-0.08338197234587624,-0.9208860409852899,0.9096670014746177,-0.86864217713299]],"nClasses":13,"nSessions":54},"VIS":{"name":"Visual cortex","classes":["VIS-1","VIS-2","VIS-3","VIS-4","VIS-5","VIS-6","VIS-7","VIS-8","VIS-9","VIS-10","VIS-11","VIS-12"],"contexts":["Standard oddball","Sensorimotor mismatch","Sequence mismatch","Duration mismatch"],"contextShort":["Standard","Sensorimotor","Sequence","Duration"],"absolute":[[11.158923832093793,7.04873870694388,10.240574980404709,8.583690879654496],[10.540730062219463,9.709277646431389,13.256325831452385,11.774649884068133],[3.8880472691757997,5.421944298201228,6.414405377820012,2.787040239550346],[9.254728238016236,11.15129103323978,7.006630147817446,10.573468579572767],[10.038197808500108,10.240841159744328,8.189270568193715,9.350846036904162],[7.335782969145835,5.431333848172535,6.978175018211834,8.534888195310623],[9.938497867525522,11.11288136089548,5.076959922012844,9.69813314285943],[4.710355069779055,5.569803104976055,3.94144609374706,4.5899894594309245],[7.386707323118001,8.580490629353228,10.266390506427323,8.401319481210146],[5.965254123427125,3.125300387978077,5.9381524136241115,5.7792753339276555],[9.617333158033883,9.841049461197047,8.973224476261752,8.1497678188243],[10.165442278965175,12.76704836286697,13.71844466402681,11.776930948687014]],"enrichment":[[0.2768671539921256,-0.38589371465104455,0.1529659748039828,-0.10166071914927717],[-0.09910153564322007,-0.21764045795961726,0.2316046398905405,0.060607833663052474],[-0.2790630937337407,0.20070143943104404,0.4432066797149381,-0.7593750200790608],[-0.03653561336222681,0.23241260192794838,-0.43800549572611885,0.1556505791500676],[0.08530349660828349,0.11413743591956557,-0.20838992454291488,-0.01702797722267261],[0.07034020818160307,-0.3633042046893877,-0.0017609669808627514,0.2887615055556483],[0.15093114595437548,0.3120643544459722,-0.818131797985057,0.11561039088172612],[-0.0034430399726475326,0.2383474733072437,-0.26055381198342575,-0.040788014645193826],[-0.23412350276813595,-0.017994776075162203,0.24080221896826554,-0.04843898872632671],[0.21674630537683603,-0.7158424325837426,0.21017682969394372,0.17105131031929133],[0.06658791359439778,0.09976319127988674,-0.0334224807772989,-0.17229002464226711],[-0.2588501321961865,0.06990190665157542,0.17359380681500966,-0.04655949375886093]],"nClasses":12,"nSessions":58},"STR":{"name":"Striatum","classes":["STR-1","STR-2","STR-3","STR-4","STR-5","STR-6","STR-7","STR-8","STR-9","STR-10","STR-11"],"contexts":["Standard oddball","Sensorimotor mismatch","Sequence mismatch","Duration mismatch"],"contextShort":["Standard","Sensorimotor","Sequence","Duration"],"absolute":[[7.96402025478011,6.779092874914057,13.311525279007924,15.91330751838404],[6.376505115467931,4.2301144437776195,2.769389807204933,5.44876411244459],[16.041029263265305,16.390991025220213,13.576682623997202,14.39051457715138],[8.784969814692486,5.643351232395506,13.70690974271537,7.13276852134635],[9.598547343852653,12.94158124594564,5.450765590517143,7.389007657764656],[6.437240025102231,7.002216423113825,2.5964733719574786,4.21478691355511],[17.20132911900105,16.142116635720825,9.967519895360596,10.479813689966731],[3.3473057363120784,7.007416279519939,5.035628521196661,6.695309446335948],[5.268017643344095,5.691323458340293,4.061159580889212,7.334285997966476],[5.0769191012941794,4.485347337945429,17.160603371783495,1.604938271604938],[13.904116582887879,13.686449043106652,12.363342215369984,19.39650329347978]],"enrichment":[[-0.4006079005957738,-0.6330125547131301,0.3404991935782772,0.5980570293685271],[0.49878321782991863,-0.09328600393590251,-0.7044145638061257,0.27194633595076284],[0.08093490237075063,0.11207127262054645,-0.15970080278566828,-0.07571363107271933],[-0.012334308269543097,-0.6508194941723147,0.629459806051106,-0.31290948262876245],[0.0754882163863506,0.5066141296246564,-0.7408689879876933,-0.30194724296933567],[0.3239509836642576,0.44532037309064465,-0.9859378499038656,-0.287031585034815],[0.33604763624417805,0.24435735675447148,-0.45116592272768646,-0.3788593388288129],[-0.7408572691056482,0.325025003819143,-0.15168573984191486,0.25929313704233087],[-0.045678954009987595,0.06582504393372267,-0.42104741317095884,0.4317173931402658],[-0.5907691336528249,-0.7695026957168395,1.1663059690655904,-2.252204594982562],[-0.0497225041213895,-0.07248640100447805,-0.2191657845332886,0.43056200575350395]],"nClasses":11,"nSessions":50},"HPC":{"name":"Hippocampus","classes":["HPC-1","HPC-2","HPC-3","HPC-4","HPC-5","HPC-6","HPC-7","HPC-8","HPC-9","HPC-10","HPC-11","HPC-12","HPC-13","HPC-14","HPC-15","HPC-16","HPC-17","HPC-18","HPC-19","HPC-20"],"contexts":["Standard oddball","Sensorimotor mismatch","Sequence mismatch","Duration mismatch"],"contextShort":["Standard","Sensorimotor","Sequence","Duration"],"absolute":[[3.6750997495916002,4.4295649070665055,6.519364604960623,3.342722740648841],[4.514918515093894,2.9569026189070944,1.5196981665607703,4.132933669564477],[2.4867276615764915,3.5331502946546607,3.6698262985579344,2.450656516975488],[8.192586396741993,6.227728099733597,7.610896715623124,9.825341959701749],[2.653204508725608,2.458279855978066,0.7435897435897436,2.953210573690935],[4.059081753249207,3.825840545225346,6.847915834312324,3.69536100302419],[3.8503656636800714,5.3596048935958684,2.713584163403588,3.8444303230162338],[11.428683909056899,8.21388075946061,5.892314679810012,9.430056216828715],[3.1834007242200832,3.174503079737661,3.73496868657512,3.320440836921916],[8.176442642935298,5.976773139076344,9.397522503491357,7.894855324237605],[4.986880936252181,8.354164141418213,9.646316016010932,7.778453162314465],[4.489851586108711,7.244255906051403,4.380607942582594,6.48247720187298],[4.53622903170914,5.144072205704841,4.95108565059885,7.299607362641177],[3.4513156980405615,5.642696831574525,4.282857451943318,3.8825876290051964],[7.953627962248477,7.403338928458421,4.35494455161142,6.218702543915537],[5.379057608142483,3.3024703898501118,5.074796134193557,3.701345380278419],[6.240031123438681,7.766123924943262,5.5760786449289075,5.2149315820357645],[3.529457235224435,3.878817486157063,5.978993064731897,3.286456027018535],[6.436763178031627,4.1829235674979826,4.985986557273103,3.7650151997639956],[0.77627411593256,0.924908424908425,2.1186525892408246,1.4804147465437787]],"enrichment":[[-0.29979942730525566,-0.030417838057228093,0.5271485268901106,-0.43655913864768414],[0.4785865591540611,-0.13202665986411552,-1.0923285785511092,0.35105281860576587],[-0.3005705323120172,0.20613607131850029,0.26089272936919455,-0.32165075837088786],[0.05259603383119385,-0.34301699000942315,-0.05365650624895252,0.3147846713045236],[0.2794185998103098,0.16933188180721268,-1.5557385065595732,0.43396694624725846],[-0.18628624422185952,-0.2716628958482323,0.568225328498006,-0.3217243322293314],[-0.043863789530614046,0.4332673975981085,-0.5486595971073723,-0.04608942052973022],[0.39771184850292424,-0.07881151939319518,-0.5580410435806871,0.12039084816059485],[-0.07519989700855464,-0.07923789328730561,0.1553274768837755,-0.014393877755254149],[0.06365013076857667,-0.3884563866002124,0.2644572950826066,0.01308965858162056],[-0.6355095887833314,0.10884814235947309,0.3163307266822503,0.0058359394260071645],[-0.3396958572901719,0.3504738967639104,-0.3752325126311393,0.1901816131282338],[-0.2680036516011488,-0.08658624114016535,-0.14175222738671964,0.4183217305980804],[-0.33696102634593683,0.37227736709661335,-0.02553381182747451,-0.16708898582331488],[0.29610908559211585,0.19267208254373752,-0.572849644695786,-0.058890383725178554],[0.3095056614204873,-0.3943021521951522,0.22550208877112418,-0.22979801562305688],[-0.0004184663820097073,0.3152230374570025,-0.1627207821268539,-0.2593233659792889],[-0.24726321832684597,-0.11109266635094521,0.5131929782027221,-0.3501768774268591],[0.4164833048864413,-0.20534044860530806,0.0480269080098575,-0.35719639595102115],[-0.7712983103862361,-0.5185539619463468,0.6772106393179109,0.1600650129711098]],"nClasses":20,"nSessions":59},"THAL":{"name":"Thalamus","classes":["THAL-1","THAL-2","THAL-3","THAL-4","THAL-5","THAL-6","THAL-7","THAL-8","THAL-9","THAL-10"],"contexts":["Standard oddball","Sensorimotor mismatch","Sequence mismatch","Duration mismatch"],"contextShort":["Standard","Sensorimotor","Sequence","Duration"],"absolute":[[8.927016971423374,13.673892906049389,10.75657489034682,10.576309317004107],[8.491039023585843,9.135190373214773,5.879750934575496,7.144291238584042],[6.960272079486665,6.858370157409531,6.829067618541303,6.131637868610573],[16.88896787182525,12.70219883094749,11.77192081797345,13.057178553456469],[12.67384767047395,9.48655812929336,14.298022477847036,12.416953738293687],[4.645325872284397,4.667182429756165,7.263736101455401,7.327024827024828],[12.054106714790061,16.532173762445606,14.111082225117313,13.838286288658496],[16.323867015788945,9.466690936093213,15.740761837253064,15.701315043746805],[4.973545789013632,7.528773212723072,6.688534418797578,7.9576374365456255],[8.06201099132788,9.948969262067397,6.660548678092537,5.849365688075365]],"enrichment":[[-0.31162063032174914,0.303553327172834,-0.04265193620049625,-0.06703442817565297],[0.14266757676967787,0.2481612680957924,-0.3875184821826156,-0.10648263274449697],[0.05229337797504405,0.031015446317893557,0.024838294277199524,-0.1305778299753622],[0.31759949318760156,-0.09340341259778942,-0.20313192749294895,-0.05363848351178626],[0.060060094697606745,-0.3578378308979429,0.2340211394082293,0.03051679337022872],[-0.3521551707177986,-0.345383116626437,0.29277681231396063,0.3052925273764344],[-0.2385300593311015,0.21722163099527744,-0.011226164259344546,-0.03938950846651621],[0.20700775051601628,-0.5790429845630849,0.15453025537978587,0.15091028310860097],[-0.4493101374084084,0.1488299056358959,-0.021894771884040154,0.22875527259836714],[0.061760521943986804,0.36516783846589257,-0.21373820061145932,-0.4010990424689324]],"nClasses":10,"nSessions":58}};
+
+const GROUP_ORDER =
+    ["MO","PFC","VIS","STR","HPC","THAL"];
+
+const ABS_ZMIN =
+    0.0;
+
+const ABS_ZMAX =
+    20.0;
+
+const ENR_LIM =
+    1.0;
+
+
+// ============================================================
+// DOM
+// ============================================================
+
+const graph =
+    document.getElementById("plot");
+
+const areaSelect =
+    document.getElementById("area-select");
+
+const absoluteButton =
+    document.getElementById("absolute-button");
+
+const enrichmentButton =
+    document.getElementById("enrichment-button");
+
+const toolbarDescription =
+    document.getElementById("toolbar-description");
+
+const regionName =
+    document.getElementById("region-name");
+
+const regionMeta =
+    document.getElementById("region-meta");
+
+const selection =
+    document.getElementById("selection");
+
+
+// ============================================================
+// STATE
+// ============================================================
+
+let currentGroup =
+    GROUP_ORDER[0];
+
+let currentView =
+    "absolute";
+
+
+// ============================================================
+// FORMATTERS
+// ============================================================
+
+function formatAbsolute(value) {
+
+    if (
+        value === null ||
+        value === undefined ||
+        !Number.isFinite(Number(value))
+    ) {
+        return "—";
+    }
+
+    return Number(value).toFixed(2) + "%";
+}
+
+
+function formatEnrichment(value) {
+
+    if (
+        value === null ||
+        value === undefined ||
+        !Number.isFinite(Number(value))
+    ) {
+        return "—";
+    }
+
+    const number =
+        Number(value);
+
+    const sign =
+        number > 0
+        ? "+"
+        : "";
+
+    return sign + number.toFixed(2);
+}
+
+
+// ============================================================
+// CONTROLS
+// ============================================================
+
+function updateControls() {
+
+    if (currentView === "absolute") {
+
+        absoluteButton.classList.add(
+            "active"
+        );
+
+        enrichmentButton.classList.remove(
+            "active"
+        );
+
+        toolbarDescription.textContent =
+            "Mean within-session class proportion, averaged across sessions.";
+
+    } else {
+
+        enrichmentButton.classList.add(
+            "active"
+        );
+
+        absoluteButton.classList.remove(
+            "active"
+        );
+
+        toolbarDescription.textContent =
+            "log₂ enrichment relative to each class's regional baseline abundance.";
+    }
+}
+
+
+// ============================================================
+// REGION HEADER
+// ============================================================
+
+function updateRegionHeader() {
+
+    const area =
+        DATA[currentGroup];
+
+    regionName.textContent =
+        area.name;
+
+    let meta =
+        area.nClasses
+        + (
+            area.nClasses === 1
+            ? " local class"
+            : " local classes"
+        );
+
+    if (
+        area.nSessions !== null &&
+        area.nSessions !== undefined
+    ) {
+
+        meta +=
+            " · "
+            + area.nSessions
+            + (
+                area.nSessions === 1
+                ? " session"
+                : " sessions"
+            );
+    }
+
+    regionMeta.textContent =
+        meta;
+}
+
+
+// ============================================================
+// BUILD CUSTOM DATA
+// ============================================================
+
+function buildCustomData(
+    area,
+    z
+) {
+
+    const output = [];
+
+    for (
+        let r = 0;
+        r < area.classes.length;
+        r++
+    ) {
+
+        const row = [];
+
+        for (
+            let c = 0;
+            c < area.contexts.length;
+            c++
+        ) {
+
+            row.push([
+                area.classes[r],
+                area.contexts[c],
+                z[r][c]
+            ]);
+        }
+
+        output.push(row);
+    }
+
+    return output;
+}
+
+
+// ============================================================
+// DYNAMIC HEIGHT
+//
+// Enough vertical room for every class while preventing the
+// plot from becoming unnecessarily tall.
+// ============================================================
+
+function calculateHeight(
+    nClasses
+) {
+
+    return Math.max(
+        500,
+        Math.min(
+            790,
+            235 + nClasses * 32
+        )
+    );
+}
+
+
+// ============================================================
+// RENDER
+// ============================================================
+
+async function renderFigure() {
+
+    updateControls();
+    updateRegionHeader();
+
+    selection.style.display =
+        "none";
+
+    const area =
+        DATA[currentGroup];
+
+    const isAbsolute =
+        currentView === "absolute";
+
+    const z =
+        isAbsolute
+        ? area.absolute
+        : area.enrichment;
+
+    const customdata =
+        buildCustomData(
+            area,
+            z
+        );
+
+    const dynamicHeight =
+        calculateHeight(
+            area.classes.length
+        );
+
+    graph.style.height =
+        dynamicHeight + "px";
+
+
+    // --------------------------------------------------------
+    // Heatmap trace
+    // --------------------------------------------------------
+
+    const trace = {
+
+        type:
+            "heatmap",
+
+        x:
+            area.contextShort,
+
+        y:
+            area.classes,
+
+        z:
+            z,
+
+        customdata:
+            customdata,
+
+        xgap:
+            1,
+
+        ygap:
+            1,
+
+        hoverongaps:
+            false,
+
+        showscale:
+            true,
+
+
+        colorbar: {
+
+            x:
+                1.025,
+
+            xanchor:
+                "left",
+
+            y:
+                0.50,
+
+            yanchor:
+                "middle",
+
+            len:
+                0.76,
+
+            thickness:
+                14,
+
+            outlinewidth:
+                0,
+
+            tickfont: {
+                size: 10,
+                color: "#555555"
+            },
+
+            title: {
+
+                text:
+                    isAbsolute
+                    ? "Mean proportion (%)"
+                    : "log₂ enrichment",
+
+                side:
+                    "right",
+
+                font: {
+                    size: 10.5,
+                    color: "#444444"
+                }
+            }
+        }
+    };
+
+
+    // --------------------------------------------------------
+    // Absolute appearance
+    // --------------------------------------------------------
+
+    if (isAbsolute) {
+
+        trace.colorscale =
+            "Viridis";
+
+        trace.zmin =
+            ABS_ZMIN;
+
+        trace.zmax =
+            ABS_ZMAX;
+
+        trace.hovertemplate =
+            "<b>%{customdata[0]}</b>"
+            + "<br>%{customdata[1]}"
+            + "<br>Mean proportion: %{z:.2f}%"
+            + "<extra></extra>";
+
+    }
+
+    // --------------------------------------------------------
+    // Enrichment appearance
+    // --------------------------------------------------------
+
+    else {
+
+        // Plotly RdBu is reversed relative to the notebook's
+        // matplotlib RdBu_r, so reversescale = true reproduces
+        // blue depletion / white baseline / red enrichment.
+        trace.colorscale =
+            "RdBu";
+
+        trace.reversescale =
+            true;
+
+        trace.zmin =
+            -ENR_LIM;
+
+        trace.zmax =
+            ENR_LIM;
+
+        trace.zmid =
+            0;
+
+        trace.hovertemplate =
+            "<b>%{customdata[0]}</b>"
+            + "<br>%{customdata[1]}"
+            + "<br>log₂ enrichment: %{z:+.2f}"
+            + "<extra></extra>";
+    }
+
+
+    // --------------------------------------------------------
+    // Layout
+    //
+    // There is deliberately NO Plotly title.
+    // All title/header elements are outside the graph so they
+    // cannot overlap the axes or colour bar.
+    // --------------------------------------------------------
+
+    const layout = {
+
+        template:
+            "plotly_white",
+
+        autosize:
+            true,
+
+        height:
+            dynamicHeight,
+
+        margin: {
+            l: 118,
+            r: 145,
+            t: 26,
+            b: 105
+        },
+
+        paper_bgcolor:
+            "#ffffff",
+
+        plot_bgcolor:
+            "#ffffff",
+
+        font: {
+            family:
+                "Arial, Helvetica, sans-serif",
+            size: 11,
+            color: "#222222"
+        },
+
+
+        // ----------------------------------------------------
+        // X axis
+        // ----------------------------------------------------
+
+        xaxis: {
+
+            title: {
+                text:
+                    "Predictive context",
+                font: {
+                    size: 11,
+                    color: "#333333"
+                },
+                standoff: 22
+            },
+
+            tickfont: {
+                size: 10.5,
+                color: "#333333"
+            },
+
+            tickangle:
+                -24,
+
+            side:
+                "bottom",
+
+            showgrid:
+                false,
+
+            zeroline:
+                false,
+
+            showline:
+                false,
+
+            ticks:
+                "",
+
+            automargin:
+                true,
+
+            fixedrange:
+                true
+        },
+
+
+        // ----------------------------------------------------
+        // Y axis
+        // ----------------------------------------------------
+
+        yaxis: {
+
+            title: {
+                text:
+                    "Local WaveMAP class",
+                font: {
+                    size: 11,
+                    color: "#333333"
+                },
+                standoff: 20
+            },
+
+            tickfont: {
+                size: 10.5,
+                color: "#333333"
+            },
+
+            autorange:
+                "reversed",
+
+            showgrid:
+                false,
+
+            zeroline:
+                false,
+
+            showline:
+                false,
+
+            ticks:
+                "",
+
+            automargin:
+                true,
+
+            fixedrange:
+                true
+        },
+
+
+        hoverlabel: {
+
+            bgcolor:
+                "#ffffff",
+
+            bordercolor:
+                "#bdbdbd",
+
+            font: {
+                family:
+                    "Arial, Helvetica, sans-serif",
+                size: 11,
+                color: "#222222"
+            }
+        }
+    };
+
+
+    // --------------------------------------------------------
+    // Plotly controls
+    // --------------------------------------------------------
+
+    const config = {
+
+        responsive:
+            true,
+
+        displaylogo:
+            false,
+
+        scrollZoom:
+            false,
+
+        doubleClick:
+            false,
+
+        modeBarButtonsToRemove: [
+            "zoom2d",
+            "pan2d",
+            "select2d",
+            "lasso2d",
+            "zoomIn2d",
+            "zoomOut2d",
+            "autoScale2d",
+            "resetScale2d"
+        ],
+
+        toImageButtonOptions: {
+
+            format:
+                "svg",
+
+            filename:
+                (
+                    "wavemap_context_"
+                    + currentGroup.toLowerCase()
+                    + "_"
+                    + currentView
+                ),
+
+            scale:
+                1
+        }
+    };
+
+
+    await Plotly.react(
+        graph,
+        [trace],
+        layout,
+        config
+    );
+}
+
+
+// ============================================================
+// CLICKED CELL
+// ============================================================
+
+function showSelectedCell(
+    point
+) {
+
+    if (
+        !point ||
+        !point.customdata
+    ) {
+        return;
+    }
+
+    const classLabel =
+        point.customdata[0];
+
+    const context =
+        point.customdata[1];
+
+    const value =
+        point.customdata[2];
+
+
+    document.getElementById(
+        "selected-class"
+    ).textContent =
+        classLabel;
+
+
+    document.getElementById(
+        "selected-context"
+    ).textContent =
+        context;
+
+
+    // --------------------------------------------------------
+    // Absolute
+    // --------------------------------------------------------
+
+    if (currentView === "absolute") {
+
+        document.getElementById(
+            "selected-value"
+        ).textContent =
+            formatAbsolute(value);
+
+        document.getElementById(
+            "selected-interpretation"
+        ).textContent =
+            (
+                value === null ||
+                value === undefined
+            )
+            ? "No value available."
+            : (
+                "Mean within-session abundance of this "
+                + "local class in the selected context."
+            );
+    }
+
+
+    // --------------------------------------------------------
+    // Enrichment
+    // --------------------------------------------------------
+
+    else {
+
+        document.getElementById(
+            "selected-value"
+        ).textContent =
+            formatEnrichment(value);
+
+        let interpretation =
+            "No value available.";
+
+        if (
+            value !== null &&
+            value !== undefined &&
+            Number.isFinite(Number(value))
+        ) {
+
+            const numeric =
+                Number(value);
+
+            if (Math.abs(numeric) < 1e-12) {
+
+                interpretation =
+                    "At the regional class baseline.";
+
+            } else if (numeric > 0) {
+
+                interpretation =
+                    "Enriched relative to this class's regional baseline.";
+
+            } else {
+
+                interpretation =
+                    "Depleted relative to this class's regional baseline.";
+            }
+        }
+
+        document.getElementById(
+            "selected-interpretation"
+        ).textContent =
+            interpretation;
+    }
+
+
+    selection.style.display =
+        "block";
+}
+
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+
+async function initialize() {
+
+    areaSelect.value =
+        currentGroup;
+
+
+    // --------------------------------------------------------
+    // Initial plot
+    // --------------------------------------------------------
+
+    await renderFigure();
+
+
+    // --------------------------------------------------------
+    // Area selector
+    // --------------------------------------------------------
+
+    areaSelect.addEventListener(
+        "change",
+        async function() {
+
+            currentGroup =
+                this.value;
+
+            await renderFigure();
+        }
+    );
+
+
+    // --------------------------------------------------------
+    // Absolute composition
+    // --------------------------------------------------------
+
+    absoluteButton.addEventListener(
+        "click",
+        async function() {
+
+            if (
+                currentView === "absolute"
+            ) {
+                return;
+            }
+
+            currentView =
+                "absolute";
+
+            await renderFigure();
+        }
+    );
+
+
+    // --------------------------------------------------------
+    // Enrichment
+    // --------------------------------------------------------
+
+    enrichmentButton.addEventListener(
+        "click",
+        async function() {
+
+            if (
+                currentView === "enrichment"
+            ) {
+                return;
+            }
+
+            currentView =
+                "enrichment";
+
+            await renderFigure();
+        }
+    );
+
+
+    // --------------------------------------------------------
+    // Heatmap click
+    // --------------------------------------------------------
+
+    graph.on(
+        "plotly_click",
+        function(eventData) {
+
+            if (
+                !eventData ||
+                !eventData.points ||
+                eventData.points.length === 0
+            ) {
+                return;
+            }
+
+            showSelectedCell(
+                eventData.points[0]
+            );
+        }
+    );
+
+
+    // --------------------------------------------------------
+    // Responsive resize
+    // --------------------------------------------------------
+
+    window.addEventListener(
+        "resize",
+        function() {
+
+            if (
+                graph &&
+                graph.data
+            ) {
+                Plotly.Plots.resize(
+                    graph
+                );
+            }
+        }
+    );
+}
+
+
+initialize();
+
+</script>
+
+
+</body>
+
+</html>

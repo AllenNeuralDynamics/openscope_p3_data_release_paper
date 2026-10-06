@@ -1,0 +1,240 @@
+{
+  "version": 1,
+  "policy": "Remote-only portraits from authoritative public institutional, laboratory, or author-controlled academic profiles; no image files are bundled with the publication.",
+  "verified_on": "2026-08-08",
+  "contributors": {
+    "jerome-lecoq": {
+      "name": "J\u00e9r\u00f4me Lecoq",
+      "source_page": "https://alleninstitute.org/person/jerome-lecoq",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594d77af2970519865a80_jerome_lecoq_web-new.jpeg",
+      "width": 653,
+      "height": 653
+    },
+    "r-carter-peene": {
+      "name": "R. Carter Peene",
+      "source_page": "https://www.allenneuraldynamics.org/people/carter-peene",
+      "avatar_url": "https://cdn.prod.website-files.com/691fabdb8ba70248dd5b7fa8/691fabdb8ba70248dd5b829a_66fb361f83edc9d7b39abe9e_Carter_Peene_SQ.jpeg",
+      "width": 800,
+      "height": 800
+    },
+    "ryan-gillis": {
+      "name": "Ryan Gillis",
+      "source_page": "https://www.mizumorilab.com/lab-news/brains-program-received-a-sloan-foundation-grant-c58eh-k8ntl-njwza-e97zr-tkt7g-pxwhf-jgcxn-gkncx-y3ds7",
+      "avatar_url": "https://static1.squarespace.com/static/6065458351cb8c7a42973707/60720307eb0ea31892661356/630113dad36fd46ddca3b5f3/1661016548090/IMG_7454_edited_edited.jpg?format=1500w",
+      "width": 1500,
+      "height": 1876
+    },
+    "ali-williford": {
+      "name": "Ali Williford",
+      "source_page": "https://alleninstitute.org/person/ali-williford",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594af62e9adaba8af040f_ali_williford-135.jpeg",
+      "width": 400,
+      "height": 400
+    },
+    "severine-durand": {
+      "name": "Severine Durand",
+      "source_page": "https://alleninstitute.org/person/severine-durand",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594a0538ad4ccf898bf0c_Severine_Durand_SQ.jpeg",
+      "width": 800,
+      "height": 800
+    },
+    "jackie-swapp": {
+      "name": "Jackie Swapp",
+      "source_page": "https://www.allenneuraldynamics.org/people/jackie-swapp",
+      "avatar_url": "https://cdn.prod.website-files.com/691fabdb8ba70248dd5b7fa8/691fabdb8ba70248dd5b82e9_Jackie_Swapp.jpg",
+      "width": 1500,
+      "height": 1000
+    },
+    "alex-stearns": {
+      "name": "Alex Stearns",
+      "source_page": "https://alleninstitute.org/person/alex-stearns",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5945e7008ab73995a04a6_Alex_Stearns_SQ.webp",
+      "width": 800,
+      "height": 800
+    },
+    "julie-weber": {
+      "name": "Julie Weber",
+      "source_page": "https://alleninstitute.org/person/julie-weber",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594e084410c99688fe84e_Julie_Weber_SQ.jpeg",
+      "width": 800,
+      "height": 800
+    },
+    "dean-rette": {
+      "name": "Dean Rette",
+      "source_page": "https://www.allenneuraldynamics.org/people/dean-rette",
+      "avatar_url": "https://cdn.prod.website-files.com/691fabdb8ba70248dd5b7fa8/691fabdb8ba70248dd5b8347_Dean-Rette-5U2A0646-WB-Web-Square.webp",
+      "width": 1522,
+      "height": 1522
+    },
+    "hannah-belski": {
+      "name": "Hannah Belski",
+      "source_page": "https://alleninstitute.org/person/hannah-belski",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594765831f7ba5e2691d5_Hannah_Belski_SQ.jpeg",
+      "width": 800,
+      "height": 800
+    },
+    "shiella-caldejon": {
+      "name": "Shiella Caldejon",
+      "source_page": "https://alleninstitute.org/person/shiella-caldejon",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5951c1e21cae5b6318cf1_shiella_caldejon-27-web.jpeg",
+      "width": 1000,
+      "height": 1000
+    },
+    "jimin-park": {
+      "name": "Jimin Park",
+      "source_page": "https://alleninstitute.org/person/jimin-park",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5947eec300ac1e1e9f0ef_Jimin-Park-square-web.jpeg",
+      "width": 800,
+      "height": 800
+    },
+    "peter-a-groblewski": {
+      "name": "Peter A Groblewski",
+      "source_page": "https://alleninstitute.org/person/peter-groblewski",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c59509881d0cfefba78bbf_Peter_Groblewski_W-SQ.webp",
+      "width": 800,
+      "height": 800
+    },
+    "maedeh-seyedolmohadesin": {
+      "name": "Maedeh Seyedolmohadesin",
+      "source_page": "https://alleninstitute.org/person/maedeh-seyedolmohadesin",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/6a18c126dd255288fa5f7c81_maedeh_seyedolmohadesin_headshot.jpg",
+      "width": 1200,
+      "height": 1200
+    },
+    "ivana-bussi": {
+      "name": "Ivana Bussi",
+      "source_page": "https://alleninstitute.org/person/ivana-bussi",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c59478211f19a28ab460f5_Ivana_Bussi.jpeg",
+      "width": 800,
+      "height": 800
+    },
+    "karim-oweiss": {
+      "name": "Karim Oweiss",
+      "source_page": "https://faculty.eng.ufl.edu/oweisslab/principal-investigator/",
+      "avatar_url": "https://faculty.eng.ufl.edu/oweisslab/wp-content/uploads/sites/675/2025/05/IMG_0816-2048x1585-1.jpeg",
+      "width": 2048,
+      "height": 1585
+    },
+    "alexander-maier": {
+      "name": "Alexander Maier",
+      "source_page": "https://news.vanderbilt.edu/2017/11/21/discovery-minds-eye-blink/alexander-maier/",
+      "avatar_url": "https://cdn.vanderbilt.edu/vu-news/files/20190417213235/Alexander-Maier.jpg",
+      "width": 600,
+      "height": 456
+    },
+    "manni-he": {
+      "name": "Manni He",
+      "source_page": "https://alleninstitute.org/person/manni-he",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5948cfeb57c9a7fa59427_Manni-He-square-web.jpeg",
+      "width": 800,
+      "height": 800
+    },
+    "alex-cahoon": {
+      "name": "Alex Cahoon",
+      "source_page": "https://alleninstitute.org/person/alex-cahoon",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594ae108991397713e8fe_Alex_Cahoon_SQ.jpeg",
+      "width": 800,
+      "height": 800,
+      "verified_on": "2026-10-05"
+    },
+    "heston-smith": {
+      "name": "Heston Smith",
+      "source_page": "https://alleninstitute.org/person/heston-smith",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594d19183b128168e3073_Heston_Smith-Allen-Institute-Headshot-Square-Large.jpeg",
+      "width": 1280,
+      "height": 1280,
+      "verified_on": "2026-10-05"
+    },
+    "david-g-wyrick": {
+      "name": "David G Wyrick",
+      "source_page": "https://alleninstitute.org/person/david-wyrick",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594c5ca99b415e753488b_David-Wyrick-square-web.jpeg",
+      "width": 800,
+      "height": 800,
+      "verified_on": "2026-10-05"
+    },
+    "keith-gramila": {
+      "name": "Keith Gramila",
+      "source_page": "https://alleninstitute.org/person/keith-gramila",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594e6a1cb919637aab3d9_Keith_Gramila-Allen-Institute-Headshot-Square-Large.jpeg",
+      "width": 1280,
+      "height": 1280,
+      "verified_on": "2026-10-05"
+    },
+    "farzaneh-najafi": {
+      "name": "Farzaneh Najafi",
+      "source_page": "https://www.najafilab.org/people",
+      "avatar_url": "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72v8e8D6s6GJtdXrvfEjBISgEbBEiTpEXAaGUVgAyT3RMCDGKpC2DeCYgw1GTQmmsW2ypAIsEp-7JN92zPNuktFepGq7ciXQP_6hM2414tyda_bSnK92jkuy3N3rytd0omocxmqPhdnI4ws6DDraYSbrHlsg3ESA0BntYXzty3OuTET3VBLL2aEt3BjFZV1FTsg9iXUuDezxrgpDtLVaJukaDT5C-tUDWdsn32hpaps=w1280",
+      "width": 1280,
+      "height": 1419,
+      "verified_on": "2026-10-05"
+    },
+    "ali-shamsnia": {
+      "name": "Ali Shamsnia",
+      "source_page": "https://www.najafilab.org/people",
+      "avatar_url": "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72vvG8ikymrocggo36Sd1jo8GWPgtzkuClqjSgljLOO-sLA6ZHxol92pKE7zXrs1IN1ae6dFkPNIw1CS034j9VAPfAX22cDxYe5Yz0CfWZuBHsasWHgyv1_SkoGVq6ZEP9oOSjK5nm9ocWbiLWAgNi4yvtEpYNjxype_TOLWbmiomIudq5dnvWvplBLkhYi04UfrNz5uQoKoQYk3YZiW2T6wTRlDzsRVfrWmFEyrSTM=w1280",
+      "width": 853,
+      "height": 885,
+      "verified_on": "2026-10-05"
+    },
+    "davis-grubin": {
+      "name": "Davis Grubin",
+      "source_page": "https://www.najafilab.org/people",
+      "avatar_url": "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72ucillO48RP9WLgkG1p0E2_f-pwZH7etZ0iinhTslaXZfhhA35q9H_rFIIhEn8QTxo7nAGQe9IfT9OiLTLnigjdAhNFdHlbbtHeJeyOnQKEyUhKIaxEgfRfzbEt-vNa99DdNXsFDeo6xLu0WxYCYj6t8k4pj3bWj6-psEfSWXFaa7X-eSUPKbRoKfCy2gEIydMGdF7GAxuFLHECnDdq_eMgr6K0qi4rEauMZdHF=w1280",
+      "width": 1280,
+      "height": 1153,
+      "verified_on": "2026-10-05"
+    },
+    "roberto-de-filippo": {
+      "name": "Roberto De Filippo",
+      "source_page": "https://robertodf.github.io/",
+      "avatar_url": "https://robertodf.github.io/images/profile.jpeg",
+      "width": 400,
+      "height": 400,
+      "verified_on": "2026-10-05"
+    },
+    "yaroslav-halchenko": {
+      "name": "Yaroslav Halchenko",
+      "source_page": "https://faculty-directory.dartmouth.edu/yaroslav-o-halchenko",
+      "avatar_url": "https://faculty-directory.dartmouth.edu/sites/faculty_directory.prod/files/styles/profile_portrait/public/yarik-crcns2014_323x405.jpg?itok=hyxIlUGg",
+      "width": 412,
+      "height": 517,
+      "verified_on": "2026-10-05"
+    },
+    "ido-aizenbud": {
+      "name": "Ido Aizenbud",
+      "source_page": "https://ido4848.github.io/me/",
+      "avatar_url": "https://ido4848.github.io/me/profile-picture.jpg",
+      "width": 5184,
+      "height": 3456,
+      "verified_on": "2026-10-05"
+    },
+    "sarah-ruediger": {
+      "name": "Sarah Ruediger",
+      "source_page": "https://profiles.ucl.ac.uk/94356-sarah-ruediger-lee",
+      "avatar_url": "https://profiles.ucl.ac.uk/94356-sarah-ruediger-lee/thumbnail",
+      "width": 180,
+      "height": 180,
+      "verified_on": "2026-10-05"
+    }
+  },
+  "unresolved": {
+    "casey-lennon-jones": {
+      "name": "Casey Lennon-Jones",
+      "source_page": "https://www.allenneuraldynamics.org/people/casey-lennon-jones",
+      "reason": "The authoritative staff profile currently uses the generic people placeholder."
+    },
+    "maria-anna-sidiropoulou": {
+      "name": "Maria Anna Sidiropoulou",
+      "source_page": "https://orcid.org/0009-0008-0185-715X",
+      "reason": "No authoritative public portrait was verified for the UCL researcher; similarly named profiles were not used.",
+      "verified_on": "2026-10-05"
+    },
+    "yuheng-cheah": {
+      "name": "Yuheng Cheah",
+      "source_page": "https://orcid.org/0009-0006-6564-6314",
+      "reason": "No authoritative public portrait was verified for the UCL researcher.",
+      "verified_on": "2026-10-05"
+    }
+  }
+}
