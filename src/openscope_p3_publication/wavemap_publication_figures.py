@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import re
 import zlib
 from io import BytesIO
 from pathlib import Path
@@ -9,7 +10,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.backends.backend_pdf import PdfFile, PdfPages
+from matplotlib.backends.backend_pdf import PdfFile, PdfPages, Verbatim
 from matplotlib.colors import TwoSlopeNorm
 from PIL import Image
 from PIL.PngImagePlugin import PngStream, putchunk
@@ -118,7 +119,15 @@ def _canonical_png(data: bytes) -> bytes:
 
 
 class _CanonicalPdfFile(PdfFile):
-    """Normalize Pillow's platform-dependent encoding of PDF image streams."""
+    """Normalize platform-dependent lossless image and path encodings."""
+
+    @staticmethod
+    def pathOperations(path, transform, clip=None, simplify=None, sketch=None):
+        operations = PdfFile.pathOperations(path, transform, clip, simplify, sketch)
+        return [
+            Verbatim(re.sub(rb"(?<!\S)-0(?!\S)", b"0", operation.pdfRepr()))
+            for operation in operations
+        ]
 
     def _writePng(self, image: Image.Image) -> tuple[bytes, int, bytes | None]:
         compressed, bit_depth, palette = super()._writePng(image)

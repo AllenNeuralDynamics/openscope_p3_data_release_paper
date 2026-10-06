@@ -40,6 +40,7 @@ jobs:
             figure_sources/data/experimental-sessions.provenance.json
             figure_sources/data/running-statistics.json
             figure_sources/data/behavior-static-frames.provenance.json
+            figure_sources/data/pupil-event-responses.provenance.json
             images/figures/generated/session-inventory.svg
             interactive/data-explorer.html
           )
