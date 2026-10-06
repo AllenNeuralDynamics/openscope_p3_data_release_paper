@@ -56,7 +56,9 @@ select {
 html,
 body {
   margin: 0;
-  background: transparent;
+  /* Opaque, not transparent: the figure renders in a MyST iframe and would
+     otherwise show the host page through it. Matches every other figure. */
+  background: var(--paper);
   color: var(--ink);
   font-family: var(--figure-font-sans);
 }

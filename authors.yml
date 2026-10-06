@@ -3,10 +3,11 @@
 version: 1
 source:
   project: "p3_data_release"
-  endpoint: "https://metadata-portal.allenneuraldynamics.org/contributions/get?project=p3_data_release&commit=4c0ca209e07a4124901602e49d34495c&format=json"
+  endpoint: "https://data.allenneuraldynamics.org/metadata-viz/contributions/project?project=p3_data_release&commit=72394d8d40c14b77837aee6c6d16df24&format=json"
   contribution_form: "https://data.allenneuraldynamics.org/contributions/add?project=p3_data_release"
-  commit: "4c0ca209e07a4124901602e49d34495c"
-  timestamp: "2026-08-06T19:08:37.120080+00:00"
+  commit: "72394d8d40c14b77837aee6c6d16df24"
+  timestamp: "2026-10-01T04:22:10.941776+00:00"
+  reviewed: true
 portal:
   sections:
     - "Background"
@@ -151,7 +152,7 @@ project:
         -
           platform: "orcid"
           url: "https://orcid.org/0000-0002-0131-0938"
-      is_admin: false
+      is_admin: true
       from_asset: false
     -
       id: "r-carter-peene"
@@ -325,7 +326,7 @@ project:
         -
           platform: "orcid"
           url: "https://orcid.org/0009-0000-7282-7515"
-      is_admin: false
+      is_admin: true
       from_asset: false
     -
       id: "casey-lennon-jones"
@@ -455,7 +456,7 @@ project:
         -
           platform: "orcid"
           url: "https://orcid.org/0009-0008-4965-6242"
-      is_admin: false
+      is_admin: true
       from_asset: false
     -
       id: "alex-stearns"
@@ -542,7 +543,6 @@ project:
       section_contributions: []
       timeline:
         joined: "2026-01-07"
-        left: "2026-03-04"
       social_links:
         -
           platform: "orcid"
@@ -746,6 +746,7 @@ project:
       name: "Ivana Bussi"
       avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c59478211f19a28ab460f5_Ivana_Bussi.jpeg"
       orcid: "0000-0003-4721-763X"
+      email: "ivana.bussi@alleninstitute.org"
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
       roles:
@@ -888,6 +889,551 @@ project:
         -
           platform: "orcid"
           url: "https://orcid.org/0009-0001-4237-900X"
+      is_admin: false
+      from_asset: false
+    -
+      id: "roberto-de-filippo"
+      name: "Roberto De Filippo"
+      avatar_url: "https://robertodf.github.io/images/profile.jpeg"
+      orcid: "0000-0002-4085-9114"
+      email: "roberto.de-filippo@bccn-berlin.de"
+      affiliations:
+        - "Humboldt-Universität zu Berlin, Bernstein Center for Computational9 Neuroscience Berlin and Institute of Biology, Berlin, Germany"
+        - "Allen Institute, Brain and Consciousness, Seattle, WA, USA"
+      roles:
+        - "Formal analysis"
+        - "Visualization"
+      credit_levels:
+        -
+          role: "Formal analysis"
+          level: "supporting"
+          description: "Analyzed SST optotagging responses in neuropixel sessions."
+        -
+          role: "Visualization"
+          level: "supporting"
+          description: "Produced supplementary figure quantifying SST optotagging."
+      section_contributions:
+        -
+          section: "Neuropixels data processing"
+          effort: "supporting"
+          description: "analysis"
+      timeline:
+        joined: "2026-08-03"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0000-0002-4085-9114"
+      is_admin: false
+      from_asset: false
+    -
+      id: "alex-cahoon"
+      name: "Alex Cahoon"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594ae108991397713e8fe_Alex_Cahoon_SQ.jpeg"
+      orcid: "0009-0006-9468-1696"
+      affiliations:
+        - "Allen Institute for Neural Dynamics, Seattle, WA"
+      roles:
+        - "Resources"
+        - "Supervision"
+        - "Validation"
+      credit_levels:
+        -
+          role: "Resources"
+          level: "supporting"
+          description: "Instrument inventory management. Calibration and maintenance, preparing documents for tools & physical infrastructure."
+        -
+          role: "Supervision"
+          level: "supporting"
+          description: "Supervision of system engineering team maintaining the behavior apparatus installed under the Neuropixels, Mesoscope, and SLAP2."
+        -
+          role: "Validation"
+          level: "supporting"
+          description: "Ensuring the integrity and reliability of behavior apparatus & associated data acquisition."
+      section_contributions:
+        -
+          section: "Behavioral training"
+          effort: "supporting"
+        -
+          section: "Stimulus implementation"
+          effort: "supporting"
+        -
+          section: "Hardware support and design"
+          effort: "lead"
+        -
+          section: "Surgical implant design"
+          effort: "lead"
+        -
+          section: "Intrinsic imaging"
+          effort: "supporting"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0009-0006-9468-1696"
+      is_admin: false
+      from_asset: false
+    -
+      id: "heston-smith"
+      name: "Heston Smith"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594d19183b128168e3073_Heston_Smith-Allen-Institute-Headshot-Square-Large.jpeg"
+      email: "smithhestonl@alleninstitute.org"
+      affiliations:
+        - "Allen Institute, Brain and Consciousness, Seattle, WA, USA"
+        - "Allen Institute for Neural Dynamics, Seattle, WA"
+      roles:
+        - "Resources"
+        - "Visualization"
+      credit_levels:
+        -
+          role: "Resources"
+          level: "supporting"
+          description: "Was part of the engineering team that designed, built, and maintained the experimental hardware"
+        -
+          role: "Visualization"
+          level: "supporting"
+          description: "Provided rendered CAD models of experimental hardware."
+      section_contributions:
+        -
+          section: "Hardware support and design"
+          effort: "equal"
+        -
+          section: "Surgical implant design"
+          effort: "supporting"
+      is_admin: false
+      from_asset: false
+    -
+      id: "david-g-wyrick"
+      name: "David G Wyrick"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594c5ca99b415e753488b_David-Wyrick-square-web.jpeg"
+      orcid: "0000-0001-8096-5766"
+      email: "david.wyrick@alleninstitute.org"
+      affiliations:
+        - "Allen Institute, Studio D3, Seattle, WA, USA"
+      roles:
+        - "Data curation"
+        - "Formal analysis"
+        - "Software"
+        - "Validation"
+        - "Visualization"
+        - "Writing – review & editing"
+      credit_levels:
+        -
+          role: "Data curation"
+          level: "supporting"
+        -
+          role: "Formal analysis"
+          level: "supporting"
+        -
+          role: "Software"
+          level: "equal"
+        -
+          role: "Validation"
+          level: "equal"
+        -
+          role: "Visualization"
+          level: "equal"
+        -
+          role: "Writing – review & editing"
+          level: "equal"
+      section_contributions:
+        -
+          section: "Neuropixels data validation"
+          effort: "equal"
+        -
+          section: "Oddball-response analysis"
+          effort: "equal"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0000-0001-8096-5766"
+      is_admin: false
+      from_asset: false
+    -
+      id: "keith-gramila"
+      name: "Keith Gramila"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594e6a1cb919637aab3d9_Keith_Gramila-Allen-Institute-Headshot-Square-Large.jpeg"
+      orcid: "0009-0001-9402-8631"
+      email: "keith.gramila@alleninstitute.org"
+      affiliations:
+        - "Allen Institute for Neural Dynamics, Seattle, WA"
+      roles:
+        - "Resources"
+      credit_levels:
+        -
+          role: "Resources"
+          level: "supporting"
+          description: "Maintained dual plane mesoscope and neural pixel probe rig operation."
+      section_contributions:
+        -
+          section: "Neuropixels neuronal recordings"
+          effort: "supporting"
+        -
+          section: "Mesoscope neuronal recordings"
+          effort: "supporting"
+        -
+          section: "Hardware support and design"
+          effort: "supporting"
+      timeline:
+        joined: "2022-09-01"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0009-0001-9402-8631"
+      is_admin: false
+      from_asset: false
+    -
+      id: "sarah-ruediger"
+      name: "Sarah Ruediger"
+      avatar_url: "https://profiles.ucl.ac.uk/94356-sarah-ruediger-lee/thumbnail"
+      orcid: "0000-0001-6684-4693"
+      email: "s.ruediger@ucl.ac.uk"
+      affiliations:
+        - "University College London, London, UK"
+      roles:
+        - "Data curation"
+        - "Formal analysis"
+        - "Investigation"
+        - "Methodology"
+        - "Software"
+        - "Supervision"
+        - "Validation"
+        - "Visualization"
+      credit_levels:
+        -
+          role: "Data curation"
+          level: "equal"
+        -
+          role: "Formal analysis"
+          level: "lead"
+        -
+          role: "Investigation"
+          level: "equal"
+        -
+          role: "Methodology"
+          level: "equal"
+        -
+          role: "Software"
+          level: "equal"
+        -
+          role: "Supervision"
+          level: "lead"
+        -
+          role: "Validation"
+          level: "lead"
+        -
+          role: "Visualization"
+          level: "lead"
+      section_contributions:
+        -
+          section: "Oddball-response analysis"
+          effort: "equal"
+        -
+          section: "Signal to Noise analysis"
+          effort: "equal"
+        -
+          section: "Receptive field analysis"
+          effort: "supporting"
+        -
+          section: "SLAP2 data validation"
+          effort: "equal"
+        -
+          section: "Neuropixels data validation"
+          effort: "equal"
+        -
+          section: "Stimulus implementation"
+          effort: "equal"
+        -
+          section: "Neuropixels data processing"
+          effort: "supporting"
+        -
+          section: "Experimental design"
+          effort: "equal"
+        -
+          section: "Background"
+          effort: "supporting"
+      timeline:
+        joined: "2026-09-08"
+        left: "2026-09-08"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0000-0001-6684-4693"
+      is_admin: false
+      from_asset: false
+    -
+      id: "yaroslav-halchenko"
+      name: "Yaroslav Halchenko"
+      avatar_url: "https://faculty-directory.dartmouth.edu/sites/faculty_directory.prod/files/styles/profile_portrait/public/yarik-crcns2014_323x405.jpg?itok=hyxIlUGg"
+      orcid: "0000-0003-3456-2493"
+      affiliations:
+        - "Dartmouth College"
+      roles:
+        - "Resources"
+        - "Writing – review & editing"
+      credit_levels:
+        -
+          role: "Resources"
+          level: "equal"
+          description: "Co-PI on DANDI archive used by OpenScope etc"
+        -
+          role: "Writing – review & editing"
+          level: "supporting"
+          description: "minor reviews/feedback"
+      section_contributions: []
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0000-0003-3456-2493"
+      is_admin: false
+      from_asset: false
+    -
+      id: "farzaneh-najafi"
+      name: "Farzaneh Najafi"
+      avatar_url: "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72v8e8D6s6GJtdXrvfEjBISgEbBEiTpEXAaGUVgAyT3RMCDGKpC2DeCYgw1GTQmmsW2ypAIsEp-7JN92zPNuktFepGq7ciXQP_6hM2414tyda_bSnK92jkuy3N3rytd0omocxmqPhdnI4ws6DDraYSbrHlsg3ESA0BntYXzty3OuTET3VBLL2aEt3BjFZV1FTsg9iXUuDezxrgpDtLVaJukaDT5C-tUDWdsn32hpaps=w1280"
+      orcid: "0000-0001-6454-2448"
+      email: "fnajafi3@gatech.edu"
+      affiliations:
+        - "Georgia Institute of Technology"
+      roles:
+        - "Conceptualization"
+        - "Methodology"
+        - "Supervision"
+        - "Validation"
+      credit_levels:
+        -
+          role: "Conceptualization"
+          level: "equal"
+        -
+          role: "Methodology"
+          level: "equal"
+        -
+          role: "Supervision"
+          level: "equal"
+          description: "Supervised multiple students , out of them Ali Shamsnia  and Davis Grubin contributed significantly.  Ali analyzed prediction error responses and Davis contributed to the QC."
+        -
+          role: "Validation"
+          level: "equal"
+      section_contributions:
+        -
+          section: "Oddball-response analysis"
+          effort: "equal"
+        -
+          section: "Signal to Noise analysis"
+          effort: "equal"
+        -
+          section: "Mesoscope data validation"
+          effort: "equal"
+        -
+          section: "Mesoscope data processing"
+          effort: "equal"
+        -
+          section: "Experimental design"
+          effort: "equal"
+        -
+          section: "Neuropixels data processing"
+          effort: "equal"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0000-0001-6454-2448"
+      is_admin: false
+      from_asset: false
+    -
+      id: "ido-aizenbud"
+      name: "Ido Aizenbud"
+      avatar_url: "https://ido4848.github.io/me/profile-picture.jpg"
+      orcid: "0009-0006-6855-567X"
+      email: "Ido.aizenbud@mail.huji.ac.il"
+      affiliations:
+        - "The Hebrew University of Jerusalem, Jerusalem, Israel"
+      roles:
+        - "Formal analysis"
+        - "Methodology"
+        - "Software"
+        - "Validation"
+        - "Visualization"
+      credit_levels:
+        -
+          role: "Formal analysis"
+          level: "equal"
+          description: "Designed and ran the glutamate QC analysis for the SLAP2 recordings across all sessions."
+        -
+          role: "Methodology"
+          level: "supporting"
+          description: "Developed the QC approach for SLAP2 glutamate imaging."
+        -
+          role: "Software"
+          level: "supporting"
+          description: "Wrote the SLAP2 glutamate QC codee."
+        -
+          role: "Validation"
+          level: "equal"
+          description: "Checked data quality across the SLAP2 glutamate archive."
+        -
+          role: "Visualization"
+          level: "equal"
+          description: "Made the SLAP2 glutamate panels of Figure 7."
+      section_contributions:
+        -
+          section: "SLAP2 data validation"
+          effort: "equal"
+        -
+          section: "Signal to Noise analysis"
+          effort: "equal"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0009-0006-6855-567X"
+      is_admin: false
+      from_asset: false
+    -
+      id: "maria-anna-sidiropoulou"
+      name: "Maria Anna Sidiropoulou"
+      orcid: "0009-0008-0185-715X"
+      email: "masiart3@gmail.com"
+      affiliations:
+        - "University College London, London, UK"
+      roles:
+        - "Software"
+        - "Validation"
+        - "Visualization"
+      credit_levels:
+        -
+          role: "Software"
+          level: "equal"
+          description: "Developed and organized Python analysis workflows for Neuropixels waveform extraction, quality control, area-specific WaveMAP clustering, electrophysiological characterization, SST optotagging analysis, and generation of manuscript figures."
+        -
+          role: "Validation"
+          level: "equal"
+          description: "Validated waveform classifications and analysis outputs using electrophysiological quality metrics and SST optotagging data, and assessed regional and session-level consistency across the dataset."
+        -
+          role: "Visualization"
+          level: "equal"
+          description: "Developed static and interactive visualizations of regional WaveMAP embeddings, waveform phenotypes, putative FS/PV-like and optotagged SST populations, and waveform-class composition across predictive contexts."
+      section_contributions:
+        -
+          section: "Neuropixels data processing"
+          effort: "equal"
+        -
+          section: "Neuropixels data validation"
+          effort: "equal"
+        -
+          section: "Signal to Noise analysis"
+          effort: "equal"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0009-0008-0185-715X"
+      is_admin: false
+      from_asset: false
+    -
+      id: "yuheng-cheah"
+      name: "Yuheng  Cheah"
+      orcid: "0009-0006-6564-6314"
+      email: "yhcheah804@gmail.com"
+      affiliations:
+        - "University College London"
+      roles:
+        - "Software"
+        - "Validation"
+        - "Visualization"
+      credit_levels:
+        -
+          role: "Software"
+          level: "equal"
+        -
+          role: "Validation"
+          level: "equal"
+        -
+          role: "Visualization"
+          level: "equal"
+      section_contributions:
+        -
+          section: "Neuropixels data validation"
+          effort: "equal"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0009-0006-6564-6314"
+      is_admin: false
+      from_asset: false
+    -
+      id: "ali-shamsnia"
+      name: "Ali Shamsnia"
+      avatar_url: "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72vvG8ikymrocggo36Sd1jo8GWPgtzkuClqjSgljLOO-sLA6ZHxol92pKE7zXrs1IN1ae6dFkPNIw1CS034j9VAPfAX22cDxYe5Yz0CfWZuBHsasWHgyv1_SkoGVq6ZEP9oOSjK5nm9ocWbiLWAgNi4yvtEpYNjxype_TOLWbmiomIudq5dnvWvplBLkhYi04UfrNz5uQoKoQYk3YZiW2T6wTRlDzsRVfrWmFEyrSTM=w1280"
+      orcid: "0009-0000-1137-6132"
+      email: "alishamsniaaa@gmial.com"
+      affiliations:
+        - "Georgia Institute of Technology"
+      roles:
+        - "Methodology"
+        - "Software"
+      credit_levels:
+        -
+          role: "Methodology"
+          level: "supporting"
+          description: "Designed a validation-first quality-control framework for processed Mesoscope planar optical physiology sessions. Defined session- and plane-level QC criteria: ROI and putative-soma counts per plane, plausibility of ROI size and soma probability, robust dF/F statistics (percentiles, MAD, 5–95% range), slow-drift estimates, event rates and amplitudes, missing values and timestamp integrity, and neuropil-to-raw fluorescence ratios. Also set a data-access strategy: stream from S3 for first-pass checks, and download locally only for full-session analysis."
+        -
+          role: "Software"
+          level: "supporting"
+          description: "Developed the initial open-source Python QC toolkit (github.com/Alishamsnia/Allen_OpenScope_Ophys_QC). It includes a command-line pipeline that streams processed NWB/Zarr sessions directly from the public aind-open-data S3 bucket, extracts plane and ROI metadata, computes trace and event QC metrics, and exports CSV/JSON summaries and diagnostic plots. It also includes a notebook for interactive inspection of session metadata, ROI tables and dF/F traces, and both tools support partial-frame loading for fast first-pass checks of large sessions."
+      section_contributions:
+        -
+          section: "Mesoscope data validation"
+          effort: "supporting"
+        -
+          section: "Signal to Noise analysis"
+          effort: "supporting"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0009-0000-1137-6132"
+      is_admin: false
+      from_asset: false
+    -
+      id: "davis-grubin"
+      name: "Davis Grubin"
+      avatar_url: "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72ucillO48RP9WLgkG1p0E2_f-pwZH7etZ0iinhTslaXZfhhA35q9H_rFIIhEn8QTxo7nAGQe9IfT9OiLTLnigjdAhNFdHlbbtHeJeyOnQKEyUhKIaxEgfRfzbEt-vNa99DdNXsFDeo6xLu0WxYCYj6t8k4pj3bWj6-psEfSWXFaa7X-eSUPKbRoKfCy2gEIydMGdF7GAxuFLHECnDdq_eMgr6K0qi4rEauMZdHF=w1280"
+      orcid: "0009-0008-5337-4168"
+      email: "grubin6@gatech.edu"
+      affiliations:
+        - "Georgia Institute of Technology"
+      roles:
+        - "Formal analysis"
+        - "Software"
+        - "Validation"
+        - "Visualization"
+      credit_levels:
+        -
+          role: "Formal analysis"
+          level: "equal"
+          description: "Comparing SNR metrics for Mesoscope recordings across layers and regions, looking at relationships between SNR metrics and layer depth, event frequency, and other variables. Using clustering algorithms to create classes that correspond to ROI signal quality."
+        -
+          role: "Software"
+          level: "equal"
+          description: "Writing code for static and interactive visualizations, generating comparisons of SNR metrics across multiple sessions"
+        -
+          role: "Validation"
+          level: "equal"
+          description: "Implementing and testing metrics for quantifying SNR for Mesoscope ROI QC sessions"
+        -
+          role: "Visualization"
+          level: "equal"
+          description: "Creating interactive visualizations and panel figure drafts for Mesoscope ROI  QC"
+      section_contributions:
+        -
+          section: "Signal to Noise analysis"
+          effort: "equal"
+        -
+          section: "Mesoscope data validation"
+          effort: "equal"
+        -
+          section: "Mesoscope data processing"
+          effort: "equal"
+          description: "Not sure if this overlaps with validation, feel free to remove if not"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0009-0008-5337-4168"
       is_admin: false
       from_asset: false
   affiliations: []

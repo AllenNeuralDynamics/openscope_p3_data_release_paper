@@ -12,7 +12,9 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-API_ROOT = "https://metadata-portal.allenneuraldynamics.org/contributions"
+from openscope_p3_publication.authorship import apply_author_review
+
+API_ROOT = "https://data.allenneuraldynamics.org/metadata-viz/contributions"
 CONTRIBUTION_FORM = "https://data.allenneuraldynamics.org/contributions/add"
 DEFAULT_PROJECT = "p3_data_release"
 DEFAULT_OUTPUT = Path(__file__).resolve().parents[1] / "authors.yml"
@@ -295,20 +297,42 @@ def sync_authors(
     project: str,
     output: Path,
     avatar_manifest_path: Path = DEFAULT_AVATAR_MANIFEST,
+    review_file: Path | None = None,
+    avatar_source_path: Path | None = None,
 ) -> tuple[int, str]:
-    history_url = api_url("get", project=project, history="true")
+    review = None
+    if review_file is not None:
+        review = json.loads(review_file.read_text(encoding="utf-8"))
+        if not isinstance(review, dict):
+            raise ValueError("Author review must be a JSON object")
+    history_url = api_url("project", project=project, history="true")
     history = fetch_json(history_url)
     if not history:
         raise ValueError(f"No contribution history found for {project}")
     source_commit = history[0]
+    if review is not None:
+        matching = [entry for entry in history if entry["commit"] == review.get("commit")]
+        if not matching:
+            raise ValueError("Author review commit is not in the project history")
+        source_commit = matching[0]
     source_url = api_url(
-        "get", project=project, commit=source_commit["commit"], format="json"
+        "project", project=project, commit=source_commit["commit"], format="json"
     )
     payload = fetch_json(source_url)
     if payload.get("project_name") != project:
         raise ValueError(f"Requested {project}, received {payload.get('project_name')}")
-    avatar_manifest = load_avatar_manifest(avatar_manifest_path)
+    if review is not None:
+        payload = apply_author_review(payload, review, source_commit["commit"])
+    avatar_manifest = load_avatar_manifest(avatar_source_path or avatar_manifest_path)
     data = transform_payload(payload, source_url, source_commit, avatar_manifest)
+    if review is not None:
+        data["source"]["reviewed"] = True
+    if avatar_source_path is not None:
+        avatar_manifest_path.write_text(
+            json.dumps(avatar_manifest, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
     output.write_text(dump_yaml(data), encoding="utf-8")
     return len(data["project"]["contributors"]), source_commit["commit"]
 
@@ -323,11 +347,23 @@ def main() -> None:
         default=DEFAULT_AVATAR_MANIFEST,
         help="Remote-only author avatar URL manifest",
     )
+    parser.add_argument(
+        "--review-file",
+        type=Path,
+        help="Local, untracked approval and correction JSON pinned to a portal commit",
+    )
+    parser.add_argument(
+        "--avatar-source",
+        type=Path,
+        help="Editable portrait source used to regenerate the avatar manifest and author URLs",
+    )
     arguments = parser.parse_args()
     count, commit = sync_authors(
         arguments.project,
         arguments.output,
         arguments.avatar_manifest,
+        review_file=arguments.review_file,
+        avatar_source_path=arguments.avatar_source,
     )
     print(f"Wrote {arguments.output} with {count} contributors from commit {commit}")
 

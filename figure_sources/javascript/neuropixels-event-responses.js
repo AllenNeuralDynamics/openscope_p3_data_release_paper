@@ -24,15 +24,15 @@
     context: "standard",
     eventIndex: 0,
     metric: "mismatch",
-    probe: "all",
     qc: "qc",
+    responsiveness: "all",
     decoderLabels: new Set(["mua", "sua"]),
     minimumFiringRateHz: 1,
     neuronTypes: new Set(["RS", "FS", "SST"]),
     baselineSubtracted: true,
     scope: "area",
     selectedUnit: null,
-    sort: "response",
+    sort: "area",
     view: "interactive",
     zscoreLimit: 3,
     sortedUnits: [],
@@ -42,9 +42,11 @@
 
   const contextTabs = document.getElementById("context-tabs");
   const eventSelect = document.getElementById("event-select");
-  const probeSelect = document.getElementById("probe-select");
   const areaSelect = document.getElementById("area-select");
   const qcTabs = document.getElementById("qc-tabs");
+  const sequenceControlNote = document.getElementById("sequence-control-note");
+  const responsivenessSelect = document.getElementById("responsiveness-select");
+  const unitCountReadout = document.getElementById("unit-count-readout");
   const decoderLabelFilter = document.getElementById("decoder-label-filter");
   const neuronTypeFilter = document.getElementById("neuron-type-filter");
   const baselineSubtractedControl = document.getElementById(
@@ -55,8 +57,8 @@
     "minimum-firing-rate-value",
   );
   const scopeTabs = document.getElementById("scope-tabs");
-  const responseSelectionLabel = document.getElementById(
-    "response-selection-label",
+  const responseSelectionControl = document.getElementById(
+    "response-selection-control",
   );
   const unitSelect = document.getElementById("unit-select");
   const metricTabs = document.getElementById("metric-tabs");
@@ -67,13 +69,10 @@
   const colorKeyMax = document.getElementById("color-key-max");
   const heatmapCanvas = document.getElementById("heatmap-canvas");
   const heatmapTooltip = document.getElementById("heatmap-tooltip");
-  const heatmapDetail = document.getElementById("heatmap-detail");
   const colorKey = document.getElementById("color-key");
   const loadingMessage = document.getElementById("loading-message");
   const responseCanvas = document.getElementById("response-canvas");
   const responseTitle = document.getElementById("response-title");
-  const responseNote = document.getElementById("response-note");
-  const sourceNote = document.getElementById("source-note");
   const interactiveView = document.getElementById("interactive-view");
   const staticView = document.getElementById("static-view");
   const rastermapRankCache = new Map();
@@ -137,6 +136,17 @@
           responseControl: decodeFloat32Base64(session.responseControlHzBase64),
           traceEventIndex: -1,
           traces: [[], []],
+          reference: session.sequenceComparisonReference
+            ? {
+                ...session.sequenceComparisonReference,
+                baseline: decodeFloat32Base64(
+                  session.sequenceComparisonReference.baselineHzBase64,
+                ),
+                sdf: decodeUint16Base64(
+                  session.sequenceComparisonReference.sdfBase64,
+                ),
+              }
+            : null,
         })),
       );
     }
@@ -164,7 +174,6 @@
           state.context = context;
           state.eventIndex = 0;
           state.area = "all";
-          state.probe = "all";
           state.selectedUnit = null;
           configureSession();
         },
@@ -186,33 +195,102 @@
     eventSelect.value = String(state.eventIndex);
   }
 
-  function renderProbeSelect() {
-    const session = currentSession();
-    const probes = [...new Set(session.units.map((unit) => unit.probe))].sort();
-    probeSelect.replaceChildren();
-    for (const [value, label] of [
-      ["all", "All probes"],
-      ...probes.map((probe) => [probe, probe.replace("Probe", "Probe ")]),
-    ]) {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = label;
-      probeSelect.append(option);
-    }
-    if (![...probeSelect.options].some((option) => option.value === state.probe)) {
-      state.probe = "all";
-    }
-    probeSelect.value = state.probe;
-  }
-
   function areaSourceUnits() {
     const session = currentSession();
     return session.units.filter(unitMatchesBaseFilters);
   }
 
+  const responsivenessCache = new Map();
+
+  function responsiveness(session) {
+    if (!responsivenessCache.has(session.context)) {
+      const decoded = {};
+      const block = session.responsiveness || {};
+      Object.keys(block).forEach((key) => {
+        decoded[key] = decodeFloat32Base64(block[key].base64);
+      });
+      responsivenessCache.set(session.context, {
+        values: decoded,
+        unitCount: session.unitCount,
+      });
+    }
+    return responsivenessCache.get(session.context);
+  }
+
+  // The figure reports the uncorrected p with the chance expectation shown
+  // beside the count. Measured signal runs 7 to 12 times chance for most
+  // events, so the uncorrected false-discovery proportion is about 8 to 13
+  // percent, while correction discards roughly 40 percent of the excess.
+  // Element three of the previous sequence, five rows back.
+  const SEQUENCE_COMPARISON_OFFSET = -5;
+  const RESPONSIVE_P_MAX = 0.05;
+  const RESPONSIVE_MODULATION_MIN = 0.1;
+
+  function responsiveAt(session, eventIndex, unitIndex, kind) {
+    const store = responsiveness(session);
+    const offset = eventIndex * store.unitCount + unitIndex;
+    const prefix = kind === "q2" ? "q2_delta" : "q1";
+    const p = store.values[`${prefix}_p`]?.[offset];
+    const modulation = store.values[`${prefix}_modulation`]?.[offset];
+    if (!Number.isFinite(p) || !Number.isFinite(modulation)) return false;
+    return p <= RESPONSIVE_P_MAX
+      && Math.abs(modulation) > RESPONSIVE_MODULATION_MIN;
+  }
+
+  function unitMatchesResponsiveness(unitIndex) {
+    if (state.responsiveness === "all") return true;
+    const session = currentSession();
+    if (state.responsiveness === "q1-any") {
+      return session.events.some((_event, index) =>
+        responsiveAt(session, index, unitIndex, "q1"),
+      );
+    }
+    const kind = state.responsiveness === "q2-event" ? "q2" : "q1";
+    return responsiveAt(session, state.eventIndex, unitIndex, kind);
+  }
+
+  // Units that pass every filter except the responsiveness one. These are the
+  // units the test was applied to, and therefore the denominator the chance
+  // expectation must use.
+  function candidateUnitIndices() {
+    const session = currentSession();
+    return session.units
+      .map((unit, index) => ({ unit, index }))
+      .filter(({ unit }) => unitMatchesBaseFilters(unit) && areaMatches(unit))
+      .map(({ index }) => index);
+  }
+
+  // Expected false positives under the null: five percent of the tests run on
+  // units clearing the modulation floor. Computed over the candidates rather
+  // than the survivors, because using the survivors would understate the noise
+  // floor by the very factor the test selected for.
+  function chanceExpectation() {
+    if (state.responsiveness === "all") return null;
+    const session = currentSession();
+    const store = responsiveness(session);
+    const prefix = state.responsiveness === "q2-event" ? "q2_delta" : "q1";
+    const events =
+      state.responsiveness === "q1-any"
+        ? session.events.map((_event, index) => index)
+        : [state.eventIndex];
+    let eligible = 0;
+    candidateUnitIndices().forEach((unitIndex) => {
+      events.forEach((eventIndex) => {
+        const offset = eventIndex * store.unitCount + unitIndex;
+        const modulation = store.values[`${prefix}_modulation`]?.[offset];
+        if (
+          Number.isFinite(modulation)
+          && Math.abs(modulation) > RESPONSIVE_MODULATION_MIN
+        ) {
+          eligible += 1;
+        }
+      });
+    });
+    return eligible * RESPONSIVE_P_MAX;
+  }
+
   function unitMatchesBaseFilters(unit) {
     return (
-      (state.probe === "all" || unit.probe === state.probe) &&
       (state.qc === "all" || unit.qcPass) &&
       state.decoderLabels.has(unit.decoderLabel) &&
       state.neuronTypes.has(unit.neuronType) &&
@@ -265,9 +343,7 @@
 
   function renderResponseSelection() {
     const individual = state.scope === "unit";
-    responseSelectionLabel.textContent = individual ? "Unit" : "Area";
-    areaSelect.hidden = individual;
-    unitSelect.hidden = !individual;
+    responseSelectionControl.hidden = !individual;
   }
 
   function filteredUnitIndices() {
@@ -275,8 +351,10 @@
     return session.units
       .map((unit, index) => ({ unit, index }))
       .filter(
-        ({ unit }) =>
-          unitMatchesBaseFilters(unit) && areaMatches(unit),
+        ({ unit, index }) =>
+          unitMatchesBaseFilters(unit)
+          && areaMatches(unit)
+          && unitMatchesResponsiveness(index),
       )
       .map(({ index }) => index);
   }
@@ -306,20 +384,85 @@
     return values.length ? Math.max(...values.map(Math.abs)) : Number.NEGATIVE_INFINITY;
   }
 
+  function areaOrderingMode() {
+    if (state.area === "all") return "parent";
+    if (state.area.startsWith("group:")) return "location";
+    return "depth";
+  }
+
+  function unitIdentityOrder(leftUnit, rightUnit) {
+    return (
+      leftUnit.probe.localeCompare(rightUnit.probe) ||
+      leftUnit.depthUm - rightUnit.depthUm ||
+      leftUnit.id - rightUnit.id
+    );
+  }
+
+  function embeddedUnitCount(atlas) {
+    // Must match the extractor's Rastermap eligibility, which is a sorter
+    // label of MUA or SUA *and* a usable baseline for this event. Counting the
+    // label alone overstates the embedded population by about 10%.
+    const session = currentSession();
+    let count = 0;
+    session.units.forEach((unit, unitIndex) => {
+      if (!["mua", "sua"].includes(unit.decoderLabel)) return;
+      const std = atlas.baselineStd[baselineOffset(unitIndex, 0)];
+      if (Number.isFinite(std) && std > 0) count += 1;
+    });
+    return count;
+  }
+
+  function renderUnitCount(indices, atlas) {
+    if (!unitCountReadout) return;
+    const session = currentSession();
+    const candidates = candidateUnitIndices().length;
+    const parts = [
+      `<strong>${indices.length.toLocaleString()}</strong> of `
+      + `${candidates.toLocaleString()} selected units`,
+    ];
+    const chance = chanceExpectation();
+    if (chance !== null) {
+      parts.push(`about ${Math.round(chance).toLocaleString()} expected by chance`);
+    }
+    if (state.sort === "rastermap" && atlas) {
+      const embedded = embeddedUnitCount(atlas);
+      parts.push(
+        `Rastermap order from ${embedded.toLocaleString()} embedded units, `
+        + "so a filtered view is a subsequence of that order rather than a "
+        + "re-embedding",
+      );
+    }
+    unitCountReadout.innerHTML = parts.join(" &middot; ");
+  }
+
   function sortedUnitIndices(atlas) {
     const session = currentSession();
     const indices = filteredUnitIndices();
     return indices.sort((left, right) => {
-      if (state.sort === "depth") {
+      if (state.sort === "area") {
         const leftUnit = session.units[left];
         const rightUnit = session.units[right];
+        const mode = areaOrderingMode();
+        if (mode === "depth") {
+          return (
+            leftUnit.depthUm - rightUnit.depthUm ||
+            unitIdentityOrder(leftUnit, rightUnit)
+          );
+        }
+        if (mode === "parent") {
+          return (
+            leftUnit.parentAreaGraphOrder - rightUnit.parentAreaGraphOrder ||
+            leftUnit.parentArea.localeCompare(rightUnit.parentArea) ||
+            leftUnit.areaGraphOrder - rightUnit.areaGraphOrder ||
+            leftUnit.location.localeCompare(rightUnit.location) ||
+            unitIdentityOrder(leftUnit, rightUnit)
+          );
+        }
         return (
-          leftUnit.probe.localeCompare(rightUnit.probe) ||
-          leftUnit.depthUm - rightUnit.depthUm
+          leftUnit.areaGraphOrder - rightUnit.areaGraphOrder ||
+          leftUnit.location.localeCompare(rightUnit.location) ||
+          unitIdentityOrder(leftUnit, rightUnit)
         );
-      }
-      if (state.sort === "unit") {
-        return session.units[left].id - session.units[right].id;
       }
       if (state.sort === "peak-time") {
         const leftPeak = peakTime(atlas, left);
@@ -445,12 +588,25 @@
     );
   }
 
-  function automaticLimit(traces) {
+  function automaticLimit(atlas, unitIndices) {
     const sample = [];
-    const stride = Math.max(1, Math.floor(traces.length / 250));
-    for (let row = 0; row < traces.length; row += stride) {
-      for (const value of traces[row]) {
-        if (value !== null && Number.isFinite(value))         sample.push(metricIsSequential() ? Math.max(0, value) : Math.abs(value));
+    const stride = Math.max(1, Math.floor(unitIndices.length / 250));
+    for (let row = 0; row < unitIndices.length; row += stride) {
+      const unitIndex = unitIndices[row];
+      const traces = metricIsSequential()
+        ? [
+            unitRateTrace(atlas, unitIndex, 0),
+            unitRateTrace(atlas, unitIndex, 1),
+          ]
+        : [unitHeatmapTrace(atlas, unitIndex)];
+      for (const trace of traces) {
+        for (const value of trace) {
+          if (value !== null && Number.isFinite(value)) {
+            sample.push(
+              metricIsSequential() ? Math.max(0, value) : Math.abs(value),
+            );
+          }
+        }
       }
     }
     if (!sample.length) return 1;
@@ -464,6 +620,21 @@
 
   function displayEnd() {
     return currentSession().windowSeconds[1];
+  }
+
+  // Derived from the window rather than hardcoded per context, so a widened
+  // window is labelled across its whole width. Reproduces the previous tick
+  // sets exactly for the 1.5 s and 3 s symmetric windows, and covers the
+  // sequence window's full [-2, 1] span.
+  function timeAxisTicks() {
+    const start = displayStart();
+    const end = displayEnd();
+    const step = end - start > 2 ? 1 : 0.5;
+    const values = new Set([start, 0, end]);
+    for (let value = Math.ceil(start / step) * step; value < end; value += step) {
+      if (value > start) values.add(Number(value.toFixed(3)));
+    }
+    return [...values].sort((left, right) => left - right);
   }
 
   function presentationTimingValues(timing) {
@@ -505,8 +676,8 @@
       mismatch: "mismatch SDF",
       control: "control SDF",
       difference: "mismatch − control SDF",
-      "mismatch-zscore": "mismatch baseline z score",
-      "control-zscore": "control baseline z score",
+      "mismatch-zscore": "mismatch baseline z-score",
+      "control-zscore": "control baseline z-score",
     }[state.metric];
   }
 
@@ -533,14 +704,192 @@
     return context;
   }
 
+  function heatmapAreaGroups() {
+    if (state.sort !== "area" || areaOrderingMode() === "depth") return [];
+    const session = currentSession();
+    const field = areaOrderingMode() === "parent" ? "parentArea" : "location";
+    const groups = [];
+    state.sortedUnits.forEach((unitIndex, row) => {
+      const label = session.units[unitIndex][field];
+      const current = groups.at(-1);
+      if (current?.label === label) {
+        current.endRow = row + 1;
+      } else {
+        groups.push({ label, startRow: row, endRow: row + 1 });
+      }
+    });
+    return groups;
+  }
+
+  function configureHeatmapHeight(areaGroups) {
+    const labelHeight = areaGroups.length ? areaGroups.length * 18 + 100 : 650;
+    heatmapCanvas.height = Math.max(650, labelHeight);
+  }
+
+  function plotHorizontalBounds() {
+    return { left: 125, right: 1170 };
+  }
+
+  function heatmapPlot() {
+    return {
+      ...plotHorizontalBounds(),
+      top: 20,
+      bottom: heatmapCanvas.height - 80,
+    };
+  }
+
+  function heatmapRowY(row, plot) {
+    if (!state.sortedUnits.length) return plot.top;
+    return (
+      plot.top +
+      (row / state.sortedUnits.length) * (plot.bottom - plot.top)
+    );
+  }
+
+  function areaLabelPositions(groups, plot) {
+    if (!groups.length) return [];
+    const gap = 17;
+    const top = plot.top + 7;
+    const bottom = plot.bottom - 7;
+    const positions = groups.map((group) =>
+      heatmapRowY((group.startRow + group.endRow) / 2, plot),
+    );
+    positions[0] = Math.max(top, positions[0]);
+    for (let index = 1; index < positions.length; index += 1) {
+      positions[index] = Math.max(positions[index], positions[index - 1] + gap);
+    }
+    positions[positions.length - 1] = Math.min(
+      bottom,
+      positions[positions.length - 1],
+    );
+    for (let index = positions.length - 2; index >= 0; index -= 1) {
+      positions[index] = Math.min(positions[index], positions[index + 1] - gap);
+    }
+    return positions;
+  }
+
+  function heatmapYAxisMetadata(areaGroups) {
+    if (state.sort !== "area") {
+      return {
+        label: "Sorted unit ordering",
+        ticks: state.sortedUnits.length
+          ? [
+              "0",
+              String(Math.floor(state.sortedUnits.length / 2)),
+              String(state.sortedUnits.length),
+            ]
+          : ["0"],
+      };
+    }
+    const mode = areaOrderingMode();
+    if (mode === "depth") {
+      const session = currentSession();
+      const depths = state.sortedUnits.map(
+        (unitIndex) => session.units[unitIndex].depthUm,
+      );
+      return {
+        label: "Depth on probe",
+        ticks: depths.length
+          ? [
+              `${Math.round(depths[0])} µm`,
+              `${Math.round(depths.at(-1))} µm`,
+            ]
+          : [],
+      };
+    }
+    return {
+      label: mode === "parent" ? "Parent area" : "Area",
+      ticks: areaGroups.map((group) => group.label),
+    };
+  }
+
+  function drawHeatmapYAxis(context, plot, areaGroups) {
+    const axis = heatmapYAxisMetadata(areaGroups);
+    context.save();
+    context.font = '21px "Myriad Pro", Arial, sans-serif';
+    context.fillStyle = "#303536";
+    context.textAlign = "center";
+    context.translate(25, (plot.top + plot.bottom) / 2);
+    context.rotate(-Math.PI / 2);
+
+    if (state.sort !== "area") {
+      context.fillText(axis.label, 0, 0);
+      context.restore();
+      context.font = '18px "IBM Plex Mono", monospace';
+      context.fillStyle = "#59605e";
+      context.textAlign = "right";
+      const rowTicks = state.sortedUnits.length
+        ? [
+            [axis.ticks[0], plot.top + 6],
+            [
+              axis.ticks[1],
+              (plot.top + plot.bottom) / 2 + 6,
+            ],
+            [axis.ticks[2], plot.bottom + 6],
+          ]
+        : [[axis.ticks[0], plot.top + 6]];
+      for (const [label, y] of rowTicks) {
+        context.fillText(String(label), plot.left - 10, y);
+      }
+      return;
+    }
+
+    const mode = areaOrderingMode();
+    if (mode === "depth") {
+      context.fillText(axis.label, 0, 0);
+      context.restore();
+      context.font = '18px "IBM Plex Mono", monospace';
+      context.fillStyle = "#59605e";
+      context.textAlign = "right";
+      if (axis.ticks.length) {
+        context.fillText(axis.ticks[0], plot.left - 10, plot.top + 6);
+        context.fillText(axis.ticks[1], plot.left - 10, plot.bottom + 6);
+      }
+      return;
+    }
+
+    context.fillText(axis.label, 0, 0);
+    context.restore();
+    const labelPositions = areaLabelPositions(areaGroups, plot);
+    context.font = '16px "IBM Plex Mono", monospace';
+    context.fillStyle = "#59605e";
+    context.strokeStyle = "#8d9591";
+    context.lineWidth = 1;
+    context.textAlign = "right";
+    areaGroups.forEach((group, index) => {
+      const center = heatmapRowY((group.startRow + group.endRow) / 2, plot);
+      const labelY = labelPositions[index];
+      if (group.startRow > 0) {
+        const boundary = heatmapRowY(group.startRow, plot);
+        context.save();
+        context.globalAlpha = 0.58;
+        context.strokeStyle = "#ffffff";
+        context.beginPath();
+        context.moveTo(plot.left, boundary);
+        context.lineTo(plot.right, boundary);
+        context.stroke();
+        context.restore();
+      }
+      context.beginPath();
+      context.moveTo(plot.left - 3, center);
+      context.lineTo(plot.left - 9, center);
+      context.lineTo(plot.left - 14, labelY);
+      context.stroke();
+      context.fillText(group.label, plot.left - 18, labelY + 5);
+    });
+  }
+
   function drawHeatmap(atlas) {
     const session = currentSession();
     state.sortedUnits = sortedUnitIndices(atlas);
+    renderUnitCount(state.sortedUnits, atlas);
     renderUnitSelect();
+    const areaGroups = heatmapAreaGroups();
+    configureHeatmapHeight(areaGroups);
     const traces = state.sortedUnits.map((unitIndex) =>
       unitHeatmapTrace(atlas, unitIndex),
     );
-    const baseLimit = automaticLimit(traces);
+    const baseLimit = automaticLimit(atlas, filteredUnitIndices());
     const zscore = state.metric.endsWith("zscore");
     const limit = zscore
       ? state.zscoreLimit
@@ -566,7 +915,7 @@
       ? `White 0, black ${limit.toFixed(2)} ${unit}`
       : `Blue −${limit.toFixed(2)}, white 0, red +${limit.toFixed(2)} ${unit}`;
     const context = canvasContext(heatmapCanvas);
-    const plot = { left: 82, right: 1175, top: 20, bottom: 570 };
+    const plot = heatmapPlot();
     context.fillStyle = "#f7f8f8";
     context.fillRect(
       plot.left,
@@ -606,29 +955,17 @@
         plot.bottom - plot.top,
       );
     }
-    context.strokeStyle = "#d0d4d2";
-    context.strokeRect(
-      plot.left,
-      plot.top,
-      plot.right - plot.left,
-      plot.bottom - plot.top,
-    );
-    const ticks =
-      state.context === "duration"
-        ? [-1.5, -1, 0, 1, 1.5]
-        : [-0.75, -0.5, 0, 0.5, 0.75];
+    const ticks = timeAxisTicks();
     for (const tick of ticks) {
       const x =
         plot.left +
         ((tick - displayStart()) / (displayEnd() - displayStart())) *
           (plot.right - plot.left);
-      context.strokeStyle = tick === 0 ? "#303536" : "#d0d4d2";
-      context.setLineDash(tick === 0 ? [6, 5] : []);
+      context.strokeStyle = "#59605e";
       context.beginPath();
-      context.moveTo(x, plot.top);
-      context.lineTo(x, plot.bottom);
+      context.moveTo(x, plot.bottom);
+      context.lineTo(x, plot.bottom + 5);
       context.stroke();
-      context.setLineDash([]);
       context.fillStyle = "#59605e";
       context.textAlign = "center";
       context.fillText(String(tick), x, plot.bottom + 28);
@@ -654,37 +991,37 @@
       context.stroke();
       context.setLineDash([]);
     }
-    context.save();
-    context.translate(25, (plot.top + plot.bottom) / 2);
-    context.rotate(-Math.PI / 2);
-    context.fillText("Units", 0, 0);
-    context.restore();
-    context.font = '18px "IBM Plex Mono", monospace';
-    context.fillStyle = "#59605e";
-    context.textAlign = "right";
-    const rowTicks = state.sortedUnits.length
-      ? [
-          [0, plot.top + 6],
-          [Math.floor(state.sortedUnits.length / 2), (plot.top + plot.bottom) / 2 + 6],
-          [state.sortedUnits.length, plot.bottom + 6],
-        ]
-      : [[0, plot.top + 6]];
-    for (const [label, y] of rowTicks) {
-      context.fillText(String(label), plot.left - 10, y);
-    }
-    heatmapDetail.textContent = `${session.sessionId} · ${
+    drawHeatmapYAxis(context, plot, areaGroups);
+    const yAxis = heatmapYAxisMetadata(areaGroups);
+    heatmapCanvas.dataset.yAxisLabel = yAxis.label;
+    heatmapCanvas.dataset.yTickLabels = yAxis.ticks.join("|");
+    const heatmapDescription = `${session.sessionId} · ${
       session.events[state.eventIndex].label
-    } · ${metricLabel()}`;
+    } · ${metricLabel()} · ${state.sortedUnits.length.toLocaleString()} units`;
     heatmapCanvas.setAttribute(
       "aria-label",
-      `${state.sortedUnits.length} unit rows by ${time.length} time bins for ${heatmapDetail.textContent}.`,
+      `${state.sortedUnits.length} unit rows by ${time.length} time bins for ${
+        heatmapDescription
+      }, ordered by ${
+        state.sort === "area"
+          ? areaOrderingMode() === "depth"
+            ? "depth on probe"
+            : areaOrderingMode() === "parent"
+              ? "parent area in Allen graph order"
+              : "exact area in Allen graph order"
+          : sortSelect.selectedOptions[0]?.textContent
+      }. ${yAxis.label} labels: ${yAxis.ticks.join(", ")}.`,
     );
   }
 
   function meanAndSem(traces) {
+    return meanAndSemOf(traces, time.length);
+  }
+
+  function meanAndSemOf(traces, binCount) {
     const mean = [];
     const sem = [];
-    for (let bin = 0; bin < time.length; bin += 1) {
+    for (let bin = 0; bin < binCount; bin += 1) {
       const values = traces.map((trace) => trace[bin]).filter(Number.isFinite);
       if (!values.length) {
         mean.push(null);
@@ -775,6 +1112,92 @@
       contextSem: context.sem,
       controlSem: control.sem,
     };
+  }
+
+  function referenceUnitTrace(atlas, unitIndex, baselineSubtracted) {
+    const reference = atlas.reference;
+    const bins = reference.shape[1];
+    const baseline = baselineSubtracted ? reference.baseline[unitIndex] : 0;
+    const trace = [];
+    for (let bin = 0; bin < bins; bin += 1) {
+      trace.push(
+        reference.sdf[unitIndex * bins + bin] / reference.quantizationScalePerHz -
+          baseline,
+      );
+    }
+    return trace;
+  }
+
+  function sequenceControlSegments(atlas, traces, baselineSubtracted) {
+    // Control block 2 is randomly ordered, so a continuous control trace
+    // averages over an arbitrary draw of the fourteen orientations outside the
+    // two windows the statistics actually use. Draw only those two windows, and
+    // fill the comparison window from the stimulus-matched 0 degree alignment
+    // rather than from whatever randomly preceded the control block's own
+    // trials.
+    const session = currentSession();
+    if (session.context !== "sequence" || !atlas.reference) return traces;
+
+    const timing = session.events[state.eventIndex].timing.context;
+    const comparison = (timing.presentationWindows || []).find(
+      (window) => window.rowOffset === SEQUENCE_COMPARISON_OFFSET,
+    );
+    const mismatchStop = timing.presentationStopSeconds;
+
+    const inMismatch = (seconds) => seconds >= 0 && seconds <= mismatchStop;
+    const control = traces.control.map((value, index) =>
+      inMismatch(time[index]) ? value : null,
+    );
+    const controlSem = traces.controlSem
+      ? traces.controlSem.map((value, index) =>
+          inMismatch(time[index]) ? value : null,
+        )
+      : traces.controlSem;
+
+    if (comparison) {
+      const reference =
+        state.scope === "unit"
+          ? { mean: referenceUnitTrace(atlas, state.selectedUnit, baselineSubtracted), sem: null }
+          : meanAndSemOf(
+              filteredUnitIndices().map((unitIndex) =>
+                referenceUnitTrace(atlas, unitIndex, baselineSubtracted),
+              ),
+              atlas.reference.shape[1],
+            );
+      time.forEach((seconds, index) => {
+        if (seconds < comparison.startSeconds || seconds > comparison.stopSeconds) {
+          return;
+        }
+        const bin = Math.round(
+          (seconds - comparison.startSeconds) / atlas.reference.binSeconds,
+        );
+        if (bin < 0 || bin >= reference.mean.length) return;
+        control[index] = reference.mean[bin];
+        if (controlSem) {
+          controlSem[index] = reference.sem ? reference.sem[bin] : null;
+        }
+      });
+    }
+    return { ...traces, control, controlSem };
+  }
+
+  function renderSequenceControlNote() {
+    const session = currentSession();
+    const reference = session.sequenceComparisonReference;
+    if (session.context !== "sequence" || !reference) {
+      sequenceControlNote.hidden = true;
+      sequenceControlNote.textContent = "";
+      return;
+    }
+    const eventLabel = session.events[state.eventIndex].label.toLowerCase();
+    sequenceControlNote.hidden = false;
+    sequenceControlNote.textContent =
+      `Control block 2 presents single gratings in random order, so it has no ` +
+      `sequence structure to trace continuously. The control curve is therefore ` +
+      `drawn only inside the two shaded windows, matched on stimulus in each: a ` +
+      `single 0° grating (${reference.trials} trials) against element three of ` +
+      `the previous sequence on the left, and ${eventLabel} against the ` +
+      `substituted element on the right.`;
   }
 
   function responseValues(traces) {
@@ -902,26 +1325,102 @@
       context.restore();
       return;
     }
-    visible.forEach((index, position) => {
-      const value = values[index];
-      const x = responseX(index, plot);
-      const y =
-        plot.bottom -
-        ((value + sem[index] - yRange[0]) / (yRange[1] - yRange[0])) *
-          (plot.bottom - plot.top);
-      if (position) context.lineTo(x, y);
-      else context.moveTo(x, y);
+    // One closed sub-path per contiguous run. The sequence control trace has a
+    // gap between its two windows, and a single path would fill straight
+    // across it.
+    const runs = [];
+    visible.forEach((index) => {
+      const previous = runs[runs.length - 1];
+      if (previous && index === previous[previous.length - 1] + 1) {
+        previous.push(index);
+      } else {
+        runs.push([index]);
+      }
     });
-    [...visible].reverse().forEach((index) => {
-      const x = responseX(index, plot);
-      const y =
-        plot.bottom -
-        ((values[index] - sem[index] - yRange[0]) / (yRange[1] - yRange[0])) *
-          (plot.bottom - plot.top);
-      context.lineTo(x, y);
+    const y = (value) =>
+      plot.bottom -
+      ((value - yRange[0]) / (yRange[1] - yRange[0])) *
+        (plot.bottom - plot.top);
+    runs.forEach((run) => {
+      run.forEach((index, position) => {
+        const x = responseX(index, plot);
+        const upper = y(values[index] + sem[index]);
+        if (position) context.lineTo(x, upper);
+        else context.moveTo(x, upper);
+      });
+      [...run].reverse().forEach((index) => {
+        context.lineTo(responseX(index, plot), y(values[index] - sem[index]));
+      });
+      context.closePath();
     });
-    context.closePath();
     context.fill();
+    context.restore();
+  }
+
+  // Sequences are five contiguous rows -- four gratings then a grey
+  // inter-sequence interval -- with the substitution always at element three.
+  // Marking every boundary lets a reader place the substituted element within
+  // its sequence, and shading the element that Q1 compares against shows the
+  // comparison directly rather than describing it.
+  function contextTint(alpha) {
+    const hex = contextColors[state.context] || "#5a6360";
+    const value = Number.parseInt(hex.slice(1), 16);
+    const red = (value >> 16) & 255;
+    const green = (value >> 8) & 255;
+    const blue = value & 255;
+    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+  }
+
+  function drawSequenceElementGuides(context, plot) {
+    const session = currentSession();
+    if (session.context !== "sequence") return;
+    const windows =
+      session.events[state.eventIndex].timing.context.presentationWindows || [];
+    if (!windows.length) return;
+
+    const span = displayEnd() - displayStart();
+    const toX = (seconds) =>
+      plot.left + ((seconds - displayStart()) / span) * (plot.right - plot.left);
+
+    // The compared element, shaded like the mismatch window but in grey so the
+    // two read as the same kind of interval playing different roles.
+    const comparison = windows.find(
+      (window) => window.rowOffset === SEQUENCE_COMPARISON_OFFSET,
+    );
+    if (comparison) {
+      const left = Math.max(toX(comparison.startSeconds), plot.left);
+      const right = Math.min(toX(comparison.stopSeconds), plot.right);
+      if (right > left) {
+        context.save();
+        context.fillStyle = "rgba(120, 128, 125, 0.16)";
+        context.fillRect(left, plot.top, right - left, plot.bottom - plot.top);
+        context.strokeStyle = "rgba(120, 128, 125, 0.7)";
+        context.lineWidth = 1;
+        context.setLineDash([4, 4]);
+        context.beginPath();
+        context.moveTo(left, plot.top);
+        context.lineTo(left, plot.bottom);
+        context.moveTo(right, plot.top);
+        context.lineTo(right, plot.bottom);
+        context.stroke();
+        context.restore();
+      }
+    }
+
+    context.save();
+    context.lineWidth = 1;
+    context.setLineDash([3, 4]);
+    context.strokeStyle = "rgba(120, 128, 125, 0.28)";
+    windows.forEach((window) => {
+      if (window.rowOffset === 0) return;
+      if (window.rowOffset === SEQUENCE_COMPARISON_OFFSET) return;
+      const x = toX(window.startSeconds);
+      if (x < plot.left || x > plot.right) return;
+      context.beginPath();
+      context.moveTo(x, plot.top);
+      context.lineTo(x, plot.bottom);
+      context.stroke();
+    });
     context.restore();
   }
 
@@ -929,7 +1428,7 @@
     const axis = responseAxis(traces, baselineSubtracted);
     const yRange = axis.range;
     const context = canvasContext(canvas);
-    const plot = { left: 86, right: 1170, top: 22, bottom: 280 };
+    const plot = { ...plotHorizontalBounds(), top: 22, bottom: 280 };
     const timing = currentSession().events[state.eventIndex].timing.context;
     if (
       Number.isFinite(timing.presentationStartSeconds) &&
@@ -945,9 +1444,10 @@
         ((timing.presentationStopSeconds - displayStart()) /
           (displayEnd() - displayStart())) *
           (plot.right - plot.left);
-      context.fillStyle = "rgba(90, 99, 96, 0.09)";
+      context.fillStyle = contextTint(0.14);
       context.fillRect(startX, plot.top, stopX - startX, plot.bottom - plot.top);
     }
+    drawSequenceElementGuides(context, plot);
     context.strokeStyle = "#d5d9d7";
     context.fillStyle = "#59605e";
     context.lineWidth = 1;
@@ -956,30 +1456,25 @@
         plot.bottom -
         ((value - yRange[0]) / (yRange[1] - yRange[0])) *
           (plot.bottom - plot.top);
-      context.strokeStyle = Math.abs(value) < 1e-9 ? "#9ca29f" : "#d5d9d7";
+      context.strokeStyle = "#59605e";
       context.beginPath();
-      context.moveTo(plot.left, y);
-      context.lineTo(plot.right, y);
+      context.moveTo(plot.left - 5, y);
+      context.lineTo(plot.left, y);
       context.stroke();
       context.textAlign = "right";
       context.fillText(formatRateTick(value), plot.left - 10, y + 6);
     }
-    const ticks =
-      state.context === "duration"
-        ? [-1.5, -1, 0, 1, 1.5]
-        : [-0.75, -0.5, 0, 0.5, 0.75];
+    const ticks = timeAxisTicks();
     for (const tick of ticks) {
       const x =
         plot.left +
         ((tick - displayStart()) / (displayEnd() - displayStart())) *
           (plot.right - plot.left);
-      context.strokeStyle = tick === 0 ? "#303536" : "#d5d9d7";
-      context.setLineDash(tick === 0 ? [6, 5] : []);
+      context.strokeStyle = "#59605e";
       context.beginPath();
-      context.moveTo(x, plot.top);
-      context.lineTo(x, plot.bottom);
+      context.moveTo(x, plot.bottom);
+      context.lineTo(x, plot.bottom + 5);
       context.stroke();
-      context.setLineDash([]);
       context.textAlign = "center";
       context.fillText(String(tick), x, plot.bottom + 27);
     }
@@ -996,6 +1491,24 @@
       context.lineTo(x, plot.bottom);
       context.stroke();
       context.setLineDash([]);
+    }
+    context.strokeStyle = "#8d9591";
+    context.beginPath();
+    context.moveTo(plot.left, plot.top);
+    context.lineTo(plot.left, plot.bottom);
+    context.lineTo(plot.right, plot.bottom);
+    context.stroke();
+    if (baselineSubtracted && yRange[0] <= 0 && yRange[1] >= 0) {
+      const zeroY =
+        plot.bottom -
+        ((0 - yRange[0]) / (yRange[1] - yRange[0])) *
+          (plot.bottom - plot.top);
+      context.strokeStyle = "#8d9591";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.moveTo(plot.left, zeroY);
+      context.lineTo(plot.right, zeroY);
+      context.stroke();
     }
     drawResponseBand(
       context,
@@ -1055,25 +1568,21 @@
       if (sequence !== renderSequence) return;
       drawHeatmap(atlas);
       if (state.selectedUnit !== null) {
-        const traces = state.baselineSubtracted
-          ? baselineSubtractedTraces(atlas)
-          : responseTraces(atlas);
+        const traces = sequenceControlSegments(
+          atlas,
+          state.baselineSubtracted
+            ? baselineSubtractedTraces(atlas)
+            : responseTraces(atlas),
+          state.baselineSubtracted,
+        );
         drawResponsePanel(responseCanvas, traces, state.baselineSubtracted);
-        const selection =
+        renderSequenceControlNote();
+        responseTitle.textContent =
           state.scope === "area"
-            ? state.area === "all"
-              ? "Selected units"
-              : selectedAreaLabel()
-            : `Unit ${session.units[state.selectedUnit].id}`;
-        responseTitle.textContent = `${selection} ${
-          state.baselineSubtracted ? "baseline-subtracted " : ""
-        }spike-density function`;
-        responseNote.textContent = `${
-          state.scope === "unit"
-            ? "Individual-unit traces are shown without an uncertainty band"
-            : "Shading shows ±1 SEM across units"
-        }; dashed guides mark mismatch onset and offset.`;
+            ? `Mismatch response averaged over units in ${selectedAreaLabel()}`
+            : `Mismatch response for unit ${session.units[state.selectedUnit].id}`;
       } else {
+        sequenceControlNote.hidden = true;
         const context = canvasContext(responseCanvas);
         context.fillStyle = "#68706d";
         context.textAlign = "center";
@@ -1083,11 +1592,8 @@
           responseCanvas.width / 2,
           responseCanvas.height / 2,
         );
-        responseTitle.textContent = "Spike-density function";
-        responseNote.textContent =
-          "Dashed guides mark mismatch onset and offset.";
+        responseTitle.textContent = "Mismatch response";
       }
-      sourceNote.textContent = `${session.sessionId} · mouse ${session.subject} · DANDI:${session.asset.dandisetId} · ${session.unitCount.toLocaleString()} sorted units`;
       loadingMessage.hidden = true;
     } catch (error) {
       if (sequence !== renderSequence) return;
@@ -1110,7 +1616,6 @@
     );
     renderContextTabs();
     renderEventSelect();
-    renderProbeSelect();
     renderAreaSelect();
     renderResponseSelection();
     configureColorControl();
@@ -1162,10 +1667,6 @@
   scopeTabs.querySelectorAll("[data-scope]").forEach((element) => {
     element.addEventListener("click", () => {
       state.scope = element.dataset.scope;
-      if (state.scope === "unit") {
-        state.area = "all";
-        renderAreaSelect();
-      }
       renderResponseSelection();
       setPressed(scopeTabs, "scope", state.scope);
       render();
@@ -1183,11 +1684,9 @@
     state.eventIndex = Number(eventSelect.value);
     render();
   });
-  probeSelect.addEventListener("change", () => {
-    state.probe = probeSelect.value;
-    state.area = "all";
+  responsivenessSelect.addEventListener("change", () => {
+    state.responsiveness = responsivenessSelect.value;
     state.selectedUnit = null;
-    renderAreaSelect();
     render();
   });
   areaSelect.addEventListener("change", () => {
@@ -1230,7 +1729,7 @@
     const rect = heatmapCanvas.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * heatmapCanvas.width;
     const y = ((event.clientY - rect.top) / rect.height) * heatmapCanvas.height;
-    const plot = { left: 82, right: 1175, top: 20, bottom: 570 };
+    const plot = heatmapPlot();
     if (x < plot.left || x > plot.right || y < plot.top || y > plot.bottom) {
       heatmapTooltip.hidden = true;
       return;
@@ -1269,7 +1768,9 @@
     const unitLabel = state.metric.endsWith("zscore") ? "z" : "spikes/s";
     heatmapTooltip.textContent = `Unit ${unit.id} · ${unit.probe} · ${
       unit.location
-    } · t=${time[binIndex].toFixed(2)} s · ${
+    }${
+      unit.parentArea === unit.location ? "" : ` (${unit.parentArea})`
+    } · ${Math.round(unit.depthUm)} µm · t=${time[binIndex].toFixed(2)} s · ${
       value === null || !Number.isFinite(value)
         ? "n/a"
         : `${value.toFixed(2)} ${unitLabel}`
@@ -1288,7 +1789,7 @@
     if (!state.sortedUnits.length) return;
     const rect = heatmapCanvas.getBoundingClientRect();
     const y = ((event.clientY - rect.top) / rect.height) * heatmapCanvas.height;
-    const plot = { top: 20, bottom: 570 };
+    const plot = heatmapPlot();
     if (y < plot.top || y > plot.bottom) return;
     const row = Math.min(
       state.sortedUnits.length - 1,
@@ -1298,8 +1799,6 @@
     );
     state.selectedUnit = state.sortedUnits[row];
     state.scope = "unit";
-    state.area = "all";
-    renderAreaSelect();
     renderResponseSelection();
     setPressed(scopeTabs, "scope", state.scope);
     render();

@@ -44,7 +44,8 @@ jobs:
         run: uv run build-publication-figures
 
       - name: Check generated figures are current
-        run: git diff --exit-code -- interactive images/figures/generated figure_sources/media/optotagging/optotagging-static-composite.svg
+        timeout-minutes: 2
+        run: git --no-pager diff --exit-code --name-only -- interactive images/figures/generated figure_sources/media/optotagging/optotagging-static-composite.svg
 
   build:
     runs-on: ubuntu-latest
@@ -73,7 +74,19 @@ jobs:
         run: uv run build-publication-figures
 
       - name: Check generated figures are current
-        run: git diff --exit-code -- interactive images/figures/generated figure_sources/media/optotagging/optotagging-static-composite.svg
+        id: generated-figures
+        timeout-minutes: 2
+        run: git --no-pager diff --exit-code --name-only -- interactive images/figures/generated figure_sources/media/optotagging/optotagging-static-composite.svg
+
+      - name: Preserve WaveMAP drift diagnostics
+        if: failure() && steps.generated-figures.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wavemap-linux-drift
+          retention-days: 3
+          path: |
+            images/figures/generated/*wavemap*
+            interactive/*wavemap*
 
       - uses: actions/setup-node@v4
         with:
@@ -89,6 +102,7 @@ jobs:
           node --check figure_sources/javascript/neuropixels-event-responses.js
           node --check figure_sources/javascript/segmentation-viewer.js
           node --check figure_sources/javascript/optotagging-heatmaps.js
+          node --check figure_sources/javascript/wavemap-supplement.js
 
       - name: Install MyST
         run: npm install --global mystmd@1.10.1
@@ -107,6 +121,12 @@ jobs:
           test -f _build/html/interactive/media/neuropixels-event-responses/standard-sdf-mean.u16.gz
           test -f _build/html/interactive/segmentation-viewer.html
           test -f _build/html/interactive/optotagging-heatmaps.html
+          test -f _build/html/interactive/wavemap-supplement.html
+          test -f _build/html/interactive/wavemap-area-explorer.html
+          test -f _build/html/interactive/fs-sst-wavemap-explorer.html
+          test -f _build/html/interactive/wavemap-context-explorer.html
+          test -f _build/html/interactive/vendor/plotly.min.js
+          test -f _build/html/interactive/media/wavemap/supplementary-wavemap.pdf
           test -f _build/html/interactive/media/optotagging/optotagging-heatmaps.svg
           test -f _build/html/interactive/zebra-stimulus-excerpt.m4v
           test -f _build/html/interactive/zebra-stimulus-poster.png

@@ -2,10 +2,17 @@
 _build/
 
 # Generated deployment copies of canonical figure data
+interactive/media/data-explorer/
+interactive/media/eye-tracking-viewer/
 interactive/media/neuropixels-event-responses/
+interactive/vendor/plotly.min.js
+interactive/media/wavemap/
 
 # Operating-system metadata
 .DS_Store
+
+# Per-developer Claude Code settings (shared config belongs in .claude/settings.json)
+.claude/settings.local.json
 
 # Python environments and build artifacts
 .venv/
@@ -13,3 +20,5 @@ interactive/media/neuropixels-event-responses/
 .ruff_cache/
 **/__pycache__/
 *.egg-info/
+# Local WaveMAP extraction cache and checkpoints
+.wavemap_work/

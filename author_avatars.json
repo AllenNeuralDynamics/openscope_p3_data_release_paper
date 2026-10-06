@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "policy": "Remote-only portraits from authoritative public institutional profiles or pages; no image files are bundled with the publication.",
+  "policy": "Remote-only portraits from authoritative public institutional, laboratory, or author-controlled academic profiles; no image files are bundled with the publication.",
   "verified_on": "2026-08-08",
   "contributors": {
     "jerome-lecoq": {
@@ -128,6 +128,94 @@
       "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c5948cfeb57c9a7fa59427_Manni-He-square-web.jpeg",
       "width": 800,
       "height": 800
+    },
+    "alex-cahoon": {
+      "name": "Alex Cahoon",
+      "source_page": "https://alleninstitute.org/person/alex-cahoon",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594ae108991397713e8fe_Alex_Cahoon_SQ.jpeg",
+      "width": 800,
+      "height": 800,
+      "verified_on": "2026-10-05"
+    },
+    "heston-smith": {
+      "name": "Heston Smith",
+      "source_page": "https://alleninstitute.org/person/heston-smith",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594d19183b128168e3073_Heston_Smith-Allen-Institute-Headshot-Square-Large.jpeg",
+      "width": 1280,
+      "height": 1280,
+      "verified_on": "2026-10-05"
+    },
+    "david-g-wyrick": {
+      "name": "David G Wyrick",
+      "source_page": "https://alleninstitute.org/person/david-wyrick",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594c5ca99b415e753488b_David-Wyrick-square-web.jpeg",
+      "width": 800,
+      "height": 800,
+      "verified_on": "2026-10-05"
+    },
+    "keith-gramila": {
+      "name": "Keith Gramila",
+      "source_page": "https://alleninstitute.org/person/keith-gramila",
+      "avatar_url": "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594e6a1cb919637aab3d9_Keith_Gramila-Allen-Institute-Headshot-Square-Large.jpeg",
+      "width": 1280,
+      "height": 1280,
+      "verified_on": "2026-10-05"
+    },
+    "farzaneh-najafi": {
+      "name": "Farzaneh Najafi",
+      "source_page": "https://www.najafilab.org/people",
+      "avatar_url": "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72v8e8D6s6GJtdXrvfEjBISgEbBEiTpEXAaGUVgAyT3RMCDGKpC2DeCYgw1GTQmmsW2ypAIsEp-7JN92zPNuktFepGq7ciXQP_6hM2414tyda_bSnK92jkuy3N3rytd0omocxmqPhdnI4ws6DDraYSbrHlsg3ESA0BntYXzty3OuTET3VBLL2aEt3BjFZV1FTsg9iXUuDezxrgpDtLVaJukaDT5C-tUDWdsn32hpaps=w1280",
+      "width": 1280,
+      "height": 1419,
+      "verified_on": "2026-10-05"
+    },
+    "ali-shamsnia": {
+      "name": "Ali Shamsnia",
+      "source_page": "https://www.najafilab.org/people",
+      "avatar_url": "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72vvG8ikymrocggo36Sd1jo8GWPgtzkuClqjSgljLOO-sLA6ZHxol92pKE7zXrs1IN1ae6dFkPNIw1CS034j9VAPfAX22cDxYe5Yz0CfWZuBHsasWHgyv1_SkoGVq6ZEP9oOSjK5nm9ocWbiLWAgNi4yvtEpYNjxype_TOLWbmiomIudq5dnvWvplBLkhYi04UfrNz5uQoKoQYk3YZiW2T6wTRlDzsRVfrWmFEyrSTM=w1280",
+      "width": 853,
+      "height": 885,
+      "verified_on": "2026-10-05"
+    },
+    "davis-grubin": {
+      "name": "Davis Grubin",
+      "source_page": "https://www.najafilab.org/people",
+      "avatar_url": "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72ucillO48RP9WLgkG1p0E2_f-pwZH7etZ0iinhTslaXZfhhA35q9H_rFIIhEn8QTxo7nAGQe9IfT9OiLTLnigjdAhNFdHlbbtHeJeyOnQKEyUhKIaxEgfRfzbEt-vNa99DdNXsFDeo6xLu0WxYCYj6t8k4pj3bWj6-psEfSWXFaa7X-eSUPKbRoKfCy2gEIydMGdF7GAxuFLHECnDdq_eMgr6K0qi4rEauMZdHF=w1280",
+      "width": 1280,
+      "height": 1153,
+      "verified_on": "2026-10-05"
+    },
+    "roberto-de-filippo": {
+      "name": "Roberto De Filippo",
+      "source_page": "https://robertodf.github.io/",
+      "avatar_url": "https://robertodf.github.io/images/profile.jpeg",
+      "width": 400,
+      "height": 400,
+      "verified_on": "2026-10-05"
+    },
+    "yaroslav-halchenko": {
+      "name": "Yaroslav Halchenko",
+      "source_page": "https://faculty-directory.dartmouth.edu/yaroslav-o-halchenko",
+      "avatar_url": "https://faculty-directory.dartmouth.edu/sites/faculty_directory.prod/files/styles/profile_portrait/public/yarik-crcns2014_323x405.jpg?itok=hyxIlUGg",
+      "width": 412,
+      "height": 517,
+      "verified_on": "2026-10-05"
+    },
+    "ido-aizenbud": {
+      "name": "Ido Aizenbud",
+      "source_page": "https://ido4848.github.io/me/",
+      "avatar_url": "https://ido4848.github.io/me/profile-picture.jpg",
+      "width": 5184,
+      "height": 3456,
+      "verified_on": "2026-10-05"
+    },
+    "sarah-ruediger": {
+      "name": "Sarah Ruediger",
+      "source_page": "https://profiles.ucl.ac.uk/94356-sarah-ruediger-lee",
+      "avatar_url": "https://profiles.ucl.ac.uk/94356-sarah-ruediger-lee/thumbnail",
+      "width": 180,
+      "height": 180,
+      "verified_on": "2026-10-05"
     }
   },
   "unresolved": {
@@ -135,6 +223,18 @@
       "name": "Casey Lennon-Jones",
       "source_page": "https://www.allenneuraldynamics.org/people/casey-lennon-jones",
       "reason": "The authoritative staff profile currently uses the generic people placeholder."
+    },
+    "maria-anna-sidiropoulou": {
+      "name": "Maria Anna Sidiropoulou",
+      "source_page": "https://orcid.org/0009-0008-0185-715X",
+      "reason": "No authoritative public portrait was verified for the UCL researcher; similarly named profiles were not used.",
+      "verified_on": "2026-10-05"
+    },
+    "yuheng-cheah": {
+      "name": "Yuheng Cheah",
+      "source_page": "https://orcid.org/0009-0006-6564-6314",
+      "reason": "No authoritative public portrait was verified for the UCL researcher.",
+      "verified_on": "2026-10-05"
     }
   }
 }
