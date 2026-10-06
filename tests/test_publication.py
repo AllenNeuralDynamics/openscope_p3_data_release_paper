@@ -312,6 +312,10 @@ def test_author_review_rejects_ambiguous_portal_names(author_review_example) -> 
 def test_authorship_snapshot_is_portal_backed() -> None:
     authors = (REPO_ROOT / "authors.yml").read_text(encoding="utf-8")
     avatars = json.loads((REPO_ROOT / "author_avatars.json").read_text(encoding="utf-8"))
+    avatar_source = json.loads(
+        (REPO_ROOT / "author_portrait_sources.json").read_text(encoding="utf-8")
+    )
+    assert avatars == avatar_source
 
     commit = re.search(r'^  commit: "([0-9a-f]{32})"$', authors, re.MULTILINE)
     assert commit
@@ -332,10 +336,9 @@ def test_authorship_snapshot_is_portal_backed() -> None:
     ):
         assert f'name: "{contributor}"' in authors
     assert avatars["version"] == 1
-    assert len(avatars["contributors"]) == 18
-    assert len(avatars["unresolved"]) == 1
+    assert set(avatars["contributors"]) | set(avatars["unresolved"]) <= set(author_ids)
     assert set(avatars["contributors"]).isdisjoint(avatars["unresolved"])
-    assert authors.count('\n      avatar_url: "https://') == 18
+    assert authors.count('\n      avatar_url: "https://') == len(avatars["contributors"])
     for author_id, record in avatars["contributors"].items():
         assert record["source_page"].startswith("https://")
         assert urllib.parse.urlparse(record["avatar_url"]).netloc in {
@@ -343,9 +346,14 @@ def test_authorship_snapshot_is_portal_backed() -> None:
             "static1.squarespace.com",
             "faculty.eng.ufl.edu",
             "cdn.vanderbilt.edu",
+            "lh7-us.googleusercontent.com",
+            "robertodf.github.io",
+            "faculty-directory.dartmouth.edu",
+            "ido4848.github.io",
+            "profiles.ucl.ac.uk",
         }
-        assert record["width"] >= 400
-        assert record["height"] >= 400
+        assert record["width"] >= 128
+        assert record["height"] >= 128
         author_block = re.search(
             rf'      id: "{re.escape(author_id)}"\n(.*?)(?=\n    -|\Z)',
             authors,

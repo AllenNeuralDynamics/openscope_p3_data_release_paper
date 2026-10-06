@@ -298,6 +298,7 @@ def sync_authors(
     output: Path,
     avatar_manifest_path: Path = DEFAULT_AVATAR_MANIFEST,
     review_file: Path | None = None,
+    avatar_source_path: Path | None = None,
 ) -> tuple[int, str]:
     review = None
     if review_file is not None:
@@ -322,10 +323,16 @@ def sync_authors(
         raise ValueError(f"Requested {project}, received {payload.get('project_name')}")
     if review is not None:
         payload = apply_author_review(payload, review, source_commit["commit"])
-    avatar_manifest = load_avatar_manifest(avatar_manifest_path)
+    avatar_manifest = load_avatar_manifest(avatar_source_path or avatar_manifest_path)
     data = transform_payload(payload, source_url, source_commit, avatar_manifest)
     if review is not None:
         data["source"]["reviewed"] = True
+    if avatar_source_path is not None:
+        avatar_manifest_path.write_text(
+            json.dumps(avatar_manifest, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
     output.write_text(dump_yaml(data), encoding="utf-8")
     return len(data["project"]["contributors"]), source_commit["commit"]
 
@@ -345,12 +352,18 @@ def main() -> None:
         type=Path,
         help="Local, untracked approval and correction JSON pinned to a portal commit",
     )
+    parser.add_argument(
+        "--avatar-source",
+        type=Path,
+        help="Editable portrait source used to regenerate the avatar manifest and author URLs",
+    )
     arguments = parser.parse_args()
     count, commit = sync_authors(
         arguments.project,
         arguments.output,
         arguments.avatar_manifest,
         review_file=arguments.review_file,
+        avatar_source_path=arguments.avatar_source,
     )
     print(f"Wrote {arguments.output} with {count} contributors from commit {commit}")
 

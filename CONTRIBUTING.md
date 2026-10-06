@@ -41,6 +41,8 @@ For a one-time reviewed refresh, a maintainer may pass `--review-file /path/outs
 
 Only the listed contributors are included, in portal order. The sync reads that exact version, preserves submitted records, roles, effort levels, and other metadata, and marks the generated snapshot as reviewed without recording the local review file or its approval list in provenance. Unknown names, ambiguous names, and invalid section corrections stop the refresh. The review applies only to that invocation: omitting `--review-file` restores the normal full-portal refresh. Run the publication checks after regenerating the snapshot.
 
+Portrait links are maintained in the editable `author_portrait_sources.json`. Use clearly identified portraits from authoritative institutional, laboratory, or author-controlled academic profiles, record the source page and measured image dimensions, and leave uncertain identities unresolved. Images remain remotely hosted; do not bundle downloaded portraits. Prefer large images, but verified profile thumbnails of at least 128 pixels in each dimension can be used for the small author avatars without upscaling the source. A record-level `verified_on` date applies to that portrait; otherwise the manifest-level date applies. To refresh portraits, a maintainer adds `--avatar-source author_portrait_sources.json` to the sync command, along with any current local `--review-file`. This regenerates both `author_avatars.json` and the avatar URLs in `authors.yml`; never hand-edit either generated file. Validate that author identities, order, and contributions are unchanged after a portrait-only refresh.
+
 ## Figures
 
 Every figure needs:

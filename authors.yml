@@ -894,6 +894,7 @@ project:
     -
       id: "roberto-de-filippo"
       name: "Roberto De Filippo"
+      avatar_url: "https://robertodf.github.io/images/profile.jpeg"
       orcid: "0000-0002-4085-9114"
       email: "roberto.de-filippo@bccn-berlin.de"
       affiliations:
@@ -927,6 +928,7 @@ project:
     -
       id: "alex-cahoon"
       name: "Alex Cahoon"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594ae108991397713e8fe_Alex_Cahoon_SQ.jpeg"
       orcid: "0009-0006-9468-1696"
       affiliations:
         - "Allen Institute for Neural Dynamics, Seattle, WA"
@@ -972,6 +974,7 @@ project:
     -
       id: "heston-smith"
       name: "Heston Smith"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594d19183b128168e3073_Heston_Smith-Allen-Institute-Headshot-Square-Large.jpeg"
       email: "smithhestonl@alleninstitute.org"
       affiliations:
         - "Allen Institute, Brain and Consciousness, Seattle, WA, USA"
@@ -1000,6 +1003,7 @@ project:
     -
       id: "david-g-wyrick"
       name: "David G Wyrick"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594c5ca99b415e753488b_David-Wyrick-square-web.jpeg"
       orcid: "0000-0001-8096-5766"
       email: "david.wyrick@alleninstitute.org"
       affiliations:
@@ -1046,6 +1050,7 @@ project:
     -
       id: "keith-gramila"
       name: "Keith Gramila"
+      avatar_url: "https://cdn.prod.website-files.com/69a0ca6ef8ecfacbc1d10e9b/69c594e6a1cb919637aab3d9_Keith_Gramila-Allen-Institute-Headshot-Square-Large.jpeg"
       orcid: "0009-0001-9402-8631"
       email: "keith.gramila@alleninstitute.org"
       affiliations:
@@ -1078,6 +1083,7 @@ project:
     -
       id: "sarah-ruediger"
       name: "Sarah Ruediger"
+      avatar_url: "https://profiles.ucl.ac.uk/94356-sarah-ruediger-lee/thumbnail"
       orcid: "0000-0001-6684-4693"
       email: "s.ruediger@ucl.ac.uk"
       affiliations:
@@ -1156,6 +1162,7 @@ project:
     -
       id: "yaroslav-halchenko"
       name: "Yaroslav Halchenko"
+      avatar_url: "https://faculty-directory.dartmouth.edu/sites/faculty_directory.prod/files/styles/profile_portrait/public/yarik-crcns2014_323x405.jpg?itok=hyxIlUGg"
       orcid: "0000-0003-3456-2493"
       affiliations:
         - "Dartmouth College"
@@ -1181,6 +1188,7 @@ project:
     -
       id: "farzaneh-najafi"
       name: "Farzaneh Najafi"
+      avatar_url: "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72v8e8D6s6GJtdXrvfEjBISgEbBEiTpEXAaGUVgAyT3RMCDGKpC2DeCYgw1GTQmmsW2ypAIsEp-7JN92zPNuktFepGq7ciXQP_6hM2414tyda_bSnK92jkuy3N3rytd0omocxmqPhdnI4ws6DDraYSbrHlsg3ESA0BntYXzty3OuTET3VBLL2aEt3BjFZV1FTsg9iXUuDezxrgpDtLVaJukaDT5C-tUDWdsn32hpaps=w1280"
       orcid: "0000-0001-6454-2448"
       email: "fnajafi3@gatech.edu"
       affiliations:
@@ -1232,6 +1240,7 @@ project:
     -
       id: "ido-aizenbud"
       name: "Ido Aizenbud"
+      avatar_url: "https://ido4848.github.io/me/profile-picture.jpg"
       orcid: "0009-0006-6855-567X"
       email: "Ido.aizenbud@mail.huji.ac.il"
       affiliations:
@@ -1350,6 +1359,7 @@ project:
     -
       id: "ali-shamsnia"
       name: "Ali Shamsnia"
+      avatar_url: "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72vvG8ikymrocggo36Sd1jo8GWPgtzkuClqjSgljLOO-sLA6ZHxol92pKE7zXrs1IN1ae6dFkPNIw1CS034j9VAPfAX22cDxYe5Yz0CfWZuBHsasWHgyv1_SkoGVq6ZEP9oOSjK5nm9ocWbiLWAgNi4yvtEpYNjxype_TOLWbmiomIudq5dnvWvplBLkhYi04UfrNz5uQoKoQYk3YZiW2T6wTRlDzsRVfrWmFEyrSTM=w1280"
       orcid: "0009-0000-1137-6132"
       email: "alishamsniaaa@gmial.com"
       affiliations:
@@ -1382,6 +1392,7 @@ project:
     -
       id: "davis-grubin"
       name: "Davis Grubin"
+      avatar_url: "https://lh7-us.googleusercontent.com/sitesv-images-rt/AMxu72ucillO48RP9WLgkG1p0E2_f-pwZH7etZ0iinhTslaXZfhhA35q9H_rFIIhEn8QTxo7nAGQe9IfT9OiLTLnigjdAhNFdHlbbtHeJeyOnQKEyUhKIaxEgfRfzbEt-vNa99DdNXsFDeo6xLu0WxYCYj6t8k4pj3bWj6-psEfSWXFaa7X-eSUPKbRoKfCy2gEIydMGdF7GAxuFLHECnDdq_eMgr6K0qi4rEauMZdHF=w1280"
       orcid: "0009-0008-5337-4168"
       email: "grubin6@gatech.edu"
       affiliations:
