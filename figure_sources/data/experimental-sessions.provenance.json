@@ -5,13 +5,13 @@
     "neuropixels": 64,
     "slap2": 43
   },
-  "notes": "Complete EPHYS, MESO, and SLAP2 worksheet rows in source order. Repeated and aborted records are retained to reproduce the supplied static plots; the interactive explorer selects valid session IDs whose QC status is Pass.",
-  "retrieved_date": "2026-08-17",
+  "notes": "Complete EPHYS, MESO, and SLAP2 worksheet rows in source order. Repeated and aborted records are retained to reproduce the supplied static plots; the intended green recording channel is preserved to distinguish SLAP2 glutamate and voltage sessions; the interactive explorer selects valid session IDs whose QC status is Pass.",
+  "retrieved_date": "2026-08-28",
   "rows": 198,
   "source_rows": 198,
-  "source_sha256": "3874d70c434074b8aac9e8bb3ec310abcff189c6506be405e4ba906b0b12cf7e",
+  "source_sha256": "0544b96aebfb41f3265806aba0ea21aa301006d1a4e1d0c9fc3da0658cf73f0e",
   "source_url": "https://docs.google.com/spreadsheets/d/1wAeloFJgvRjrseoVeNm4YQd8BezGWRon-Z-b1iJAz9c/edit?usp=sharing",
-  "vendored_sha256": "23c4c7893a8033c18c7d52ec36bbb88f9b1640acf7f7882c0e5b465dae26edd4",
+  "vendored_sha256": "0f28fed3d6211cdd4187f28046f2c789b68064f2d556504d6daac950853e0c88",
   "version": 1,
   "worksheet_rows": 198
 }

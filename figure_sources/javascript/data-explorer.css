@@ -74,6 +74,7 @@ html.is-embedded .explorer { min-height: 0; }
   background: #fff;
 }
 
+.static-shell svg,
 .static-shell img {
   width: 100%;
   min-width: 900px;
@@ -81,8 +82,99 @@ html.is-embedded .explorer { min-height: 0; }
   display: block;
 }
 
+.inventory-view .static-shell,
+.static-view .static-shell {
+  overflow-x: hidden;
+}
+
+.inventory-view .static-shell svg,
+.static-view .static-shell img {
+  width: calc(100% / 0.95);
+  max-width: none;
+  transform: translateX(-2.5%);
+}
+
+.static-shell .session-qc-outline,
+.static-shell .session-qc-tags {
+  pointer-events: none;
+}
+
+.static-shell .session-target {
+  cursor: help;
+}
+
+.static-shell .session-target.is-clickable {
+  cursor: pointer;
+}
+
+.static-shell .session-target:hover .session-block,
+.static-shell .session-target:focus .session-block {
+  filter: brightness(0.70);
+}
+
+.static-shell .session-target:hover .session-block[fill="none"],
+.static-shell .session-target:focus .session-block[fill="none"] {
+  fill: #e8eceb;
+}
+
+.static-shell .session-target.is-clickable:focus {
+  outline: none;
+}
+
+.static-shell .mouse-target.is-clickable { cursor: pointer; }
+
+.static-shell .mouse-target:hover .mouse-hitbox,
+.static-shell .mouse-target:focus .mouse-hitbox {
+  fill: #7a8380;
+}
+
+.static-shell .mouse-target:hover .mouse-id,
+.static-shell .mouse-target:focus .mouse-id {
+  fill: #fff;
+}
+
+.static-shell .mouse-target.is-clickable:focus { outline: none; }
+
+.session-tooltip {
+  position: fixed;
+  z-index: 20;
+  width: min(380px, calc(100vw - 16px));
+  padding: 11.5px 13.8px;
+  border: 1px solid #76817d;
+  border-radius: 5px;
+  background: rgba(31, 38, 36, 0.97);
+  box-shadow: 0 6px 18px rgba(17, 24, 23, 0.24);
+  color: #fff;
+  pointer-events: none;
+}
+
+.session-tooltip[hidden] { display: none; }
+
+.session-tooltip > strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13.8px;
+  line-height: 1.35;
+}
+
+.session-tooltip dl {
+  margin: 9.2px 0 0;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 3.45px 11.5px;
+  font-size: 13.8px;
+  line-height: 1.35;
+}
+
+.session-tooltip dt { color: #bfc8c5; font-weight: 600; }
+.session-tooltip dd { margin: 0; overflow-wrap: anywhere; }
+
 #interactive-view[hidden],
-.static-view[hidden] { display: none !important; }
+.static-view[hidden],
+.inventory-view[hidden],
+.table-shell[hidden],
+.table-tools[hidden] { display: none !important; }
 
 .explorer-header {
   border: 1px solid var(--line);
@@ -256,6 +348,10 @@ tbody tr:hover td {
   background: #ecefee;
 }
 
+tbody tr.selected-session td {
+  background: #dfeaed;
+}
+
 tbody td:first-child {
   font-weight: 650;
 }
@@ -284,7 +380,9 @@ tr.modality-neuropixels td:first-child {
   border-left: 4px solid #9ea5a2;
 }
 
-tr.modality-slap2 td:first-child {
+tr.modality-slap2 td:first-child,
+tr.modality-slap2-glutamate td:first-child,
+tr.modality-slap2-voltage td:first-child {
   border-left: 4px solid #9ea5a2;
 }
 

@@ -85,9 +85,10 @@ html.is-embedded .viewer {
 
 .static-shell img {
   display: block;
-  width: 100%;
-  min-width: 900px;
+  width: 96%;
+  min-width: 864px;
   height: auto;
+  margin-inline: auto;
 }
 
 header {

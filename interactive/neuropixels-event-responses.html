@@ -50,6 +50,7 @@ select {
 html,
 body {
   margin: 0;
+  overflow: hidden;
   /* Opaque, not transparent: the figure renders in a MyST iframe and would
      otherwise show the host page through it. Matches every other figure. */
   background: var(--paper);
@@ -291,7 +292,7 @@ select {
 
 #color-limit {
   display: block;
-  width: 160px;
+  width: min(160px, 100%);
   margin-top: 7px;
 }
 
@@ -337,7 +338,7 @@ select {
 
 .canvas-shell {
   position: relative;
-  overflow-x: auto;
+  overflow-x: clip;
 }
 
 canvas {
@@ -385,9 +386,10 @@ canvas {
 
 .static-view img {
   display: block;
-  width: 100%;
-  min-width: 960px;
+  width: 85%;
+  min-width: 816px;
   height: auto;
+  margin-inline: auto;
 }
 
 @media (max-width: 850px) {

@@ -11,6 +11,8 @@ import pandas as pd
 import pytest
 from matplotlib.backends.backend_pdf import PdfFile
 from matplotlib.figure import Figure
+from matplotlib.path import Path as PlotPath
+from matplotlib.transforms import Affine2D
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from pypdf import PdfReader
@@ -25,6 +27,7 @@ from openscope_p3_publication.wavemap_figure import (
 )
 from openscope_p3_publication.wavemap_publication_figures import (
     _canonical_png,
+    _CanonicalPdfFile,
     _CanonicalPdfPages,
     build_wavemap_static_figures,
 )
@@ -151,6 +154,19 @@ def test_wavemap_png_compression_is_canonical_and_lossless() -> None:
         assert np.array_equal(np.asarray(normalized), pixels)
         with Image.open(BytesIO(encoded[0])) as original:
             assert normalized.info == original.info
+
+
+@pytest.mark.parametrize("translation", [(-1e-8, 0), (0, -1e-8), (-0.5, -1e-8)])
+def test_wavemap_pdf_paths_normalize_negative_zero(translation: tuple[float, float]) -> None:
+    path = PlotPath.unit_rectangle()
+    transform = Affine2D().translate(*translation)
+    original = PdfFile.pathOperations(path, transform)[0].pdfRepr()
+    normalized = _CanonicalPdfFile.pathOperations(path, transform)[0].pdfRepr()
+
+    assert b"-0" in original.split()
+    assert normalized.split() == [
+        b"0" if token == b"-0" else token for token in original.split()
+    ]
 
 
 def test_wavemap_pdf_image_compression_is_canonical_and_lossless(tmp_path: Path) -> None:
