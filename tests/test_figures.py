@@ -4,10 +4,12 @@ import hashlib
 import json
 import math
 import re
+import runpy
 import statistics
 import struct
 from io import BytesIO
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -656,6 +658,159 @@ def test_optotagging_write_results_round_trips_parquet(tmp_path: Path) -> None:
     assert provenance["rows"] == 1
     assert provenance["sessions"] == 1
     assert len(provenance["output_sha256"]) == 64
+
+
+def test_optotagging_results_snapshot_is_source_backed() -> None:
+    data_path = REPO_ROOT / "figure_sources/data/optotagging-results.parquet"
+    provenance = json.loads(
+        data_path.with_suffix(".provenance.json").read_text(encoding="utf-8")
+    )
+
+    assert hashlib.sha256(data_path.read_bytes()).hexdigest() == provenance["output_sha256"]
+    assert provenance["output_path"] == str(data_path.relative_to(REPO_ROOT))
+    assert provenance["rows"] == 133556
+    assert provenance["sessions"] == 60
+    assert provenance["dandiset_id"] == "001637"
+    assert provenance["dandiset_version"] == "draft"
+    assert provenance["retrieved_date"] == "2026-08-04"
+    assert provenance["unit_filter"] == "decoder_label != 'noise'"
+    assert provenance["failed_sessions"] == []
+    assert len(provenance["asset_manifest"]) == 62
+    assert len({asset["asset_id"] for asset in provenance["asset_manifest"]}) == 62
+    assert len(provenance["skipped_sessions"]) == 2
+
+    readme = (REPO_ROOT / "figure_sources/data/README.md").read_text(encoding="utf-8")
+    assert "optotagging_analysis.py" not in readme
+    assert "python scripts/extract_optotagging_results.py" in readme
+    assert (REPO_ROOT / "scripts/extract_optotagging_results.py").is_file()
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_results_table_matches_provenance() -> None:
+    pytest.importorskip("pyarrow")
+    data_path = REPO_ROOT / "figure_sources/data/optotagging-results.parquet"
+    provenance = json.loads(
+        data_path.with_suffix(".provenance.json").read_text(encoding="utf-8")
+    )
+    results = pd.read_parquet(data_path)
+    metric_names = ("pre_mean", "post_mean", "modulation_index", "p_value")
+    identifier_columns = ["asset_id", "asset_path", "session_id", "unit_id"]
+    expected_columns = set(identifier_columns) | {
+        f"{condition.table_name}__{metric}"
+        for condition in CONDITIONS
+        for metric in metric_names
+    }
+
+    assert set(results.columns) == expected_columns
+    assert not results[identifier_columns].isna().any().any()
+    assert len(results) == provenance["rows"]
+    assert results["session_id"].nunique() == provenance["sessions"]
+    assert not results.duplicated(["session_id", "unit_id"]).any()
+    pd.testing.assert_frame_equal(
+        results,
+        results.sort_values(["session_id", "unit_id"], kind="stable").reset_index(drop=True),
+    )
+
+    manifest_assets = {
+        (asset["asset_id"], asset["asset_path"]) for asset in provenance["asset_manifest"]
+    }
+    observed_assets = set(results[["asset_id", "asset_path"]].itertuples(index=False, name=None))
+    assert observed_assets <= manifest_assets
+    assert len(observed_assets) == provenance["sessions"]
+    assert {asset_path for _, asset_path in manifest_assets - observed_assets} == {
+        session["asset_path"] for session in provenance["skipped_sessions"]
+    }
+    assert provenance["conditions"] == [
+        {
+            "table_name": condition.table_name,
+            "pulse_frequency_hz": condition.pulse_frequency_hz,
+            "count_window_seconds": condition.count_window_seconds,
+            "post_delay_seconds": condition.post_delay_seconds,
+        }
+        for condition in CONDITIONS
+    ]
+
+    for condition in CONDITIONS:
+        for metric in metric_names:
+            values = results[f"{condition.table_name}__{metric}"].dropna().to_numpy()
+            assert np.isfinite(values).all()
+            if metric == "modulation_index":
+                assert ((values >= -1) & (values <= 1)).all()
+            elif metric == "p_value":
+                assert ((values >= 0) & (values <= 1)).all()
+            else:
+                assert (values >= 0).all()
+
+
+@requires_optotagging_analysis_deps
+def test_optotagging_results_extractor_records_supported_and_skipped_sessions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pytest.importorskip("pyarrow")
+    extract_results = runpy.run_path(
+        str(REPO_ROOT / "scripts/extract_optotagging_results.py")
+    )["extract_results"]
+    assets = [
+        {"asset_id": "asset-2", "asset_path": "sub-2/session.nwb"},
+        {"asset_id": "asset-1", "asset_path": "sub-1/session.nwb"},
+        {"asset_id": "asset-skipped", "asset_path": "sub-3/schema.nwb"},
+    ]
+    analyzed_assets = []
+
+    def analyze_test_asset(asset: dict[str, str]) -> SimpleNamespace:
+        analyzed_assets.append(asset)
+        if asset["asset_id"] == "asset-skipped":
+            raise SessionSkipped("missing intervals group")
+        return SimpleNamespace(
+            metrics=pd.DataFrame([{**asset, "session_id": asset["asset_id"], "unit_id": 1}])
+        )
+
+    monkeypatch.setitem(extract_results.__globals__, "discover_session_assets", lambda: assets)
+    monkeypatch.setitem(extract_results.__globals__, "analyze_asset", analyze_test_asset)
+    parquet_path, provenance_path = extract_results(tmp_path)
+
+    assert analyzed_assets == assets
+    assert pd.read_parquet(parquet_path)["session_id"].tolist() == ["asset-1", "asset-2"]
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    assert provenance["rows"] == 2
+    assert provenance["sessions"] == 2
+    assert provenance["skipped_sessions"] == [
+        {"asset_path": "sub-3/schema.nwb", "reason": "missing intervals group"}
+    ]
+    assert provenance["failed_sessions"] == []
+    assert len(provenance["asset_manifest"]) == len(assets)
+
+
+@requires_optotagging_analysis_deps
+@pytest.mark.parametrize("failure", ["empty_inventory", "all_skipped", "unexpected_error"])
+def test_optotagging_results_extractor_preserves_outputs_on_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str
+) -> None:
+    extract_results = runpy.run_path(
+        str(REPO_ROOT / "scripts/extract_optotagging_results.py")
+    )["extract_results"]
+    parquet_path = tmp_path / "optotagging-results.parquet"
+    provenance_path = tmp_path / "optotagging-results.provenance.json"
+    parquet_path.write_bytes(b"previous results")
+    provenance_path.write_text("previous provenance", encoding="utf-8")
+    assets = [] if failure == "empty_inventory" else [
+        {"asset_path": "complete.nwb"}, {"asset_path": "unavailable.nwb"}
+    ]
+
+    def analyze_test_asset(asset: dict[str, str]) -> SimpleNamespace:
+        if failure == "all_skipped":
+            raise SessionSkipped("missing intervals group")
+        if asset["asset_path"] == "complete.nwb":
+            return SimpleNamespace(metrics=pd.DataFrame({"unit_id": [1]}))
+        raise OSError("NWB unavailable")
+
+    monkeypatch.setitem(extract_results.__globals__, "discover_session_assets", lambda: assets)
+    monkeypatch.setitem(extract_results.__globals__, "analyze_asset", analyze_test_asset)
+    with pytest.raises(OSError if failure == "unexpected_error" else RuntimeError):
+        extract_results(tmp_path)
+
+    assert parquet_path.read_bytes() == b"previous results"
+    assert provenance_path.read_text(encoding="utf-8") == "previous provenance"
 
 
 def test_optotagging_snapshot_is_source_backed(tmp_path: Path) -> None:
