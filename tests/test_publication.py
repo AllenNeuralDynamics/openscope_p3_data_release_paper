@@ -1156,6 +1156,9 @@ def test_figure_captions_and_interactive_placement() -> None:
     )
     assert "[Figure 6](#fig-segmentation-viewers)" in manuscript
     assert ":label: fig-unit-extraction-plan" in manuscript
+    assert "2,521 sources have defined classes and 19 are excluded" in manuscript
+    assert "averages exclude zero-event source/context pairs" in manuscript
+    assert "cross-cohort quality-class differences must not be interpreted" in manuscript
     assert "[Figure 8](#fig-basic-stimuli-plan) outlines a comparison" in manuscript
     assert "([Figure 11](#fig-standard-oddball-plan))" in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript

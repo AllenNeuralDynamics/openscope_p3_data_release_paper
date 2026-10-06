@@ -1,0 +1,386 @@
+{
+  "archive_rows": 2540,
+  "archive_sessions": 20,
+  "archive_tables": {
+    "slap2_context_rates_all_sessions.csv": {
+      "sha256": "0664fe733eca98bb9613ef19161574f9b9cdb72441a0a05a3d34f5ac2253ef05",
+      "upstream_path": "docs/notebooks/plots_figure7_slap2_glutamate/slap2_context_rates_all_sessions.csv"
+    },
+    "slap2_event_metrics.csv": {
+      "sha256": "1ebc3d0a09121665fc1e320a5e212bfe8fc6b54e258cc3e8b092d0073a6017de",
+      "upstream_path": "docs/notebooks/plots_figure7_slap2_glutamate/slap2_event_metrics.csv"
+    },
+    "slap2_metrics_all_sessions.csv": {
+      "sha256": "05fb3ac28577de6451495457f4051ef63151da5bb2eec8dc8ce6e4c68a326734",
+      "upstream_path": "docs/notebooks/plots_figure7_slap2_glutamate/slap2_metrics_all_sessions.csv"
+    },
+    "slap2_session_summary.csv": {
+      "sha256": "ebea435be794ea69d2359236df16e40ac9fda9395017106d1ff5dedd093c50ae",
+      "upstream_path": "docs/notebooks/plots_figure7_slap2_glutamate/slap2_session_summary.csv"
+    },
+    "stimulus_contexts.csv": {
+      "sha256": "00228c9de670e69f53ff6ae552f0556095eb273e1b066f638df2779ae0e94f9d",
+      "upstream_path": "docs/notebooks/plots_figure7_slap2_glutamate/stimulus_contexts.csv"
+    }
+  },
+  "compression": "NPY arrays in a lossless ZIP_LZMA archive",
+  "dandiset_id": "001424",
+  "dandiset_version": "draft",
+  "example_asset_id": "1fccbd05-7ba2-4e40-9cb8-e8814119f756",
+  "example_session_id": "sub-794237_ses-20250508T145040",
+  "example_source_sha256": "375a7ed7c5793cba2aaa24834db5849a71901d36d772a9b94e80df01a619c801",
+  "inventory_note": "Asset metadata observed during migration; the upstream extraction did not record its original NWB asset digests.",
+  "large_snapshot_approved": true,
+  "output_bytes": 13682569,
+  "output_file": "example.npz",
+  "output_sha256": "8a934b83c3bf116e6798b74d161b7c8b907ff5776818f7e7832f3bd395b140b9",
+  "parameters": {
+    "classification_scope": "one fit over all sessions",
+    "classification_seed": 0,
+    "detection_threshold_sd": 3.0,
+    "large_event_minimum_sd": 4.0,
+    "tau_seconds": 0.02
+  },
+  "retrieved_at": "2026-10-06T06:06:33.453114+00:00",
+  "selected_sources": [
+    {
+      "dmd": 1,
+      "n_events": 5074,
+      "roi": 9,
+      "samples": 599588,
+      "source_dtype": "float64",
+      "stored_dtype": "float32"
+    },
+    {
+      "dmd": 2,
+      "n_events": 5037,
+      "roi": 1,
+      "samples": 599588,
+      "source_dtype": "float64",
+      "stored_dtype": "float32"
+    },
+    {
+      "dmd": 2,
+      "n_events": 3411,
+      "roi": 21,
+      "samples": 599588,
+      "source_dtype": "float64",
+      "stored_dtype": "float32"
+    },
+    {
+      "dmd": 2,
+      "n_events": 3270,
+      "roi": 26,
+      "samples": 599588,
+      "source_dtype": "float64",
+      "stored_dtype": "float32"
+    }
+  ],
+  "selection": "Largest >4 SD event fraction in DMD1 plus the nearest-to-median source in each archive-wide quality class within the example session.",
+  "source_assets": [
+    {
+      "asset_id": "98e54c75-2b4a-41ca-b502-b58d63b1f6d5",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/98e54c75-2b4a-41ca-b502-b58d63b1f6d5/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/161/72f/16172f3e-f4f8-432e-9d51-261ea5399502"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "88f5bbd1bb1e4d37d8c177a5380b7a59-8",
+        "dandi:sha2-256": "d2c2be3d9201cf3e98f8f3f5a867cb988d9960a5489d2cbc35e9810cd81b3b3d"
+      },
+      "modified": "2025-08-22T03:29:25.843350Z",
+      "path": "sub-776270/sub-776270_ses-SLAP2-776270-2025-07-02-11-50-06_image+ophys.nwb",
+      "session_id": "sub-776270_ses-SLAP2-776270-2025-07-02-11-50-06",
+      "size": 527290644
+    },
+    {
+      "asset_id": "ff65e279-c30f-4c92-8687-c8934d2b9342",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/ff65e279-c30f-4c92-8687-c8934d2b9342/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/d08/d95/d08d959a-acd2-468a-9c58-bb77a1f5dc3e"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "7f2844ad670c3196d27b597d57c16616-38",
+        "dandi:sha2-256": "dd7d48d597f0f2276e6056de0f5d47830767c9fc780e7ac3e3d71a622e331b61"
+      },
+      "modified": "2025-06-05T21:34:27.180443Z",
+      "path": "sub-794237/sub-794237_ses-20250403T103830_image+ophys.nwb",
+      "session_id": "sub-794237_ses-20250403T103830",
+      "size": 2529711248
+    },
+    {
+      "asset_id": "4c105b81-0522-4139-b6d9-5f454e3a2076",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/4c105b81-0522-4139-b6d9-5f454e3a2076/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/472/b65/472b65f5-91d0-43ef-8936-fcec30ac9121"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "7dc80c9a93fdc0a6a0797f8b86c393f0-36",
+        "dandi:sha2-256": "656b103d7f7d689eea654b11b0750e1ba8769773940775a17900d6a8074fac30"
+      },
+      "modified": "2025-06-05T21:36:15.441308Z",
+      "path": "sub-794237/sub-794237_ses-20250424T142019_image+ophys.nwb",
+      "session_id": "sub-794237_ses-20250424T142019",
+      "size": 2385128084
+    },
+    {
+      "asset_id": "1fccbd05-7ba2-4e40-9cb8-e8814119f756",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/1fccbd05-7ba2-4e40-9cb8-e8814119f756/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/14c/e65/14ce6596-f6d5-42a7-a103-1fb85fb560e3"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "7486af23a85ad36abef10ad8f14bcb1b-42",
+        "dandi:sha2-256": "375a7ed7c5793cba2aaa24834db5849a71901d36d772a9b94e80df01a619c801"
+      },
+      "modified": "2025-06-05T21:37:19.868640Z",
+      "path": "sub-794237/sub-794237_ses-20250508T145040_image+ophys.nwb",
+      "session_id": "sub-794237_ses-20250508T145040",
+      "size": 2763502656
+    },
+    {
+      "asset_id": "b8c05ec0-0a74-46f5-956d-e82af3cc5d27",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/b8c05ec0-0a74-46f5-956d-e82af3cc5d27/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/3dd/866/3dd86643-8ee3-4d19-889e-c258102e0b10"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "75d615ab706856020017f1e12b5223de-23",
+        "dandi:sha2-256": "38fe9e1d52a2dbd211d09fa172aac8005024c2da3a7f446bc751f1a697106d39"
+      },
+      "modified": "2025-08-29T00:35:05.238475Z",
+      "path": "sub-796630/sub-796630_ses-SLAP2-796630-2025-08-25-14-59-15_image+ophys.nwb",
+      "session_id": "sub-796630_ses-SLAP2-796630-2025-08-25-14-59-15",
+      "size": 1528694576
+    },
+    {
+      "asset_id": "1b6509ef-70d7-46e4-9c8e-587bb6ace95f",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/1b6509ef-70d7-46e4-9c8e-587bb6ace95f/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/e95/21c/e9521c86-5587-473c-990d-ed432bb65d28"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "381be9104a329724fbb965b7b026ddbc-22",
+        "dandi:sha2-256": "af8798fbd52184adfce210ad1e6442c49dfc3488f1195062b48d00f25e3206b6"
+      },
+      "modified": "2025-10-10T02:28:21.674614Z",
+      "path": "sub-796630/sub-796630_ses-SLAP2-796630-2025-08-28-14-25-34_image+ophys.nwb",
+      "session_id": "sub-796630_ses-SLAP2-796630-2025-08-28-14-25-34",
+      "size": 1467934164
+    },
+    {
+      "asset_id": "eb2eb08b-14b2-479d-ac1b-1259db054727",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/eb2eb08b-14b2-479d-ac1b-1259db054727/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/29d/7a3/29d7a312-ce71-40de-8114-56ec99b41c0f"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "489bf19c2457f04ccfea4c751ac1e6ee-28",
+        "dandi:sha2-256": "82428429b16cf30528b46690bd09ba4d2c836098b22ae5a01f8e42e815c61139"
+      },
+      "modified": "2025-10-17T10:22:43.500580Z",
+      "path": "sub-796630/sub-796630_ses-SLAP2-796630-2025-09-26-10-48-22_image+ophys.nwb",
+      "session_id": "sub-796630_ses-SLAP2-796630-2025-09-26-10-48-22",
+      "size": 1872522164
+    },
+    {
+      "asset_id": "44871646-ca8d-440d-b970-5756ed7cb47e",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/44871646-ca8d-440d-b970-5756ed7cb47e/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/829/cc8/829cc83a-4603-4e3d-936f-484bcf06cbcb"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "9ae2a1705627538161142002a2c8c0da-40",
+        "dandi:sha2-256": "4642ac3e001a741b75a9a604d1c8ad40375c1548bacf5681e61324c77ca1297d"
+      },
+      "modified": "2025-10-17T10:50:04.623241Z",
+      "path": "sub-796630/sub-796630_ses-SLAP2-796630-2025-10-01-14-23-25_image+ophys.nwb",
+      "session_id": "sub-796630_ses-SLAP2-796630-2025-10-01-14-23-25",
+      "size": 2619720316
+    },
+    {
+      "asset_id": "2ecafd40-29a6-422f-92b0-32f7e940c783",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/2ecafd40-29a6-422f-92b0-32f7e940c783/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/d8a/db3/d8adb3df-599e-4f90-bbf3-6e5c7b5eeff2"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "da1d54a7a37078019d8a9f5932131903-15",
+        "dandi:sha2-256": "16b79a80981c5a81cd69f555ae710add02edf530e79f9b5869045b770e6c9416"
+      },
+      "modified": "2025-08-27T23:18:30.042704Z",
+      "path": "sub-801381/sub-801381_ses-SLAP2-801381-2025-06-05-14-57-42_image+ophys.nwb",
+      "session_id": "sub-801381_ses-SLAP2-801381-2025-06-05-14-57-42",
+      "size": 1005358404
+    },
+    {
+      "asset_id": "22ad0a5a-c28c-45c7-af6f-98817ef16c54",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/22ad0a5a-c28c-45c7-af6f-98817ef16c54/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/bfd/695/bfd69503-896e-40bf-8d4a-46a9159725d3"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "fe65d62379f0df35c15d223b81584863-15",
+        "dandi:sha2-256": "0621409bc6c6607b7e6a7c87fa8eb94fb34032e5aada45d1bcc253cd5a34856a"
+      },
+      "modified": "2025-10-17T06:21:27.827006Z",
+      "path": "sub-801381/sub-801381_ses-SLAP2-801381-2025-09-26-14-17-56_image+ophys.nwb",
+      "session_id": "sub-801381_ses-SLAP2-801381-2025-09-26-14-17-56",
+      "size": 960973284
+    },
+    {
+      "asset_id": "d5120d10-e8b5-469b-b7a1-0b03cef0a831",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/d5120d10-e8b5-469b-b7a1-0b03cef0a831/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/0eb/ffe/0ebffe25-9709-4262-b719-d36872a03379"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "4b3907c9eed70b0d94de5a7f7b961db5-35",
+        "dandi:sha2-256": "ad7f61020e3fa783391ef67ad1d8072f1548eb42d9ed103e17ebb6ecc1f10e01"
+      },
+      "modified": "2025-10-17T02:10:04.529570Z",
+      "path": "sub-801381/sub-801381_ses-SLAP2-801381-2025-10-02-15-23-18_image+ophys.nwb",
+      "session_id": "sub-801381_ses-SLAP2-801381-2025-10-02-15-23-18",
+      "size": 2303311004
+    },
+    {
+      "asset_id": "d23a03af-c3bd-4cf0-9492-6dca96fb201d",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/d23a03af-c3bd-4cf0-9492-6dca96fb201d/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/b50/5a7/b505a73c-e7ff-437b-9457-82b84d478838"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "be50cadbb0fe9e98079bcb0665066377-11",
+        "dandi:sha2-256": "5ede03805ff06556520723bf7e89ae83eeb291818949e2145d923a6c704805e9"
+      },
+      "modified": "2025-08-25T23:01:00.931059Z",
+      "path": "sub-803496/sub-803496_ses-SLAP2-803496-2025-07-02-15-33-26_image+ophys.nwb",
+      "session_id": "sub-803496_ses-SLAP2-803496-2025-07-02-15-33-26",
+      "size": 678863608
+    },
+    {
+      "asset_id": "0929c67a-7eca-46d8-836d-430a8df136ae",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/0929c67a-7eca-46d8-836d-430a8df136ae/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/982/579/98257946-fa32-40cb-8d3a-c71432c8c3b8"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "bddada2277ff8db72537d97df6296bcc-39",
+        "dandi:sha2-256": "3b7fd9d9ead2b7fc044f0f3d5033617e706b0c3f5e99e9db74c35d9384b98195"
+      },
+      "modified": "2026-08-01T02:28:35.043458Z",
+      "path": "sub-828408/sub-828408_ses-828408-2025-11-13-10-30-53_image+ophys.nwb",
+      "session_id": "sub-828408_ses-828408-2025-11-13-10-30-53",
+      "size": 2616654491
+    },
+    {
+      "asset_id": "686c579b-eddf-4e7d-b9b2-c633e2d1fb15",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/686c579b-eddf-4e7d-b9b2-c633e2d1fb15/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/9ae/2c7/9ae2c7cf-db44-41f1-8692-0824928fab61"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "c8f08c3584bdafb58b3fe16b3d32f60c-58",
+        "dandi:sha2-256": "6cf6d61adad31d49ba761fea0767b437112fb7f83729be500aff63966a64f6ac"
+      },
+      "modified": "2026-07-31T05:25:12.328356Z",
+      "path": "sub-828408/sub-828408_ses-828408-2025-11-18-14-44-48_image+ophys.nwb",
+      "session_id": "sub-828408_ses-828408-2025-11-18-14-44-48",
+      "size": 3846456589
+    },
+    {
+      "asset_id": "90509ad1-232a-4f9e-bc45-c5a194c6e994",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/90509ad1-232a-4f9e-bc45-c5a194c6e994/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/3dd/901/3dd901d9-02b3-444b-bfb7-f752c9179b85"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "bec77eaa2d73139e8fe4b2517baa824e-15",
+        "dandi:sha2-256": "71646fd9b905a11b13f690cb0248ac62c84a9d25caf383cd18ee9da3147c7493"
+      },
+      "modified": "2026-08-01T04:37:02.030994Z",
+      "path": "sub-828409/sub-828409_ses-828409-2025-11-20-10-01-34_image+ophys.nwb",
+      "session_id": "sub-828409_ses-828409-2025-11-20-10-01-34",
+      "size": 1000457770
+    },
+    {
+      "asset_id": "e03a3c9e-1699-4742-b352-7385c3a90610",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/e03a3c9e-1699-4742-b352-7385c3a90610/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/84f/eb5/84feb5eb-6399-4974-b138-7ac2f36dde8c"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "13aba1325f5e26d87a87e25fd462e86a-43",
+        "dandi:sha2-256": "e162f2d8e30dcbb6339f641863a07a964905390a1041d2e5ca6c878d1812398f"
+      },
+      "modified": "2026-08-01T03:11:03.939239Z",
+      "path": "sub-828409/sub-828409_ses-828409-2025-11-21-11-14-03_image+ophys.nwb",
+      "session_id": "sub-828409_ses-828409-2025-11-21-11-14-03",
+      "size": 2831214109
+    },
+    {
+      "asset_id": "983e5908-15f5-4235-b477-71f0ce47c1fc",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/983e5908-15f5-4235-b477-71f0ce47c1fc/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/32f/f77/32ff7792-bf60-4618-bbd6-6ff26e75565a"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "866d625f916ba05d1f22d0aec0e719c7-38",
+        "dandi:sha2-256": "536aba16ee5d004b3ae617124eda0ed37e1ac88f0ec152f14b9a6eb3b6870fb1"
+      },
+      "modified": "2026-08-01T01:36:17.280190Z",
+      "path": "sub-829704/sub-829704_ses-829704-2025-12-10-13-47-47_image+ophys.nwb",
+      "session_id": "sub-829704_ses-829704-2025-12-10-13-47-47",
+      "size": 2522110791
+    },
+    {
+      "asset_id": "e36d24b2-ee5d-44d4-8119-b4f3f53e80d1",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/e36d24b2-ee5d-44d4-8119-b4f3f53e80d1/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/813/822/81382240-7878-42a8-8095-810142993b40"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "da8ca2ddf14797ea8e402880084849c6-33",
+        "dandi:sha2-256": "d19e175db49a452fc60feec598eb01b7174d16e8a460dd964eda067f0e14ad2d"
+      },
+      "modified": "2026-08-01T01:02:26.316526Z",
+      "path": "sub-829704/sub-829704_ses-829704-2025-12-11-12-57-26_image+ophys.nwb",
+      "session_id": "sub-829704_ses-829704-2025-12-11-12-57-26",
+      "size": 2151916401
+    },
+    {
+      "asset_id": "e136d355-5d49-4cc0-bcd4-b7539d639557",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/e136d355-5d49-4cc0-bcd4-b7539d639557/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/2ea/571/2ea571ae-1bfc-4790-afe8-275b3ae401f8"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "36c9b1d4f242425d56f8de5fe71a51cb-52",
+        "dandi:sha2-256": "2b955d0d38077bb2ea1f08712a7c934a54830272c9d5fec5978326130af0221f"
+      },
+      "modified": "2026-07-31T21:29:42.534000Z",
+      "path": "sub-829704/sub-829704_ses-829704-2025-12-16-11-03-04_image+ophys.nwb",
+      "session_id": "sub-829704_ses-829704-2025-12-16-11-03-04",
+      "size": 3438876944
+    },
+    {
+      "asset_id": "018a6c38-a3e6-4246-abb4-01c01281f392",
+      "content_url": [
+        "https://api.dandiarchive.org/api/assets/018a6c38-a3e6-4246-abb4-01c01281f392/download/",
+        "https://dandiarchive.s3.amazonaws.com/blobs/92d/792/92d792f0-6ca2-4b30-b707-015b7c4d89cc"
+      ],
+      "digest": {
+        "dandi:dandi-etag": "b3cd059d0b02e8011cf9ee9671dee3ca-56",
+        "dandi:sha2-256": "1cddcea5a22f20599492df8bc07a997778ece683c36653293b222ecfffd97738"
+      },
+      "modified": "2026-08-01T01:27:57.962071Z",
+      "path": "sub-829704/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys.nwb",
+      "session_id": "sub-829704_ses-829704-2025-12-18-10-57-36",
+      "size": 3709531648
+    }
+  ],
+  "source_hash_verification": "Published DANDI digest; source read by HTTPS byte ranges.",
+  "source_pr": "https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/pull/171",
+  "upstream_commit": "a0f6af8a05f296d1c376bd10e1edd70766699c25",
+  "version": 1
+}

@@ -1032,18 +1032,11 @@ def write_placeholder_plan_svg(
 
 
 def write_unit_extraction_plan_svg(output: Path = UNIT_EXTRACTION_PLAN_OUTPUT) -> Path:
-    return write_placeholder_plan_svg(
-        UNIT_EXTRACTION_PLAN_SOURCE,
-        output,
-        title_lines=(
-            "Unit extraction → signal and noise amplitude",
-            "Distributions across areas, sessions, and modalities",
-        ),
-        mask_height=140,
-        first_baseline=52,
-        font_size=FIGURE_TYPE_SCALE["title"],
-        line_gap=60,
+    from openscope_p3_publication.slap2_glutamate_figure7_panels import (
+        write_slap2_glutamate_figure,
     )
+
+    return write_slap2_glutamate_figure(output)
 
 
 def write_basic_stimuli_plan_svg(output: Path = BASIC_STIMULI_PLAN_OUTPUT) -> Path:
