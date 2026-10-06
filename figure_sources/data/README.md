@@ -59,21 +59,27 @@ used by the viewer are not stored in it.
 
 The implementation is in
 [`src/openscope_p3_publication/optotagging.py`](../../src/openscope_p3_publication/optotagging.py).
-To regenerate the complete table, open the marimo notebook, choose **All
-sessions**, and run the analysis:
+To refresh the complete table, run the command-line extractor from the repository
+root. This explicitly reads the public NWBs and is not part of routine builds:
 
-```powershell
-uv run --with dandi --with h5py --with iblatlas --with iblutil --with marimo `
-  --with matplotlib --with numpy --with pandas --with pyarrow --with remfile `
-  --with scipy --with seaborn marimo edit optotagging_analysis.py
+```bash
+uv run --with dandi --with h5py --with iblatlas --with iblutil --with numpy \
+  --with pandas --with pyarrow --with remfile --with scipy \
+  python scripts/extract_optotagging_results.py
 ```
 
-By default, the notebook writes `optotagging-results.parquet` and
+By default, the extractor writes `optotagging-results.parquet` and
 `optotagging-results.provenance.json` to
-`~/Data/openscope_p3_data_release_paper/`. The provenance document records the
-DANDI version and asset inventory, output checksum, condition parameters,
-excluded sessions, and failed sessions. When updating the committed snapshot,
-copy both generated files into `figure_sources/data/` together.
+`~/Data/openscope_p3_data_release_paper/`. Use `--output-dir` to choose another
+staging directory. Unsupported sessions are recorded as exclusions; any other
+session error stops the extraction before existing results are replaced. The
+provenance document records the DANDI version and asset inventory, output
+checksum, condition parameters, excluded sessions, and failed sessions.
+
+The committed table is a historical snapshot retrieved on August 4, 2026. The
+DANDI draft can change, so a new extraction is a deliberate refresh rather than
+a guarantee of byte-identical reconstruction. Review the new inventory and
+results before copying both generated files into `figure_sources/data/` together.
 
 From the repository root, load the committed table with:
 
