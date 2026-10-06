@@ -44,7 +44,8 @@ jobs:
         run: uv run build-publication-figures
 
       - name: Check generated figures are current
-        run: git diff --exit-code -- interactive images/figures/generated figure_sources/media/optotagging/optotagging-static-composite.svg
+        timeout-minutes: 2
+        run: git --no-pager diff --exit-code --name-only -- interactive images/figures/generated figure_sources/media/optotagging/optotagging-static-composite.svg
 
   build:
     runs-on: ubuntu-latest
@@ -73,7 +74,19 @@ jobs:
         run: uv run build-publication-figures
 
       - name: Check generated figures are current
-        run: git diff --exit-code -- interactive images/figures/generated figure_sources/media/optotagging/optotagging-static-composite.svg
+        id: generated-figures
+        timeout-minutes: 2
+        run: git --no-pager diff --exit-code --name-only -- interactive images/figures/generated figure_sources/media/optotagging/optotagging-static-composite.svg
+
+      - name: Preserve WaveMAP drift diagnostics
+        if: failure() && steps.generated-figures.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wavemap-linux-drift
+          retention-days: 3
+          path: |
+            images/figures/generated/*wavemap*
+            interactive/*wavemap*
 
       - uses: actions/setup-node@v4
         with:
