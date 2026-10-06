@@ -13,16 +13,7 @@ The displayed author list and author order are provisional and will be finalized
 :height: 800px
 :::
 
-:::{note} Manuscript status
-Incomplete prose, analysis outlines, and placeholder figures are labeled **Work in progress**. Specific missing details are highlighted in amber. Unmarked material represents the current manuscript content.
-:::
-
 # Abstract
-
-:::{warning} Work in progress
-:class: manuscript-wip
-This is a preliminary draft (subject to change). Please feel free to edit.
-:::
 
 The OpenScope Community Project consist of team-based open science on a large international scale. Every step of the scientific process is performed in a maximally transparent and inclusive fashion. Anyone around the globe can join and contribute to the project at any point in time. Contributions are preserved, kept public, and freely accesible. The initial project centers on predictive processing, a popular theory in systems neuroscience which assumes brain responses to mostly reflect deviations from expectation. As a first step, researchers performed a collaborative literature review, distilled open questions, and designed experimental paradigms to close the most pressing knowledge gaps. These suggestions then guided data collection at the Allen Institute. Here we release and characterize the resulting data. In order to test for deviations from expectation, "oddball" paradigms were chosen, where repeated patterns of sensory stimulation are violated on purpose. The dataset comprises neuronal measures of mostly neocortical activity during four different kinds of oddball stimuli, including a change in visual feature, sequence, temporal structure, or sensori-motor context. The data also comprises several control conditions as well as standardized procedures to characterize visual responses, such as receptive fields and tuning properties. The data covers three distinct spatial scales. (1) SLAP2 single glutamate vesicle imaging yielded synapse-level resolution of single neuron inputs to primary visual cortex. (2) Linear multielectrode arrays (Neuropixels) across six cortical areas as well as some subcortical structures resulted in single cell spiking measurements as well as extracellular voltages (local field potentials and current source density) with laminar resolution. And (3) two-photon calcium imaging (mesoscope) of primary visual cortex and a neighboring visual area provided access to inter-areal population responses and connectivity. Optogenetic phototagging further enhanced the data by providing insight into specific neuronal (inhibitory) cell types. We elaborate the specifics of the methodology, summarize key statistics, and provide several key analyses to assess data quality. Initial findings on oddball responses are also provided.
 
@@ -33,17 +24,12 @@ The OpenScope Community Project consist of team-based open science on a large in
 :alt: Predictive-processing computations across spatial scales, the multimodal experimental workflow, and context allocation across recording cohorts.
 :width: 100%
 
-**Figure 1:** Distributed predictive-processing hypotheses motivate multimodal recordings. **A,** A visual sequence establishes an expectation (blue), whereas an unexpected oddball produces a prediction-error signal (red). Predictions and errors may be expressed through reciprocal brain-wide pathways, within local cortical populations, and across the dendritic and somatic compartments of individual neurons. **B,** To sample these nested scales within one standardized project, animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels electrophysiology, or SLAP2 dendritic imaging. **C,** Five cohort timelines show eight outlined habituation and training sessions followed by filled neural-recording sessions. Neuropixels and mesoscope sampled motor- and sequence-habituated cohorts in opposite context orders. Neuropixels sampled every context once, whereas mesoscope repeated each context twice; SLAP2 sampled the motor-habituated cohort only.
+Distributed predictive-processing hypotheses motivate multimodal recordings. **A,** A visual sequence establishes an expectation (blue), whereas an unexpected oddball produces a prediction-error signal (red). Predictions and errors may be expressed through reciprocal brain-wide pathways, within local cortical populations, and across the dendritic and somatic compartments of individual neurons. **B,** To sample these nested scales within one standardized project, animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels electrophysiology, or SLAP2 dendritic imaging. **C,** Five cohort timelines show eight outlined habituation and training sessions followed by filled neural-recording sessions. Neuropixels and mesoscope sampled motor- and sequence-habituated cohorts in opposite context orders. Neuropixels sampled every context once, whereas mesoscope repeated each context twice; SLAP2 sampled the motor-habituated cohort only.
 :::
 
 ## The challenge of predictive processing research
 
 Predictive processing theories propose that the brain continuously generates predictions about incoming sensory signals and updates its internal models when those predictions are violated. These prediction errors are thought to drive perception, learning, and behavior. While this framework has gained considerable theoretical support, significant conflicts persist in the experimental literature regarding the neural mechanisms that implement predictive computations.
-
-:::{warning} Work in progress
-:class: manuscript-wip
-This subsection still needs additional synthesis of the unresolved conceptual challenges in predictive-processing research.
-:::
 
 ## Relationship to the companion review
 
@@ -69,33 +55,19 @@ Previous datasets are typically limited to a single recording modality, preventi
 
 To investigate whether prior experience with a specific predictive context influences neural responses to prediction violations, animals were divided into two cohorts that differed in their habituation experience and the order in which experimental sessions were presented. Both cohorts underwent all four mismatch session types, but the session experienced first (and for which animals had extensive prior habituation) differed between cohorts. This design enables within-animal comparison of mismatch responses across contexts, while the between-cohort comparison reveals how learned expectations from habituation shape these responses [@aizenbud2026neural].
 
-- The **motor cohort** was habituated in a closed-loop visuomotor environment in which locomotion on a running disc controlled the phase of a vertical drifting visual grating stimulus that mimicked optic flow. During habituation (days 6–10, with session durations increasing from 8 to 48 min) and full-length training sessions (\>1 h), animals experienced continuous closed-loop optic flow without any mismatch events. Experimental sessions where neuronal activity was recorded were then conducted in the following fixed order:
+- The **motor cohort** was habituated in a closed-loop visuomotor environment in which locomotion on a running disc controlled the phase of a vertical drifting visual grating stimulus that mimicked optic flow. During habituation (days 6–10, with session durations increasing from 8 to 48 min) and full-length training sessions (\>1 h), animals experienced continuous closed-loop optic flow without any mismatch events.
 
-  1.  Sensorimotor mismatch,
+- The **sequence cohort** was habituated to passively view repeating sequences of drifting gratings (A–B–C–D–grey) without any mismatch events. During habituation (days 6–10, durations 8–48 min) and full-length training sessions (\>1 h), animals viewed these sequences while freely running on the disc, which had no effect on the visual stimulus.
 
-  2.  Standard oddball
-
-  3.  Sequence mismatch
-
-  4.  Duration mismatch.
-
-- The **sequence cohort** was habituated to passively view repeating sequences of drifting gratings (A–B–C–D–grey) without any mismatch events. During habituation (days 6–10, durations 8–48 min) and full-length training sessions (\>1 h), animals viewed these sequences while freely running on the disc, which had no effect on the visual stimulus. Experimental sessions where neuronal activity was recorded were then conducted in the following fixed order:
-
-  1.  Sequence mismatch
-
-  2.  Duration mismatch
-
-  3.  Standard oddball
-
-  4.  Sensorimotor mismatch.
+The motor cohort was recorded in the order sensorimotor mismatch, standard oddball, sequence mismatch, and duration mismatch. The sequence cohort was recorded in the order sequence mismatch, duration mismatch, standard oddball, and sensorimotor mismatch.
 
 In both cohorts, the session that matched the habituation context was presented first, ensuring maximal learned expectation for the primary mismatch type. The remaining three sessions were presented in a counterbalanced order across cohorts. Each session was run in immediate succession: once for Neuropixels electrophysiology and twice for mesoscope two-photon calcium imaging, resulting in four or eight total recording sessions per animal. Given a limited throughput, experiments with the SLAP2 platform focused on the motor cohort. Each platform was used in a way that leverage their respective strengths: Experiments using the Mesoscope modality aimed to target the same exact population of neurons across all sessions types twice for a total of 8 cell-matched sessions; experiments using the Neuropixels modality were new probe insertions each day and aimed to record from the same areas (but not the same units) across all 4 types exactly once; experiments on the SLAP2 modality aimed to record the same neuron across all 4 sessions types exactly once. Across all modalities, those goals were met with pass/failure rates that are shared below. This cross-modality allocation is summarized in [Figure 1C](#fig-graphical-abstract). QC-passing unit yields across the four Neuropixels recording days are summarized in [Supplementary Figure 2](#fig-supp-neuropixels-unit-yield).
 
 **Four predictive contexts**
 
-The four distinct session contexts each targeted a different aspect of predictive processing. For all 4 contexts, the stimuli table containing both recurring and deviant trials were created at the onset of each session. The resulting tables were then subsequently shuffled so that the mouse could not predict the exact occurrence of deviants (pseudo-random). The order of stimuli blocks (deviant vs control blocks) were maintained across all sessions.
+The four contexts tested violations of expected visual features (standard oddball), locomotion-linked visual feedback (sensorimotor mismatch), stimulus order (sequence mismatch), and stimulus timing (duration mismatch). Each context was embedded in a common session structure with matched control blocks and shared natural-movie and receptive-field stimuli. Trial tables were generated for each session and pseudo-randomized to vary deviant timing, while block order was held constant.
 
-The shared within-session architecture and context-specific stimulus selection are summarized in [Figure 2](#fig-interactive-experimental-design).
+The shared within-session architecture and context-specific stimulus selection are summarized in [Figure 2](#fig-interactive-experimental-design). Full session protocols and control-block parameters are described under [Stimuli parameters](#stimuli-parameters) in Methods.
 
 :::{iframe} ./interactive/experimental-design.html
 :label: fig-interactive-experimental-design
@@ -135,43 +107,18 @@ block. This placed per-deviant sampling within the published range while
 keeping the complete shared block sequence to approximately 71 min and applying
 the same event rate across all four predictive contexts.
 
-#### Session type 1: Standard oddball.
-
-Full-field sinusoidal drifting gratings were presented in a classical oddball paradigm. The standard stimulus (0° orientation, 0.04 cycles per degree, 2 Hz temporal frequency, 100% contrast) was presented with high probability, with each trial consisting of a 343 ms stimulus presentation followed by a 343 ms grey inter-stimulus interval (686 ms total trial duration). Deviant stimuli occurred randomly at a combined rate of 5.4 per minute (1.35/min per type) and included: orientation deviants at 45° and 90°, a halt deviant (temporal frequency set to 0, producing a stationary grating), and an omission deviant (contrast set to 0, producing a blank screen).
-
-#### Session type 2 — Sensorimotor mismatch.
-
-Optic flow was coupled to the animal's locomotion on the running disc, creating a closed-loop visuomotor environment. A full-field sinusoidal grating (0° orientation, 0.04 cpd) was displayed with its phase updated at 30 Hz based on wheel rotation. The coupling gain was set such that the visual flow was consistent with that experienced by a freely moving mouse. Mismatch events were introduced by transiently decoupling visual flow from locomotion for 343 ms. Mismatch types (each at 1.35/min) included: motor halt (temporal frequency set to 0, freezing grating motion despite continued locomotion), motor omission (contrast set to 0, removing the grating entirely), and motor orientation changes (grating orientation shifted to 45° or 90° while drifting at 2 Hz independent of the wheel). A minimum interval of 2 s separated consecutive mismatch events, with a 5 s buffer at the start and end of the block.
-
-#### Session type 3 — Sequence mismatch.
-
-Animals were presented with repeating five-element sequences of drifting gratings. Each sequence consisted of four oriented gratings (90°–45°–0°–45°) followed by a grey inter-sequence interval with each element presented for 250 ms, yielding a total sequence duration of 1.25 s. All gratings were full-field (0.04 cpd, 2 Hz temporal frequency, 100% contrast). Mismatch events were introduced by substituting the third element (normally 0°) of a sequence at a combined rate of 5.4 mismatch sequences per minute. Mismatch types included: orientation substitution to 45° (producing a repeated element where a change was expected), orientation substitution to 90° (introducing a novel orientation), halt (stationary grating), and omission (blank screen at the substitution position).
-
-#### Session type 4 — Duration/temporal mismatch.
-
-Full-field sinusoidal drifting gratings (0° orientation, 0.04 cpd, 2 Hz temporal frequency, 100% contrast) were presented with a standard trial structure of 343 ms stimulus followed by a 343 ms delay (686 ms total). Temporal prediction violations were introduced by altering the inter-stimulus delay while keeping the stimulus duration constant. Deviant delays included 150 ms (shorter than expected), 500 ms, and 1000 ms (longer than expected), each occurring at 1.35/min. Omission deviants (contrast = 0) were also included at 1.35/min.
-
-### Shared session design
-
-All four session types shared an identical set of control blocks presented before and after the main mismatch block, enabling cross-session normalization and quality assessment. Each session comprised the following blocks in order:
-
-1.  Standard control block (6.4 min): 14 grating orientations (spaced every 22.5° from 0° to 315°) plus omission and halt trials, each repeated multiple times and presented in shuffled order. Each trial used the standard 343 ms stimulus + 343 ms delay structure (0.04 cpd, 2 Hz, 100% contrast, full-field). This block provides orientation tuning curves and adaptation-free baselines.
-
-2.  Main mismatch block (26 min): The session-specific mismatch paradigm (standard oddball, sensorimotor, sequence, or duration mismatch, as described above).
-
-3.  Standard control block (6.4 min): A repeat of the first control block, enabling assessment of response stability over the session.
-
-4.  Sequential control block (4.7 min): The same 14 orientations plus omissions and halts as in the standard control block, but presented with 250 ms duration (matching the temporal structure of the sequence mismatch paradigm) and shuffled randomly without sequential structure. This serves as a non-sequential baseline for the sequence mismatch session.
-
-5.  Jitter (duration) control block (6.4 min): Gratings (0° orientation, standard parameters) presented with seven different inter-stimulus delays (150, 343, 500, 750, 1000, 1500, and 914 ms), each repeated uniformly across the block, plus omission trials. This provides a matched-stimulus baseline for the duration mismatch session, where all delays occur with equal probability.
-
-6.  Open-loop prerecorded block (6.4 min): A shared pre-recorded wheel-derived phase trajectories (sampled at 30 Hz from previous running sessions) drove the grating phase in open loop, replicating naturalistic visual flow patterns without actual closed-loop coupling. Motor mismatch events (orientation changes, halts, and omissions, each at 1.35/min) were injected into this playback, providing a sensorimotor mismatch control condition where the animal's locomotion does not match the visual flow.
-
-7.  Natural movie block (10 min): A naturalistic "zebra noise" movie (120° × 95° visual field, 30 fps, 300 s duration, presented twice) was displayed [@skriabine2026zebra]. This stimulus serves as a shared reference for cross-session and cross-modality comparison, and provides a rich stimulus for characterizing neural response properties.
-
-8.  Receptive field mapping block (5 min): A small drifting grating patch (20° diameter, 0.08 cpd, 4 Hz temporal frequency, 80% contrast) was presented at 81 positions on a 9 × 9 grid spanning ±40° of visual space in 10° steps. Three orientations (0°, 45°, 90°) were tested at each position with 5 repeats, using 250 ms presentations. This block enables estimation of spatial receptive fields for individual neurons.
-
 ## Multimodal recording hardware
+
+The three recording platforms sampled complementary spatial scales during the
+shared visual-stimulation paradigm ([Figure 3](#fig-multimodal-pipelines)).
+Six acute Neuropixels probes targeted distributed cortical and subcortical
+structures, while mesoscope two-photon calcium imaging sampled eight chronic
+imaging planes across VISp and VISlm. SLAP2 imaging targeted proximal and apical
+dendritic compartments of layer II/III pyramidal neurons in VISp. Recordings
+were collected in separate animals with modality-specific implants; the shared
+stimulus protocol, rather than simultaneous acquisition, provides the basis
+for comparisons across platforms. Acquisition and targeting procedures are
+described under [Neuronal recording modalities](#neuronal-recording-modalities).
 
 :::{figure} ./images/figures/generated/multimodal-hardware.svg
 :label: fig-multimodal-pipelines
@@ -278,7 +225,7 @@ The habituation protocol included two cohorts of mice. (1) The **sequence cohort
 
 ## Visual stimulation
 
-All visual stimuli were generated using BonVision [@lopes2021bonvision], an open-source visual environment package running within the Bonsai reactive programming framework [@lopes2015bonsai]. For behavior training, Neuropixels recordings and mesoscope imaging, stimuli were rendered at 60 Hz and displayed on a gamma-calibrated ASUS PA248Q LCD monitor (1920 × 1200 pixels, 55.7 cm wide, 60 Hz refresh rate) positioned 15 cm from the animal's right eye (see [Figure 1](#fig-graphical-abstract)). A spherical warping correction (BonVision SphereMapping) was applied to all stimuli to compensate for the close viewing distance and flat display geometry, ensuring that apparent size, speed, and spatial frequency were constant across the visual field as seen from the mouse's perspective. The monitor subtended 120° × 95° of visual space. Mean luminance was 50 cd/m². Stimulus timing was synchronized to neural recordings via a photodiode placed on a sync square region of the monitor that alternated between black and white every 60 frames, and via digital synchronization pulses sent to a National Instruments digital board. The full stimulus code, Bonsai workflow, and parameter files are available on the project's GitHub repository ([https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing)). For SLAP2 recordings, the stimulation screen was smaller to account for physical constraints of the SLAP2 rig. <span class="manuscript-wip-inline"><strong>Work in progress:</strong> verify and add the SLAP2 display model, pixel dimensions, physical size, and visual-angle coverage.</span>
+All visual stimuli were generated using BonVision [@lopes2021bonvision], an open-source visual environment package running within the Bonsai reactive programming framework [@lopes2015bonsai]. For behavior training, Neuropixels recordings and mesoscope imaging, stimuli were rendered at 60 Hz and displayed on a gamma-calibrated ASUS PA248Q LCD monitor (1920 × 1200 pixels, 55.7 cm wide, 60 Hz refresh rate) positioned 15 cm from the animal's right eye (see [Figure 1](#fig-graphical-abstract)). A spherical warping correction (BonVision SphereMapping) was applied to all stimuli to compensate for the close viewing distance and flat display geometry, ensuring that apparent size, speed, and spatial frequency were constant across the visual field as seen from the mouse's perspective. The monitor subtended 120° × 95° of visual space. Mean luminance was 50 cd/m². Stimulus timing was synchronized to neural recordings via a photodiode placed on a sync square region of the monitor that alternated between black and white every 60 frames, and via digital synchronization pulses sent to a National Instruments digital board. The full stimulus code, Bonsai workflow, and parameter files are available on the project's GitHub repository ([https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing)). For SLAP2 recordings, the stimulation screen was smaller to account for physical constraints of the SLAP2 rig.
 
 For each session, a stimulus table (CSV file) was generated programmatically by a Python script (generate_experiment_csv.py) using a session-specific random seed derived from the session UUID and timestamp, ensuring unique trial sequences across sessions while maintaining reproducibility. This CSV table specified all trial parameters (orientation, spatial frequency, temporal frequency, contrast, duration, delay, position, phase, trial type, and block membership) and was read by the Bonsai workflow (generic_oddball.bonsai) to drive stimulus presentation in sequence.
 
@@ -299,10 +246,48 @@ particular recorded session.
 
 In the sensorimotor mismatch context, the phase of the drifting grating was coupled to the angular position of the running disc via a rotary encoder. The wheel-to-visual coupling was computed as: phase (radians) = 2π × R × θ / tan(1/f × π/180), where R is the wheel radius-to-screen ratio (0.36), θ is the wheel angle in degrees, and f is the spatial frequency (0.04 cpd). This coupling was calibrated so that the resulting visual flow approximated the optic flow a freely moving mouse would experience during forward locomotion.
 
+(stimuli-parameters)=
 ## Stimuli parameters
 
-All drifting grating stimuli shared the following base parameters unless otherwise specified: spatial frequency 0.04 cpd, temporal frequency 2 Hz, 100% contrast, sinusoidal luminance profile, full-field extent (360° diameter with spherical correction). For the standard oddball, sequence mismatch, and duration mismatch sessions, gratings drifted at a fixed temporal frequency of 2 Hz. For the sensorimotor mismatch session, the grating phase was updated at 30 Hz (every other video frame) based on wheel rotation, with temporal frequency set to 0 in the stimulus table (wheel-controlled mode). Oddball/mismatch events occurred at a rate of 1.35 per minute per deviant type (5.4/min total across four deviant types) in all session types. The stimulus parameters for each session type and shared control blocks are detailed in the Experimental design section above.
+All drifting grating stimuli shared the following base parameters unless otherwise specified: spatial frequency 0.04 cpd, temporal frequency 2 Hz, 100% contrast, sinusoidal luminance profile, full-field extent (360° diameter with spherical correction). For the standard oddball, sequence mismatch, and duration mismatch sessions, gratings drifted at a fixed temporal frequency of 2 Hz. For the sensorimotor mismatch session, the grating phase was updated at 30 Hz (every other video frame) based on wheel rotation, with temporal frequency set to 0 in the stimulus table (wheel-controlled mode). Oddball/mismatch events occurred at a rate of 1.35 per minute per deviant type (5.4/min total across four deviant types) in all session types. The four session types and shared control blocks are described below.
 
+### Session type 1: Standard oddball
+
+Full-field sinusoidal drifting gratings were presented in a classical oddball paradigm. The standard stimulus (0° orientation, 0.04 cycles per degree, 2 Hz temporal frequency, 100% contrast) was presented with high probability, with each trial consisting of a 343 ms stimulus presentation followed by a 343 ms grey inter-stimulus interval (686 ms total trial duration). Deviant stimuli occurred randomly at a combined rate of 5.4 per minute (1.35/min per type) and included: orientation deviants at 45° and 90°, a halt deviant (temporal frequency set to 0, producing a stationary grating), and an omission deviant (contrast set to 0, producing a blank screen).
+
+### Session type 2: Sensorimotor mismatch
+
+Optic flow was coupled to the animal's locomotion on the running disc, creating a closed-loop visuomotor environment. A full-field sinusoidal grating (0° orientation, 0.04 cpd) was displayed with its phase updated at 30 Hz based on wheel rotation. The coupling gain was set such that the visual flow was consistent with that experienced by a freely moving mouse. Mismatch events were introduced by transiently decoupling visual flow from locomotion for 343 ms. Mismatch types (each at 1.35/min) included: motor halt (temporal frequency set to 0, freezing grating motion despite continued locomotion), motor omission (contrast set to 0, removing the grating entirely), and motor orientation changes (grating orientation shifted to 45° or 90° while drifting at 2 Hz independent of the wheel). A minimum interval of 2 s separated consecutive mismatch events, with a 5 s buffer at the start and end of the block.
+
+### Session type 3: Sequence mismatch
+
+Animals were presented with repeating five-element sequences of drifting gratings. Each sequence consisted of four oriented gratings (90°–45°–0°–45°) followed by a grey inter-sequence interval with each element presented for 250 ms, yielding a total sequence duration of 1.25 s. All gratings were full-field (0.04 cpd, 2 Hz temporal frequency, 100% contrast). Mismatch events were introduced by substituting the third element (normally 0°) of a sequence at a combined rate of 5.4 mismatch sequences per minute. Mismatch types included: orientation substitution to 45° (producing a repeated element where a change was expected), orientation substitution to 90° (introducing a novel orientation), halt (stationary grating), and omission (blank screen at the substitution position).
+
+### Session type 4: Duration/temporal mismatch
+
+Full-field sinusoidal drifting gratings (0° orientation, 0.04 cpd, 2 Hz temporal frequency, 100% contrast) were presented with a standard trial structure of 343 ms stimulus followed by a 343 ms delay (686 ms total). Temporal prediction violations were introduced by altering the inter-stimulus delay while keeping the stimulus duration constant. Deviant delays included 150 ms (shorter than expected), 500 ms, and 1000 ms (longer than expected), each occurring at 1.35/min. Omission deviants (contrast = 0) were also included at 1.35/min.
+
+### Shared session design
+
+All four session types shared an identical set of control blocks presented before and after the main mismatch block, enabling cross-session normalization and quality assessment. Each session comprised the following blocks in order:
+
+1.  Standard control block (6.4 min): 14 grating orientations (spaced every 22.5° from 0° to 315°) plus omission and halt trials, each repeated multiple times and presented in shuffled order. Each trial used the standard 343 ms stimulus + 343 ms delay structure (0.04 cpd, 2 Hz, 100% contrast, full-field). This block provides orientation tuning curves and adaptation-free baselines.
+
+2.  Main mismatch block (26 min): The session-specific mismatch paradigm (standard oddball, sensorimotor, sequence, or duration mismatch, as described above).
+
+3.  Standard control block (6.4 min): A repeat of the first control block, enabling assessment of response stability over the session.
+
+4.  Sequential control block (4.7 min): The same 14 orientations plus omissions and halts as in the standard control block, but presented with 250 ms duration (matching the temporal structure of the sequence mismatch paradigm) and shuffled randomly without sequential structure. This serves as a non-sequential baseline for the sequence mismatch session.
+
+5.  Jitter (duration) control block (6.4 min): Gratings (0° orientation, standard parameters) presented with seven different inter-stimulus delays (150, 343, 500, 750, 1000, 1500, and 914 ms), each repeated uniformly across the block, plus omission trials. This provides a matched-stimulus baseline for the duration mismatch session, where all delays occur with equal probability.
+
+6.  Open-loop prerecorded block (6.4 min): A shared pre-recorded wheel-derived phase trajectories (sampled at 30 Hz from previous running sessions) drove the grating phase in open loop, replicating naturalistic visual flow patterns without actual closed-loop coupling. Motor mismatch events (orientation changes, halts, and omissions, each at 1.35/min) were injected into this playback, providing a sensorimotor mismatch control condition where the animal's locomotion does not match the visual flow.
+
+7.  Natural movie block (10 min): A naturalistic "zebra noise" movie (120° × 95° visual field, 30 fps, 300 s duration, presented twice) was displayed [@skriabine2026zebra]. This stimulus serves as a shared reference for cross-session and cross-modality comparison, and provides a rich stimulus for characterizing neural response properties.
+
+8.  Receptive field mapping block (5 min): A small drifting grating patch (20° diameter, 0.08 cpd, 4 Hz temporal frequency, 80% contrast) was presented at 81 positions on a 9 × 9 grid spanning ±40° of visual space in 10° steps. Three orientations (0°, 45°, 90°) were tested at each position with 5 repeats, using 250 ms presentations. This block enables estimation of spatial receptive fields for individual neurons.
+
+(neuronal-recording-modalities)=
 ## Neuronal recording modalities
 
 ### Neuropixels extracellular electrophysiology
@@ -470,7 +455,7 @@ Metrics used for each criteria are available on the AWS S3 bucket in a qc.json f
 
 ### SLAP2 dendritic imaging
 
-Dual-color imaging of synaptic glutamate and somatic calcium in single neurons was performed using SLAP2. SLAP2 allows for simultaneous measurement of arbitrarily-shaped ROIs across two imaging planes. <span class="manuscript-wip-inline"><strong>Citation needed:</strong> add the SLAP2 methods paper when available.</span> We recorded from Layer 2/3 pyramidal neurons in the visual cortex. We imaged from soma and several peri-somatic dendritic segments in one plane, and imaged several apical dendritic segments on the second plane, typically achieving recordings of \>100 synapses at \>200 Hz each. Imaging was motion stabilized by using SLAP2’s image-based online motion correction.
+Dual-color imaging of synaptic glutamate and somatic calcium in single neurons was performed using SLAP2. SLAP2 allows for simultaneous measurement of arbitrarily-shaped ROIs across two imaging planes. We recorded from Layer 2/3 pyramidal neurons in the visual cortex. We imaged from soma and several peri-somatic dendritic segments in one plane, and imaged several apical dendritic segments on the second plane, typically achieving recordings of \>100 synapses at \>200 Hz each. Imaging was motion stabilized by using SLAP2’s image-based online motion correction.
 
 #### Acquisition of reference stacks and ROI selection
 
@@ -480,6 +465,7 @@ Reference stacks were aligned during the imaging session and used to define imag
 
 The reference stacks were also used for online motion correction during functional imaging. Lateral (x-y) displacements were estimated by registering incoming data to the reference volumes and were used to update the DMD illumination patterns in real time. Axial (z) motion was compensated independently using a remote-focusing system, allowing ROIs to remain aligned to the targeted neuronal structures throughout the recording session.
 
+(data-processing)=
 ## Data processing
 
 ### Neuropixels extracellular electrophysiology
@@ -536,9 +522,8 @@ Source extraction was performed with a custom algorithm (SILo; [AllenNeuralDynam
 
 ### SLAP2 voltage
 
-:::{warning} Work in progress
-This section is under development.
-:::
+The source-extraction procedure above applies to glutamate imaging. Processing
+details for SLAP2 voltage recordings are not specified here.
 
 ### NWB data packaging
 
@@ -659,9 +644,24 @@ Completed SLAP2 NWB files were deposited in [DANDI:001424](https://dandiarchive.
 
 # Data records
 
+The release comprises modality-specific recording-session inventories and NWB
+files containing neural, stimulus, and behavioral data. The inventories
+describe the animals and experimental sessions, while the NWB records organize
+the associated measurements for analysis. Together, they connect cohort and
+recording-context metadata with the archived data described below.
+
 ## Data tables
 
-Animal and session coverage, recording context, and quality-control status are summarized in [Figure 4](#fig-recording-session-inventory).
+[Figure 4](#fig-recording-session-inventory) summarizes animal and session
+coverage from the recording worksheets for Neuropixels, mesoscope, and SLAP2.
+Animal metadata identify the cohort and recording modality; session entries
+provide session IDs, recording context, quality-control status, and data-access
+links. SLAP2 records distinguish glutamate and voltage recordings where channel
+metadata are available. The static inventory retains failed, repeated, and
+aborted entries to document acquisition coverage, whereas the interactive
+Sessions table includes only records with a valid session ID and QC status
+`Pass`. Acquisition attempts and pass-QC sessions therefore represent distinct
+populations in this summary.
 
 :::{iframe} ./interactive/data-explorer.html
 :label: fig-recording-session-inventory
@@ -806,9 +806,23 @@ each DMD imaging path.
 
 # Data validation
 
+The following sections organize validation around native acquisition streams,
+extracted units or optical sources, and synchronized behavioral measurements.
+We distinguish representative recording examples from quantitative summaries
+across sessions. Each analysis uses its stated inclusion and quality-control
+criteria; observations from a single example are not treated as validation of
+the entire dataset.
+
 ## Raw data across recording modalities
 
-Representative native acquisition formats and source-backed excerpts are shown in [Figure 5](#fig-aligned-neural-signals).
+The modalities produce different native data structures: multichannel
+extracellular-voltage time series for Neuropixels, fluorescence image frames
+for mesoscope, and sparse dendritic detector samples for SLAP2.
+[Figure 5](#fig-aligned-neural-signals) presents source-backed excerpts from one
+public session per modality, showing the recording geometry and native signals
+that underlie the unit and source extraction described next. Optical contrast
+is scaled independently for display, so brightness should not be interpreted
+as a quantitative comparison across modalities.
 
 :::{iframe} ./interactive/neural-viewer.html
 :label: fig-aligned-neural-signals
@@ -856,8 +870,25 @@ and SLAP2
 
 ## Units extraction
 
-Representative unit-extraction filters and matched activity traces are shown in
-[Figure 6](#fig-segmentation-viewers).
+Unit extraction identifies the spatial sources and activity traces used for
+subsequent analyses, but these sources represent different biological signals
+across modalities. For Neuropixels, Kilosort 4 groups extracellular spike
+waveforms into clusters, yielding spike times, mean waveforms, and quality
+metrics. Sorter labels and quality metrics distinguish putative single-unit
+activity from multi-unit activity; a sorted cluster should not automatically be
+treated as an isolated neuron. For mesoscope, Suite2p identifies cell-sized
+regions of interest (ROIs) in motion-corrected imaging planes. Each ROI is
+associated with neuropil-corrected fluorescence and $\Delta F/F$ traces, from
+which OASIS deconvolution estimates spike-related events rather than directly
+measuring action potentials.
+
+For SLAP2 glutamate imaging, SILo localizes spatially sparse glutamate-release
+sources along dendrites, refines their spatial profiles, and extracts their
+fluorescence time courses. Multiple extracted sources can belong to the same
+neuron, so source counts are not neuron counts. [Figure 6](#fig-segmentation-viewers)
+compares the spatial filters and matched activity traces from representative
+sessions. The preprocessing, segmentation, source-extraction, and curation
+procedures are described under [Data processing](#data-processing) in Methods.
 
 :::{iframe} ./interactive/segmentation-viewer.html
 :label: fig-segmentation-viewers
@@ -896,11 +927,6 @@ Data come from the public drafts of
 [DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files),
 [DANDI:001768](https://dandiarchive.org/dandiset/001768/draft/files), and
 [DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files).
-:::
-
-:::{warning} Work in progress
-:class: manuscript-wip
-The SLAP2 glutamate analysis in [Figure 7](#fig-unit-extraction-plan) and the Neuropixels unit-yield result are current. The remaining modality-specific signal-quality, stability, extraction, and cross-session analyses below are still an outline.
 :::
 
 :::{figure} ./images/figures/generated/figure-07-unit-extraction-plan.svg
@@ -1004,10 +1030,8 @@ Bleaching and remaining cross-session stability analyses are still in progress.
 
 ## Receptive field analysis across modalities
 
-:::{warning} Work in progress
-:class: manuscript-wip
-This analysis and [Figure 8](#fig-basic-stimuli-plan) are planning placeholders. Receptive-field methods, cross-modality results, and final figure panels still need to be added.
-:::
+[Figure 8](#fig-basic-stimuli-plan) outlines a comparison of receptive-field
+measurements and basic stimulus responses across recording modalities.
 
 :::{figure} ./images/figures/generated/figure-08-basic-stimuli-plan.svg
 :label: fig-basic-stimuli-plan
@@ -1085,8 +1109,26 @@ the publication.
 
 ## Neuropixels mismatch responses across predictive contexts
 
-Unit-level mismatch responses and matched controls across all four Neuropixels
-contexts are shown in [Figure 10](#fig-neuropixels-event-responses).
+[Figure 10](#fig-neuropixels-event-responses) illustrates how the released
+Neuropixels recordings can be used to identify candidate mismatch-responsive
+units. Four public sessions from mouse 830794 provide one example of each
+predictive context. Panel A summarizes responsive fractions and
+mismatch-minus-control firing rates by area and event; panel B shows unit-level
+mismatch-minus-control time courses and mean mismatch and control responses
+for one event per context.
+These are distinct unit populations from separate acute insertions, not the
+same neurons followed across contexts.
+
+Selection for further analysis starts with spike-sorting quality control and
+valid, sufficiently sampled trials, followed by two complementary comparisons:
+the mismatch against the preceding expected stimulus or ongoing optic flow
+(Q1), and against the same physical event in its matched control block (Q2).
+Response magnitude, sign, and
+time course then help characterize the selected units. The current uncorrected
+screen is exploratory; quantitative claims should use the released
+multiple-comparison-corrected *q* values and retain the context-specific
+qualifications below. Responsiveness alone does not establish a neuron's role
+in predictive computation.
 
 Mismatch events are not always preceded by the standard context they violate.
 [Supplementary Figure 7](#fig-supp-mismatch-adjacency) quantifies how often one
@@ -1196,14 +1238,9 @@ Neuropixels mismatch responses by predictive-processing context, anatomical area
 
 ## Stimulus-evoked responses: oddball across modalities
 
-:::{warning} Work in progress
-:class: manuscript-wip
-This analysis, the questions below, and [Figure 11](#fig-standard-oddball-plan) are planning placeholders. Final cross-modality oddball-response results and figure panels still need to be added.
-:::
-
-- Stability across the session for all modalities ?
-
-- Orientation tuning plots?
+Comparisons of standard-oddball responses across modalities will assess
+orientation tuning and within-session stability
+([Figure 11](#fig-standard-oddball-plan)).
 
 :::{figure} ./images/figures/generated/figure-11-standard-oddball-plan.svg
 :label: fig-standard-oddball-plan
@@ -1264,283 +1301,97 @@ working with electrophysiology, imaging, and behavioral data.
 
 ## Limitations
 
-:::{warning} Work in progress
-:class: manuscript-wip
-The final limitations discussion still needs to be drafted. Topics already identified include passive-viewing constraints and incomplete cell-type coverage; additional modality-specific and sampling caveats should be added.
-:::
+Experiments were conducted during passive viewing rather than an explicit
+mismatch-reporting task, limiting direct links between neural activity and
+perception. The modalities sample different cellular populations and measure
+different biological signals in separate animals; their response amplitudes
+and time courses are not directly interchangeable. Neuropixels units are not
+matched across acute recording sessions, and longitudinal imaging analyses
+require validated cell or source matching. The four-session Neuropixels example
+illustrates an analysis workflow in one mouse, not a population-wide estimate;
+generalization requires replication across animals and control of multiple
+comparisons.
 
 ## Data analysis plan
 
-:::{warning} Work in progress
-:class: manuscript-wip
-This section is an unedited working outline. It needs substantial shortening and reorganization around a prioritized set of hypotheses, prespecified outcomes, shared cross-modality analyses, and clearly separated confirmatory and exploratory tests.
-:::
-
-Our review [@aizenbud2026neural] highlighted the presence of mismatch responses throughout the cortical network, spanning multiple areas and cellular populations, including excitatory neurons and inhibitory subtypes. These responses involve dynamic contributions from both dendritic and somatic compartments. Consequently, our analysis must disentangle these relative contributions within a tightly integrated network, across multiple types of mismatches.
-
-A key assumption in our analysis is that different types of mismatches may recruit distinct relative contributions from computational primitives. To test this assumption, we must measure the precise dynamic properties of individual compartments across neuronal types, areas and layers. Our goal is to compare the relative timing and strength of predictive responses, complemented by decoding analyses to extract instantaneous prediction strengths emerging across the network. Neuropixels recordings will enable decoding with millisecond precision, such that the first occurrences of mismatch encoding across circuit components (brain regions, cortical layers, neuronal subtypes, and neuronal compartments) can be identified, while imaging experiments will provide denser recordings to measure the broader impact of these predictions on the overall network.
-
-Modeling these responses will be a key integrative effort, facilitating the unification of multi-modal and multi-species datasets. First, analytical metrics derived from real physiological data can be designed and iteratively refined using simulated neuronal activity from cortical models, where the ground truth is known. Second, modeling will enable the multi-modal integration of these datasets by leveraging the relative strengths of various techniques to constrain model parameters. Simulated models will vary in complexity to evaluate our ability to disentangle mechanisms such as adaptation, E/I balance, and other underlying processes.
-
-
-The analysis can be organized to address three main scientific hypotheses: I) whether mismatch responses are “additive”, “subtractive”, or “multiplicative” in nature; II) whether mismatch responses contain detailed, temporally specific predictions or expectations about the stimulus ensemble; III) whether there exists a common neural mechanism underlying different kinds of mismatch responses. Here, we provide further details about the data analysis and hypothesis testing that this experiment makes possible.
-
-Throughout all hypotheses, we will leverage a shared set of metrics computed on all datasets. **Encoding metrics** should include measures used to evaluate deterministic models, like linear and logistic regressions, such as accuracy, mean square error, and the coefficient of determination R2, or for probabilistic models such as generalized linear models (GLMs). **Decoding metrics** should include measures from pattern clustering and/or classification, for e.g., Mahalanobis distance, confusion matrix (categorical variables) or F1 score, mutual information, or bit rate/latency (for BCIs). In addition, analysis of response distribution across anatomical location and cell types will be used to test all hypotheses.
-
-### I. What kind of information is encoded by mismatch responses?
-
-A. *<u>Multiplicative novelty:</u>* Stimulus-specific enhancement for novel / unpredicted stimuli
-
-B. *<u>Additive novelty:</u>* A generalized “alert” signal that encodes novelty per se
-
-C. *<u>Subtractive novelty:</u>* The difference between the expected vs. actual stimulus
-
-D. *<u>No effect:</u>* In particular, this empirical outcome could constitute a form of rejection of the hypothesis that predictive computation was involved in the experimental conditions tested
-
-#### ***Analysis \#1:*** For each neuron and each mismatch stimulus, construct either the event-triggered average (ETA; for Ca<sup>++</sup> imaging data) or peri-stimulus time histogram (PSTH; for Neuropixel data):
-
-- Significant mismatch responses will be determined in each neuron by comparing activity evoked by a given mismatch stimulus to that same stimulus when it appears during the appropriate control setting. For session 1, this will be a comparison to the spaced randomized control. For session 2, this will be a comparison to the open loop pre-recorded sequence. For session 3, this will be a comparison to the contiguous randomized sequence control. For session 4, this will be the response to a time interval presented as an oddball to the same time interval in random order.
-
-- The significance of mismatch responses will be rigorously tested using bootstrap resampling, to avoid making the assumption of normal statistics for each neuron (which is often a poor assumption). Neurons with p \< 0.01 will be considered “mismatch” neurons.
-
-- Assuming that mismatches occur at random times on an interval \[ITI<sub>min</sub>, ITI<sub>max</sub>\], then the ETA from t = –ITI<sub>min</sub> to t = 0 serves as a baseline response.
-
-- *Absolute response measure*: integrated neural activity over a time window shifted by a standard latency (~50-100 ms).
-
-- *Relative response measure:* integrated neural activity minus baseline activity (use a longer time window for baseline for better SNR, but then scale the integral to compare to the activity at t \> 0).
-
-#### ***Analysis \#2:*** Compare the mismatch response in the novel vs. control conditions:
-
-A. Make a scatter plot of responses in the two conditions and carry out a linear fit. Here are possible interpretations of this analysis, keeping in mind that the data may exhibit combinations of these outcomes:
-
-- multiplicative novelty coding = slope of linear fit \> 1
-
-- additive novelty coding = offset of linear fit \> 0
-
-- subtractive novelty coding = slope of linear fit is not statistically different from zero (or extensive deviation for a subset of neurons)
-
-- no effect = neurons on the identity line
-
-#### ***Analysis \#3:*** Compare responses to different mismatch stimuli in the novel condition (for Sessions 1 and 2):
-
-- Calculate the relative response to the four different mismatch stimuli
-
-- If neurons encode subtractive novelty, then the following will be true:
-
-  1. R(downward, 90° shift) > R(45° shift), because this is a bigger change in orientation
-
-  2. R(halt) < R(90°) and R(45°), because the halt involves a smaller change in velocity
-
-- Other possibilities: i) make some index that captures this relationship for individual neurons, ii) calculate the fraction of neurons fulfilling these conditions and compare them to a shuffle test, iii) assess the effects of depth and subregion on fraction of neurons showing mismatch responses, and compare between types (different sessions).
-
-#### ***Analysis \#4:*** Calculate decoding performance / information encoded for mismatch stimuli and novelty *per se*:
-
-- What fraction of neurons encode significant info about novelty per se?
-
-  - a large fraction indicates a major, distributed encoding of novelty per se
-
-- What fraction of neurons encode significant info about individual mismatch stimuli?
-
-  - a large fraction indicates a major, distributed encoding of the identity of novel stimuli
-
-- Calculate decoding performance vs. N neurons, extrapolate to large N:
-
-  - extrapolation → ~1 indicates strong encoding (expected for individual stimuli, but unclear for novelty *per se*)
-
-- Compare decoding performance of novelty *per se* vs. performance for individual stimuli:
-
-  - similar performance indicates a strong encoding of novelty *per se*
-
-  - lower performance for novelty indicates a weak or secondary encoding of novelty
-
-- Scatter plot of info encoded for novelty vs. individual stimuli:
-
-  - high correlation indicates a joint encoding of novelty and stimulus identity
-
-  - low correlation indicates a separate encoding of novelty and stimulus identity.
-
-### II. Distinguish between two categories of prediction made by neurons:
-
-A. *<u>Detailed predictions</u>* about the identity of the upcoming stimulus
-
-B. Deviation of stimulus probability from the expected *<u>stimulus ensemble</u>*, often described in the literature as “adaptation”. This empirical outcome could be interpreted as a form of refutation of the hypothesis that predictive computation was involved in the experimental conditions tested.
-
-#### ***Analysis \#1:*** Compare the response to the same mismatch stimulus in all three conditions for the sensorimotor mismatch (session 2):
-
-- Is the mismatch response \> for closed loop vs. open loop
-
-  - YES indicates that the neuron encodes a detailed prediction (as only the closed loop condition allows a detailed prediction)
-
-- Is the mismatch response \> control vs. open loop
-
-  - YES indicates that the neuron encodes deviation from the expected ensemble (as a blank is differs more from the mismatch grating than the vertically oriented grating present in the closed loop condition)
-
-#### ***Analysis \#2:*** Calculate decoding performance / info encoded for individual mismatch stimuli vs. for novelty *per se*.
-
-- Use population decoder to identify the occurrence of an individual mismatch stimulus (target) versus all the other neural activity; start with a linear decoder (support vector machine):
-
-  - this quantifies the fidelity for encoding the identity of each of 4 mismatch stimuli
-
-- In a complementary fashion, calculate the mutual information each neuron represents about an individual mismatch stimulus versus all other neural activity
-
-- Similarly, calculate decoding performance and information for a comparison of neural activity during any mismatch stimulus vs all other neural activity;
-
-  - this quantifies the fidelity for encoding stimulus novelty *per se*
-
-- If significantly more information is encoded in the closed loop condition vs. open loop
-
-  - YES indicates encodes of a detailed prediction
-
-- If significantly more information is encoded in the control condition vs. open loop
-
-  - YES indicates encoding of a deviation from the expected ensemble
-
-#### ***Analysis \#3:*** Emergence of Prediction Signals in Single Neurons and Neural Populations
-
-When new, arbitrary correlations are created by the experimenter, the brain must, in principle, learn these new correlations. This can be demonstrated by showing several kinds of changes in neural responses to the same stimuli over time. These changes may occur within a single recording session, which is often interpreted as a form of adaptation, or across recording sessions, which is typically interpreted as learning.
-
-*Key Hypothesis Tests:*
-
-- <u>Predictive coding vs. static tuning:</u> Do individual neurons or neural populations show changes in their response to the same oddball stimuli?
-
-  - YES indicates evidence of predictive computation
-
-  - NO indicates evidence of static or previously learned tuning to stimuli
-
-- <u>“Predictive” Activity:</u> Do neurons or populations of neurons exhibit activity that systematically depends on what the upcoming stimulus is (as can be demonstrated by changing stimulus contingencies)?
-
-  - YES suggests that the neural activity was in part encoding the identity of the upcoming stimulus
-
-  - NO indicates that the neural activity encodes the identity of the current stimulus
-
-- <u>“Pattern completion” activity:</u> Do neurons or populations of neurons exhibit activity during stimulus omission that depends systematically on the preceding stimulus?
-
-  - YES indicates a form of predictive computation, in which predictions are embodied, in part, by specific neural activity driven by events that predict an upcoming stimulus (rather than by the stimulus itself)
-
-  - NO indicates that a response to the omission itself
-
-- <u>Latent component dynamics:</u> Do identified latent variables exhibit systematic changes over trials?
-
-  - YES indicates evidence of predictive computation revealed only at the population level
-
-- <u>Neural dimensionality reduction:</u> Does the manifold structure of mismatch responses shift toward a more compact, lower-dimensional space with repeated exposure?
-
-  - YES indicates a structure of predictive computation that is consistent with theories about efficient coding and/or maximization of coding capacity
-
-- <u>Conjunctive vs. disentangled representation:</u> Does the visualized geometric structure of population activity embedded in a 3D space; e.g., using unsupervised UMAP (Uniform Manifold Approximation and Projection), show distinct, possibly orthogonal, trajectories that could reveal disentangled coding schemes for different signals (e.g., for stimulus evoked responses vs. prediction errors)?
-
-  - YES indicates that the population neural code can simultaneously represent information about the stimulus as well as its predictive context
-
-*Single Neuron Analysis:* Determine whether individual neurons exhibit changes in their responses with repeated oddball presentations, indicative of learning.
-
-- <u>Trial-by-Trial Response Analysis:</u> Measure the amplitude and timing of neuronal responses to each oddball stimulus across trials.
-
-- <u>Model Fitting:</u> Apply exponential or linear decay models to these responses to measure trends over time.
-
-- <u>Statistical Validation:</u> Use bootstrap resampling to evaluate the significance of observed changes.
-
-- <u>Time Points for Analysis:</u> Pre-Oddball Baseline Period: A period before the oddball onset (e.g., -200 ms to stimulus onset at 0 ms) to establish baseline activity levels. Oddball Response Window: A post stimulus onset interval (e.g., 0 to 300 ms) capturing the immediate neuronal response to the oddball stimulus.
-
-*Population Latent Analysis:* Identify latent patterns within neural populations that correspond to predictions and prediction error signals.
-
-- <u>Tensor Component Analysis (TCA):</u> Decompose multi-dimensional neural data to uncover components with trial-dependent dynamics.
-
-- <u>Time Points for Analysis:</u> Pre-Oddball Baseline: A period before oddball onset (e.g., -200 ms to stimulus onset at 0 ms) to establish baseline population activity levels. Oddball Response Window: The duration of the oddball stimulus presentation (e.g., 0 to 300 ms) capturing immediate population responses to the oddball stimulus. Post-Oddball Period: A post stimulus offset interval (e.g., 300 ms to 600 ms) to monitor any sustained or delayed responses. Inter-Trial Intervals: Periods between oddball trials to evaluate baseline stability and potential anticipatory activity.
-
-*Cross-Day Analysis:* Monitor the activity of individual neurons or neural populations over time to identify changes in prediction error signaling and learning processes.
-
-### III. Mismatch responses across different types of predictions
-
-These experiments test mismatch responses resulting from different kinds of predictions: i) repetition vs. oddball (session 1), sensorimotor mismatch (session 2), and temporal sequence prediction (session 3 and 4). Are there different circuit mechanisms for these four kinds of prediction?
-
-In particular, sensorimotor prediction requires a corollary discharge of the motor command, so it requires feedback from outside V1. While there is evidence for feedback from higher-level cortex for oddball responses, reduced oddball responses seem to remain after blocking this feedback. Temporal sequence prediction could, in principle, be carried out by recurrent neural circuits within V1, but it is likely that feedback from higher cortex could enhance or extend these predictions.
-
-Importantly, if the outlined paradigms show the same essential distribution of feature-based mismatch responses across areas and layers, then this would argue against the hypothesis for distinct mechanisms.
-
-#### ***Analysis \#1:*** Map the locations of neurons showing significant mismatch responses using two-photon imaging and neuropixels recordings.
-
-- For spatial analyses, we will focus on the firing rate (using a deconvolution approach for Ca<sup>++</sup> imaging) averaged over all timepoints (e.g., 0 to 275 ms) for each trial. For each cohort, we will map the density of mismatch neurons as a function of region, layer, and cell-type. We will compare the percentage of mismatch responses (over all responsive neurons; each mouse as one observation) using a mixed ANOVA with paradigm (paradigm 1, 2, or 3) as a between subjects variable and region and layer as within subjects variables. Sex and mouse age will be covariates. We will carry out a separate analysis for each method (two-photon vs neuropixel) and cell-type (two-photon imaging of PYRs and interneurons subtypes).
-
-- Using PSTHs, compute the variability (standard deviation) of spike times relative to stimulus onset, as well as peak latency; compare to different models and across experimental conditions.
-
-- Use dimensionality reduction techniques (principal components analysis (PCA), t-distributed stochastic neighbor embedding (t-SNE), UMAP, *etc*.) to visualize population activity across units and identify functional clusters.
-
-- Characterize how different coding subspaces are oriented relative to each other in neural state space by computing the joint angles [@rule2020stable].
-
-- Another approach would be to examine how much the coding direction of one variable aligns with the direction of another variable.
-
-#### ***Analysis \#2:*** Compare responses for the \*same\* neurons between sensorimotor (session 2) and temporal sequence (session 3) mismatches.
-
-- Is the mismatch response stronger for sensorimotor than temporal sequence prediction?
-
-  - YES suggests different neural circuits for these two kinds of prediction
-
-  - NO suggests common circuitry may explain data
-
-- Make a scatter plot of mismatch response in sensorimotor vs. temporal sequence prediction
-
-  - data scattering all over the plane suggests different neural circuits for these two kinds of prediction
-
-  - data falling near a line suggests that additional circuitry for sensorimotor prediction “feeds into” common circuits
-
-- Are there more examples of ‘pure mismatch responses’ (i.e. no baseline activity) in sensorimotor prediction vs. others
-
-  - YES suggests different neural circuits for these different kinds of prediction
-
-#### **Analysis \#3:** Compare responses for the \*same\* neurons between the oddball (session 1) and sequence (session 3) mismatches.
-
-- For comparing magnitudes of mismatch responses, the average firing rate for each neuron showing a significant mismatch response will be averaged over trials, and then layers and regions. We will compare these values using a mixed ANOVA with paradigm (session 1, 2, 3 or 4) as a between-subjects variable and region and layer as within-subjects variables.
-
-- Is the mismatch response stronger for repetition than temporal sequence prediction?
-
-  - YES suggests different neural circuits for these two kinds of prediction
-
-  - NO suggests common circuitry may explain data
-
-- Make a scatter plot of mismatch response in oddball vs. temporal sequence prediction
-
-- data scattering all over the plane suggests different neural circuits for these two kinds of prediction
-
-- data falling near a line suggests that additional circuitry for oddball prediction “feeds into” common circuits
-
-#### ***Analysis \#4:*** Analysis of recording from inhibitory interneurons.
-
-- Are inhibitory neurons more strongly activated in session 2?
-
-  - YES suggests that there is feedback from higher cortical areas
-
-- Is inhibitory activity stronger in closed loop vs. open loop (session 2)?
-
-  - YES inhibitory activity may reflect a sensory prediction
-
-- Similar analyses for sessions 1 and 3
-
-#### ***Analysis \#5:*** Temporal Mismatch Analysis (session 4).
-
-- Test whether baseline activity and/or visual evoked responses under control conditions are different than for temporally deviant visual stimuli
-
-  - YES indicates neurons encode specific temporal predictions about the time of occurrence of stimuli
-
-- Assess how distinct classes of interneurons contribute to predictive timing by examining their responses to temporally based mismatches when the stimulus duration deviates from the control condition
-
-#### **Analysis \#6:** Test various prediction models across session types.
-
-- Quantify learning effects as a function of region and layer. Measure the response amplitude before and after repeated presentations of the same stimulus within a recording session.
-
-- Analyze changes in neural responses within a recording session (e.g., occurring over periods of seconds to minutes) to detect patterns likely to reflect short-term memory processes. Compute autocorrelations and cross-correlations across spike trains.
-
-- Train deep learning models using self-supervised learning (e.g., to predict future activity from past activity) to extract latent feature representations of the neural data. Analyze the accuracy of stimulus decoders trained on the representations extracted from different areas and using different temporal windows.
-
-- Analyze changes in neural activity patterns across learning days to detect patterns likely to reflect longer-term experience-dependent plasticity processes.
-
-- Use information theory criteria and cross-validation techniques to compare the goodness-of-fit of different models. Validate models using separate test datasets, including ones obtained from different laboratories.
+The companion review [@aizenbud2026neural] motivates three related analysis
+themes: what mismatch responses encode, how expectations differ from adaptation,
+and whether different predictive contexts recruit shared circuit mechanisms.
+The proposals below extend the descriptive analyses in this release; they are
+not additional completed results. Each should begin with modality-appropriate
+quality control, synchronized trial definitions, and matched-control
+comparisons. Confirmatory tests should specify response windows, inclusion
+criteria, and correction for multiple comparisons in advance, with effect sizes
+and uncertainty reported alongside significance. Unit selection and model
+training should be separated from held-out evaluation.
+
+### Stimulus identity and novelty
+
+Compare event-aligned spike rates or optical response traces between each
+mismatch and its matched control to distinguish stimulus-specific modulation
+from a response shared across unexpected events. Additive, multiplicative,
+and subtractive response models can be evaluated alongside null and
+adaptation-based alternatives using held-out predictive performance, rather
+than assigning a unique mechanism to the slope of a response scatter plot.
+Population decoding can test whether activity identifies the physical stimulus,
+the occurrence of any mismatch, or both. These comparisons should balance trial
+counts and sampled population sizes, quantify both enhancement and suppression,
+and report response magnitude, latency, and reliability. Optical event estimates
+should retain their distinction from directly measured spike times.
+
+### Expectation, adaptation, and experience
+
+Test whether responses depend on specific predictions about stimulus identity
+and timing or on the recent distribution of sensory inputs. Closed-loop versus
+open-loop sensorimotor comparisons should account for running state, while
+sequence analyses must acknowledge residual differences in stimulus history
+between structured and randomized controls. Responses to omissions and activity
+near expected stimulus times can constrain these alternatives without being
+treated as sufficient evidence for a particular mechanism. Duration analyses
+should examine the manipulated delay as well as the following stimulus.
+Trial-resolved response and population-state models can then assess changes
+with repeated exposure, controlling for behavioral fluctuations and recording
+drift before attributing those changes to learning.
+
+### Shared and context-specific circuit mechanisms
+
+Compare response prevalence, magnitude, and timing across contexts, anatomical
+areas, layers, and supported cell-type groups. Population analyses can assess
+whether stimulus and context information occupy aligned or distinct coding
+subspaces [@rule2020stable]. Neuropixels provides spike-timing resolution across
+distributed structures, while imaging contributes spatially resolved cellular
+and dendritic measurements; neither requires assuming that their signals are
+interchangeable. Longitudinal comparisons of individual cells or sources should
+be restricted to validated, registered imaging data, because acute Neuropixels
+insertions do not track the same units across days. Inference should account
+for units and sessions nested within animals, cohort order, and sampling
+differences rather than treating every source as an independent replicate.
+Finally, circuit models incorporating adaptation, excitation-inhibition balance,
+or predictive interactions can be tested against these joint constraints.
+Simulated data with known mechanisms can assess how well the proposed metrics
+distinguish alternatives, and held-out recordings can test whether model
+predictions generalize across animals and contexts.
 
 # Conclusion
 
-:::{warning} Work in progress
-:class: manuscript-wip
-The conclusion has not yet been drafted.
-:::
+The OpenScope Predictive Processing Community Project brings four mismatch
+contexts into a shared experimental framework for studying neural responses
+across spatial scales. Neuropixels electrophysiology, mesoscope calcium imaging,
+and SLAP2 dendritic imaging provide complementary measurements of population
+activity and subcellular signals, accompanied by common control stimuli and
+synchronized behavioral records. Public NWB files, stimulus definitions,
+provenance records, and reproducible analysis code connect these measurements
+to their acquisition and processing history.
+
+Together, these resources support tests of whether mismatch responses share
+computational principles across contexts and how those responses depend on
+stimulus history, behavioral state, and circuit location. The example analyses
+provide routes to selecting and characterizing candidate units, but do not by
+themselves establish which signals implement prediction or prediction-error
+computations. Such conclusions require matched controls, corrected statistical
+inference, and replication across animals while respecting modality-specific
+sampling and measurement limits. The release provides a common basis for these
+tests and for further community-developed analyses of predictive processing.
 
 ## Supplementary figures
 

@@ -228,10 +228,15 @@ def test_manuscript_marks_author_list_as_provisional() -> None:
 def test_manuscript_marks_unfinished_content() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
 
-    assert ":::{note} Manuscript status" in manuscript
-    assert manuscript.count(":::{warning} Work in progress") == 9
-    assert manuscript.count('class="manuscript-wip-inline"') == 2
+    assert re.findall(r"^:::\{warning\} (.+)$", manuscript, re.MULTILINE) == [
+        "Author list not final"
+    ]
     for stale_marker in (
+        "Work in progress",
+        "manuscript-wip",
+        "Manuscript status",
+        "This is a preliminary draft",
+        "[Figure 7](#fig-unit-extraction-plan) and the modality subsections",
         "To be written",
         "Supplementary Fig. X",
         "XXXX",
@@ -638,6 +643,7 @@ def test_methods_are_collapsed_as_one_section() -> None:
     )
     assert methods.rstrip().endswith("::::")
     assert "## Experimental animals" in methods
+    assert "(data-processing)=\n## Data processing" in methods
     assert ":label: fig-multimodal-pipelines" not in methods
     assert "[Figure 3](#fig-multimodal-pipelines)" in methods
     assert "#### Neuropixels Ephys NWB Packaging Pipeline" in methods
@@ -645,6 +651,31 @@ def test_methods_are_collapsed_as_one_section() -> None:
     assert "#### SLAP2 NWB Packaging Pipeline" in methods
     assert "11f8d942-a12c-44b5-84db-d084164294d1" in methods
     assert "f8d26d18-3daf-45fd-9671-32b68d2a9441" in methods
+
+    protocols = methods.split("## Stimuli parameters\n", 1)[1].split(
+        "## Neuronal recording modalities\n", 1
+    )[0]
+    assert len(re.findall(r"^### Session type [1-4]: ", protocols, re.MULTILINE)) == 4
+    assert manuscript.count("### Session type ") == 4
+    assert "### Session type " not in manuscript[:methods_start]
+    assert "### Shared session design" in protocols
+    assert "### Shared session design" not in manuscript[:methods_start]
+    assert re.findall(r"^([1-8])\.\s+\S", protocols, re.MULTILINE) == list("12345678")
+    assert "[Stimuli parameters](#stimuli-parameters)" in manuscript[:methods_start]
+    assert "| Recording position |" not in manuscript
+    assert (
+        "The motor cohort was recorded in the order sensorimotor mismatch, standard oddball, "
+        "sequence mismatch, and duration mismatch."
+    ) in manuscript[:methods_start]
+    assert (
+        "The sequence cohort was recorded in the order sequence mismatch, duration mismatch, "
+        "standard oddball, and sensorimotor mismatch."
+    ) in manuscript[:methods_start]
+    assert not re.search(
+        r"^\s+\d+\.\s+(?:Sequence|Duration|Sensorimotor) mismatch",
+        manuscript[:methods_start],
+        re.MULTILINE,
+    )
 
     import_script = runpy.run_path(
         str(REPO_ROOT / "scripts" / "import_google_doc.py")
@@ -998,8 +1029,67 @@ def test_data_explorer_uses_generated_assets_without_manuscript_data() -> None:
     assert "View grouped static summary tables" not in manuscript
 
 
+@pytest.mark.parametrize(
+    ("heading", "expected_terms"),
+    [
+        ("## Multimodal recording hardware", ("Neuropixels", "mesoscope", "SLAP2")),
+        ("# Data records", ("inventories", "NWB", "behavioral")),
+        ("## Data tables", ("session IDs", "`Pass`", "failed")),
+        ("# Data validation", ("representative", "quality-control", "entire dataset")),
+        (
+            "## Raw data across recording modalities",
+            ("extracellular-voltage", "fluorescence", "sparse"),
+        ),
+        (
+            "## Units extraction",
+            ("Kilosort 4", "OASIS", "SILo", "source counts are not neuron counts"),
+        ),
+        (
+            "## Neuropixels mismatch responses across predictive contexts",
+            ("Panel A", "panel B", "(Q1)", "(Q2)", "*q* values", "exploratory"),
+        ),
+        ("## Limitations", ("passive viewing", "interchangeable", "validated")),
+        ("# Conclusion", ("Neuropixels", "mesoscope", "SLAP2", "NWB", "replication")),
+    ],
+)
+def test_manuscript_sections_have_explanatory_prose(
+    heading: str, expected_terms: tuple[str, ...]
+) -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    section = manuscript.split(f"{heading}\n", 1)[1]
+    introduction = re.split(r"^(?:#{1,6} |:::\{)", section, maxsplit=1, flags=re.MULTILINE)[0]
+
+    for term in expected_terms:
+        assert term in introduction
+
+
+def test_analysis_plan_is_concise_prose() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    plan = manuscript.split("## Data analysis plan\n", 1)[1].split("# Conclusion\n", 1)[0]
+
+    assert len(plan.split()) <= 600
+    assert len(re.findall(r"^### ", plan, re.MULTILINE)) == 3
+    assert not re.search(r"^(?:\s*[-*+] |\s*\d+\. |#### )", plan, re.MULTILINE)
+    for term in ("additive", "multiplicative", "subtractive", "adaptation", "held-out"):
+        assert term in plan.lower()
+    assert "not additional completed results" in plan
+    assert "do not track the same units across days" in plan
+    assert "@rule2020stable" in plan
+
+
 def test_figure_captions_and_interactive_placement() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+
+    captioned_figures = re.findall(
+        r"^:::\{(?:figure|iframe)\} [^\n]+\n"
+        r"(?P<options>(?::\w[^\n]*\n)+)\n(?P<caption>.*?)\n:::$",
+        manuscript,
+        re.MULTILINE | re.DOTALL,
+    )
+    assert captioned_figures
+    for options, caption in captioned_figures:
+        if ":enumerated: false" not in options:
+            assert not re.match(r"(?:\*\*)?(?:Supplementary )?Figure\s+\d", caption)
 
     assert "A visual sequence establishes an expectation" in manuscript
     assert "**B,** To sample these nested scales" in manuscript
@@ -1065,12 +1155,12 @@ def test_figure_captions_and_interactive_placement() -> None:
         < manuscript.index("fig-basic-stimuli-plan")
     )
     assert "[Figure 6](#fig-segmentation-viewers)" in manuscript
-    assert "The SLAP2 glutamate analysis in [Figure 7](#fig-unit-extraction-plan)" in manuscript
+    assert ":label: fig-unit-extraction-plan" in manuscript
     assert "2,521 sources have defined classes and 19 are excluded" in manuscript
     assert "averages exclude zero-event source/context pairs" in manuscript
     assert "cross-cohort quality-class differences must not be interpreted" in manuscript
-    assert "This analysis and [Figure 8](#fig-basic-stimuli-plan)" in manuscript
-    assert "[Figure 11](#fig-standard-oddball-plan) are planning placeholders" in manuscript
+    assert "[Figure 8](#fig-basic-stimuli-plan) outlines a comparison" in manuscript
+    assert "([Figure 11](#fig-standard-oddball-plan))" in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert ":placeholder: ./images/figures/generated/synchronized-behavior.svg" in manuscript
     assert "Synchronized behavior and running across recording modalities" in manuscript
@@ -1105,7 +1195,6 @@ def test_figure_captions_and_interactive_placement() -> None:
         (4, "fig-recording-session-inventory"),
         (5, "fig-aligned-neural-signals"),
         (6, "fig-segmentation-viewers"),
-        (7, "fig-unit-extraction-plan"),
         (8, "fig-basic-stimuli-plan"),
         (9, "fig-behavior-tracking"),
         (10, "fig-neuropixels-event-responses"),
@@ -1125,7 +1214,7 @@ def test_figure_captions_and_interactive_placement() -> None:
 
     figure_1 = manuscript.index(":label: fig-graphical-abstract")
     cohort_link = manuscript.index("[Figure 1C](#fig-graphical-abstract)")
-    explanation = manuscript.index("The four distinct session contexts")
+    explanation = manuscript.index("**Four predictive contexts**")
     viewer = manuscript.index(":label: fig-interactive-experimental-design")
     assert figure_1 < cohort_link < explanation < viewer
 
@@ -1223,7 +1312,7 @@ def test_manuscript_has_no_docx_formatting_artifacts() -> None:
 
     assert not any(line.startswith(">") for line in manuscript.splitlines())
     assert "| Publication |\n|----|" not in manuscript
-    assert "our ability to disentangle mechanisms" in manuscript
+    assert "Simulated data with known mechanisms" in manuscript
     assert "our ability\n\n:::{figure}" not in manuscript
     assert "**Supplementary** **Fig. X**" not in manuscript
     assert "**Supplementary** **Table 1**" not in manuscript
