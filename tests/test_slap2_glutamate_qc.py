@@ -19,6 +19,7 @@ from openscope_p3_publication.slap2_glutamate_figure7_panels import (
 )
 from openscope_p3_publication.slap2_glutamate_qc_events import (
     assign_classes,
+    detect_events,
     event_amplitudes_raw,
     sampling_interval,
 )
@@ -129,6 +130,9 @@ def test_selected_example_reproduces_original_source_measurements() -> None:
         events = event_table(
             source_trace(trace_data, record["roi"]), trace_data["ts"], trace_data["dt"]
         )
+        assert events["z"].dtype == np.float64
+        original_events = detect_events(source_trace(trace_data, record["roi"]), trace_data["dt"])
+        np.testing.assert_array_equal(events["idx"], original_events["idx"])
         expected = example.loc[record["dmd"], record["roi"]]
         assert len(events["idx"]) == expected.n_events
         assert events["raw_sd"] == pytest.approx(expected.noise_dff, rel=1e-6)
@@ -171,7 +175,7 @@ def test_publication_figure_builds_without_network(tmp_path: Path, monkeypatch, 
     text = output.read_text(encoding="utf-8")
     assert "SLAP2 glutamate signal-quality analysis" in text
     assert text.count("data:image/svg+xml;base64,") == 3
-    assert len(list(tmp_path.glob("figure7_panel*.png"))) == 5
+    assert not list(tmp_path.glob("figure7_panel*.png"))
     assert len(list(tmp_path.glob("figure7_panel*.svg"))) == 5
     first_build = {asset.name: asset.read_bytes() for asset in tmp_path.iterdir()}
     write_slap2_glutamate_figure(output)

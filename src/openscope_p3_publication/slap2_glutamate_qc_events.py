@@ -140,15 +140,24 @@ def _local_maxima(z: np.ndarray, thr: float, refractory: int) -> np.ndarray:
     return np.asarray(keep, dtype=int)
 
 
-def detect_events(trace: np.ndarray, dt: float, tau: float = TAU_IGLUSNFR4F_S):
+def detect_events(
+    trace: np.ndarray, dt: float, tau: float = TAU_IGLUSNFR4F_S,
+    *, stable_filter: bool = False,
+):
     """Detect glutamate events on one dF/F trace.
 
     Returns a dict with event indices and amplitudes (in SD), the matched-filter
     z-scored trace, the noise SD, and the count of negative-going peaks that
     serves as the empirical false-positive estimate.
+
+    stable_filter uses float64 accumulation for the plotted example's reproducible
+    curve. The archive-analysis default retains the original float32 calculation.
     """
     filled, valid = interpolate_gaps(np.asarray(trace, dtype=np.float32))
     kernel = matched_filter_kernel(dt, tau)
+    if stable_filter:
+        filled = filled.astype(np.float64)
+        kernel = kernel.astype(np.float64)
     filt = np.convolve(filled, kernel, mode="same")
     filt[~valid] = np.nan  # interpolated samples take no part in detection
 

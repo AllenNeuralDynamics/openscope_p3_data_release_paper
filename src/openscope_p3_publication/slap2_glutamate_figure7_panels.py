@@ -140,16 +140,17 @@ def panel_tag(fig, letter: str) -> None:
              ha="left", color=INK)
 
 
-def save_panel(fig, out: Path, name: str) -> None:
+def save_panel(fig, out: Path, name: str, *, preview_png: bool = True) -> None:
     out.mkdir(parents=True, exist_ok=True)
     svg = io.StringIO()
     fig.savefig(svg, format="svg", dpi=300, metadata={"Date": None})
     svg_text = canonical_svg_images(svg.getvalue())
     svg_text = "\n".join(line.rstrip() for line in svg_text.splitlines()) + "\n"
     (out / f"{name}.svg").write_text(svg_text, encoding="utf-8", newline="\n")
-    png = io.BytesIO()
-    fig.savefig(png, format="png", dpi=300, metadata={"Software": "OpenScope P3 publication"})
-    (out / f"{name}.png").write_bytes(canonical_png(png.getvalue()))
+    if preview_png:
+        png = io.BytesIO()
+        fig.savefig(png, format="png", dpi=300, metadata={"Software": "OpenScope P3 publication"})
+        (out / f"{name}.png").write_bytes(canonical_png(png.getvalue()))
     plt.close(fig)
 
 
@@ -341,7 +342,7 @@ def class_examples(metrics: pd.DataFrame) -> dict[str, tuple[int, int]]:
 
 def event_table(trace: np.ndarray, ts: np.ndarray, dt: float) -> dict:
     """Detection + raw-σ amplitudes for one trace, as the QC pipeline does it."""
-    res = detect_events(trace, dt)
+    res = detect_events(trace, dt, stable_filter=True)
     finite = trace[np.isfinite(trace)]
     raw_sd, raw_med = baseline_noise(finite)
     amp_raw = event_amplitudes_raw(trace, res["idx"], dt, raw_sd)
@@ -492,7 +493,7 @@ def imaged_segments(activity: np.ndarray, outlines: list[np.ndarray]) -> list[di
 
 
 def render_panel_c(sess: dict, metrics: pd.DataFrame, out: Path, dmd: int = 1,
-                   color_by: str | None = None) -> int:
+                   color_by: str | None = None, *, preview_png: bool = True) -> int:
     """Both imaging planes, one example synapse footprint, and its trace + events.
 
     Both DMDs are drawn: recording proximal and apical dendrites of the same
@@ -645,7 +646,8 @@ def render_panel_c(sess: dict, metrics: pd.DataFrame, out: Path, dmd: int = 1,
     ax.set_axisbelow(True)
 
     panel_tag(fig, "C")
-    save_panel(fig, out, "figure7_panelC_slap2_glutamate" + gradient_suffix(color_by))
+    save_panel(fig, out, "figure7_panelC_slap2_glutamate" + gradient_suffix(color_by),
+               preview_png=preview_png)
     print(f"panel C -> example synapse {ex} (DMD{dmd}), {ev['idx'].size} events, "
           f"class {metrics[(metrics.dmd == dmd) & (metrics.roi == ex)].quality_class.iloc[0]}")
     return ex
@@ -796,7 +798,7 @@ def _draw_feature_space(ax, m: pd.DataFrame, title: str, rings: pd.DataFrame | N
 
 def render_panel_g(sess: dict, m_ex: pd.DataFrame, m_all: pd.DataFrame,
                    summary: pd.DataFrame, out: Path, dmd: int = 1,
-                   color_by: str | None = None) -> None:
+                   color_by: str | None = None, *, preview_png: bool = True) -> None:
     """Signal/noise measurement on a trace, and the class definition."""
     roi = example_synapse(m_ex, dmd)
     examples = class_examples(m_ex)
@@ -847,7 +849,8 @@ def render_panel_g(sess: dict, m_ex: pd.DataFrame, m_all: pd.DataFrame,
                linespacing=1.4)
 
     panel_tag(fig, "G")
-    save_panel(fig, out, "figure7_panelG_slap2_glutamate" + gradient_suffix(color_by))
+    save_panel(fig, out, "figure7_panelG_slap2_glutamate" + gradient_suffix(color_by),
+               preview_png=preview_png)
     print(f"panel G -> trace window from {t0 - np.nanmin(sess['traces'][dmd]['ts']):.0f} s; "
           f"class examples {examples}")
 
@@ -880,7 +883,9 @@ def _rate_bars(ax, d: pd.DataFrame, contexts: list[tuple[str, str]],
     ax.set_axisbelow(True)
 
 
-def render_panel_k(m_all: pd.DataFrame, ctx: pd.DataFrame, out: Path) -> None:
+def render_panel_k(
+    m_all: pd.DataFrame, ctx: pd.DataFrame, out: Path, *, preview_png: bool = True
+) -> None:
     """Classes across stimulus context, dendritic compartment, and neurons."""
     m = usable(m_all)
     # A rate needs a few seconds of recording behind it; a synapse that caught
@@ -1001,7 +1006,7 @@ def render_panel_k(m_all: pd.DataFrame, ctx: pd.DataFrame, out: Path) -> None:
              fontsize=5.8, color=MUTED, va="bottom", linespacing=1.4)
 
     panel_tag(fig, "K")
-    save_panel(fig, out, "figure7_panelK_slap2_glutamate")
+    save_panel(fig, out, "figure7_panelK_slap2_glutamate", preview_png=preview_png)
 
     print("panel K -> event rate (Hz/synapse) by context and class:")
     piv = (ctx.assign(cohort=ctx.session.isin(dual).map({False: "glut", True: "glut+ca"}))
@@ -1023,7 +1028,8 @@ def publication_tables(
 
 
 def write_publication_panels(
-    output: Path, *, data_dir: Path = DATA_DIR, example_path: Path = EXAMPLE_PATH
+    output: Path, *, data_dir: Path = DATA_DIR, example_path: Path = EXAMPLE_PATH,
+    preview_png: bool = False,
 ) -> list[Path]:
     """Regenerate every migrated panel offline from checksummed publication inputs."""
     provenance = json.loads(
@@ -1040,17 +1046,20 @@ def write_publication_panels(
     output.mkdir(parents=True, exist_ok=True)
     with mpl.rc_context():
         set_style()
-        render_panel_c(session, example, output)
-        render_panel_g(session, example, metrics, summary, output)
-        render_panel_k(metrics, contexts, output)
-        render_panel_c(session, example, output, color_by="median_event_raw_sd")
-        render_panel_g(session, example, metrics, summary, output, color_by="median_event_raw_sd")
+        render_panel_c(session, example, output, preview_png=preview_png)
+        render_panel_g(session, example, metrics, summary, output, preview_png=preview_png)
+        render_panel_k(metrics, contexts, output, preview_png=preview_png)
+        render_panel_c(session, example, output, color_by="median_event_raw_sd",
+                   preview_png=preview_png)
+        render_panel_g(session, example, metrics, summary, output, color_by="median_event_raw_sd",
+                   preview_png=preview_png)
     names = (
         "figure7_panelC_slap2_glutamate", "figure7_panelG_slap2_glutamate",
         "figure7_panelK_slap2_glutamate", "figure7_panelC_slap2_glutamate_gradient",
         "figure7_panelG_slap2_glutamate_gradient",
     )
-    return [output / f"{name}.{extension}" for name in names for extension in ("svg", "png")]
+    extensions = ("svg", "png") if preview_png else ("svg",)
+    return [output / f"{name}.{extension}" for name in names for extension in extensions]
 
 
 def write_slap2_glutamate_figure(output: Path) -> Path:

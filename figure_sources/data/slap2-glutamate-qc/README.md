@@ -69,8 +69,13 @@ uv run build-publication-figures
 uv run pytest tests/test_slap2_glutamate_qc.py
 ```
 
-The build generates C/G/K, the continuous-color C/G variants, and the Figure 7
-composition from the committed inputs. It does not download or open a primary NWB.
+The build generates canonical SVGs for C/G/K, the continuous-color C/G variants,
+and the Figure 7 composition from committed inputs. It does not open a primary NWB.
+PNG previews remain available through the notebook and standalone rendering command
+but are not versioned: native rasterizers differ by a few antialiased pixel values.
+The plotted example uses float64 matched-filter accumulation for stable SVG geometry;
+the archive-analysis default retains Ido's original float32 computation. Tests verify
+identical event indices and agreement with the original selected-source measurements.
 The notebook at `../../python/slap2_glutamate_figure7_panels.ipynb` uses the same
 package functions and writes previews only into the ignored build directory.
 
