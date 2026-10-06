@@ -110,7 +110,6 @@ from openscope_p3_publication.figures import (
     write_standard_oddball_plan_svg,
     write_static_svg,
     write_svg_output,
-    write_unit_extraction_plan_svg,
     write_unit_yield_html,
     write_unit_yield_svg,
 )
@@ -629,6 +628,7 @@ def test_optotagging_validate_nwb_reports_missing_conditions() -> None:
 
 @requires_optotagging_analysis_deps
 def test_optotagging_write_results_round_trips_parquet(tmp_path: Path) -> None:
+    pytest.importorskip("pyarrow")
     metric_columns = {
         "asset_id": ["asset-1"],
         "asset_path": ["sub-1/session.nwb"],
@@ -1966,13 +1966,6 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
 
 def test_placeholder_plans_mask_obsolete_figure_numbers(tmp_path: Path) -> None:
     cases = (
-        (
-            write_unit_extraction_plan_svg,
-            "figure-07-unit-extraction-plan.svg",
-            "Unit extraction → signal and noise amplitude",
-            "Figure 4",
-            2,
-        ),
         (
             write_basic_stimuli_plan_svg,
             "figure-08-basic-stimuli-plan.svg",

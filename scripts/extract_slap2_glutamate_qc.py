@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Run the SLAP2 event-based QC over every session in DANDI 001424.
 
 Downloads one session at a time to a local cache, computes per-synapse metrics
@@ -34,36 +33,51 @@ archive-wide fit nearly all synapses of the second cohort land in the High SNR
 class; that is a property of how the traces were packaged, not of the preps.
 
 Usage:
-    python slap2_glutamate_qc_batch.py --output docs/notebooks/plots_figure7_slap2_glutamate \
-        [--cache /tmp/slap2_cache] [--limit N] [--keep-downloads]
-    python slap2_glutamate_qc_batch.py --output <dir> --refit-only   # classes only, no NWB access
+    uv run --extra nwb-view python scripts/extract_slap2_glutamate_qc.py \
+        --output /tmp/slap2-qc-refresh --cache /tmp/slap2-nwb-cache
+    uv run python scripts/extract_slap2_glutamate_qc.py --output <dir> --refit-only
 """
 
 from __future__ import annotations
 
 import argparse
+import datetime as dt
+import hashlib
+import io
 import json
 import shutil
 import time
 import urllib.request
-import warnings
+import zipfile
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-warnings.filterwarnings("ignore")
-
-from slap2_glutamate_qc_events import (  # noqa: E402
-    SD_LARGE, assign_classes, assign_event_contexts,
-    baseline_noise, detect_events, drop_untimed_events, event_amplitudes_raw,
-    resolve_layout, sampling_interval, stimulus_table,
+from openscope_p3_publication.slap2_glutamate_qc_events import (  # noqa: E402
+    SD_LARGE,
+    assign_classes,
+    assign_event_contexts,
+    baseline_noise,
+    detect_events,
+    drop_untimed_events,
+    event_amplitudes_raw,
+    resolve_layout,
+    sampling_interval,
+    stimulus_table,
 )
 
 DANDISET = "001424"
 API = (f"https://api.dandiarchive.org/api/dandisets/{DANDISET}"
        f"/versions/draft/assets/")
 UA = {"User-Agent": "Mozilla/5.0"}
+REPO_ROOT = Path(__file__).resolve().parents[1]
+EXAMPLE_SESSION = "sub-794237_ses-20250508T145040"
+EXAMPLE_ASSET_ID = "1fccbd05-7ba2-4e40-9cb8-e8814119f756"
+EXAMPLE_SHA256 = "375a7ed7c5793cba2aaa24834db5849a71901d36d772a9b94e80df01a619c801"
+DEFAULT_EXAMPLE_OUTPUT = REPO_ROOT / "figure_sources/media/slap2-glutamate-qc/example.npz"
+UPSTREAM_COMMIT = "a0f6af8a05f296d1c376bd10e1edd70766699c25"
+UPSTREAM_REPO = "https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing"
 
 
 def api_get(url: str) -> dict:
@@ -78,6 +92,157 @@ def list_assets() -> list[dict]:
         out += page["results"]
         url = page.get("next")
     return sorted(out, key=lambda a: a["path"])
+
+
+def write_example_arrays(output: Path, arrays: dict[str, np.ndarray]) -> None:
+    """Write a deterministic, lossless NumPy archive using standard LZMA compression."""
+    with zipfile.ZipFile(output, "w") as archive:
+        for name, values in sorted(arrays.items()):
+            buffer = io.BytesIO()
+            np.save(buffer, np.asarray(values), allow_pickle=False)
+            member = zipfile.ZipInfo(f"{name}.npy", date_time=(1980, 1, 1, 0, 0, 0))
+            archive.writestr(member, buffer.getvalue(), compress_type=zipfile.ZIP_LZMA)
+
+
+def extract_example(
+    metrics_dir: Path, output: Path, *, allow_large_example: bool = False
+) -> Path:
+    """Stream the pinned example and retain only the four plotted source traces."""
+    import h5py
+    import remfile
+    from pynwb import NWBHDF5IO
+
+    from openscope_p3_publication.slap2_glutamate_figure7_panels import (
+        _plane_images,
+        class_examples,
+        event_table,
+        example_synapse,
+        session_id,
+    )
+
+    metrics = pd.read_csv(metrics_dir / "slap2_metrics_all_sessions.csv")
+    example_metrics = metrics.loc[metrics.session == EXAMPLE_SESSION]
+    selected = {(1, example_synapse(example_metrics)), *class_examples(example_metrics).values()}
+    metadata_url = f"https://api.dandiarchive.org/api/assets/{EXAMPLE_ASSET_ID}/"
+    source = api_get(metadata_url)
+    if source["digest"].get("dandi:sha2-256") != EXAMPLE_SHA256:
+        raise ValueError("The pinned SLAP2 example's published checksum has changed.")
+
+    arrays = {"schema_version": np.array(1), "session_id": np.array(EXAMPLE_SESSION)}
+    validated_sources = []
+    source_url = next(url for url in source["contentUrl"] if ".s3.amazonaws.com/" in url)
+    print(f"Streaming {source['path']} ({source['contentSize']:,} bytes in the source NWB)",
+          flush=True)
+    remote_file = remfile.File(source_url)
+    h5_file = h5py.File(remote_file, mode="r")
+    io = NWBHDF5IO(file=h5_file, mode="r", load_namespaces=True)
+    try:
+        layout = resolve_layout(io.read())
+        trace_dmds = sorted({dmd for dmd, _ in selected})
+        arrays["trace_dmds"] = np.asarray(trace_dmds, dtype=np.int16)
+        arrays["plane_dmds"] = np.asarray(layout["dmds"], dtype=np.int16)
+        for dmd in layout["dmds"]:
+            plane = _plane_images(layout, dmd)
+            if plane is None:
+                raise ValueError(f"DMD{dmd} is missing an image or source masks.")
+            activity, mean_image, outlines = plane
+            arrays[f"activity{dmd}"] = activity
+            arrays[f"mean{dmd}"] = mean_image
+            arrays[f"outlines{dmd}"] = np.stack(outlines)
+            if dmd not in trace_dmds:
+                continue
+            series = layout["dff_series"][dmd]
+            roi_ids = sorted(roi for plane_id, roi in selected if plane_id == dmd)
+            timestamps = np.asarray(series.timestamps)
+            interval = sampling_interval(timestamps)
+            print(f"Reading DMD{dmd} source traces {roi_ids}", flush=True)
+            traces = np.asarray(series.data[:, roi_ids], dtype=np.float32)
+            arrays[f"data{dmd}"] = traces
+            arrays[f"ts{dmd}"] = timestamps
+            arrays[f"dt{dmd}"] = np.array(interval)
+            arrays[f"roi_ids{dmd}"] = np.asarray(roi_ids, dtype=np.int32)
+            for column, roi in enumerate(roi_ids):
+                events = event_table(traces[:, column], timestamps, interval)
+                expected = example_metrics.loc[
+                    (example_metrics.dmd == dmd) & (example_metrics.roi == roi)
+                ].iloc[0]
+                amplitudes = events["amp_raw"][np.isfinite(events["amp_raw"])]
+                if len(events["idx"]) != int(expected.n_events):
+                    raise ValueError(f"DMD{dmd} ROI {roi} event count differs from the snapshot.")
+                if not np.isclose(events["raw_sd"], expected.noise_dff, rtol=1e-6):
+                    raise ValueError(f"DMD{dmd} ROI {roi} noise differs from the snapshot.")
+                if not np.isclose(np.median(amplitudes), expected.median_event_raw_sd, rtol=1e-6):
+                    raise ValueError(f"DMD{dmd} ROI {roi} amplitudes differ from the snapshot.")
+                validated_sources.append({
+                    "dmd": dmd, "roi": roi, "n_events": int(expected.n_events),
+                    "samples": len(timestamps), "source_dtype": str(series.data.dtype),
+                    "stored_dtype": str(traces.dtype),
+                })
+    finally:
+        io.close()
+        remote_file.close()
+
+    inventory = {session_id(Path(asset["path"])): asset for asset in list_assets()}
+    source_assets = []
+    for archive_session in sorted(metrics.session.unique()):
+        asset = inventory[archive_session]
+        asset_metadata = api_get(f"https://api.dandiarchive.org/api/assets/{asset['asset_id']}/")
+        source_assets.append({
+            "session_id": archive_session, "asset_id": asset["asset_id"],
+            "path": asset["path"], "size": asset["size"], "modified": asset["modified"],
+            "digest": asset_metadata["digest"], "content_url": asset_metadata["contentUrl"],
+        })
+    tables = {}
+    for table_path in sorted(metrics_dir.glob("*.csv")):
+        tables[table_path.name] = {
+            "sha256": hashlib.sha256(table_path.read_bytes()).hexdigest(),
+            "upstream_path": f"docs/notebooks/plots_figure7_slap2_glutamate/{table_path.name}",
+        }
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output.with_suffix(".npz.tmp")
+    write_example_arrays(temporary, arrays)
+    size = temporary.stat().st_size
+    if size > 100 * 1024 * 1024 or (size >= 10 * 1024 * 1024 and not allow_large_example):
+        raise ValueError(
+            f"Example snapshot is {size:,} bytes; 10-100 MiB requires maintainer approval "
+            "and --allow-large-example, while files above 100 MiB must remain external."
+        )
+    temporary.replace(output)
+    provenance = {
+        "version": 1,
+        "dandiset_id": DANDISET,
+        "dandiset_version": "draft",
+        "retrieved_at": dt.datetime.now(dt.UTC).isoformat(),
+        "source_pr": f"{UPSTREAM_REPO}/pull/171",
+        "upstream_commit": UPSTREAM_COMMIT,
+        "archive_tables": tables,
+        "archive_rows": len(metrics),
+        "archive_sessions": int(metrics.session.nunique()),
+        "source_assets": source_assets,
+        "inventory_note": "Asset metadata observed during migration; the upstream extraction "
+                          "did not record its original NWB asset digests.",
+        "example_asset_id": EXAMPLE_ASSET_ID,
+        "example_session_id": EXAMPLE_SESSION,
+        "example_source_sha256": EXAMPLE_SHA256,
+        "source_hash_verification": "Published DANDI digest; source read by HTTPS byte ranges.",
+        "selected_sources": validated_sources,
+        "selection": "Largest >4 SD event fraction in DMD1 plus the nearest-to-median "
+                     "source in each archive-wide quality class within the example session.",
+        "parameters": {"tau_seconds": 0.020, "detection_threshold_sd": 3.0,
+                       "large_event_minimum_sd": SD_LARGE, "classification_seed": 0,
+                       "classification_scope": "one fit over all sessions"},
+        "output_file": output.name,
+        "compression": "NPY arrays in a lossless ZIP_LZMA archive",
+        "large_snapshot_approved": allow_large_example,
+        "output_sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
+        "output_bytes": size,
+    }
+    output.with_suffix(".provenance.json").write_text(
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n"
+    )
+    print(f"Wrote {output} ({size:,} bytes)", flush=True)
+    return output
 
 
 def fetch(asset: dict, cache: Path) -> Path:
@@ -118,7 +283,7 @@ def sample_contexts(ts: np.ndarray, stim: pd.DataFrame) -> pd.Categorical:
 def context_seconds(codes: np.ndarray, categories, valid: np.ndarray, dt: float) -> dict:
     """Seconds per context for one source, from its valid samples."""
     counts = np.bincount(codes[valid & (codes >= 0)], minlength=len(categories))
-    return {str(c): float(n * dt) for c, n in zip(categories, counts) if n}
+    return {str(c): float(n * dt) for c, n in zip(categories, counts, strict=True) if n}
 
 
 def process(nwb_path: Path, subject: str, session: str):
@@ -303,6 +468,12 @@ def write_outputs(args, all_metrics, all_ctx, summaries) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--output", type=Path, required=True)
+    ap.add_argument("--example-only", action="store_true",
+                    help="Read archive tables from --output and extract only the pinned example.")
+    ap.add_argument("--example-output", type=Path, default=DEFAULT_EXAMPLE_OUTPUT,
+                    help="Destination NPZ for the compact, offline figure input.")
+    ap.add_argument("--allow-large-example", action="store_true",
+                    help="Allow a 10-100 MiB example only after explicit maintainer approval.")
     ap.add_argument("--cache", type=Path, default=Path("/tmp/slap2_cache"))
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--only", default=None,
@@ -315,6 +486,12 @@ def main() -> None:
                     help="skip the per-session pass; only refit the archive-wide "
                          "classes on the existing metrics table")
     args = ap.parse_args()
+
+    if args.example_only:
+        extract_example(
+            args.output, args.example_output, allow_large_example=args.allow_large_example
+        )
+        return
 
     args.output.mkdir(parents=True, exist_ok=True)
     if args.refit_only:

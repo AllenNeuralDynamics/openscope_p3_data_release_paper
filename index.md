@@ -900,15 +900,51 @@ Data come from the public drafts of
 
 :::{warning} Work in progress
 :class: manuscript-wip
-[Figure 7](#fig-unit-extraction-plan) and the modality subsections below remain an analysis outline. The Neuropixels unit-yield result is current; the other signal-quality, stability, extraction, and cross-session analyses still need final results and prose.
+The SLAP2 glutamate analysis in [Figure 7](#fig-unit-extraction-plan) and the Neuropixels unit-yield result are current. The remaining modality-specific signal-quality, stability, extraction, and cross-session analyses below are still an outline.
 :::
 
 :::{figure} ./images/figures/generated/figure-07-unit-extraction-plan.svg
 :label: fig-unit-extraction-plan
-:alt: Draft panel plan for unit extraction and signal-to-noise analysis across modalities.
+:alt: SLAP2 glutamate source footprints and example traces, event-amplitude quality classes, and context-dependent event rates and class composition across 20 sessions from 8 mice.
 :width: 100%
 
-Draft plan for unit extraction and signal-to-noise analysis across recording modalities.
+**SLAP2 glutamate signal-quality analysis.** Panel identifiers C, G, and K are
+retained from the original multimodal Figure 7 plan. **C,** Activity projections
+of proximal (DMD1; 120 sources) and apical (DMD2; 59 sources) dendrites in the
+example session `sub-794237_ses-20250508T145040`. Source outlines are colored by
+archive-wide quality class; dashed boxes identify sampled image regions. The
+grayscale range is set independently for each displayed crop from its 2nd to
+99.5th intensity percentiles. The
+orange circle marks DMD1 source 9, whose footprint and 20 s of dimensionless
+ΔF/F beginning 900 s into the recording are shown below, with detected events.
+**G,** Detection on a matched-filtered trace and amplitude measurement on the raw
+trace, amplitude distributions for representative sources from each class, and
+the archive-wide event-amplitude feature space. An exponential kernel with a
+20 ms decay constant is used for detection at 3 noise SD. Raw event amplitudes
+are the local peak minus the preceding baseline, expressed in raw-trace noise
+SD; the bins are <2, 2 to <4, and ≥4 SD. One standardized k-means fit (k = 3,
+seed 0) across all sessions assigns ordinal Low SNR, Intermediate, and High SNR
+labels by the highest-amplitude fraction. The snapshot contains 2,540 sources
+from 20 sessions and 8 mice: 665 Low SNR, 1,026 Intermediate, 830 High SNR,
+and 19 without an assigned class because noise or event-amplitude features are
+undefined. Orange rings identify the representative sources. **K,** Mean ± SEM
+detected-event rates across retained source/context records, followed by class
+composition within each dendritic compartment and recording session, grouped
+by mouse. Rates use each source's valid recorded seconds; records with fewer
+than 5 s and classes with fewer than 10 sources within a cohort are not plotted.
+Named contexts with fewer than 100 retained records are also omitted.
+The imported context table contains event-bearing pairs only, so these rate
+averages exclude zero-event source/context pairs. Contexts in the 12
+glutamate-only sessions are inferred from orientation statistics; the 8
+glutamate-plus-calcium sessions use named interval tables. The latter cohort
+contains non-negative, denoised ΔF/F and therefore a different noise scale:
+cross-cohort quality-class differences must not be interpreted as differences
+in preparation quality. Source data are from
+[DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files), with the
+analysis and original results contributed in
+[community PR #171](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/pull/171).
+The committed archive tables and four-trace example snapshot regenerate every
+panel without network access.
 :::
 
 ### Neuropixels recordings
@@ -954,11 +990,17 @@ GROUP3
 
 ### SLAP imaging
 
-- signal-to-noise
+The event-based glutamate QC analysis in [Figure 7](#fig-unit-extraction-plan)
+characterizes 2,540 extracted sources across 20 sessions from 8 mice. It separates
+event detection from amplitude measurement and retains both within-session and
+archive-wide quality labels in the released tables. The displayed classes use
+the archive-wide fit; 2,521 sources have defined classes and 19 are excluded.
+These ordinal signal-quality labels describe the recorded traces, not cell
+identities or a common preparation-quality scale across the two processing
+cohorts. Context rates are conditional on the event-bearing records retained in
+the source tables, as defined in the caption.
 
-- Quality control
-
-- Bleaching
+Bleaching and remaining cross-session stability analyses are still in progress.
 
 ## Receptive field analysis across modalities
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Event-based signal/noise QC for SLAP2 glutamate imaging.
 
 Computes per-synapse quality metrics from iGluSnFR4f dF/F traces using an
@@ -37,13 +36,10 @@ their own class rather than being given a fabricated SNR.
 from __future__ import annotations
 
 import argparse
-import warnings
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
-warnings.filterwarnings("ignore")
 
 # iGluSnFR4f decay constant used by the SLAP2 SILo source extractor (Methods).
 TAU_IGLUSNFR4F_S = 0.020
@@ -207,7 +203,7 @@ def event_amplitudes_raw(trace: np.ndarray, idx: np.ndarray, dt: float,
         b0, b1 = max(0, i - pre_a), max(1, i - pre_b)
         base_win = trace[b0:b1]
         peak_win = trace[i:min(n, i + post + 1)]
-        if base_win.size == 0 or peak_win.size == 0:
+        if not np.isfinite(base_win).any() or not np.isfinite(peak_win).any():
             continue
         base = np.nanmedian(base_win)
         peak = np.nanmax(peak_win)
@@ -427,7 +423,9 @@ def assign_classes(metrics: pd.DataFrame, seed: int = 0) -> pd.DataFrame:
     centroids, labels = kmeans2((feats - mu) / sigma, 3, minit="++", seed=seed)
     order = np.argsort(centroids[:, -1])          # ascending > 4 SD fraction
     remap = {int(old): new for new, old in enumerate(order)}
-    df.loc[usable, "quality_class"] = [CLASS_NAMES[remap[int(l)]] for l in labels]
+    df.loc[usable, "quality_class"] = [
+        CLASS_NAMES[remap[int(cluster_label)]] for cluster_label in labels
+    ]
     return df
 
 

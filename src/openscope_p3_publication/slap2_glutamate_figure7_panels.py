@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""Render the SLAP2-glutamate column of Figure 7 (panels C, G, K).
+"""Render the migrated SLAP2-glutamate Figure 7 panels C, G, and K.
 
-Figure 7 of the data-release paper is a 4-column x 3-row grid:
+The original multimodal plan was a 4-column x 3-row grid:
 
     columns : Neuropixels | Mesoscope | SLAP2 glutamate | SLAP2 voltage
     row 1   : A B C D  example 2D projection, single source, trace + events
@@ -19,23 +18,25 @@ This script renders the SLAP2 *glutamate* column:
   K  event rate by stimulus context per class, and class composition across
      dendritic compartment and across neurons (one neuron per session).
 
-Panel C and the trace in G read one NWB file. Everything else comes from the
-archive-wide tables written by `slap2_glutamate_qc_batch.py` (20 sessions, 8 mice), so
-G and K re-render in seconds without touching any NWB. Metrics and classes are
-those of `slap2_glutamate_qc_events.py`, whose event-amplitude scheme mirrors the
-mesoscope QC agreed in discussion #156.
+All panels now read the committed example snapshot and archive tables by default,
+without opening an NWB or accessing the network. An external NWB remains an optional
+input for deliberate refreshes. The labels preserve the original plan positions;
+other modalities are not included in the current composition. The original analysis
+is recorded at https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/pull/171.
 
 Usage:
-    python slap2_glutamate_figure7_panels.py --nwb <example session.nwb> \
-        --metrics <dir with slap2_*_all_sessions.csv> --output <dir> \
-        [--cache <local dir for the example session's arrays>]
+    uv run python -m openscope_p3_publication.slap2_glutamate_figure7_panels --output <dir>
 """
 
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
+import io
+import json
 import re
-import warnings
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import matplotlib as mpl
@@ -49,13 +50,20 @@ from matplotlib.colors import Normalize  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
 from matplotlib.patches import Patch  # noqa: E402
 
-from slap2_glutamate_qc_events import (  # noqa: E402
-    SD_DETECT, SD_LARGE, TAU_IGLUSNFR4F_S,
-    baseline_noise, detect_events, event_amplitudes_raw, resolve_layout,
+from openscope_p3_publication.slap2_glutamate_qc_events import (  # noqa: E402
+    SD_DETECT,
+    SD_LARGE,
+    TAU_IGLUSNFR4F_S,
+    baseline_noise,
+    detect_events,
+    event_amplitudes_raw,
+    resolve_layout,
     sampling_interval,
 )
 
-warnings.filterwarnings("ignore")
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = REPO_ROOT / "figure_sources/data/slap2-glutamate-qc"
+EXAMPLE_PATH = REPO_ROOT / "figure_sources/media/slap2-glutamate-qc/example.npz"
 
 # ───────────────────────── palette & style ─────────────────────────
 
@@ -119,6 +127,7 @@ def set_style() -> None:
         "grid.color": GRID, "grid.linewidth": 0.5,
         "legend.frameon": False,
         "savefig.bbox": "tight", "savefig.pad_inches": 0.02,
+        "svg.hashsalt": "openscope-p3-slap2-glutamate-qc",
     })
 
 
@@ -128,13 +137,18 @@ def panel_tag(fig, letter: str) -> None:
 
 
 def save_panel(fig, out: Path, name: str) -> None:
-    for ext in ("svg", "png"):
-        fig.savefig(out / f"{name}.{ext}", dpi=300)
+    out.mkdir(parents=True, exist_ok=True)
+    svg = io.StringIO()
+    fig.savefig(svg, format="svg", dpi=300, metadata={"Date": None})
+    svg_text = "\n".join(line.rstrip() for line in svg.getvalue().splitlines()) + "\n"
+    (out / f"{name}.svg").write_text(svg_text, encoding="utf-8", newline="\n")
+    fig.savefig(out / f"{name}.png", dpi=300, metadata={"Software": "OpenScope P3 publication"})
     plt.close(fig)
 
 
 def hide_frame(ax) -> None:
-    ax.set_xticks([]); ax.set_yticks([])
+    ax.set_xticks([])
+    ax.set_yticks([])
     for sp in ax.spines.values():
         sp.set_visible(False)
 
@@ -227,7 +241,7 @@ def load_session_cached(nwb_path: Path, cache: Path | None) -> dict:
     """
     f = None if cache is None else cache / (session_id(nwb_path) + ".npz")
     if f is not None and f.exists():
-        z = np.load(f, allow_pickle=True)
+        z = np.load(f, allow_pickle=False)
         sess = {"traces": {}, "planes": {}}
         for d in [int(x) for x in z["dmds"]]:
             sess["traces"][d] = {"data": z[f"data{d}"], "ts": z[f"ts{d}"],
@@ -252,6 +266,40 @@ def load_session_cached(nwb_path: Path, cache: Path | None) -> dict:
     return sess
 
 
+def load_example_snapshot(path: Path) -> dict:
+    """Load the checksummed, numeric-only subset used by the publication panels."""
+    provenance = json.loads(path.with_suffix(".provenance.json").read_text(encoding="utf-8"))
+    if hashlib.sha256(path.read_bytes()).hexdigest() != provenance["output_sha256"]:
+        raise ValueError("SLAP2 example snapshot checksum does not match its provenance.")
+    session = {"traces": {}, "planes": {}}
+    with np.load(path, allow_pickle=False) as arrays:
+        if int(arrays["schema_version"]) != 1:
+            raise ValueError("Unsupported SLAP2 example snapshot schema.")
+        session["session_id"] = str(arrays["session_id"])
+        for stored_dmd in arrays["trace_dmds"]:
+            dmd = int(stored_dmd)
+            trace_data = {
+                "data": arrays[f"data{dmd}"],
+                "ts": arrays[f"ts{dmd}"],
+                "dt": float(arrays[f"dt{dmd}"]),
+                "roi_ids": arrays[f"roi_ids{dmd}"],
+            }
+            if trace_data["data"].shape != (
+                len(trace_data["ts"]), len(trace_data["roi_ids"])
+            ):
+                raise ValueError(f"DMD{dmd} trace dimensions do not match their identifiers.")
+            session["traces"][dmd] = trace_data
+        for stored_dmd in arrays["plane_dmds"]:
+            dmd = int(stored_dmd)
+            activity = arrays[f"activity{dmd}"]
+            mean_image = arrays[f"mean{dmd}"]
+            outlines = arrays[f"outlines{dmd}"]
+            if activity.shape != mean_image.shape or outlines.shape[1:] != activity.shape:
+                raise ValueError(f"DMD{dmd} images and source masks have inconsistent shapes.")
+            session["planes"][dmd] = (activity, mean_image, list(outlines))
+    return session
+
+
 # ───────────────────────── shared helpers ─────────────────────────
 
 def usable(m: pd.DataFrame) -> pd.DataFrame:
@@ -269,7 +317,8 @@ def class_examples(metrics: pd.DataFrame) -> dict[str, tuple[int, int]]:
     """One representative (dmd, roi) per class: nearest to the class median."""
     m = usable(metrics).dropna(subset=["frac_events_lt2sd", "frac_events_gt4sd"])
     feats = m[["frac_events_lt2sd", "frac_events_gt4sd"]].to_numpy()
-    sd = feats.std(0); sd[sd == 0] = 1
+    sd = feats.std(0)
+    sd[sd == 0] = 1
     out = {}
     for cls in CLASS_ORDER:
         sel = (m.quality_class == cls).to_numpy()
@@ -291,6 +340,16 @@ def event_table(trace: np.ndarray, ts: np.ndarray, dt: float) -> dict:
     amp_raw = event_amplitudes_raw(trace, res["idx"], dt, raw_sd)
     return {**res, "amp_raw": amp_raw, "raw_sd": raw_sd, "raw_med": raw_med,
             "t": ts[res["idx"]]}
+
+
+def source_trace(trace_data: dict, roi: int) -> np.ndarray:
+    """Read a source from a full session or an explicitly indexed compact subset."""
+    if "roi_ids" not in trace_data:
+        return trace_data["data"][:, roi]
+    matches = np.flatnonzero(np.asarray(trace_data["roi_ids"]) == roi)
+    if len(matches) != 1:
+        raise KeyError(f"Expected one trace for ROI {roi}, found {len(matches)}.")
+    return trace_data["data"][:, int(matches[0])]
 
 
 def amplitude_bin(amp: np.ndarray) -> np.ndarray:
@@ -324,13 +383,15 @@ def stacked_composition(ax, table: pd.DataFrame, labels, fontsize=6, min_label=7
         vals = table[cls].values
         ax.barh(pos, vals, left=base, height=thickness, color=CLASS_COLORS[cls],
                 edgecolor="white", linewidth=1.0, label=cls)
-        for p, (v, b) in enumerate(zip(vals, base)):
+        for p, (v, b) in enumerate(zip(vals, base, strict=True)):
             if v > min_label:
                 ax.text(b + v / 2, p, f"{v:.0f}", ha="center", va="center", fontsize=fontsize,
                         color="white" if cls != "Low SNR" else INK)
         base += vals
-    ax.set_yticks(pos); ax.set_yticklabels(labels)
-    ax.set_xlim(0, 100); ax.set_xlabel("% of synapses")
+    ax.set_yticks(pos)
+    ax.set_yticklabels(labels)
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("% of synapses")
     ax.grid(axis="x", alpha=0.7)
     ax.set_axisbelow(True)
 
@@ -439,7 +500,7 @@ def render_panel_c(sess: dict, metrics: pd.DataFrame, out: Path, dmd: int = 1,
     norm = None if color_by is None else gradient_norm(usable(metrics), color_by)
 
     tr = sess["traces"][dmd]
-    trace, ts = tr["data"][:, ex], tr["ts"]
+    trace, ts = source_trace(tr, ex), tr["ts"]
     ev = event_table(trace, ts, tr["dt"])
 
     # Geometry is explicit: microscopy axes keep equal aspect, so each plane's
@@ -452,7 +513,7 @@ def render_panel_c(sess: dict, metrics: pd.DataFrame, out: Path, dmd: int = 1,
     avail_in = (right - left) * fig_w
 
     crops = {}
-    for d, (act, _, outs) in planes.items():
+    for d, (_, _, outs) in planes.items():
         by0, by1, bx0, bx1 = coverage_bbox(outs)
         aspect = (bx1 - bx0) / (by1 - by0)
         w_in, h_in = avail_in, avail_in / aspect
@@ -511,7 +572,6 @@ def render_panel_c(sess: dict, metrics: pd.DataFrame, out: Path, dmd: int = 1,
                 fill=False, edgecolor=MUTED, linewidth=0.5, linestyle=(0, (2, 2))))
             ax.text(sx0 - bx0 - pad, sy0 - by0 - pad - 2, f"{sg['n_synapses']}",
                     fontsize=5, color=MUTED, ha="left", va="bottom")
-        n_cls = {c: int((md.quality_class == c).sum()) for c in CLASS_ORDER}
         ax.set_title(f"{COMPARTMENT[d]} — {len(outs)} synapses across {len(segs)} imaged "
                      f"segment{'s' if len(segs) != 1 else ''} (dashed)",
                      loc="left", color=INK, pad=6 if k else 14)
@@ -589,7 +649,7 @@ def render_panel_c(sess: dict, metrics: pd.DataFrame, out: Path, dmd: int = 1,
 def _draw_measurement(ax_z, ax_raw, sess, dmd: int, roi: int, width: float = 5.0) -> float:
     """G-i: detection on the matched-filtered trace, amplitude on the raw trace."""
     tr = sess["traces"][dmd]
-    trace, ts, dt = tr["data"][:, roi], tr["ts"], tr["dt"]
+    trace, ts, dt = source_trace(tr, roi), tr["ts"], tr["dt"]
     ev = event_table(trace, ts, dt)
     t0 = pick_window(ev, ts, width)
     win = (ts >= t0) & (ts < t0 + width)
@@ -628,7 +688,7 @@ def _draw_measurement(ax_z, ax_raw, sess, dmd: int, roi: int, width: float = 5.0
     pre_a, pre_b = int(round(3 * TAU_IGLUSNFR4F_S / dt)), int(round(TAU_IGLUSNFR4F_S / dt))
     post = max(1, int(round(2 * TAU_IGLUSNFR4F_S / dt)))
     dx, tick = 0.028, 0.012       # bracket sits just right of the peak
-    for i, b in zip(i_ev, bins):
+    for i, b in zip(i_ev, bins, strict=True):
         base = np.nanmedian(raw[max(0, i - pre_a):max(1, i - pre_b)])
         seg = raw[i:i + post + 1]
         k = int(np.nanargmax(seg))
@@ -663,10 +723,11 @@ def _draw_class_examples(axes, sess, metrics: pd.DataFrame, examples: dict,
     for k, cls in enumerate(reversed(CLASS_ORDER)):          # High on top
         ax = axes[k]
         if cls not in examples:
-            ax.set_axis_off(); continue
+            ax.set_axis_off()
+            continue
         d, r = examples[cls]
         tr = sess["traces"][d]
-        ev = event_table(tr["data"][:, r], tr["ts"], tr["dt"])
+        ev = event_table(source_trace(tr, r), tr["ts"], tr["dt"])
         amps = ev["amp_raw"][np.isfinite(ev["amp_raw"])]
         if color_by is None:
             colour, title = CLASS_COLORS[cls], f"{cls} — synapse {r}, DMD{d}"
@@ -681,7 +742,7 @@ def _draw_class_examples(axes, sess, metrics: pd.DataFrame, examples: dict,
                                color=colour, edgecolor="white", linewidth=0.3)
         ax.set_ylim(0, 1.55 * counts.max())
         f = [(amps < 2).mean(), ((amps >= 2) & (amps < SD_LARGE)).mean(), (amps >= SD_LARGE).mean()]
-        for x, frac, b in zip((0.0, 3.0, 9.0), f, ("lt2", "mid", "gt4")):
+        for x, frac, b in zip((0.0, 3.0, 9.0), f, ("lt2", "mid", "gt4"), strict=True):
             txt = f"{BIN_LABELS[b]}\n{100 * frac:.0f} %" if k == 0 else f"{100 * frac:.0f} %"
             ax.text(x, 0.95, txt, transform=ax.get_xaxis_transform(), ha="center",
                     va="top", fontsize=6, color=INK, linespacing=1.3)
@@ -715,7 +776,8 @@ def _draw_feature_space(ax, m: pd.DataFrame, title: str, rings: pd.DataFrame | N
     if rings is not None:
         ax.scatter(100 * rings.frac_events_lt2sd, 100 * rings.frac_events_gt4sd, s=48,
                    facecolors="none", edgecolors=ORANGE, linewidths=1.1, zorder=6)
-    ax.set_xlim(*xlim); ax.set_ylim(*ylim)
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
     ax.set_xlabel("% of the synapse's events < 2 SD")
     ax.set_title(title, loc="left", color=INK, fontsize=6.8)
     if color_by is None:
@@ -756,7 +818,7 @@ def render_panel_g(sess: dict, m_ex: pd.DataFrame, m_all: pd.DataFrame,
     ylim = (np.floor(100 * m.frac_events_gt4sd.min() / 10) * 10, 100)
     ax_fs = fig.add_subplot(bot[1])
     keys = set(examples.values())
-    rings = m_ex[[(d, r) in keys for d, r in zip(m_ex.dmd, m_ex.roi)]]
+    rings = m_ex[[(d, r) in keys for d, r in zip(m_ex.dmd, m_ex.roi, strict=True)]]
     _draw_feature_space(
         ax_fs, m, f"All sessions — {summary.session.nunique()} sessions, "
                   f"{summary.subject.nunique()} mice, {len(m):,} synapses",
@@ -898,7 +960,7 @@ def render_panel_k(m_all: pd.DataFrame, ctx: pd.DataFrame, out: Path) -> None:
         vals = tab[cls].values
         ax.bar(s.x, vals, bottom=base, width=0.72, color=CLASS_COLORS[cls],
                edgecolor="white", linewidth=0.8)
-        for x, v, b in zip(s.x, vals, base):
+        for x, v, b in zip(s.x, vals, base, strict=True):
             if v > 12:
                 ax.text(x, b + v / 2, f"{v:.0f}", ha="center", va="center", fontsize=5,
                         color="white" if cls != "Low SNR" else INK)
@@ -942,13 +1004,95 @@ def render_panel_k(m_all: pd.DataFrame, ctx: pd.DataFrame, out: Path) -> None:
     print(piv.to_string())
 
 
+def publication_tables(
+    data_dir: Path = DATA_DIR,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Read the archive tables used by the three panels."""
+    return (
+        pd.read_csv(data_dir / "slap2_metrics_all_sessions.csv"),
+        pd.read_csv(data_dir / "slap2_context_rates_all_sessions.csv"),
+        pd.read_csv(data_dir / "slap2_session_summary.csv"),
+    )
+
+
+def write_publication_panels(
+    output: Path, *, data_dir: Path = DATA_DIR, example_path: Path = EXAMPLE_PATH
+) -> list[Path]:
+    """Regenerate every migrated panel offline from checksummed publication inputs."""
+    provenance = json.loads(
+        example_path.with_suffix(".provenance.json").read_text(encoding="utf-8")
+    )
+    for filename, record in provenance["archive_tables"].items():
+        if hashlib.sha256((data_dir / filename).read_bytes()).hexdigest() != record["sha256"]:
+            raise ValueError(f"SLAP2 archive table checksum mismatch: {filename}")
+    session = load_example_snapshot(example_path)
+    metrics, contexts, summary = publication_tables(data_dir)
+    example = metrics.loc[metrics.session == session["session_id"]].reset_index(drop=True)
+    if len(metrics) != provenance["archive_rows"] or len(summary) != provenance["archive_sessions"]:
+        raise ValueError("SLAP2 archive coverage differs from the recorded snapshot.")
+    output.mkdir(parents=True, exist_ok=True)
+    with mpl.rc_context():
+        set_style()
+        render_panel_c(session, example, output)
+        render_panel_g(session, example, metrics, summary, output)
+        render_panel_k(metrics, contexts, output)
+        render_panel_c(session, example, output, color_by="median_event_raw_sd")
+        render_panel_g(session, example, metrics, summary, output, color_by="median_event_raw_sd")
+    names = (
+        "figure7_panelC_slap2_glutamate", "figure7_panelG_slap2_glutamate",
+        "figure7_panelK_slap2_glutamate", "figure7_panelC_slap2_glutamate_gradient",
+        "figure7_panelG_slap2_glutamate_gradient",
+    )
+    return [output / f"{name}.{extension}" for name in names for extension in ("svg", "png")]
+
+
+def write_slap2_glutamate_figure(output: Path) -> Path:
+    """Build the Figure 7 static composition while retaining the original C/G/K labels."""
+    write_publication_panels(output.parent)
+    width, padding, gap = 1600, 24, 28
+    elements = []
+    y_position = padding
+    for panel in "CGK":
+        panel_path = output.parent / f"figure7_panel{panel}_slap2_glutamate.svg"
+        panel_bytes = panel_path.read_bytes()
+        root = ET.fromstring(panel_bytes)
+        _, _, panel_width, panel_height = map(float, root.attrib["viewBox"].split())
+        height = (width - 2 * padding) * panel_height / panel_width
+        encoded = base64.b64encode(panel_bytes).decode("ascii")
+        elements.append(
+            f'<image x="{padding}" y="{y_position:.6f}" width="{width - 2 * padding}" '
+            f'height="{height:.6f}" href="data:image/svg+xml;base64,{encoded}"/>'
+        )
+        y_position += height + gap
+    height = y_position - gap + padding
+    svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" '
+        f'width="{width}" height="{height:.6f}" viewBox="0 0 {width} {height:.6f}" '
+        'role="img" aria-labelledby="title description">',
+        '<title id="title">SLAP2 glutamate signal-quality analysis</title>',
+        '<desc id="description">Panels C, G, and K show both imaging planes and an example '
+        'synaptic trace, event detection and archive-wide quality classes, and event rates '
+        'and class composition across stimulus contexts, dendritic compartments, and sessions. '
+        'The archive includes 2,540 sources from 20 sessions and 8 mice, with 2,521 classified '
+        'sources and 19 exclusions. Other modalities remain outside this figure.</desc>',
+        f'<rect width="{width}" height="{height:.6f}" fill="white"/>',
+        *elements,
+        '</svg>',
+    ]
+    output.write_text("\n".join(svg) + "\n", encoding="utf-8", newline="\n")
+    return output
+
+
 # ───────────────────────── main ─────────────────────────
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--nwb", required=True, type=Path, help="example session (panel C, G-i/ii)")
-    ap.add_argument("--metrics", required=True, type=Path,
+    inputs = ap.add_mutually_exclusive_group()
+    inputs.add_argument("--nwb", type=Path, help="optional external example NWB")
+    inputs.add_argument("--example", type=Path, default=None,
+                        help="checksummed example NPZ; defaults to the committed snapshot")
+    ap.add_argument("--metrics", default=DATA_DIR, type=Path,
                     help="directory holding slap2_metrics_all_sessions.csv, "
                          "slap2_context_rates_all_sessions.csv, slap2_session_summary.csv")
     ap.add_argument("--output", required=True, type=Path)
@@ -971,14 +1115,19 @@ def main() -> None:
         raise SystemExit("metrics table has no quality classes — run "
                          "`slap2_glutamate_qc_batch.py --refit-only` first")
 
-    sid = session_id(args.nwb)
+    sess = None
+    if set("CG") & set(args.only):
+        sess = (load_session_cached(args.nwb, args.cache) if args.nwb is not None
+                else load_example_snapshot(args.example or EXAMPLE_PATH))
+    sid = session_id(args.nwb) if args.nwb is not None else (
+        sess["session_id"] if sess is not None else "sub-794237_ses-20250508T145040"
+    )
     m_ex = m_all[m_all.session == sid].reset_index(drop=True)
     if m_ex.empty:
         raise SystemExit(f"{sid} is not in {args.metrics}/slap2_metrics_all_sessions.csv")
     print(f"example session {sid}: {len(m_ex)} synapses, classes "
           f"{m_ex.quality_class.value_counts().to_dict()}")
 
-    sess = load_session_cached(args.nwb, args.cache) if set("CG") & set(args.only) else None
     if "C" in args.only:
         render_panel_c(sess, m_ex, args.output, color_by=args.color_by)
     if "G" in args.only:
