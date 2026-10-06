@@ -1,0 +1,42 @@
+:root {
+  color-scheme: light;
+  --ink: #303536;
+  --line: #d0d4d2;
+  --accent: #315f73;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #fff; color: var(--ink); }
+.wavemap-supplement { width: 100%; margin: 0 auto; }
+.view-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.view-tabs button {
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+.view-tabs button[aria-selected="true"] {
+  color: var(--accent);
+  background: #eef3f3;
+  border-color: var(--accent);
+}
+.view-tabs button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+[role="tabpanel"] { width: 100%; overflow-x: auto; }
+[role="tabpanel"][hidden] { display: none; }
+iframe { display: block; width: 100%; min-height: 900px; border: 0; }
+#panel-static img { display: block; width: 100%; height: auto; }

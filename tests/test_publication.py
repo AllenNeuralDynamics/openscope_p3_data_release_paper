@@ -722,7 +722,7 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "**B,** a dorsal projection" in manuscript
     assert manuscript.count(
         "[Supplementary Figure 5](#fig-supp-optotagging-heatmaps)"
-    ) == 1
+    ) == 3
     assert "./interactive/optotagging-heatmaps.html" in manuscript
     assert ":label: fig-supp-optotagging-heatmaps\n:enumerated: false" in manuscript
     assert (
