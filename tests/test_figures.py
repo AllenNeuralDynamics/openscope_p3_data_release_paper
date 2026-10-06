@@ -5,9 +5,12 @@ import json
 import math
 import re
 import runpy
+import shutil
 import statistics
 import struct
-from io import BytesIO
+import subprocess
+import urllib.parse
+from io import BytesIO, StringIO
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -2029,6 +2032,89 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
 
     write_data_explorer_html(explorer_path, static_output=static_path)
     assert explorer_path.read_text(encoding="utf-8") == html
+
+
+@pytest.mark.parametrize(
+    ("kind", "modality"),
+    [
+    ("animals", ""),
+    ("sessions", ""),
+    ("dataAccess", "neuropixels"),
+    ("dataAccess", "mesoscope"),
+    ("dataAccess", "slap2-glutamate"),
+    ("dataAccess", "slap2-voltage"),
+    ],
+)
+@pytest.mark.parametrize("visible_count", [0, 1])
+def test_data_explorer_csv_exports_match_source_columns(
+    kind: str, modality: str, visible_count: int
+) -> None:
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js is required to exercise the browser CSV exporter")
+    table = load_publication_table_data()["tables"][kind]
+    table["rows"] = table["rows"][:2]
+    if kind == "dataAccess":
+        table["csvHeaders"].reverse()
+        for row in table["rows"]:
+            row["csvValues"].reverse()
+    table["rows"][-1]["csvValues"][0] = 'quoted, "value"\nsecond line'
+    visible_rows = table["rows"][-visible_count:] if visible_count else []
+    headers = table["columnViews"][modality] if kind == "dataAccess" else table["csvHeaders"]
+    expected_rows = [
+    [row["csvValues"][table["csvHeaders"].index(header)] for header in headers]
+    for row in visible_rows
+    ]
+    script = r"""
+const fs = require("node:fs");
+const vm = require("node:vm");
+const input = JSON.parse(fs.readFileSync(0, "utf8"));
+const source = fs.readFileSync(process.argv[1], "utf8");
+const boundary = source.indexOf("\n  elements.search.addEventListener(");
+if (boundary < 0) throw new Error("Cannot locate the viewer event-binding boundary");
+const context = {
+    document: {
+        getElementById(id) {
+            if (id === "explorer-data") {
+                return {textContent: JSON.stringify({tables: {[input.kind]: input.table}})};
+            }
+            return id === "modality-filter" ? {value: input.modality} : {};
+        },
+        querySelectorAll() { return []; },
+    },
+    inputState: {kind: input.kind, visibleRows: input.visibleRows},
+};
+const download = vm.runInNewContext(source.slice(0, boundary) + `
+    Object.assign(state, inputState);
+    updateDownloadLink();
+    return elements.download;
+})();`, context);
+process.stdout.write(JSON.stringify(download));
+"""
+    result = subprocess.run(
+        [node, "-e", script, str(REPO_ROOT / "figure_sources/javascript/data-explorer.js")],
+        input=json.dumps(
+            {
+                "kind": kind,
+                "modality": modality,
+                "table": table,
+                "visibleRows": visible_rows,
+            }
+        ),
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=10,
+    )
+    download = json.loads(result.stdout)
+    prefix = "data:text/csv;charset=utf-8,"
+    assert download["href"].startswith(prefix)
+    decoded = urllib.parse.unquote(download["href"][len(prefix):])
+    assert decoded.startswith("\ufeff")
+    parsed_csv = list(csv.reader(StringIO(decoded.removeprefix("\ufeff"))))
+    assert parsed_csv == [headers, *expected_rows]
+    suffix = f"{kind}-{modality}" if kind == "dataAccess" else kind
+    assert download["download"] == f"openscope-predictive-processing-{suffix}.csv"
 
 
 def test_data_access_table_uses_modality_specific_columns(tmp_path: Path) -> None:

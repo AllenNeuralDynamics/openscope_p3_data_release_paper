@@ -1172,7 +1172,10 @@ tr.modality-slap2-voltage td:first-child {
 
   function updateDownloadLink() {
     const table = data.tables[state.kind];
-    const columns = visibleColumns(table);
+    const headers = state.kind === "dataAccess"
+      ? table.columnViews[elements.modality.value]
+      : table.csvHeaders;
+    const columns = headers.map((header) => ({ header, index: table.csvHeaders.indexOf(header) }));
     const csv = [
       columns.map(({ header }) => header),
       ...state.visibleRows.map((row) => columns.map(({ index }) => row.csvValues[index])),
