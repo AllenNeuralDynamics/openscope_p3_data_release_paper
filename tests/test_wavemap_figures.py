@@ -2,11 +2,17 @@ import hashlib
 import json
 import runpy
 import xml.etree.ElementTree as ET
+import zlib
+from io import BytesIO
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
+from matplotlib.backends.backend_pdf import PdfFile
+from matplotlib.figure import Figure
+from PIL import Image
+from PIL.PngImagePlugin import PngInfo
 from pypdf import PdfReader
 
 from openscope_p3_publication.figures import REPO_ROOT
@@ -17,7 +23,11 @@ from openscope_p3_publication.wavemap_figure import (
     load_wavemap_snapshot,
     verified_waveform_sampling_rate,
 )
-from openscope_p3_publication.wavemap_publication_figures import build_wavemap_static_figures
+from openscope_p3_publication.wavemap_publication_figures import (
+    _canonical_png,
+    _CanonicalPdfPages,
+    build_wavemap_static_figures,
+)
 
 
 @pytest.fixture(scope="module")
@@ -121,6 +131,49 @@ def test_wavemap_explorers_build_offline_deterministically(tmp_path: Path, snaps
         html = output.read_text(encoding="utf-8")
         assert "./vendor/plotly.min.js" in html
         assert "cdn.plot.ly" not in html
+
+
+def test_wavemap_png_compression_is_canonical_and_lossless() -> None:
+    pixels = np.arange(19 * 23 * 4, dtype=np.uint8).reshape(19, 23, 4)
+    image = Image.fromarray(pixels)
+    metadata = PngInfo()
+    metadata.add_text("Source", "WaveMAP encoding regression")
+    encoded = []
+    for level in (1, 9):
+        buffer = BytesIO()
+        image.save(buffer, format="PNG", compress_level=level, pnginfo=metadata, dpi=(600, 600))
+        encoded.append(buffer.getvalue())
+    assert encoded[0] != encoded[1]
+    canonical = [_canonical_png(data) for data in encoded]
+    assert canonical[0] == canonical[1]
+    assert _canonical_png(canonical[0]) == canonical[0]
+    with Image.open(BytesIO(canonical[0])) as normalized:
+        assert np.array_equal(np.asarray(normalized), pixels)
+        with Image.open(BytesIO(encoded[0])) as original:
+            assert normalized.info == original.info
+
+
+def test_wavemap_pdf_image_compression_is_canonical_and_lossless(tmp_path: Path) -> None:
+    image = Image.fromarray(np.arange(19 * 23 * 3, dtype=np.uint8).reshape(19, 23, 3))
+    original_file = PdfFile(BytesIO())
+    original_data, original_depth, original_palette = original_file._writePng(image)
+    original_file.close()
+    output = tmp_path / "canonical.pdf"
+    with _CanonicalPdfPages(output, metadata={"CreationDate": None, "ModDate": None}) as pages:
+        normalized, bit_depth, palette = pages._ensure_file()._writePng(image)
+        assert zlib.decompress(normalized) == zlib.decompress(original_data)
+        assert normalized == zlib.compress(zlib.decompress(original_data))
+        assert (bit_depth, palette) == (original_depth, original_palette)
+        figure = Figure(figsize=(1, 1))
+        figure.subplots().imshow(image)
+        pages.savefig(figure)
+    pdf = PdfReader(output)
+    assert len(pdf.pages) == 1
+    images = pdf.pages[0]["/Resources"]["/XObject"].values()
+    assert images
+    for reference in images:
+        stream = reference.get_object()
+        assert stream._data == zlib.compress(zlib.decompress(stream._data))
 
 
 def test_wavemap_static_supplement_is_complete_and_deterministic(

@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import base64
+import zlib
+from io import BytesIO
 from pathlib import Path
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.backends.backend_pdf import PdfFile, PdfPages
 from matplotlib.colors import TwoSlopeNorm
 from PIL import Image
+from PIL.PngImagePlugin import PngStream, putchunk
 
 from openscope_p3_publication.wavemap_figure import (
     REPO_ROOT,
@@ -89,6 +92,46 @@ def _clean_umap(ax):
         spine.set_visible(False)
 
 
+def _canonical_png(data: bytes) -> bytes:
+    """Normalize lossless compression without changing PNG scanlines or metadata."""
+    source = BytesIO(data)
+    signature = source.read(8)
+    if signature != b"\x89PNG\r\n\x1a\n":
+        raise ValueError("Expected a PNG image.")
+    output = BytesIO()
+    output.write(signature)
+    chunks = PngStream(source)
+    compressed = bytearray()
+    while True:
+        chunk_type, _position, length = chunks.read()
+        payload = source.read(length)
+        chunks.crc(chunk_type, payload)
+        if chunk_type == b"IDAT":
+            compressed.extend(payload)
+        else:
+            if compressed:
+                putchunk(output, b"IDAT", zlib.compress(zlib.decompress(compressed)))
+                compressed.clear()
+            putchunk(output, chunk_type, payload)
+        if chunk_type == b"IEND":
+            return output.getvalue()
+
+
+class _CanonicalPdfFile(PdfFile):
+    """Normalize Pillow's platform-dependent encoding of PDF image streams."""
+
+    def _writePng(self, image: Image.Image) -> tuple[bytes, int, bytes | None]:
+        compressed, bit_depth, palette = super()._writePng(image)
+        return zlib.compress(zlib.decompress(compressed)), bit_depth, palette
+
+
+class _CanonicalPdfPages(PdfPages):
+    def _ensure_file(self) -> PdfFile:
+        if self._file is None:
+            self._file = _CanonicalPdfFile(self._filename, metadata=self._metadata)
+        return self._file
+
+
 def _save(fig, stem, output_dir=None, pages=None):
     output_dir = OUT if output_dir is None else output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -102,13 +145,13 @@ def _save(fig, stem, output_dir=None, pages=None):
         bbox_inches="tight",
         facecolor="white",
     )
+    png.write_bytes(_canonical_png(png.read_bytes()))
 
-    fig.savefig(
+    with _CanonicalPdfPages(
         pdf,
-        bbox_inches="tight",
-        facecolor="white",
         metadata={"CreationDate": None, "ModDate": None},
-    )
+    ) as individual_pages:
+        individual_pages.savefig(fig, bbox_inches="tight", facecolor="white")
 
     if pages is not None:
         pages.savefig(fig, bbox_inches="tight", facecolor="white")
@@ -609,7 +652,7 @@ def build_wavemap_static_figures(
     output_dir.mkdir(parents=True, exist_ok=True)
     supplementary_pdf = output_dir / "supplementary-wavemap.pdf"
     outputs = []
-    with PdfPages(
+    with _CanonicalPdfPages(
         supplementary_pdf,
         metadata={"CreationDate": None, "ModDate": None, "Title": "Supplementary Figure 9"},
     ) as pages:

@@ -25,6 +25,11 @@ four-panel SVG and four-page PDF are the complete static counterpart to
 Supplementary Figure 9's interactive explorers. Plotly and the downloadable PDF
 are copied to ignored deployment paths during the build, not duplicated in Git.
 
+PNG compression, including raster images embedded in PDFs, is normalized with
+Python's standard zlib encoder. This preserves image pixels, metadata, and PDF
+content while avoiding platform-dependent Pillow compression choices in the
+byte-for-byte generated-asset checks.
+
 The legacy serialized 30 kHz waveform-rate fallback is not treated as measured
 metadata: every recorded per-unit rate is missing in this snapshot. Static and
 interactive waveform plots therefore use sample indices. The putative FS
