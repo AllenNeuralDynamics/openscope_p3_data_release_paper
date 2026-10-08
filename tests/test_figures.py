@@ -81,8 +81,6 @@ from openscope_p3_publication.figures import (
     load_slap2_raw_movies,
     load_stimulus_table_excerpts,
     load_unit_yield_data,
-    modality_session_records,
-    session_panel_rows,
     session_table_modality,
     text_sha256_matches,
     total_duration_minutes,
@@ -110,8 +108,6 @@ from openscope_p3_publication.figures import (
     write_segmentation_viewer_svg,
     write_segmentation_viewers,
     write_session_inventory_svg,
-    write_standard_oddball_plan_svg,
-    write_static_svg,
     write_svg_output,
     write_unit_extraction_plan_svg,
     write_unit_yield_html,
@@ -233,9 +229,8 @@ def test_interactive_figures_share_readable_typography() -> None:
             pixels = float(value) * (16 if unit == "rem" else 1)
             assert pixels >= 12, (path.name, pixels)
 
-    for name in ("neural-viewer.js", "segmentation-viewer.js"):
-        javascript = (source_dir / name).read_text(encoding="utf-8")
-        assert all(int(size) >= 12 for size in re.findall(r"\bsize:\s*(\d+)", javascript))
+    javascript = (source_dir / "segmentation-viewer.js").read_text(encoding="utf-8")
+    assert all(int(size) >= 12 for size in re.findall(r"\bsize:\s*(\d+)", javascript))
 
     for path in sorted((REPO_ROOT / "interactive").glob("*.html")):
         assert "--figure-type-metadata: 0.75rem" in path.read_text(encoding="utf-8")
@@ -264,7 +259,7 @@ def test_session_type_colors_are_consistent_across_figure_surfaces() -> None:
         REPO_ROOT / "figure_sources/javascript/behavior-viewer.js",
         REPO_ROOT / "interactive/behavior-viewer.html",
         REPO_ROOT / "interactive/experimental-design.html",
-        REPO_ROOT / "images/figures/generated/experimental-design.svg",
+        REPO_ROOT / "images/figures/generated/figure-02-context-controls.svg",
         REPO_ROOT / "images/figures/generated/figure-01-panel-c-cohorts.svg",
         REPO_ROOT / "images/figures/generated/session-inventory.svg",
         REPO_ROOT / "images/figures/generated/synchronized-behavior.svg",
@@ -1811,7 +1806,7 @@ def test_stimulus_excerpts_preserve_pinned_source_order() -> None:
 
 def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     html_path = write_interactive_html(tmp_path / "experimental-design.html")
-    svg_path = write_static_svg(tmp_path / "experimental-design.svg")
+    svg_path = write_context_controls_svg(tmp_path / "figure-02-context-controls.svg")
 
     html = html_path.read_text(encoding="utf-8")
     svg = svg_path.read_text(encoding="utf-8")
@@ -1891,7 +1886,9 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert "__EMBED_AUTO_HEIGHT_JS__" not in html
     assert "__SIMULATOR_" not in html
     assert 'role="img"' in svg
-    assert "Session 4" in svg
+    assert 'aria-labelledby="title description"' in svg
+    assert "Within-session controls enable cross-context comparisons" in svg
+    assert svg.count("data:image/png;base64,") == 2
     assert "Source Sans 3" not in html
     assert 'font-family: "Myriad Pro", Arial, sans-serif;' in html
     assert "IBM Plex Sans" not in svg
@@ -2080,13 +2077,6 @@ def test_placeholder_plans_mask_obsolete_figure_numbers(tmp_path: Path) -> None:
             "Basic stimuli → unit/system identification",
             "Figure 5",
             1,
-        ),
-        (
-            write_standard_oddball_plan_svg,
-            "figure-11-standard-oddball-plan.svg",
-            "Responses to standard oddball stimuli",
-            "Figure 7",
-            2,
         ),
     )
     for writer, filename, expected_title, obsolete_title, title_lines in cases:
@@ -2388,233 +2378,6 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
 
     write_session_inventory_svg(svg_path)
     assert svg_path.read_text(encoding="utf-8") == svg
-
-
-def legacy_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None:
-    provenance = json.loads(
-        SESSION_RECORDS_PROVENANCE_PATH.read_text(encoding="utf-8")
-    )
-    assert hashlib.sha256(SESSION_RECORDS_PATH.read_bytes()).hexdigest() == (
-        provenance["vendored_sha256"]
-    )
-    assert provenance["worksheet_rows"] == 198
-    assert provenance["rows"] == 198
-    assert provenance["source_rows"] == 198
-    assert provenance["modality_rows"] == {
-        "mesoscope": 91,
-        "neuropixels": 64,
-        "slap2": 43,
-    }
-
-    payload = load_experimental_session_records()
-    records = payload["records"]
-    assert len(records) == 198
-    assert [int(record["source_row"]) for record in records] == list(range(3, 201))
-    assert {
-        modality: len(modality_session_records(records, modality))
-        for modality in ("neuropixels", "mesoscope", "slap2")
-    } == {"neuropixels": 64, "mesoscope": 91, "slap2": 29}
-
-    mesoscope_rows = session_panel_rows(records, "mesoscope")
-    assert [row["mouseId"] for row in mesoscope_rows] == [
-        "832700",
-        "839909",
-        "843001",
-        "845342",
-        "846289",
-        "837568",
-        "842971",
-        "843000",
-        "850399",
-        "853137",
-    ]
-    assert [len(row["sessions"]) for row in mesoscope_rows] == [
-        8,
-        8,
-        12,
-        8,
-        8,
-        11,
-        8,
-        8,
-        8,
-        12,
-    ]
-    slap2_rows = session_panel_rows(records, "slap2")
-    assert [row["mouseId"] for row in slap2_rows] == [
-        "851453",
-        "845207",
-        "841191",
-        "829704",
-        "828409",
-        "828408",
-    ]
-    assert [len(row["sessions"]) for row in slap2_rows] == [3, 5, 4, 4, 4, 6]
-
-    svg_path = write_session_inventory_svg(tmp_path / "session-inventory.svg")
-    svg = svg_path.read_text(encoding="utf-8")
-    assert 'width="1150" height="680"' in svg
-    assert svg.count('class="platform-heading" data-modality=') == 3
-    assert_modality_title_scale(svg)
-    assert svg.count('class="platform-logo"') == 3
-    assert svg.count('y="1" width="54" height="54"') == 3
-    assert svg.count('class="panel-title"') == 3
-    assert svg.count('y="34"') == 3
-    assert svg.count("data:image/png;base64,") == 3
-    assert '>A</text>' in svg and '>Neuropixels</text>' in svg
-    assert '>B</text>' in svg and '>Mesoscope</text>' in svg
-    assert '>C</text>' in svg and '>SLAP2</text>' in svg
-    assert "SLAP2 P3" not in svg
-    assert svg.count('id="mouse-id-axis-label"') == 1
-    assert ">Mouse ID</text>" in svg
-    assert 'id="session-inventory-legend"' in svg
-    assert "Session type" in svg
-    assert "Quality control" in svg
-    assert (
-        '<rect x="120" y="42" width="24" height="16" fill="none" '
-        'stroke="#69716F" stroke-width="2"/>'
-    ) in svg
-    assert "Failed session (type-colored border)" in svg
-    assert "Missing expected session" not in svg
-    assert "QC tags" in svg
-    assert "<circle" not in svg
-    assert 'font-family="IBM Plex Mono, monospace" font-size="11.5"' in svg
-    assert ">Pilot session</text>" not in svg
-    assert ">One probe excluded for saturation events</text>" in svg
-    assert ">10</text>" in svg
-    assert svg.index(">Blood at insertion site</text>") < svg.index(">Mouse stress</text>")
-    assert svg.index(">Mouse stress</text>") < svg.index(">Mouse suspected asleep</text>")
-    assert "Poor opto response" not in svg
-    assert "Sync problems" not in svg
-    assert "Poor brain health" not in svg
-    assert svg.count(">Motion correction problems</text>") == 1
-    assert "Motion correction issue" not in svg
-    assert "SLAP2 stopped early" in svg
-    assert svg.count(">Cell matching problems</text>") == 1
-    assert svg.count('class="session-qc-outline"') == 17
-    assert svg.count('class="session-qc-outline" data-qc-kind="session-fail"') == 17
-    assert svg.count('class="session-target" data-session-id=') > 0
-    assert "<title>" not in svg
-    assert 'data-session-id="unknown session id"' in svg
-    assert 'data-qc-tag-labels="' in svg
-    assert 'aria-label="Recording sessions per mouse across three modalities"' in svg
-    assert 'pointer-events="none"' in svg
-    failed_blocks = re.findall(
-        r'<rect class="session-block"[^>]+fill="none" '
-        r'stroke="(#[0-9A-F]{6})" stroke-width="2" pointer-events="all"/>',
-        svg,
-    )
-    assert len(failed_blocks) == 17
-    assert set(failed_blocks) == {
-        SESSION_TYPE_COLORS["sensorimotor"],
-        SESSION_TYPE_COLORS["standard"],
-        SESSION_TYPE_COLORS["sequence"],
-        SESSION_TYPE_COLORS["duration"],
-    }
-    filled_blocks = re.findall(
-        r'<rect class="session-block"[^>]+fill="(#[0-9A-F]{6})" '
-        r'stroke="(#[0-9A-F]{6})" stroke-width="2"/>',
-        svg,
-    )
-    assert filled_blocks
-    assert all(fill == stroke for fill, stroke in filled_blocks)
-    assert "<pattern" not in svg
-    assert svg.count('class="session-qc-tags"') == 47
-    assert svg.count('class="session-qc-tags" data-qc-tags=') == 47
-    assert all(
-        numbers == sorted(numbers)
-        for label in re.findall(r'data-qc-tags="([0-9,]+)"', svg)
-        for numbers in [[int(number) for number in label.split(",")]]
-    )
-    assert '<tspan ' not in svg
-    white_qc_numbers = re.findall(
-        r'class="session-qc-tags"[^>]+fill="#FFFFFF" stroke="#000000" '
-        r'stroke-width="1"',
-        svg,
-    )
-    black_qc_numbers = re.findall(
-        r'class="session-qc-tags"[^>]+fill="#000000" stroke="#FFFFFF" '
-        r'stroke-width="1"',
-        svg,
-    )
-    assert len(white_qc_numbers) + len(black_qc_numbers) == 47
-    assert len(black_qc_numbers) == 17
-    assert len(white_qc_numbers) == 30
-    assert "Recording sessions per mouse</text>" not in svg
-    assert "worksheet rows ·" not in svg
-    assert "Static panels follow" not in svg
-    assert 'stroke-dasharray="3 2"' not in svg
-    assert ">C1</text>" not in svg
-    assert ">C2</text>" not in svg
-    assert svg.count(">Session number</text>") == 1
-    session_widths = {
-        float(width)
-        for width in re.findall(
-            r'<rect class="session-block"[^>]* width="([^"]+)"',
-            svg,
-        )
-    }
-    assert session_widths == {29.8}
-    panel_title_positions = [
-        float(position)
-        for position in re.findall(
-            r'<text class="panel-title" x="([^"]+)"',
-            svg,
-        )
-    ]
-    assert len(panel_title_positions) == 3
-    panel_chunks = re.split(r'<text class="panel-title"', svg)[1:]
-    first_session_positions = [
-        float(re.search(r'<rect class="session-block" x="([^"]+)"', chunk).group(1))
-        for chunk in panel_chunks
-    ]
-    assert [
-        session_position - title_position
-        for title_position, session_position in zip(
-            panel_title_positions,
-            first_session_positions,
-            strict=True,
-        )
-    ] == [67.5, 67.5, 67.5]
-    assert max(
-        following - current
-        for current, following in zip(
-            panel_title_positions[:-1],
-            panel_title_positions[1:],
-            strict=True,
-        )
-    ) < 500
-    assert svg.count('class="session-axis"') == 1
-    mouse_y_positions = {
-        modality: [
-            float(position)
-            for position in re.findall(
-                rf'<text class="mouse-id" data-modality="{modality}" '
-                rf'x="[^"]+" y="([^"]+)"',
-                svg,
-            )
-        ]
-        for modality in ("neuropixels", "mesoscope", "slap2")
-    }
-    mouse_y_steps = {
-        modality: [
-            following - current
-            for current, following in zip(positions[:-1], positions[1:], strict=True)
-        ]
-        for modality, positions in mouse_y_positions.items()
-    }
-    assert set(mouse_y_steps["neuropixels"]) == {28, 56}
-    assert set(mouse_y_steps["mesoscope"]) == {28, 56}
-    assert set(mouse_y_steps["slap2"]) == {28}
-    legend_position = re.search(
-        r'id="session-inventory-legend" transform="translate\(([^ ]+) ([^)]+)\)"',
-        svg,
-    )
-    assert legend_position is not None
-    assert float(legend_position.group(1)) == 310
-    legend_y = float(legend_position.group(2))
-    assert legend_y == 421
-    assert legend_y - (mouse_y_positions["mesoscope"][-1] - 4) == 56
 
 
 def test_literature_comparison_is_deterministic(tmp_path: Path) -> None:

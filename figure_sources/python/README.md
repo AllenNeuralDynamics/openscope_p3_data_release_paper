@@ -12,9 +12,8 @@ The experimental-design generator writes:
 - `images/figures/generated/figure-01-panel-c-cohorts.svg`: context allocation across Neuropixels, mesoscope, and SLAP2 cohorts, embedded as Figure 1C.
 - `images/figures/generated/figure-02-context-controls.svg`: static session timeline and detailed control architecture.
 - `images/figures/generated/multimodal-hardware.svg`: Figure 3 rig, mouse-platform, and targeting composition built from nine checksum-verified PowerPoint PNG sources.
-- `images/figures/generated/figure-07-unit-extraction-plan.svg`, `figure-08-basic-stimuli-plan.svg`, and `figure-11-standard-oddball-plan.svg`: clean wrappers around preserved draft PNGs that mask obsolete embedded figure numbers while retaining their analysis-plan content.
+- [figure-07-unit-extraction-plan.svg](../../images/figures/generated/figure-07-unit-extraction-plan.svg) and [figure-08-basic-stimuli-plan.svg](../../images/figures/generated/figure-08-basic-stimuli-plan.svg): wrappers around the two draft analysis-plan PNGs still used in the manuscript, with obsolete embedded figure numbers masked.
 - `interactive/experimental-design.html`: self-contained JavaScript stimulus viewer for the MyST site.
-- `images/figures/generated/experimental-design.svg`: accessible generated timeline summary.
 
 Its structured inputs are `figure_sources/data/experimental-design-sessions.csv` and `figure_sources/data/experimental-design-blocks.csv`.
 Its HTML, CSS, and JavaScript sources are under `figure_sources/javascript/`.

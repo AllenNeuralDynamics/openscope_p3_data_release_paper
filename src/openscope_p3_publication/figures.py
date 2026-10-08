@@ -117,15 +117,11 @@ HARDWARE_STATIC_OUTPUT = (
 IMPORTED_FIGURE_DIR = REPO_ROOT / "images" / "figures" / "imported"
 UNIT_EXTRACTION_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-04-unit-extraction-plan.png"
 BASIC_STIMULI_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-05-basic-stimuli-plan.png"
-STANDARD_ODDBALL_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-07-standard-oddball-plan.png"
 UNIT_EXTRACTION_PLAN_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "figure-07-unit-extraction-plan.svg"
 )
 BASIC_STIMULI_PLAN_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "figure-08-basic-stimuli-plan.svg"
-)
-STANDARD_ODDBALL_PLAN_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-11-standard-oddball-plan.svg"
 )
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
@@ -249,7 +245,6 @@ OTHER_STUDIES_PATH = DATA_DIR / "other-oddball-studies.csv"
 OTHER_STUDIES_PROVENANCE_PATH = OTHER_STUDIES_PATH.with_suffix(".provenance.json")
 UNIT_YIELD_DATA_PATH = DATA_DIR / "neuropixels-unit-yield.csv"
 UNIT_YIELD_PROVENANCE_PATH = UNIT_YIELD_DATA_PATH.with_suffix(".provenance.json")
-STATIC_OUTPUT = REPO_ROOT / "images" / "figures" / "generated" / "experimental-design.svg"
 UNIT_YIELD_STATIC_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "supplementary-neuropixels-unit-yield.svg"
 )
@@ -1062,23 +1057,6 @@ def write_basic_stimuli_plan_svg(output: Path = BASIC_STIMULI_PLAN_OUTPUT) -> Pa
         first_baseline=62,
         font_size=FIGURE_TYPE_SCALE["title"],
         line_gap=44,
-    )
-
-
-def write_standard_oddball_plan_svg(
-    output: Path = STANDARD_ODDBALL_PLAN_OUTPUT,
-) -> Path:
-    return write_placeholder_plan_svg(
-        STANDARD_ODDBALL_PLAN_SOURCE,
-        output,
-        title_lines=(
-            "Responses to standard oddball stimuli",
-            "Demonstrate stimulus alignment",
-        ),
-        mask_height=285,
-        first_baseline=118,
-        font_size=FIGURE_TYPE_SCALE["title"],
-        line_gap=82,
     )
 
 
@@ -6101,80 +6079,6 @@ def write_session_inventory_svg(
     return output
 
 
-def write_static_svg(output: Path = STATIC_OUTPUT) -> Path:
-    output.parent.mkdir(parents=True, exist_ok=True)
-    width = 1200
-    height = 500
-    label_width = 220
-    plot_width = 920
-    top = 105
-    row_height = 72
-    bar_height = 44
-    scale = plot_width / total_duration_minutes()
-
-    svg = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
-        f'viewBox="0 0 {width} {height}" role="img" '
-        'aria-labelledby="title description">',
-        '<title id="title">Shared structure of the four predictive-processing sessions</title>',
-        '<desc id="description">Four horizontal session timelines with a context-specific '
-        'mismatch block and seven shared control and characterization blocks.</desc>',
-        '<rect width="1200" height="500" fill="#FFFFFF"/>',
-        f'<text x="40" y="52" font-family="{FIGURE_SANS_FONT}" font-size="28" '
-        'font-weight="600" fill="#172126">Shared structure of the four predictive-processing '
-        "sessions</text>",
-    ]
-
-    for session_index, session in enumerate(SESSIONS):
-        y = top + session_index * row_height
-        svg.append(
-            f'<text x="40" y="{y + 18}" font-family="{FIGURE_SANS_FONT}" '
-            f'font-size="17" font-weight="600" fill="#172126">Session {session.number}</text>'
-        )
-        svg.append(
-            f'<text x="40" y="{y + 39}" font-family="{FIGURE_SANS_FONT}" '
-            f'font-size="14" fill="#49565C">{escape(session.name)}</text>'
-        )
-        x = label_width
-        shared_index = 0
-        for block in BLOCKS:
-            block_width = block.duration_minutes * scale
-            color = session.color if block.category == "context" else SHARED_COLORS[shared_index]
-            svg.append(
-                f'<rect x="{x:.2f}" y="{y}" width="{block_width:.2f}" height="{bar_height}" '
-                f'fill="{color}" stroke="#FFFFFF" stroke-width="1"/>'
-            )
-            if block_width >= 80:
-                svg.append(
-                    f'<text x="{x + block_width / 2:.2f}" y="{y + 27}" '
-                    f'font-family="{FIGURE_SANS_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
-                    f'text-anchor="middle" fill="#172126">{escape(block.name)}</text>'
-                )
-            x += block_width
-            if block.category == "shared":
-                shared_index += 1
-
-    axis_y = top + len(SESSIONS) * row_height + 12
-    svg.append(
-        f'<line x1="{label_width}" y1="{axis_y}" x2="{label_width + plot_width}" '
-        f'y2="{axis_y}" stroke="#49565C" stroke-width="1"/>'
-    )
-    for minute in range(0, 71, 10):
-        x = label_width + minute * scale
-        svg.extend(
-            [
-                f'<line x1="{x:.2f}" y1="{axis_y}" x2="{x:.2f}" y2="{axis_y + 6}" '
-                'stroke="#49565C" stroke-width="1"/>',
-                f'<text x="{x:.2f}" y="{axis_y + 24}" '
-                f'font-family="{FIGURE_SANS_FONT}" font-size="12" '
-                f'text-anchor="middle" fill="#49565C">{minute} min</text>',
-            ]
-        )
-    svg.append("</svg>")
-    write_svg_output(output, svg)
-    return output
-
-
 def write_unit_yield_svg(
     output: Path = UNIT_YIELD_STATIC_OUTPUT,
     data_path: Path = UNIT_YIELD_DATA_PATH,
@@ -6727,7 +6631,6 @@ def main() -> None:
     hardware_path = write_hardware_figure_svg()
     unit_extraction_plan_path = write_unit_extraction_plan_svg()
     basic_stimuli_plan_path = write_basic_stimuli_plan_svg()
-    standard_oddball_plan_path = write_standard_oddball_plan_svg()
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
     nwb_file_contents_path = write_nwb_file_contents_html()
@@ -6749,7 +6652,6 @@ def main() -> None:
     optotagging_source_path = write_optotagging_static_source()
     optotagging_html_path = write_optotagging_heatmap_html()
     optotagging_svg_path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT
-    svg_path = write_static_svg()
     unit_yield_svg_path = write_unit_yield_svg()
     mismatch_adjacency_svg_path = write_mismatch_adjacency_svg()
     sensorimotor_running_svg_path = write_sensorimotor_running_svg()
@@ -6760,7 +6662,6 @@ def main() -> None:
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_plan_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {basic_stimuli_plan_path.relative_to(REPO_ROOT)}")
-    print(f"Wrote {standard_oddball_plan_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")
@@ -6784,7 +6685,6 @@ def main() -> None:
     print(f"Wrote {optotagging_source_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {optotagging_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {optotagging_svg_path.relative_to(REPO_ROOT)}")
-    print(f"Wrote {svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {mismatch_adjacency_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {sensorimotor_running_svg_path.relative_to(REPO_ROOT)}")
