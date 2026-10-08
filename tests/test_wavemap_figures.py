@@ -100,7 +100,7 @@ def test_wavemap_time_axis_requires_recorded_rate(snapshot: dict) -> None:
 def test_wavemap_complements_optotagging_as_a_main_figure() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     assert manuscript.count(":label: fig-supp-wavemap") == 1
-    assert "[Figure 10](#fig-supp-wavemap)" in manuscript
+    assert "[Figure 9](#fig-supp-wavemap)" in manuscript
     assert ":label: fig-supp-wavemap\n:width: 100%" in manuscript
     assert ":placeholder: ./images/figures/generated/supplementary-wavemap.svg" in manuscript
     assert ":label: fig-unit-extraction-plan" in manuscript

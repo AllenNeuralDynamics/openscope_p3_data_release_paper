@@ -157,10 +157,13 @@ NEURAL_EXCERPTS_PATH = DATA_DIR / "raw-neural-excerpts.json"
 NEURAL_STATIC_FRAME_PROVENANCE_PATH = (
     DATA_DIR / "raw-neural-static-frames.provenance.json"
 )
+SLAP2_ACQUISITION_BANDS_PATH = DATA_DIR / "slap2-acquisition-bands.json"
 NEURAL_STATIC_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "raw-neural-recordings.svg"
 )
 SEGMENTATION_VIEWER_DATA_PATH = DATA_DIR / "segmentation-viewers.json"
+SEGMENTATION_MOVIES_PATH = DATA_DIR / "segmentation-movies.json"
+SEGMENTATION_MOVIE_MEDIA_DIR = REPO_ROOT / "figure_sources/media/segmentation-movies"
 SEGMENTATION_VIEWER_PROVENANCE_PATH = SEGMENTATION_VIEWER_DATA_PATH.with_suffix(
     ".provenance.json"
 )
@@ -3674,19 +3677,8 @@ def encode_rgba_png(width: int, height: int, pixels: bytes) -> bytes:
 
 
 def neural_voltage_rgb(encoded: int) -> tuple[int, int, int]:
-    centered = max(-1.0, min(1.0, (encoded - 127.5) / 127.5))
-    if centered < 0:
-        amount = centered + 1
-        return (
-            round(28 + amount * 218),
-            round(77 + amount * 169),
-            round(151 + amount * 95),
-        )
-    return (
-        round(246 - centered * 57),
-        round(246 - centered * 192),
-        round(246 - centered * 205),
-    )
+    gray = max(0, min(255, encoded))
+    return gray, gray, gray
 
 
 def neural_heatmap_png(option: dict) -> bytes:
@@ -3796,6 +3788,92 @@ def load_neural_static_frames(payload: dict) -> dict[tuple[str, str], Path]:
     return paths
 
 
+def load_slap2_acquisition_bands(
+    payload: dict,
+    path: Path = SLAP2_ACQUISITION_BANDS_PATH,
+) -> dict[str, dict]:
+    """Validate structural projections and source-backed SLAP2 raster-region overlays."""
+    from PIL import Image
+
+    snapshot = json.loads(path.read_text(encoding="utf-8"))
+    session = next(record for record in payload["sessions"] if record["id"] == "slap2")
+    records = snapshot.get("planes", [])
+    planes = {record["optionId"]: record for record in records}
+    if (
+        snapshot.get("version") != 1
+        or snapshot.get("rawNeuralSha256")
+        != hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest()
+        or len(records) != 2
+        or set(planes) != set(SLAP2_STATIC_COMPOSITES)
+    ):
+        raise RuntimeError("SLAP2 acquisition-band provenance is invalid.")
+    for option_id, record in planes.items():
+        if (
+            record.get("session") != session["session"]
+            or record.get("width") != 400 or record.get("height") != 640
+            or record.get("displayTransform") != "transpose-for-publication"
+            or record.get("maskDataset") != "AcquisitionContainer/AcquisitionPlan/rasterROIMasks"
+            or record.get("regionCount") != 6
+            or record.get("nativeMaskPixelCount", 0) <= 0
+            or len(record.get("sources", [])) != 2
+            or any(source not in session["sources"] for source in record["sources"])
+        ):
+            raise RuntimeError(f"SLAP2 acquisition-band geometry or sources changed: {option_id}")
+        for field in ("referenceImage", "bandOverlay"):
+            asset = record[field]
+            relative_path = asset["assetPath"]
+            media_path = REPO_ROOT / "figure_sources" / relative_path
+            if (
+                not relative_path.startswith("media/slap2-acquisition-bands/")
+                or ".." in Path(relative_path).parts
+                or hashlib.sha256(media_path.read_bytes()).hexdigest() != asset["sha256"]
+            ):
+                raise RuntimeError(f"SLAP2 acquisition-band image checksum changed: {option_id}")
+            with Image.open(media_path) as image:
+                if image.size != (record["width"], record["height"]):
+                    raise RuntimeError(
+                        f"SLAP2 acquisition-band image dimensions changed: {option_id}"
+                    )
+    return planes
+
+
+def append_white_scale_bar(
+    svg: list[str],
+    *,
+    x: float,
+    y: float,
+    length: float,
+    label: str,
+    vertical: bool = False,
+    display_scale: float = 1.0,
+    canvas_width: float = 1876,
+) -> None:
+    """Draw a calibrated image scale with uniform final-display typography."""
+    end_x = x if vertical else x + length
+    end_y = y - length if vertical else y
+    font_size = 24 * FIGURE_REFERENCE_WIDTH / (canvas_width * display_scale)
+    offset = 10 / display_scale
+    text_x = x - offset if vertical else x + length
+    text_y = y - length / 2 + 8 / display_scale if vertical else y - offset
+    anchor = "end"
+    svg.extend(
+        [
+            f'<g class="image-scale" data-label="{escape(label)}" '
+            f'data-orientation="{"vertical" if vertical else "horizontal"}">',
+            f'<line x1="{x:.2f}" y1="{y:.2f}" x2="{end_x:.2f}" y2="{end_y:.2f}" '
+            f'stroke="#111111" stroke-width="{7 / display_scale:.3f}" stroke-linecap="butt"/>',
+            f'<line class="image-scale-bar" x1="{x:.2f}" y1="{y:.2f}" '
+            f'x2="{end_x:.2f}" y2="{end_y:.2f}" stroke="#FFFFFF" '
+            f'stroke-width="{4 / display_scale:.3f}" stroke-linecap="butt"/>',
+            f'<text class="image-scale-label" x="{text_x:.2f}" y="{text_y:.2f}" '
+            f'font-family="{FIGURE_SANS_FONT}" font-size="{font_size:.3f}" '
+            f'font-weight="700" text-anchor="{anchor}" fill="#FFFFFF">'
+            f'{escape(label)}</text>',
+            '</g>',
+        ]
+    )
+
+
 def append_static_scale_bar(
     svg: list[str],
     *,
@@ -3805,19 +3883,58 @@ def append_static_scale_bar(
     native_width: int,
     microns_per_pixel: float,
     microns: int,
+    display_scale: float = 1.0,
 ) -> None:
     bar_width = display_width * microns / (native_width * microns_per_pixel)
-    svg.extend(
-        [
-            f'<line x1="{x:.2f}" y1="{y:.2f}" x2="{x + bar_width:.2f}" '
-            f'y2="{y:.2f}" stroke="#111111" stroke-width="7"/>',
-            f'<line x1="{x:.2f}" y1="{y:.2f}" x2="{x + bar_width:.2f}" '
-            f'y2="{y:.2f}" stroke="#FFFFFF" stroke-width="4"/>',
-            f'<text x="{x + bar_width / 2:.2f}" y="{y - 9:.2f}" '
-            'font-family="Source Sans 3, sans-serif" font-size="12" '
-            f'font-weight="700" text-anchor="middle" fill="#FFFFFF">{microns} µm</text>',
-        ]
+    append_white_scale_bar(
+        svg, x=x, y=y, length=bar_width, label=f"{microns} µm", display_scale=display_scale
     )
+
+
+def neural_grayscale_frame_png(
+    path: Path,
+    *,
+    transpose: bool = False,
+    crop_bounds: tuple[int, int, int, int] | None = None,
+) -> bytes:
+    """Render committed optical previews in grayscale without changing source pixels."""
+    from PIL import Image, ImageChops
+
+    with Image.open(path) as source:
+        red, green, blue = source.convert("RGB").split()
+        gray = ImageChops.lighter(ImageChops.lighter(red, green), blue)
+        if crop_bounds is not None:
+            gray = gray.crop(crop_bounds)
+        if transpose:
+            gray = gray.transpose(Image.Transpose.TRANSPOSE)
+        rgb = gray.convert("RGB")
+        return encode_rgb_png(rgb.width, rgb.height, rgb.tobytes())
+
+
+def slap2_reference_crop(path: Path, band_overlay: Path) -> tuple[int, int, int, int]:
+    """Trim low-valued reference padding without excluding any raster-region pixels."""
+    from PIL import Image
+
+    with Image.open(path) as source:
+        gray = source.convert("L")
+        edge_level = max(
+            gray.getpixel(corner)
+            for corner in (
+                (0, 0), (gray.width - 1, 0),
+                (0, gray.height - 1), (gray.width - 1, gray.height - 1),
+            )
+        )
+        bounds = gray.point(lambda value: 255 if value > edge_level else 0).getbbox()
+    if bounds is None:
+        raise RuntimeError("SLAP2 reference image contains only padding.")
+    with Image.open(band_overlay) as overlay:
+        marked = overlay.getchannel("A").getbbox()
+    if marked is None or not (
+        bounds[0] <= marked[0] < marked[2] <= bounds[2]
+        and bounds[1] <= marked[1] < marked[3] <= bounds[3]
+    ):
+        raise RuntimeError("SLAP2 reference crop would exclude targeted raster regions.")
+    return bounds
 
 
 def append_neuropixels_raw_card(
@@ -3827,78 +3944,50 @@ def append_neuropixels_raw_card(
     y: float,
     option: dict,
     show_axis: bool,
+    visible_height: float | None = None,
 ) -> None:
     card_width = 540
     card_height = 225
     header_height = 28
     image_height = 145
-    anatomy_x = x + 7
-    anatomy_width = 62
-    heatmap_x = anatomy_x + anatomy_width + 7
-    heatmap_width = 445
+    heatmap_x = x + 7
+    heatmap_width = card_width - 14
     image_y = y + header_height
     image_data = base64.b64encode(neural_heatmap_png(option)).decode()
+    clip_id = f'raw-{option["id"]}-clip'
+    if visible_height is not None:
+        svg.append(
+            f'<defs><clipPath id="{clip_id}"><rect x="{x:.2f}" y="{y:.2f}" '
+            f'width="{card_width}" height="{visible_height:.2f}"/></clipPath></defs>'
+        )
+    clip = f' clip-path="url(#{clip_id})"' if visible_height is not None else ""
     svg.extend(
         [
             f'<g class="raw-image-card" data-modality="neuropixels" '
-            f'data-option-id="{option["id"]}">',
+            f'data-option-id="{option["id"]}"{clip}>',
             f'<rect x="{x:.2f}" y="{y:.2f}" width="{card_width}" '
-            f'height="{card_height}" rx="3" fill="#FFFFFF" stroke="#8F9996"/>',
+            f'height="{card_height}" fill="#FFFFFF"/>',
             f'<text x="{x + 9:.2f}" y="{y + 19:.2f}" '
             'font-family="Source Sans 3, sans-serif" font-size="13" '
             f'font-weight="700" fill="#303536">{escape(option["label"])}</text>',
         ]
     )
-    for index, segment in enumerate(option["anatomySegments"]):
-        segment_y = image_y + segment["startRow"] / option["rows"] * image_height
-        segment_height = (
-            (segment["endRow"] - segment["startRow"])
-            / option["rows"]
-            * image_height
-        )
-        fill = "#F5F6F6" if segment["label"] == "void" else (
-            "#E2E7E5" if index % 2 == 0 else "#EEF1F0"
-        )
-        svg.append(
-            f'<rect x="{anatomy_x:.2f}" y="{segment_y:.2f}" '
-            f'width="{anatomy_width}" height="{segment_height:.2f}" fill="{fill}"/>'
-        )
-        if segment_height >= 11:
-            svg.append(
-                f'<text x="{anatomy_x + anatomy_width / 2:.2f}" '
-                f'y="{segment_y + segment_height / 2 + 3:.2f}" '
-            'font-family="Source Sans 3, sans-serif" font-size="8" '
-                f'font-weight="600" text-anchor="middle" fill="#3F4745">'
-                f'{escape(segment["label"])}</text>'
-            )
     svg.extend(
         [
-            f'<rect x="{anatomy_x:.2f}" y="{image_y:.2f}" width="{anatomy_width}" '
-            f'height="{image_height}" fill="none" stroke="#8F9996"/>',
             f'<image class="raw-card-image" href="data:image/png;base64,{image_data}" '
             f'x="{heatmap_x:.2f}" y="{image_y:.2f}" width="{heatmap_width}" '
             f'height="{image_height}" preserveAspectRatio="none"/>',
-            f'<rect x="{heatmap_x:.2f}" y="{image_y:.2f}" width="{heatmap_width}" '
-            f'height="{image_height}" fill="none" stroke="#8F9996"/>',
         ]
     )
     if show_axis:
-        axis_y = image_y + image_height + 6
-        for tick_index, milliseconds in enumerate((0, 25, 50, 75, 100)):
-            tick_x = heatmap_x + tick_index / 4 * heatmap_width
-            svg.extend(
-                [
-                    f'<line x1="{tick_x:.2f}" y1="{image_y + image_height:.2f}" '
-                    f'x2="{tick_x:.2f}" y2="{axis_y:.2f}" stroke="#6C7572"/>',
-                    f'<text x="{tick_x:.2f}" y="{axis_y + 13:.2f}" '
-                    f'font-family="IBM Plex Mono, monospace" font-size="{FIGURE_TYPE_SMALL}" '
-                    f'text-anchor="middle" fill="#59615F">{milliseconds}</text>',
-                ]
-            )
-        svg.append(
-            f'<text x="{heatmap_x + heatmap_width / 2:.2f}" y="{axis_y + 29:.2f}" '
-            f'font-family="Source Sans 3, sans-serif" font-size="{FIGURE_TYPE_SMALL}" '
-            'text-anchor="middle" fill="#4D5553">100 ms raw AP excerpt</text>'
+        time_width = 0.02 / (option["timeEndSeconds"] - option["timeStartSeconds"]) * heatmap_width
+        scale_x = heatmap_x + heatmap_width - time_width - 20
+        scale_y = image_y + image_height - 20
+        append_white_scale_bar(svg, x=scale_x, y=scale_y, length=time_width, label="20 ms")
+        append_white_scale_bar(
+            svg, x=scale_x, y=scale_y,
+            length=1000 / (option["depthMaxUm"] - option["depthMinUm"]) * image_height,
+            label="1000 µm", vertical=True,
         )
     svg.append("</g>")
 
@@ -3914,37 +4003,93 @@ def append_microscopy_raw_card(
     modality: str,
     label: str,
     show_scale: bool,
+    visible_height: float | None = None,
+    band_overlay: Path | None = None,
+    transpose: bool = False,
+    crop_bounds: tuple[int, int, int, int] | None = None,
 ) -> float:
     padding = 7
     header_height = 27
     image_width = card_width - 2 * padding
     display_width = option.get("displayWidth", option["nativeWidth"])
     display_height = option.get("displayHeight", option["nativeHeight"])
+    if transpose:
+        display_width, display_height = display_height, display_width
     image_height = image_width * display_height / display_width
     card_height = header_height + image_height + padding
     image_x = x + padding
     image_y = y + header_height
-    image_data = base64.b64encode(path.read_bytes()).decode()
+    if crop_bounds is not None:
+        from PIL import Image
+
+        with Image.open(path) as source:
+            width_fraction = (crop_bounds[2] - crop_bounds[0]) / source.width
+            height_fraction = (crop_bounds[3] - crop_bounds[1]) / source.height
+        if transpose:
+            width_fraction, height_fraction = height_fraction, width_fraction
+        image_x += image_width * (1 - width_fraction) / 2
+        image_y += image_height * (1 - height_fraction) / 2
+        image_width *= width_fraction
+        image_height *= height_fraction
+        display_width *= width_fraction
+    image_data = base64.b64encode(
+        neural_grayscale_frame_png(path, transpose=transpose, crop_bounds=crop_bounds)
+    ).decode()
+    clip_id = f'raw-{option["id"]}-clip'
+    if visible_height is not None:
+        svg.append(
+            f'<defs><clipPath id="{clip_id}"><rect x="{x:.2f}" y="{y:.2f}" '
+            f'width="{card_width}" height="{visible_height:.2f}"/></clipPath></defs>'
+        )
+    clip = f' clip-path="url(#{clip_id})"' if visible_height is not None else ""
+    orientation = (
+        ' data-static-transform="transpose" data-fast-scan-axis="horizontal"'
+        if transpose else ""
+    )
+    crop = (
+        f' data-source-crop="{" ".join(str(value) for value in crop_bounds)}"'
+        if crop_bounds is not None else ""
+    )
     svg.extend(
         [
             f'<g class="raw-image-card" data-modality="{modality}" '
-            f'data-option-id="{option["id"]}" data-card-width="{card_width:.0f}">',
+            f'data-option-id="{option["id"]}" data-card-width="{card_width:.0f}"'
+            f'{orientation}{crop}{clip}>',
             f'<rect x="{x:.2f}" y="{y:.2f}" width="{card_width}" '
-            f'height="{card_height:.2f}" rx="3" fill="#FFFFFF" stroke="#8F9996"/>',
-            f'<text x="{x + padding:.2f}" y="{y + 18:.2f}" '
+            f'height="{card_height:.2f}" fill="#FFFFFF"/>',
+            f'<text x="{image_x:.2f}" y="{y + 18:.2f}" '
             'font-family="Source Sans 3, sans-serif" font-size="12" '
             f'font-weight="700" fill="#303536">{escape(label)}</text>',
             f'<image class="raw-card-image" href="data:image/png;base64,{image_data}" '
             f'x="{image_x:.2f}" y="{image_y:.2f}" width="{image_width:.2f}" '
             f'height="{image_height:.2f}"/>',
-            f'<rect x="{image_x:.2f}" y="{image_y:.2f}" width="{image_width:.2f}" '
-            f'height="{image_height:.2f}" fill="none" stroke="#8F9996"/>',
         ]
     )
+    if band_overlay is not None:
+        overlay_bytes = band_overlay.read_bytes()
+        if transpose or crop_bounds is not None:
+            from PIL import Image
+
+            with Image.open(band_overlay) as source:
+                overlay = source.convert("RGBA")
+                if crop_bounds is not None:
+                    overlay = overlay.crop(crop_bounds)
+                if transpose:
+                    overlay = overlay.transpose(Image.Transpose.TRANSPOSE)
+                overlay_bytes = encode_rgba_png(overlay.width, overlay.height, overlay.tobytes())
+        overlay_data = base64.b64encode(overlay_bytes).decode("ascii")
+        svg.append(
+            f'<image class="acquisition-band-overlay" '
+            f'href="data:image/png;base64,{overlay_data}" '
+            f'x="{image_x:.2f}" y="{image_y:.2f}" width="{image_width:.2f}" '
+            f'height="{image_height:.2f}"/>'
+        )
     if show_scale:
         append_static_scale_bar(
             svg,
-            x=image_x + 12,
+            x=image_x + image_width - 12 - image_width
+            * (50 if modality == "mesoscope" else 25)
+            / (display_width * option["micronsPerPixel"]),
             y=image_y + image_height - 14,
             display_width=image_width,
             native_width=display_width,
@@ -3959,23 +4104,36 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
     payload = load_neural_excerpts()
     sessions = {session["id"]: session for session in payload["sessions"]}
     frame_paths = load_neural_static_frames(payload)
+    acquisition_bands = load_slap2_acquisition_bands(payload)
     logo_paths = load_platform_logos()
-    width = 1800
-    height = 700
+    width = 1876
+    height = 1900
     panel_lefts = {"neuropixels": 35, "mesoscope": 645, "slap2": 1235}
     svg = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
-        '<title id="title">Raw recording stacks across three modalities</title>',
+        '<title id="title">Raw recordings, extracted sources, and activity</title>',
         '<desc id="description">Six stacked Neuropixels probe heatmaps, two stacks '
-        'containing eight mesoscope plane images, and two SLAP2 plane images merging '
-        'green iGluSnFR4f with red RCaMP3 show the native raw-data formats.</desc>',
+        'containing eight mesoscope plane images, and two SLAP2 structural projections '
+        'with cyan targeted raster regions show acquisition coverage in row one. '
+        'Row two shows extracted sources from one probe or plane per modality; '
+        'row three shows their ten matched activity traces.</desc>',
         f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
     ]
+    for label, center in (
+        ("Raw data", 360), ("Extracted sources", 1000), ("Activity traces", 1590)
+    ):
+        svg.append(
+            f'<text class="figure-row-label" x="60" y="{center}" '
+            f'transform="rotate(-90 60 {center})" text-anchor="middle" '
+            f'font-family="{FIGURE_SANS_FONT}" font-size="26" font-weight="700" '
+            f'fill="#293133">{label}</text>'
+        )
+    svg.append('<g class="figure-grid" transform="translate(76 0)">')
     summaries = {
-        "neuropixels": "6 probe recordings · all raw excerpts stacked",
-        "mesoscope": "8 planes · 4 VISp + 4 VISl · all raw frames stacked",
-        "slap2": "2 VISp planes · merged green + red channels",
+        "neuropixels": "6 probe recordings",
+        "mesoscope": "8 planes · 4 VISp + 4 VISl",
+        "slap2": "2 VISp planes",
     }
     for letter, label, modality in (
         ("A", "Neuropixels", "neuropixels"),
@@ -3992,13 +4150,13 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
                 'font-family="Source Sans 3, sans-serif" font-size="24" '
                 f'font-weight="700" fill="#293133">{letter}</text>',
                 f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
-                f'x="{left + 28}" y="1" width="{logo_size}" height="{logo_size}" '
+                f'x="{left + 56}" y="1" width="{logo_size}" height="{logo_size}" '
                 'preserveAspectRatio="xMidYMid meet"/>',
-                f'<text class="modality-title" x="{left + 136}" y="35" '
+                f'<text class="modality-title" x="{left + 168}" y="35" '
                 'font-family="Source Sans 3, sans-serif" '
                 f'font-size="{FIGURE_TYPE_SCALE["modality"]}" '
                 f'font-weight="700" fill="#293133">{label}</text>',
-                f'<text class="modality-scale" x="{left + 136}" y="67" '
+                f'<text class="modality-scale" x="{left + 168}" y="67" '
                 'font-family="Source Sans 3, sans-serif" font-size="12" '
                 f'font-weight="600" fill="#59615F">{escape(summaries[modality])}</text>',
                 "</g>",
@@ -4012,9 +4170,10 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         append_neuropixels_raw_card(
             svg,
             x=35 + index * 8,
-            y=102 + index * 62,
+            y=102 + index * 70,
             option=neuropixels_options[option_id],
             show_axis=index == len(NEURAL_STATIC_SELECTIONS["neuropixels"]) - 1,
+            visible_height=64 if index < len(NEURAL_STATIC_SELECTIONS["neuropixels"]) - 1 else None,
         )
 
     mesoscope_options = {
@@ -4026,7 +4185,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         ("VISp · 4 planes", 650, ("visp_2", "visp_0", "visp_1", "visp_3")),
         ("VISl · 4 planes", 915, ("visl_6", "visl_4", "visl_5", "visl_7")),
     )
-    for stack_index, (stack_label, left, option_ids) in enumerate(mesoscope_stacks):
+    for stack_label, left, option_ids in mesoscope_stacks:
         svg.append(
             f'<text class="neural-detail-label" x="{left}" y="{detail_label_y}" '
             'font-family="Source Sans 3, sans-serif" '
@@ -4037,45 +4196,103 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
             append_microscopy_raw_card(
                 svg,
                 x=left + index * 8,
-                y=detail_card_y + index * 45,
+                y=detail_card_y + index * 53,
                 card_width=255,
                 option=option,
                 path=frame_paths[("mesoscope", option_id)],
                 modality="mesoscope",
                 label=f'{option["targetLayer"]} · {option["imagingDepthUm"]:g} µm',
-                show_scale=(
-                    stack_index == len(mesoscope_stacks) - 1
-                    and index == len(option_ids) - 1
-                ),
+                show_scale=index == len(option_ids) - 1,
+                visible_height=47 if index < len(option_ids) - 1 else None,
             )
 
     slap2_options = {
         option["id"]: option for option in sessions["slap2"]["options"]
     }
-    svg.append(
-        f'<text class="neural-detail-label" x="1240" y="{detail_label_y}" '
-        'font-family="Source Sans 3, sans-serif" '
-        'font-size="12" font-weight="700" fill="#303536">'
-        'iGluSnFR4f (green) + RCaMP3 (red)</text>'
-    )
-    for index, (composite_id, source_option_ids) in enumerate(
-        SLAP2_STATIC_COMPOSITES.items()
-    ):
+    slap2_card_width = 380
+    slap2_left = panel_lefts["slap2"] + (550 - slap2_card_width) / 2
+    slap2_top = detail_label_y - 18
+    for composite_id, source_option_ids in SLAP2_STATIC_COMPOSITES.items():
         option = {**slap2_options[source_option_ids[0]], "id": composite_id}
         dmd = composite_id.split("-", maxsplit=1)[0].upper()
         depth = option["remoteFocusDepthBelowPiaUm"]
-        append_microscopy_raw_card(
+        coverage = acquisition_bands[composite_id]
+        reference_path = REPO_ROOT / "figure_sources" / coverage["referenceImage"]["assetPath"]
+        overlay_path = REPO_ROOT / "figure_sources" / coverage["bandOverlay"]["assetPath"]
+        card_height = append_microscopy_raw_card(
             svg,
-            x=1240 + index * 270,
-            y=detail_card_y,
-            card_width=265,
+            x=slap2_left,
+            y=slap2_top,
+            card_width=slap2_card_width,
             option=option,
-            path=frame_paths[("slap2", composite_id)],
+            path=reference_path,
             modality="slap2",
             label=f"{dmd} · {depth:g} µm",
-            show_scale=index == len(SLAP2_STATIC_COMPOSITES) - 1,
+            show_scale=True,
+            band_overlay=overlay_path,
+            transpose=True,
+            crop_bounds=slap2_reference_crop(reference_path, overlay_path),
         )
-    svg.append("</svg>")
+        slap2_top += card_height + 14
+    legend_left = slap2_left + 75
+    legend_top = slap2_top - 10
+    svg.extend(
+        [
+            '<g class="acquisition-band-legend">',
+            f'<rect class="acquisition-band-swatch" x="{legend_left:g}" '
+            f'y="{legend_top:g}" width="18" height="18" fill="#25AAE1"/>',
+            f'<text x="{legend_left + 28:g}" y="{legend_top + 16:g}" '
+            f'font-family="{FIGURE_SANS_FONT}" font-size="12" '
+            'font-weight="700" fill="#25AAE1">targeted raster regions</text>',
+            '</g>',
+        ]
+    )
+    segmentation = {
+        record["id"]: record for record in load_segmentation_viewers()["viewers"]
+    }
+    for column, (modality, left) in enumerate(panel_lefts.items()):
+        panel_path = write_segmentation_viewer_svg(
+            modality,
+            output.parent / SEGMENTATION_VIEWER_STATIC_OUTPUTS[modality].name,
+            image_display_scale=min(550 / 670, 530 / 640),
+        )
+        encoded = base64.b64encode(panel_path.read_bytes()).decode("ascii")
+        source = segmentation[modality]["sources"][0]
+        source_label = source["panelLabel"]
+        if modality == "mesoscope":
+            option = mesoscope_options[source["sourceId"]]
+            source_label = (
+                f'{option["targetArea"]} · {option["targetLayer"]} · '
+                f'{option["imagingDepthUm"]:g} µm'
+            )
+        svg.append(
+            f'<defs><image id="extraction-{modality}" width="1400" height="760" '
+            f'href="data:image/svg+xml;base64,{encoded}"/></defs>'
+        )
+        for row, top, view_box in (
+            (1, 735, "52 95 670 640"),
+            (2, 1320, "750 100 590 590"),
+        ):
+            letter = chr(ord("A") + row * 3 + column)
+            svg.extend(
+                [
+                    f'<g class="extraction-panel" data-modality="{modality}" '
+                    f'data-row="{row + 1}" data-source-id="{source["sourceId"]}">',
+                    f'<text x="{left}" y="{top - 22}" '
+                    f'font-family="{FIGURE_SANS_FONT}" font-size="24" '
+                    f'font-weight="700" fill="#293133">{letter}</text>',
+                    *([
+                        f'<text class="source-panel-label" x="{left + 34}" y="{top - 22}" '
+                        f'font-family="{FIGURE_SANS_FONT}" font-size="17" '
+                        f'fill="#59615F">{escape(source_label)}</text>',
+                    ] if row == 1 else []),
+                    f'<svg x="{left}" y="{top + 12}" width="550" height="530" '
+                    f'viewBox="{view_box}" overflow="hidden">'
+                    f'<use href="#extraction-{modality}"/></svg>',
+                    '</g>',
+                ]
+            )
+    svg.extend(["</g>", "</svg>"])
     output.parent.mkdir(parents=True, exist_ok=True)
     write_svg_output(output, svg)
     return output
@@ -4086,35 +4303,8 @@ def write_neural_viewer_html(
     static_output: Path = NEURAL_STATIC_OUTPUT,
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
-    payload = load_neural_excerpts()
-    logo_data_uris = platform_logo_data_uris()
     write_neural_static_svg(static_output)
-    for session in payload["sessions"]:
-        session["logo"] = logo_data_uris[session["id"]]
-        for field in ("alignment", "context", "event", "stimulus"):
-            session.pop(field, None)
-    template = (JAVASCRIPT_DIR / "neural-viewer.html").read_text(encoding="utf-8")
-    stylesheet = load_figure_stylesheet("neural-viewer.css")
-    javascript = (JAVASCRIPT_DIR / "neural-viewer.js").read_text(encoding="utf-8")
-    html = (
-        template.replace("__NEURAL_CSS__", stylesheet)
-        .replace(
-            "__NEURAL_STATIC_IMAGE__",
-            f"media/neural-viewer/{static_output.name}",
-        )
-        .replace(
-            "__NEURAL_DATA__",
-            json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
-        )
-        .replace("__NEURAL_JS__", javascript)
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
-    )
-    output.write_text(html, encoding="utf-8", newline="\n")
-    media_output = output.parent / "media" / "neural-viewer"
-    if media_output.exists():
-        shutil.rmtree(media_output)
-    shutil.copytree(NEURAL_MEDIA_DIR, media_output)
-    shutil.copy2(static_output, media_output / static_output.name)
+    write_segmentation_viewer_html(output, static_output=static_output)
     return output
 
 
@@ -4126,9 +4316,22 @@ def write_segmentation_viewer_html(
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_segmentation_viewers(data_path, provenance_path)
+    movies = load_segmentation_movies(payload)
+    raw_payload = load_neural_excerpts()
+    raw_sessions = {record["id"]: record for record in raw_payload["sessions"]}
+    slap2_raw_movies = load_slap2_raw_movies(raw_payload)
     logo_data_uris = platform_logo_data_uris()
     for modality in payload["viewers"]:
         modality["logo"] = logo_data_uris[modality["id"]]
+        for source in modality["sources"]:
+            source["registeredMovie"] = movies.get((modality["id"], source["sourceId"]))
+            source["rawOptions"] = [
+                dict(slap2_raw_movies[option["id"]]) if modality["id"] == "slap2" else
+                {key: value for key, value in option.items() if key != "dataBase64"}
+                for option in raw_sessions[modality["id"]]["options"]
+                if option["id"] == source["sourceId"]
+                or option["id"].startswith(f"{source['sourceId']}-detector-")
+            ]
     template = (JAVASCRIPT_DIR / "segmentation-viewer.html").read_text(
         encoding="utf-8"
     )
@@ -4136,11 +4339,16 @@ def write_segmentation_viewer_html(
     javascript = (JAVASCRIPT_DIR / "segmentation-viewer.js").read_text(
         encoding="utf-8"
     )
+    static_media_dir = (
+        "media/neural-viewer"
+        if static_output.name == NEURAL_STATIC_OUTPUT.name
+        else "media/segmentation-viewers"
+    )
     html = (
         template.replace("__SEGMENTATION_CSS__", stylesheet)
         .replace(
             "__SEGMENTATION_STATIC_IMAGE__",
-            f"media/segmentation-viewers/{static_output.name}",
+            f"{static_media_dir}/{static_output.name}",
         )
         .replace("__SEGMENTATION_JS__", javascript)
         .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
@@ -4156,11 +4364,165 @@ def write_segmentation_viewer_html(
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     media_output = output.parent / "media" / "segmentation-viewers"
-    if media_output.exists():
-        shutil.rmtree(media_output)
-    shutil.copytree(SEGMENTATION_VIEWER_MEDIA_DIR, media_output)
-    shutil.copy2(static_output, media_output / static_output.name)
+    shutil.copytree(SEGMENTATION_VIEWER_MEDIA_DIR, media_output, dirs_exist_ok=True)
+    shutil.copytree(
+        SEGMENTATION_MOVIE_MEDIA_DIR,
+        output.parent / "media/segmentation-movies",
+        dirs_exist_ok=True,
+    )
+    shutil.copytree(NEURAL_MEDIA_DIR, output.parent / "media/neural-viewer", dirs_exist_ok=True)
+    shutil.copy2(static_output, output.parent / static_media_dir / static_output.name)
+    if static_media_dir == "media/neural-viewer":
+        (media_output / static_output.name).unlink(missing_ok=True)
     return output
+
+
+def load_segmentation_movies(
+    viewers: dict,
+    path: Path = SEGMENTATION_MOVIES_PATH,
+) -> dict[tuple[str, str], dict]:
+    """Validate registered movie geometry, source identities, and media checksums."""
+    from PIL import Image
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if (
+        payload.get("version") != 1
+        or payload.get("segmentationSha256")
+        != hashlib.sha256(SEGMENTATION_VIEWER_DATA_PATH.read_bytes()).hexdigest()
+    ):
+        raise RuntimeError("Registered movie snapshot provenance is invalid.")
+    expected = {
+        (modality["id"], source["sourceId"]): source
+        for modality in viewers["viewers"]
+        for source in modality["sources"]
+        if modality["id"] != "neuropixels"
+    }
+    records = payload.get("movies", [])
+    movies = {(record["modality"], record["sourceId"]): record for record in records}
+    if len(movies) != len(records) or movies.keys() != expected.keys():
+        raise RuntimeError("Registered movie source inventory is incomplete or duplicated.")
+    for key, record in movies.items():
+        source = expected[key]
+        times = record.get("frameTimesSeconds", [])
+        asset_path = record.get("assetPath", "")
+        media_path = REPO_ROOT / "figure_sources" / asset_path
+        if (
+            record.get("session") != source["session"]
+            or record.get("coordinateSystem") != "registered-segmentation-image"
+            or record.get("baseImageSha256") != source["baseImage"]["sha256"]
+            or record.get("width") != source["baseImage"]["width"]
+            or record.get("height") != source["baseImage"]["height"]
+            or record.get("displayTransform") != source["displayTransform"]
+            or len(times) != record.get("frameCount")
+            or len(times) < 30
+            or times[0] != 0
+            or not all(math.isfinite(value) for value in times)
+            or not all(left < right for left, right in zip(times, times[1:], strict=False))
+            or not asset_path.startswith("media/segmentation-movies/")
+            or ".." in Path(asset_path).parts
+            or not media_path.is_file()
+            or hashlib.sha256(media_path.read_bytes()).hexdigest() != record.get("sha256")
+        ):
+            raise RuntimeError(f"Registered movie alignment or checksum is invalid: {key}")
+        if not record.get("sources") or any(
+            not item.get("url", "").startswith("https://") for item in record["sources"]
+        ):
+            raise RuntimeError(f"Registered movie source provenance is missing: {key}")
+        if key == ("slap2", "dmd1"):
+            annotation = record.get("somaticBand", {})
+            bounds = annotation.get("boundsXY", [])
+            if (
+                annotation.get("sourceLabel") != "soma"
+                or annotation.get("coordinateSystem") != "registered-segmentation-image"
+                or annotation.get("baseImageSha256") != source["baseImage"]["sha256"]
+                or len(bounds) != 4
+                or not 0 <= bounds[0] < bounds[2] <= record["width"]
+                or not 0 <= bounds[1] < bounds[3] <= record["height"]
+                or not any(item.get("sha256") == annotation.get("annotationSha256")
+                           and item.get("url") == annotation.get("annotationUrl")
+                           for item in record["sources"])
+            ):
+                raise RuntimeError("SLAP2 somatic-band annotation provenance is invalid.")
+        with Image.open(media_path) as sheet:
+            if sheet.size != (
+                record["frameWidth"] * record["sheetColumns"],
+                record["frameHeight"] * record["sheetRows"],
+            ):
+                raise RuntimeError(f"Registered movie sprite geometry is invalid: {key}")
+    return movies
+
+
+def load_slap2_raw_movies(
+    raw_payload: dict,
+    path: Path = SEGMENTATION_MOVIES_PATH,
+) -> dict[str, dict]:
+    """Validate raw-only SLAP2 clips against the pinned acquisition excerpt."""
+    from PIL import Image
+
+    snapshot = json.loads(path.read_text(encoding="utf-8"))
+    session = next(record for record in raw_payload["sessions"] if record["id"] == "slap2")
+    expected = {option["id"]: option for option in session["options"]}
+    records = snapshot.get("slap2RawMovies", [])
+    movies = {record["id"]: record for record in records}
+    if len(movies) != len(records) or movies.keys() != expected.keys():
+        raise RuntimeError("SLAP2 raw-only movie inventory is incomplete or duplicated.")
+    raw_sha256 = hashlib.sha256(NEURAL_EXCERPTS_PATH.read_bytes()).hexdigest()
+    sources = {source["url"]: source for source in session["sources"]}
+    for option_id, record in movies.items():
+        option = expected[option_id]
+        factor = option["spatialDownsampleFactor"]
+        plane = option_id.split("-", maxsplit=1)[0]
+        asset_path = record.get("assetPath", "")
+        media_path = REPO_ROOT / "figure_sources" / asset_path
+        if (
+            record.get("rawNeuralSha256") != raw_sha256
+            or record.get("session") != session["session"]
+            or record.get("sourceId") != plane
+            or record.get("detectorChannel") != option["detectorChannel"]
+            or record.get("measurement") != option["measurement"]
+            or record.get("coordinateSystem") != "native-acquisition-raster"
+            or record.get("displayTransform") != "native-yx"
+            or record.get("fastScanAxis") != "horizontal"
+            or record.get("referenceBackground") is not False
+            or record.get("temporalAveragingFrames") != 1
+            or record.get("spatialDownsampleFactor") != factor
+            or record.get("spatialReduction") != "max"
+            or record.get("micronsPerPixel") != option["micronsPerPixel"]
+            or record.get("displayWidth") != option["nativeWidth"]
+            or record.get("displayHeight") != option["nativeHeight"]
+            or record.get("frameWidth") != option["nativeWidth"] // factor
+            or record.get("frameHeight") != option["nativeHeight"] // factor
+            or record.get("frameCount") != option["frameCount"]
+            or record.get("frameTimes") != option["frameTimes"]
+            or len(record.get("decodedFramesSha256", "")) != 64
+            or not asset_path.startswith("media/segmentation-movies/")
+            or ".." in Path(asset_path).parts
+            or not media_path.is_file()
+            or hashlib.sha256(media_path.read_bytes()).hexdigest() != record.get("sheetSha256")
+        ):
+            raise RuntimeError(
+                f"SLAP2 raw-only movie geometry or provenance is invalid: {option_id}"
+            )
+        expected_urls = {
+            url for url in sources
+            if url.endswith((f"{plane.upper()}.meta", f"{plane.upper()}-TRIAL000026.dat"))
+        }
+        recorded_sources = record.get("sources", [])
+        if (
+            len(recorded_sources) != 2
+            or {item.get("url") for item in recorded_sources} != expected_urls
+        ):
+            raise RuntimeError(f"SLAP2 raw-only source inventory is invalid: {option_id}")
+        for source in recorded_sources:
+            if any(source.get(key) != value for key, value in sources[source["url"]].items()):
+                raise RuntimeError(f"SLAP2 raw-only source checksum is invalid: {option_id}")
+        with Image.open(media_path) as sheet:
+            if sheet.size != (
+                record["frameWidth"] * record["sheetColumns"],
+                record["frameHeight"] * record["sheetRows"],
+            ):
+                raise RuntimeError(f"SLAP2 raw-only sprite geometry is invalid: {option_id}")
+    return movies
 
 
 def segmentation_trace_rows(viewer: dict) -> list[list[float]]:
@@ -4177,7 +4539,7 @@ def segmentation_trace_rows(viewer: dict) -> list[list[float]]:
 
 def static_segmentation_trace_indices(
     rows: list[list[float]],
-    count: int = 20,
+    count: int = 10,
 ) -> list[int]:
     active_indices = []
     for index, values in enumerate(rows):
@@ -4344,6 +4706,7 @@ def write_segmentation_viewer_svg(
     output: Path | None = None,
     data_path: Path = SEGMENTATION_VIEWER_DATA_PATH,
     provenance_path: Path = SEGMENTATION_VIEWER_PROVENANCE_PATH,
+    image_display_scale: float = 1.0,
 ) -> Path:
     if modality not in SEGMENTATION_VIEWER_STATIC_OUTPUTS:
         raise ValueError(f"Unsupported segmentation viewer modality: {modality}")
@@ -4363,7 +4726,7 @@ def write_segmentation_viewer_svg(
         'viewBox="0 0 1400 760" role="img" aria-labelledby="title description">',
         f'<title id="title">{escape(SEGMENTATION_VIEWER_TITLES[modality])}</title>',
         '<desc id="description">A source projection shows all extraction filters; '
-        'twenty representative filters are paired with vertically stacked activity traces.</desc>',
+        'ten representative filters are paired with vertically stacked activity traces.</desc>',
         '<rect width="1400" height="760" fill="#FFFFFF"/>',
         f'<image class="static-modality-logo" data-modality="{modality}" '
         f'href="data:image/png;base64,{logo_data}" x="52" y="10" '
@@ -4389,10 +4752,10 @@ def write_segmentation_viewer_svg(
         raw_image = base64.b64encode(
             encode_rgb_png(viewer["rawColumns"], viewer["rawRows"], rgb)
         ).decode()
-        image_x = visual_left + 46
-        image_y = visual_top + 20
-        image_width = visual_width - 56
-        image_height = visual_height - 58
+        image_x = visual_left
+        image_y = visual_top
+        image_width = visual_width
+        image_height = visual_height
 
         def spike_x(time_ms: float) -> float:
             return image_x + (time_ms - viewer["rawTimeStartMs"]) / (
@@ -4423,46 +4786,18 @@ def write_segmentation_viewer_svg(
                 f'stroke="{"#FFFFFF" if is_represented else "none"}" '
                 f'stroke-width="{1.2 if is_represented else 0}"/>'
             )
-        svg.append(
-            f'<rect x="{image_x:.2f}" y="{image_y:.2f}" width="{image_width:.2f}" '
-            f'height="{image_height:.2f}" fill="none" stroke="#68716F"/>'
+        time_width = 20 / (viewer["rawTimeEndMs"] - viewer["rawTimeStartMs"]) * image_width
+        scale_x = image_x + image_width - time_width - 20 / image_display_scale
+        scale_y = image_y + image_height - 20 / image_display_scale
+        append_white_scale_bar(
+            svg, x=scale_x, y=scale_y, length=time_width, label="20 ms",
+            display_scale=image_display_scale, canvas_width=1400,
         )
-        for index in range(5):
-            fraction = index / 4
-            vertical = image_y + fraction * image_height
-            depth = viewer["rawDepthMaxUm"] - fraction * (
-                viewer["rawDepthMaxUm"] - viewer["rawDepthMinUm"]
-            )
-            horizontal = image_x + fraction * image_width
-            time_ms = viewer["rawTimeStartMs"] + fraction * (
-                viewer["rawTimeEndMs"] - viewer["rawTimeStartMs"]
-            )
-            svg.extend(
-                [
-                    f'<line x1="{image_x - 6:.2f}" y1="{vertical:.2f}" '
-                    f'x2="{image_x:.2f}" y2="{vertical:.2f}" stroke="#68716F"/>',
-                    f'<text x="{image_x - 8:.2f}" y="{vertical + 4:.2f}" '
-                    f'text-anchor="end" font-family="{FIGURE_MONO_FONT}" '
-                    f'font-size="{FIGURE_TYPE_SMALL}" fill="#68716F">{depth:.0f}</text>',
-                    f'<line x1="{horizontal:.2f}" y1="{image_y + image_height:.2f}" '
-                    f'x2="{horizontal:.2f}" y2="{image_y + image_height + 6:.2f}" '
-                    'stroke="#68716F"/>',
-                    f'<text x="{horizontal:.2f}" y="{image_y + image_height + 18:.2f}" '
-                    f'text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
-                    f'font-size="{FIGURE_TYPE_SMALL}" fill="#68716F">{time_ms:.0f}</text>',
-                ]
-            )
-        svg.extend(
-            [
-                f'<text x="{image_x + image_width / 2:.2f}" '
-                f'y="{image_y + image_height + 34:.2f}" text-anchor="middle" '
-                f'font-family="{FIGURE_SANS_FONT}" font-size="{FIGURE_TYPE_SMALL}" '
-                'font-weight="600" fill="#68716F">Excerpt time (ms)</text>',
-                f'<text x="{image_x:.2f}" y="{image_y - 8:.2f}" '
-                f'text-anchor="start" font-family="{FIGURE_SANS_FONT}" '
-                f'font-size="{FIGURE_TYPE_SMALL}" font-weight="600" '
-                'fill="#68716F">Probe length from tip (µm)</text>',
-            ]
+        append_white_scale_bar(
+            svg, x=scale_x, y=scale_y,
+            length=1000 / (viewer["rawDepthMaxUm"] - viewer["rawDepthMinUm"]) * image_height,
+            label="1000 µm", vertical=True, display_scale=image_display_scale,
+            canvas_width=1400,
         )
     else:
         base_path = REPO_ROOT / "figure_sources" / viewer["baseImage"]["assetPath"]
@@ -4502,19 +4837,44 @@ def write_segmentation_viewer_svg(
         )
         scale_microns = 25 if modality == "slap2" else 50
         scale_width = scale_microns / viewer["micronsPerPixel"] * scale
-        scale_x = image_x + rendered_width - scale_width - 17
-        scale_y = image_y + rendered_height - 18
-        svg.extend(
-            [
-                f'<line x1="{scale_x:.2f}" y1="{scale_y:.2f}" '
-                f'x2="{scale_x + scale_width:.2f}" y2="{scale_y:.2f}" '
-                'stroke="#FFFFFF" stroke-width="4"/>',
-                f'<text x="{scale_x + scale_width / 2:.2f}" y="{scale_y - 8:.2f}" '
-                f'text-anchor="middle" font-family="{FIGURE_SANS_FONT}" '
-                f'font-size="{FIGURE_TYPE_SMALL}" font-weight="700" fill="#FFFFFF">'
-                f'{scale_microns} µm</text>',
-            ]
+        append_white_scale_bar(
+            svg,
+            x=image_x + rendered_width - scale_width - 20 / image_display_scale,
+            y=image_y + rendered_height - 20 / image_display_scale,
+            length=scale_width,
+            label=f"{scale_microns} µm",
+            display_scale=image_display_scale,
+            canvas_width=1400,
         )
+        if modality == "slap2":
+            annotation = load_segmentation_movies(payload)[("slap2", viewer["sourceId"])][
+                "somaticBand"
+            ]
+            left, top, right, bottom = annotation["boundsXY"]
+            band_x = image_x + left * scale
+            band_y = image_y + top * scale
+            band_width = (right - left) * scale
+            band_height = (bottom - top) * scale
+            label_x = image_x + rendered_width - 14 / image_display_scale
+            label_y = band_y - 42 / image_display_scale
+            font_size = 20 * FIGURE_REFERENCE_WIDTH / (1400 * image_display_scale)
+            svg.extend(
+                [
+                    '<g class="somatic-band" data-source-label="soma">',
+                    f'<rect x="{band_x:.2f}" y="{band_y:.2f}" '
+                    f'width="{band_width:.2f}" height="{band_height:.2f}" '
+                    f'fill="none" stroke="#FFFFFF" stroke-width="{2 / image_display_scale:.3f}" '
+                    f'stroke-dasharray="{5 / image_display_scale:.3f} '
+                    f'{4 / image_display_scale:.3f}"/>',
+                    f'<path d="M {band_x + band_width:.2f} {band_y:.2f} '
+                    f'L {label_x - 20:.2f} {label_y + 8:.2f}" fill="none" '
+                    f'stroke="#FFFFFF" stroke-width="{2 / image_display_scale:.3f}"/>',
+                    f'<text x="{label_x:.2f}" y="{label_y:.2f}" text-anchor="end" '
+                    f'font-family="{FIGURE_SANS_FONT}" font-size="{font_size:.3f}" '
+                    'font-weight="700" fill="#FFFFFF">Somatic band</text>',
+                    '</g>',
+                ]
+            )
 
     append_segmentation_trace_stack(
         svg,
@@ -4551,7 +4911,7 @@ def write_segmentation_viewer_static_svg(
         'viewBox="0 0 1400 2280" role="img" aria-labelledby="title description">',
         '<title id="title">Unit extraction across recording modalities</title>',
         '<desc id="description">Neuropixels, mesoscope, and SLAP2 panels show '
-        'representative extraction filters with twenty stacked activity traces.</desc>',
+        'representative extraction filters with ten stacked activity traces.</desc>',
         *panels,
         "</svg>",
     ]

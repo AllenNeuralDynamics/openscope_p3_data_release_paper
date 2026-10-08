@@ -507,7 +507,7 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     assert "see [Figure 1](#fig-graphical-abstract)" in manuscript
     assert "see [Figure 3](#fig-multimodal-pipelines)" in manuscript
     assert "./images/figures/generated/multimodal-hardware.svg" in manuscript
-    assert "./images/figures/generated/figure-06-segmentation-viewers.svg" in manuscript
+    assert "./images/figures/generated/figure-06-segmentation-viewers.svg" not in manuscript
     assert "./images/figures/generated/figure-07-unit-extraction-plan.svg" in manuscript
     assert "./images/figures/generated/figure-08-basic-stimuli-plan.svg" in manuscript
     assert "./images/figures/generated/figure-11-standard-oddball-plan.svg" not in manuscript
@@ -643,6 +643,8 @@ def test_methods_are_collapsed_as_one_section() -> None:
     )
     assert methods.rstrip().endswith("::::")
     assert "## Experimental animals" in methods
+    assert "(registered-movie-excerpts)=" in methods
+    assert manuscript.count("### NWB data packaging") == 1
     assert "(data-processing)=\n## Data processing" in methods
     processing = methods.split("(data-processing)=\n", 1)[1]
     assert (
@@ -783,7 +785,7 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "isolated runs of one to four samples" in manuscript
     assert "**B,** a dorsal projection" in manuscript
     assert manuscript.count(
-        "[Figure 9](#fig-supp-optotagging-heatmaps)"
+        "[Figure 8](#fig-supp-optotagging-heatmaps)"
     ) == 3
     assert "./interactive/optotagging-heatmaps.html" in manuscript
     assert ":label: fig-supp-optotagging-heatmaps\n:width: 100%" in manuscript
@@ -961,39 +963,45 @@ def test_nwb_file_contents_explorer_uses_pinned_native_snapshots() -> None:
 def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     raw_start = manuscript.index(":label: fig-aligned-neural-signals")
-    segmentation_start = manuscript.index(":label: fig-segmentation-viewers")
+    segmentation_start = manuscript.index("(fig-segmentation-viewers)=")
     segmentation_stop = manuscript.index(":label: fig-unit-extraction-plan")
-    segmentation_captions = manuscript[segmentation_start:segmentation_stop]
+    segmentation_captions = manuscript[raw_start:segmentation_start]
     segmentation_text = " ".join(segmentation_captions.split())
     assert raw_start < segmentation_start < segmentation_stop
     assert ":enumerated: false" not in segmentation_captions
     assert (
-        ":placeholder: ./images/figures/generated/figure-06-segmentation-viewers.svg"
+        ":placeholder: ./images/figures/generated/raw-neural-recordings.svg"
         in segmentation_captions
     )
-    assert "same platform logos as the other multimodal figures" in segmentation_text
-    assert "all six probes" in segmentation_text
-    assert "all eight VISp and VISl planes" in segmentation_text
-    assert "provides DMD1 and DMD2" in segmentation_text
+    assert manuscript.count(":::{iframe} ./interactive/neural-viewer.html") == 1
+    assert ":::{iframe} ./interactive/segmentation-viewer.html" not in manuscript
+    assert "**D-F,** Extracted sources" in segmentation_text
+    assert "**G-I,** Ten activity-bearing filters" in segmentation_text
+    assert "Probe A, the VISp L2/3 plane at 152 µm, and SLAP2 DMD1" in segmentation_text
+    assert "DMD1 above DMD2" in segmentation_text
+    assert "all 60 frames of each committed raw movie" in segmentation_text
     assert "every probe or imaging plane" in segmentation_text
     assert "complete NWB segmentation" in segmentation_text
-    assert "complete source segmentation" in segmentation_text
-    assert "30 s ΔF/F (%)" in segmentation_text
-    assert "30 s, approximately 200 Hz ΔF/F (%) trace" in segmentation_text
-    assert "waveform-spread band" in segmentation_text
-    assert "common-mode correction is enabled by default" in segmentation_text
+    assert "30 s for imaging" in segmentation_text
+    assert "SLAP2 trace samples are approximately 200 Hz" in segmentation_text
+    assert "common-mode-corrected AP voltage" in segmentation_text
     assert (
         "fast-scanning x axis is horizontal for mesoscope and vertical for SLAP2"
         in segmentation_text
     )
     assert "mark its direction" not in segmentation_text
-    assert "twenty activity-bearing filters sampled evenly across filter order" in segmentation_text
-    assert "grayscale average projection" in segmentation_text
-    assert "arrays and masks receive the same publication-level axis transpose" in segmentation_text
-    assert "background controls alter only" in segmentation_text
+    assert "Ten activity-bearing filters sampled evenly across filter order" in segmentation_text
+    assert "somatic band in F" in segmentation_text
+    assert "user-drawn `soma` ROI" in segmentation_text
+    assert "20 ms and 1000 µm" in segmentation_text
+    assert "cyan acquisition bands" in segmentation_text
+    assert "not fluorescence intensity or extracted-source segmentation" in segmentation_text
+    assert "sampled areas listed above each probe" in segmentation_text
+    assert "registered movies beneath the imaging masks" in segmentation_text
+    assert "separate elapsed-time axes" in segmentation_text
+    assert "without segmentation overlays" in segmentation_text
     assert "activity image" not in segmentation_text.lower()
     assert "QC-passing" not in segmentation_text
-    assert "No tab shows stimulus annotations" in segmentation_text
     assert "first sequence omission" not in segmentation_text
     assert "first motor mismatch" not in segmentation_text
     assert "fig-supp-segmentation-viewers" not in manuscript
@@ -1164,14 +1172,15 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "overlapping raw-image cards" in manuscript
     assert "**A,** all six Neuropixels probe heatmaps" in manuscript
     assert "eight mesoscope plane stills" in manuscript
-    assert "two merged SLAP2 plane previews" in manuscript
+    assert "two SLAP2 reference projections" in manuscript
     assert "black-referenced display gain" in manuscript
     assert "1st–99.5th max-channel percentiles" in manuscript
-    assert "400 × 640 lossless WebP frames" in manuscript
-    assert "transpose it for\npublication display" in manuscript
-    assert "fast-scanning x axis vertical" in manuscript
-    assert "single aligned source frame without temporal averaging" in manuscript
-    assert "hue-preserving gamma of 0.55" in manuscript
+    assert "640 × 400 lossless grayscale frames" in manuscript
+    assert "fast-scanning x axis horizontal, matching C and F" in manuscript
+    assert "comes from one acquisition cycle; unsampled pixels are black" in manuscript
+    assert "reference or temporally averaged image blended into the raw signal" in manuscript
+    assert "reference-stack maximum projection" in manuscript
+    assert "99.8th percentiles with gamma 0.6" in manuscript
     assert "shown to introduce the native acquisition formats" in manuscript
     assert "Event-aligned raw data across recording modalities" not in manuscript
     assert "prediction-violating event" not in manuscript
@@ -1194,15 +1203,15 @@ def test_figure_captions_and_interactive_placement() -> None:
         manuscript.index("# Data records")
         < manuscript.index("## Raw data across recording modalities")
         < manuscript.index("fig-aligned-neural-signals")
-        < manuscript.index("## Units extraction")
         < manuscript.index("fig-segmentation-viewers")
+        < manuscript.index("## Units extraction")
         < manuscript.index("fig-unit-extraction-plan")
         < manuscript.index("## Receptive field analysis across modalities")
         < manuscript.index("fig-basic-stimuli-plan")
     )
-    assert "[Figure 6](#fig-segmentation-viewers)" in manuscript
+    assert "[Figure 5](#fig-aligned-neural-signals)" in manuscript
     assert ":label: fig-unit-extraction-plan" in manuscript
-    assert "[Figure 8](#fig-basic-stimuli-plan) outlines a comparison" in manuscript
+    assert "[Figure 7](#fig-basic-stimuli-plan) outlines a comparison" in manuscript
     assert "fig-standard-oddball-plan" not in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert ":placeholder: ./images/figures/generated/synchronized-behavior.svg" in manuscript
@@ -1224,7 +1233,7 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "Event-centered excerpts from real Neuropixels" not in manuscript
     assert "figure-06-behavior-tracking-plan.png" not in manuscript
     assert "continuous raw\nbehavioral videos" in manuscript
-    assert "[Figure 12](#fig-behavior-tracking)" in manuscript
+    assert "[Figure 11](#fig-behavior-tracking)" in manuscript
     assert "[](#fig-behavior-tracking)" not in manuscript
     assert (
         manuscript.index(":label: fig-supp-optotagging-heatmaps")
@@ -1238,12 +1247,11 @@ def test_figure_captions_and_interactive_placement() -> None:
         (3, "fig-multimodal-pipelines"),
         (4, "fig-recording-session-inventory"),
         (5, "fig-aligned-neural-signals"),
-        (6, "fig-segmentation-viewers"),
-        (8, "fig-basic-stimuli-plan"),
-        (9, "fig-supp-optotagging-heatmaps"),
-        (10, "fig-supp-wavemap"),
-        (11, "fig-neuropixels-event-responses"),
-        (12, "fig-behavior-tracking"),
+        (7, "fig-basic-stimuli-plan"),
+        (8, "fig-supp-optotagging-heatmaps"),
+        (9, "fig-supp-wavemap"),
+        (10, "fig-neuropixels-event-responses"),
+        (11, "fig-behavior-tracking"),
     ):
         assert f"[Figure {number}](#{label})" in manuscript
     assert re.search(r"\[\]\(#fig-", manuscript) is None

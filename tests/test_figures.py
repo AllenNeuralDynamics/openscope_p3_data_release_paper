@@ -74,8 +74,11 @@ from openscope_p3_publication.figures import (
     load_optotagging_static_summary,
     load_publication_table_data,
     load_running_statistics,
+    load_segmentation_movies,
     load_segmentation_viewers,
     load_shared_stimulus_table_excerpts,
+    load_slap2_acquisition_bands,
+    load_slap2_raw_movies,
     load_stimulus_table_excerpts,
     load_unit_yield_data,
     modality_session_records,
@@ -1469,6 +1472,74 @@ def test_common_median_correction_removes_time_column_offsets() -> None:
     assert corrected == bytes((78, 78, 78) * 3 + (178, 178, 178) * 3)
 
 
+def test_slap2_raw_movies_are_source_backed(tmp_path: Path) -> None:
+    raw_payload = load_neural_excerpts()
+    movies = load_slap2_raw_movies(raw_payload)
+    coverage = load_slap2_acquisition_bands(raw_payload)
+    assert len(movies) == 4
+    for option_id, record in movies.items():
+        assert record["referenceBackground"] is False
+        assert record["temporalAveragingFrames"] == 1
+        assert record["displayTransform"] == "native-yx"
+        assert record["fastScanAxis"] == "horizontal"
+        assert (record["frameWidth"], record["frameHeight"]) == (640, 400)
+        assert record["frameCount"] == 60
+        assert len(record["cycleIndices"]) == record["frameCount"]
+        assert all(left < right for left, right in zip(
+            record["cycleIndices"], record["cycleIndices"][1:], strict=False
+        ))
+        overlay = coverage[f"{record['sourceId']}-composite"]["bandOverlay"]
+        with Image.open(REPO_ROOT / "figure_sources" / overlay["assetPath"]) as image:
+            marked = np.asarray(image.getchannel("A")).T > 0
+        hashes = set()
+        with Image.open(REPO_ROOT / "figure_sources" / record["assetPath"]) as sheet:
+            for frame_index in range(record["frameCount"]):
+                left = frame_index % record["sheetColumns"] * record["frameWidth"]
+                top = frame_index // record["sheetColumns"] * record["frameHeight"]
+                frame = np.asarray(sheet.crop((
+                    left, top, left + record["frameWidth"], top + record["frameHeight"]
+                )).convert("RGB"))
+                assert np.array_equal(frame[..., 0], frame[..., 1])
+                assert np.array_equal(frame[..., 1], frame[..., 2])
+                assert not np.any(frame[~marked])
+                assert np.any(frame[marked])
+                hashes.add(hashlib.sha256(frame.tobytes()).hexdigest())
+        assert len(hashes) == record["frameCount"], option_id
+
+    snapshot = json.loads((REPO_ROOT / "figure_sources/data/segmentation-movies.json").read_text())
+    snapshot["slap2RawMovies"][0]["referenceBackground"] = True
+    bad_path = tmp_path / "bad-raw-movie.json"
+    bad_path.write_text(json.dumps(snapshot), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="geometry or provenance"):
+        load_slap2_raw_movies(raw_payload, bad_path)
+
+
+def test_registered_movies_match_all_imaging_sources(tmp_path: Path) -> None:
+    viewers = load_segmentation_viewers()
+    movies = load_segmentation_movies(viewers)
+    assert len(movies) == 10
+    somatic_band = movies[("slap2", "dmd1")]["somaticBand"]
+    assert somatic_band["sourceLabel"] == "soma"
+    assert somatic_band["boundsXY"] == [160, 187, 240, 243]
+    assert somatic_band["pixelCount"] == 3103
+    assert somatic_band["annotationUrl"].endswith("/ANNOTATIONS.mat")
+    for (modality, source_id), movie in movies.items():
+        assert movie["frameCount"] == (38 if modality == "mesoscope" else 40)
+        assert 3.5 < movie["frameTimesSeconds"][-1] < 4
+        assert movie["width"] >= 400
+        assert movie["height"] >= 400
+        assert movie["sourceId"] == source_id
+        assert movie["decodedFramesSha256"]
+        assert all(record.get("etag") or record.get("sha256") for record in movie["sources"])
+
+    path = tmp_path / "segmentation-movies.json"
+    payload = json.loads((REPO_ROOT / "figure_sources/data/segmentation-movies.json").read_text())
+    payload["movies"][0]["baseImageSha256"] = "0" * 64
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="alignment or checksum"):
+        load_segmentation_movies(viewers, path)
+
+
 def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     html_path = write_segmentation_viewer_html(tmp_path / "segmentation-viewer.html")
     html = html_path.read_text(encoding="utf-8")
@@ -1482,11 +1553,21 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert 'id="background-intensity"' in html
     assert 'id="common-mode-toggle"' in html
     assert 'id="common-mode-control"' in html
+    assert '<option value="merged">' not in html
+    assert 'channel: "0"' in html
+    assert 'state.channel === "merged"' not in html
+    assert '"registeredMovie":' in html
+    assert '"coordinateSystem":"registered-segmentation-image"' in html
+    assert '"rawOptions":' in html
+    assert html.count('"referenceBackground":false') == 4
+    assert '"assetPath":"media/segmentation-movies/slap2-dmd1-detector-1-raw.webp"' in html
+    assert (tmp_path / "media/segmentation-movies/slap2-dmd1.webp").is_file()
+    assert (tmp_path / "media/neural-viewer/slap2-dmd1-composite.webp").is_file()
     assert 'class="view-button active" data-view="interactive"' in html
     assert 'data-view="static"' in html
     assert 'id="interactive-view"' in html
     assert 'id="static-view"' in html
-    assert "twenty vertically stacked activity traces per modality" in html
+    assert "ten vertically stacked activity traces per modality" in html
     assert 'id="panel-label"' not in html
     assert 'id="session-line"' not in html
     assert 'id="viewer-title"' in html
@@ -1524,8 +1605,14 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert "chart-event" not in html
     assert "Sequence omission" not in html
     assert "Motor orientation 90" not in html
-    assert "Common-mode-corrected AP voltage" in html
-    assert "Raw AP voltage" in html
+    assert "Common-mode-corrected AP voltage" not in html
+    assert "drawWhiteScaleBar" in html
+    assert '"20 ms"' in html
+    assert "Centroid x" not in html
+    assert "Centroid y" not in html
+    assert "Footprint pixels" not in html
+    assert html.count('["Pixels", formatNumber(filter.pixelCount, 0)]') == 2
+    assert 'id="source-link"' not in html
     assert "Detected sorted spikes" not in html
     assert "Extraction filters" not in html
     assert "Fast scan" not in html
@@ -1577,16 +1664,18 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
         assert svg.count('class="static-modality-logo"') == 1
         assert removed_heading not in svg.split("</title>", maxsplit=1)[1]
         assert '<rect x="748" y="100"' not in svg
-        assert svg.count('class="static-activity-trace"') == 20
+        assert svg.count('class="static-activity-trace"') == 10
         assert svg.count('class="trace-scale-bar"') == 2
         assert 'class="trace-scale-tick"' not in svg
         assert svg.count('stroke="#000000" stroke-width="4"') == 2
         assert 'stroke="#E2E6E4"' not in svg
         assert "Fast scan" not in svg
         if modality == "neuropixels":
-            assert "Probe length from tip (µm)" in svg
-            assert 'transform="rotate(-90' not in svg
-            assert svg.count('data-vertical-gain="1"') == 20
+            assert "Probe length from tip (µm)" not in svg
+            assert "Excerpt time (ms)" not in svg
+            assert 'data-label="1000 µm"' in svg
+            assert 'data-label="20 ms"' in svg
+            assert svg.count('data-vertical-gain="1"') == 10
             assert "310 detected spikes" not in svg
             assert "common-mode-corrected AP voltage" not in svg
             assert "Sequence omission" not in svg
@@ -1594,8 +1683,8 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
             assert "Binned spike rate" not in svg
         else:
             expected_gain = "3" if modality == "mesoscope" else "2"
-            assert svg.count(f'data-vertical-gain="{expected_gain}"') == 20
-            assert svg.count("<clipPath") == 20
+            assert svg.count(f'data-vertical-gain="{expected_gain}"') == 10
+            assert svg.count("<clipPath") == 10
             assert svg.count("data:image/png;base64,") >= 3
             assert 'filter="url(#neutral-overlay)"' not in svg
             assert svg.count('class="represented-filter-fills"') == 1
@@ -1603,6 +1692,9 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
             assert "<circle" not in svg
             assert "ΔF/F (%)" not in svg
             assert "%</text>" in svg
+            if modality == "slap2":
+                assert 'class="somatic-band" data-source-label="soma"' in svg
+                assert ">Somatic band</text>" in svg
 
     combined_path = write_segmentation_viewer_static_svg(
         tmp_path / "figure-06-segmentation-viewers.svg",
@@ -3267,25 +3359,33 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     )
     html = viewer_path.read_text(encoding="utf-8")
 
-    assert 'id="neural-viewer"' in html
-    assert 'id="raw-canvas"' in html
-    assert 'id="option-select"' in html
-    assert 'id="contrast"' in html
-    assert 'id="playhead"' in html
+    assert 'id="segmentation-viewer"' in html
+    assert 'id="source-canvas"' in html
+    assert 'id="source-select"' in html
+    assert 'id="background-intensity"' in html
+    assert 'id="movie-playhead"' in html
+    assert 'id="movie-play"' in html
+    assert 'id="segmentation-toggle"' in html
+    assert 'id="filter-select"' in html
+    assert 'id="activity-chart"' in html
+    assert 'data-image-mode="registered"' in html
+    assert 'data-image-mode="raw"' in html
+    assert 'data-image-mode="reference"' in html
     assert 'data-view="interactive"' in html
     assert 'data-view="static"' in html
     assert 'id="static-view"' in html
     assert "media/neural-viewer/raw-neural-recordings.svg" in html
     assert "max-width: 900px" not in html
     assert "max-width: 1200px" not in html
-    assert 'classList.toggle("static-active", view === "static")' in html
-    assert "function microscopyFrame(option, record, frameIndex)" in html
-    assert "movieFrameContext.getImageData" in html
-    assert "movieFrameContext.putImageData" in html
-    assert "context.filter" not in html
+    assert "function movieRecord()" in html
+    assert "function animateMovie(timestamp)" in html
+    assert "function nearestMovieFrame(times, target)" in html
+    assert "state.showSegmentation" in html
     assert "selectView" in html
-    assert "Excerpt time (s)" in html
-    assert "Excerpt time (ms)" in html
+    assert "Registered movie time (s)" in html
+    assert "Raw movie time (s)" in html
+    assert "Excerpt time (ms)" not in html
+    assert "Probe length from tip (µm)" in html
     assert "Time from event onset" not in html
     assert "aligned to event onset" not in html
     assert "event-tick" not in html
@@ -3297,41 +3397,89 @@ def test_neural_viewer_is_deterministic(tmp_path: Path) -> None:
     assert "Mesoscope" in html
     assert "SLAP2" in html
     assert html.count('"logo":"data:image/png;base64,') == 3
-    assert 'className = "modality-logo"' in html
-    assert 'button.append(logo, session.label)' in html
-    assert "Raw AP acquisition voltage" in html
-    assert "Raw AP acquisition" in html
+    assert 'class="modality-logo"' in html
+    assert '"20 ms"' in html
     assert "colorbarX" not in html
-    assert "Raw 30 kHz AP acquisition voltage with CCF boundaries" in html
-    assert "drawAnatomySegments" in html
+    assert "CCF area" in html
     assert "anatomySegments" in html
-    assert "Raw imaging frames with a 50 micrometer scale bar" in html
-    assert "scaleBarMicrons = 50" in html
-    assert "LFP" not in html
+    assert "drawProbeAnatomy(plot)" in html
+    assert "function drawScaleBar(rect)" in html
+    assert "LFP" not in html.partition('<script id="segmentation-data"')[0]
     assert "apDataBase64" not in html
-    assert "Raw two-photon frames" in html
-    assert "Sparse raw detector frames" in html
-    assert "storedWidth || option.nativeWidth" in html
-    assert "storedHeight || option.nativeHeight" in html
-    assert "option.displayWidth || option.nativeWidth" in html
-    assert "dataBase64" in html
+    assert "raw.displayWidth || raw.nativeWidth" in html
+    assert "rawDataBase64" in html
     assert "mesoscope-visp-0.webp" in html
-    assert "rangeSha256" in html
+    assert "rawExcerptSha256" in html
     assert 'document.querySelector("body > main")' in html
     assert 'id="signal-summary"' not in html
     assert "event-key" not in html
     assert "drawStimulusTrack" not in html
-    assert 'elements.transport.hidden = session.viewType === "heatmap"' in html
-    assert "__NEURAL_" not in html
+    assert "__SEGMENTATION_" not in html
     assert "__EMBED_AUTO_HEIGHT_JS__" not in html
     copied_media = tmp_path / "media" / "neural-viewer"
     assert len(list(copied_media.glob("*.webp"))) == 14
     assert (copied_media / "slap2-dmd1-composite.webp").is_file()
     assert (copied_media / "slap2-dmd2-composite.webp").is_file()
+    registered = tmp_path / "media/segmentation-movies"
+    assert len(list(registered.glob("*.webp"))) == 14
+    assert not (tmp_path / "media/segmentation-viewers/raw-neural-recordings.svg").exists()
     assert (copied_media / static_path.name).read_bytes() == static_path.read_bytes()
 
     write_neural_viewer_html(viewer_path, static_output=static_path)
     assert viewer_path.read_text(encoding="utf-8") == html
+
+
+def test_slap2_acquisition_bands_are_source_backed(tmp_path: Path) -> None:
+    payload = load_neural_excerpts()
+    raw_session = next(session for session in payload["sessions"] if session["id"] == "slap2")
+    records = load_slap2_acquisition_bands(payload)
+    assert len(records) == 2
+    for record in records.values():
+        assert record["regionCount"] == 6
+        assert record["maskSha256"]
+        assert record["referenceProjectionSha256"]
+        reference = np.asarray(Image.open(REPO_ROOT / "figure_sources" /
+                                         record["referenceImage"]["assetPath"]))
+        assert np.array_equal(reference[..., 0], reference[..., 1])
+        assert np.array_equal(reference[..., 1], reference[..., 2])
+        overlay = np.asarray(Image.open(REPO_ROOT / "figure_sources" /
+                                       record["bandOverlay"]["assetPath"]))
+        marked = overlay[..., 3] > 0
+        assert 0 < marked.sum() < marked.size / 4
+        assert np.all(overlay[marked, :3] == [37, 170, 225])
+        assert np.all(overlay[marked, 3] == 150)
+        raw_preview = np.asarray(
+            Image.open(NEURAL_STATIC_FRAME_DIR / f"slap2-{record['optionId']}.png").convert("RGB")
+        )
+        sampled = (raw_preview[..., 0] != raw_preview[..., 2]) | (
+            raw_preview[..., 1] != raw_preview[..., 2]
+        )
+        assert sampled.any()
+        assert not np.any(sampled & ~marked)
+        raw_option = next(
+            option for option in raw_session["options"]
+            if option["id"] == f"{record['plane'].lower()}-detector-1"
+        )
+        with Image.open(NEURAL_MEDIA_DIR / Path(raw_option["compositeAssetPath"]).name) as sheet:
+            assert raw_option["frameCount"] == 60
+            for frame_index in range(raw_option["frameCount"]):
+                left = frame_index % raw_option["sheetColumns"] * raw_option["frameWidth"]
+                top = frame_index // raw_option["sheetColumns"] * raw_option["frameHeight"]
+                frame = np.asarray(sheet.crop((
+                    left, top, left + raw_option["frameWidth"], top + raw_option["frameHeight"]
+                )).convert("RGB"))
+                samples = (frame[..., 0] != frame[..., 2]) | (frame[..., 1] != frame[..., 2])
+                assert samples.shape == marked.shape
+                assert not np.any(samples & ~marked)
+
+    snapshot = json.loads(
+        (REPO_ROOT / "figure_sources/data/slap2-acquisition-bands.json").read_text()
+    )
+    snapshot["planes"][0]["sources"][0]["sha256"] = "0" * 64
+    bad_path = tmp_path / "bad-bands.json"
+    bad_path.write_text(json.dumps(snapshot), encoding="utf-8")
+    with pytest.raises(RuntimeError, match="geometry or sources changed"):
+        load_slap2_acquisition_bands(payload, bad_path)
 
 
 def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
@@ -3386,17 +3534,66 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
 
     svg_path = write_neural_static_svg(tmp_path / "raw-neural-recordings.svg")
     svg = svg_path.read_text(encoding="utf-8")
-    assert 'width="1800" height="700"' in svg
-    assert svg.count("data:image/png;base64,") == 19
+    assert 'width="1876" height="1900"' in svg
+    assert svg.count('class="figure-row-label"') == 3
+    assert svg.count('class="figure-row-label" x="60"') == 3
+    assert svg.count(">Raw data</text>") == 1
+    assert svg.count(">Extracted sources</text>") == 1
+    assert svg.count(">Activity traces</text>") == 1
+    assert svg.count('class="extraction-panel"') == 6
+    assert svg.count('data-row="2"') == 3
+    assert svg.count('data-row="3"') == 3
+    assert svg.count('class="source-panel-label"') == 3
+    assert "VISp · L2/3 · 152 µm</text>" in svg
+    assert ">VISp 0</text>" not in svg
+    for trace_panel in re.findall(
+        r'<g class="extraction-panel"[^>]+data-row="3".*?</g>', svg, re.DOTALL
+    ):
+        assert 'class="source-panel-label"' not in trace_panel
+    for label in re.findall(r'<text class="image-scale-label"[^>]+>', svg):
+        assert 'text-anchor="end"' in label
+    for raw_panel in re.findall(
+        r'<g class="raw-image-card" data-modality="neuropixels".*?</g>', svg, re.DOTALL
+    ):
+        assert 'width="526"' in raw_panel
+        assert "#E2E7E5" not in raw_panel
+        assert "#EEF1F0" not in raw_panel
+    assert svg.count("data:image/svg+xml;base64,") == 3
+    embedded_scale = min(550 / 670, 530 / 640)
+    for encoded_panel in re.findall(r'href="data:image/svg\+xml;base64,([^"]+)"', svg):
+        panel = base64.b64decode(encoded_panel).decode("utf-8")
+        sizes = re.findall(r'class="image-scale-label"[^>]+font-size="([^"]+)"', panel)
+        strokes = re.findall(r'class="image-scale-bar"[^>]+stroke-width="([^"]+)"', panel)
+        assert sizes and strokes
+        assert all(math.isclose(float(size) * embedded_scale, 24, abs_tol=0.02) for size in sizes)
+        assert all(math.isclose(float(size) * embedded_scale, 4, abs_tol=0.01) for size in strokes)
+    for modality in ("neuropixels", "mesoscope", "slap2"):
+        assert svg.count(f'<use href="#extraction-{modality}"/>') == 2
+    assert svg.count("data:image/png;base64,") == 21
+    assert svg.count('class="acquisition-band-overlay"') == 2
+    assert "Cyan: targeted raster regions" not in svg
+    assert svg.count('class="acquisition-band-legend"') == 1
+    assert 'class="acquisition-band-swatch" x="1395" y="647.5"' in svg
+    assert 'width="18" height="18" fill="#25AAE1"' in svg
+    assert 'fill="#25AAE1">targeted raster regions</text>' in svg
+    assert svg.index('class="acquisition-band-legend"') > svg.index(
+        'data-option-id="dmd2-composite"'
+    )
     assert svg.count('class="platform-heading" data-modality=') == 3
     assert_modality_title_scale(svg)
     assert svg.count('class="platform-logo"') == 3
+    for heading in re.findall(r'<g class="platform-heading".*?</g>', svg, re.DOTALL):
+        letter_x = float(re.search(r'<text x="([^"]+)"', heading).group(1))
+        logo_x = float(re.search(r'class="platform-logo"[^>]+ x="([^"]+)"', heading).group(1))
+        assert logo_x - letter_x == 56
     assert svg.count('y="1" width="96" height="96"') == 3
     assert svg.count('class="raw-image-card" data-modality="neuropixels"') == 6
     assert svg.count('class="raw-image-card" data-modality="mesoscope"') == 8
     assert svg.count('class="raw-image-card" data-modality="slap2"') == 2
     assert svg.count('data-modality="slap2" data-option-id=') == 2
-    assert svg.count('data-card-width="265"') == 2
+    assert svg.count('data-card-width="380"') == 2
+    assert svg.count('data-static-transform="transpose" data-fast-scan-axis="horizontal"') == 2
+    assert 'data-static-rotation="90"' not in svg
     assert svg.count('class="raw-card-image"') == 16
     assert svg.count('data-modality="mesoscope" data-option-id=') == 8
     assert svg.count('data-card-width="255"') == 8
@@ -3407,22 +3604,98 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert "DMD1 · 91 µm" in svg
     assert "DMD2 · 123.75 µm" in svg
     assert "green + red composite" not in svg
-    assert svg.count(">50 µm</text>") == 1
-    assert svg.count(">25 µm</text>") == 1
-    assert "6 probe recordings · all raw excerpts stacked" in svg
-    assert "8 planes · 4 VISp + 4 VISl · all raw frames stacked" in svg
-    assert "2 VISp planes · merged green + red channels" in svg
+    assert svg.count(">50 µm</text>") == 2
+    assert svg.count(">25 µm</text>") == 2
+    assert 'data-label="20 ms"' in svg
+    assert 'data-label="1000 µm"' in svg
+    assert 'stroke="#8F9996"' not in svg
+    assert "100 ms raw AP excerpt" not in svg
+    assert svg.count('<clipPath id="raw-') == 11
+    for image in re.findall(
+        r'class="raw-card-image" href="data:image/png;base64,([^"]+)"', svg
+    ):
+        pixels = np.asarray(Image.open(BytesIO(base64.b64decode(image))))
+        assert np.array_equal(pixels[..., 0], pixels[..., 1])
+        assert np.array_equal(pixels[..., 1], pixels[..., 2])
+    assert ">6 probe recordings</text>" in svg
+    assert ">8 planes · 4 VISp + 4 VISl</text>" in svg
+    assert ">2 VISp planes</text>" in svg
+    assert "all raw excerpts" not in svg
+    assert "all raw frames" not in svg
+    assert "reference + acquisition bands" not in svg
     assert "±" not in svg
     assert "µV" not in svg
-    assert 'font-size="12" font-weight="600" text-anchor="middle"' in svg
-    assert svg.count('class="neural-detail-label"') == 3
+    assert 'class="image-scale-label"' in svg
+    assert set(re.findall(r'class="image-scale-label"[^>]+font-size="([^"]+)"', svg)) == {"24"}
+    assert svg.count('class="neural-detail-label"') == 2
     assert re.findall(
         r'class="neural-detail-label"[^>]+\sy="([^"]+)"[^>]+font-size="([^"]+)"',
         svg,
-    ) == [("122", "18")] * 3
+    ) == [("122", "18.76")] * 2
     assert '<rect x="650.00" y="135.00" width="255"' in svg
-    assert '<rect x="1240.00" y="135.00" width="265"' in svg
-    assert '<rect x="1510.00" y="135.00" width="265"' in svg
+    assert '<rect x="1320.00" y="104.00" width="380"' in svg
+    assert '<rect x="1320.00" y="380.75" width="380"' in svg
+    coverage = load_slap2_acquisition_bands(load_neural_excerpts())
+    registered_sources = {
+        source["sourceId"]: source
+        for viewer in load_segmentation_viewers()["viewers"] if viewer["id"] == "slap2"
+        for source in viewer["sources"]
+    }
+    crop_bounds = {"dmd1-composite": (0, 46, 400, 563), "dmd2-composite": (0, 53, 400, 564)}
+    registered_crop_offsets = {"dmd1-composite": (49, 47), "dmd2-composite": (48, 51)}
+    for panel in re.findall(
+        r'<g class="raw-image-card" data-modality="slap2".*?</g>', svg, re.DOTALL
+    ):
+        option_id = re.search(r'data-option-id="([^"]+)"', panel).group(1)
+        left, top, right, bottom = crop_bounds[option_id]
+        assert f'data-source-crop="{left} {top} {right} {bottom}"' in panel
+        image_width = float(re.search(
+            r'class="raw-card-image"[^>]+ width="([^"]+)"', panel
+        ).group(1))
+        scale = re.search(
+            r'class="image-scale-bar" x1="([^"]+)"[^>]+ x2="([^"]+)"', panel
+        )
+        assert math.isclose(
+            float(scale.group(2)) - float(scale.group(1)),
+            image_width * 25 / ((bottom - top) * 0.5),
+            abs_tol=0.01,
+        )
+        for image_class, field in (
+            ("raw-card-image", "referenceImage"),
+            ("acquisition-band-overlay", "bandOverlay"),
+        ):
+            encoded = re.search(
+                rf'class="{image_class}"[^>]+href="data:image/png;base64,([^"]+)"', panel
+            ).group(1)
+            rendered = np.asarray(Image.open(BytesIO(base64.b64decode(encoded))))
+            source = np.asarray(Image.open(REPO_ROOT / "figure_sources" /
+                                          coverage[option_id][field]["assetPath"]))
+            assert rendered.shape[:2] == (right - left, bottom - top)
+            assert np.array_equal(rendered, source[top:bottom, left:right].transpose(1, 0, 2))
+            if image_class == "raw-card-image":
+                edge_level = max(source[0, 0, 0], source[0, -1, 0],
+                                 source[-1, 0, 0], source[-1, -1, 0])
+                assert source[:top].max() <= edge_level
+                assert source[bottom:].max() <= edge_level
+            else:
+                assert np.count_nonzero(rendered[..., 3]) == np.count_nonzero(source[..., 3])
+                bands = Image.fromarray(rendered[..., 3])
+                bands = bands.crop(bands.getbbox())
+                bands = np.asarray(bands.resize(
+                    (bands.width * 2, bands.height * 2), Image.Resampling.NEAREST
+                )) > 0
+                registered_source = registered_sources[option_id.split("-", maxsplit=1)[0]]
+                labels = np.asarray(Image.open(
+                    REPO_ROOT / "figure_sources" / registered_source["labelImage"]["assetPath"]
+                ).convert("RGB"))
+                registered = np.any(labels > 0, axis=-1)
+                offset_x, offset_y = registered_crop_offsets[option_id]
+                aligned = registered[
+                    offset_y:offset_y + bands.shape[0], offset_x:offset_x + bands.shape[1]
+                ]
+                assert aligned.sum() == registered.sum()
+                assert np.all(bands[aligned])
+                assert np.count_nonzero(np.fliplr(bands) & aligned) < registered.sum() / 4
     assert "#D9DEDC" not in svg
     assert "scale-card" not in svg
     assert "playback" not in svg.lower()

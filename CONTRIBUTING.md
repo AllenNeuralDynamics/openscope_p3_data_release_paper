@@ -167,6 +167,55 @@ Use the same architecture for future figures that aggregate units, receptive fie
 
 Compact display data for an interactive figure may be committed when it is reproducibly derived from versioned source data. Keep primary and analysis-scale data in their external archive.
 
+The combined raw-recording and extraction viewer uses the existing raw excerpts
+plus registered movie clips stored under `figure_sources/media/segmentation-movies/`.
+Their manifest, `figure_sources/data/segmentation-movies.json`, pins the NWB mask
+references, public processed-movie URLs and ETags, frame windows, image transforms,
+and decoded/output checksums. The registered clips provide the background beneath
+the masks; raw-acquisition mode intentionally does not overlay registered masks.
+Refresh these clips separately with:
+
+```bash
+uv run --with h5py --with remfile --with tifffile --with scipy --with pillow==12.3.0 \
+	python scripts/extract_segmentation_viewers.py --movies-only
+```
+
+This mode does not replace the existing raw or segmentation snapshots. Add
+`--movie-source VISp_0` or `--movie-source DMD1` to refresh one source. As with
+other extractors, review any existing clip changes before refreshing. The build
+checks source geometry and checksums, then stages ignored deployment copies.
+The SLAP2 DMD1 somatic-band annotation is taken from the saved `soma` ROI in
+`ANNOTATIONS.mat`, checked against the processing summary mask, and pinned in
+the same manifest; it is not inferred from display brightness.
+
+The SLAP2 raw mode uses separate detector-only clips in the same movie directory,
+under `slap2RawMovies` in the movie manifest. They use the native acquisition
+orientation, single-cycle frames, and black unsampled pixels, without a reference
+background or merged channel. The refresh checks the original raw byte-range
+checksums, metadata, frame times, and detector contrast ranges. Preview it with:
+
+```bash
+uv run --with h5py --with numpy --with remfile --with s3fs --with 'zarr<3' \
+	--with wavpack-numcodecs --with pillow==12.3.0 --with tifffile==2026.7.14 \
+	python scripts/extract_raw_neural_excerpts.py --slap2-raw-only --dry-run
+```
+
+Remove `--dry-run` to refresh only these four clips. The scoped mode backs up the
+previous manifest and any replaced clips, preserving registered movies and the
+legacy raw/static snapshots. Never use the full raw extractor for this refresh.
+
+Figure 5C uses grayscale reference-stack projections with cyan targeted raster
+regions from the acquisition metadata. These are acquisition-band overlays, not
+fluorescence-intensity maps or extracted-source masks. The source and image
+checksums are recorded in `figure_sources/data/slap2-acquisition-bands.json`,
+with compact PNGs under `figure_sources/media/slap2-acquisition-bands/`. Refresh
+only these products, without replacing raw movies or existing stills, using:
+
+```bash
+uv run --with h5py --with numpy --with tifffile \
+	python scripts/extract_raw_neural_static_frames.py --slap2-bands-only
+```
+
 Use a browser-readable format appropriate to the payload. Existing figures use JSON or base64-encoded typed arrays for smaller data and separate gzip-compressed typed arrays for larger data. Include the metadata needed to interpret the payload and retain source and output checksums when the generator already produces them.
 
 Commit one canonical copy under `figure_sources/data/` or `figure_sources/media/<figure-name>/`. When an interactive page needs the data beside its generated HTML, `uv run build-publication-figures` creates an ignored deployment copy under `interactive/`, which MyST copies into the ignored `_build/` site output. Do not commit or edit the deployment copy. The binary file-size and maintainer-review rules above still apply.

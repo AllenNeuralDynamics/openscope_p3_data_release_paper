@@ -9,9 +9,9 @@
     slap2: "#b16027",
   };
   const viewerTitles = {
-    neuropixels: "Neuropixels unit-template viewer",
-    mesoscope: "Mesoscope ROI segmentation viewer",
-    slap2: "SLAP2 source-segmentation viewer",
+    neuropixels: "Neuropixels raw signals and sorted units",
+    mesoscope: "Mesoscope movies and extracted cells",
+    slap2: "SLAP2 movies and extracted sources",
   };
   const elements = {
     activityChart: document.getElementById("activity-chart"),
@@ -20,6 +20,17 @@
     canvas: document.getElementById("source-canvas"),
     commonModeControl: document.getElementById("common-mode-control"),
     commonModeToggle: document.getElementById("common-mode-toggle"),
+    channelControl: document.getElementById("channel-control"),
+    channelSelect: document.getElementById("channel-select"),
+    imageModes: document.getElementById("image-modes"),
+    imageModeButtons: document.querySelectorAll("[data-image-mode]"),
+    moviePlay: document.getElementById("movie-play"),
+    moviePlayhead: document.getElementById("movie-playhead"),
+    movieTime: document.getElementById("movie-time"),
+    movieTimeLabel: document.getElementById("movie-time-label"),
+    movieTransport: document.getElementById("movie-transport"),
+    segmentationLabel: document.getElementById("segmentation-label"),
+    segmentationToggle: document.getElementById("segmentation-toggle"),
     filterLabel: document.getElementById("filter-label"),
     filterMetadata: document.getElementById("filter-metadata"),
     filterSelect: document.getElementById("filter-select"),
@@ -33,10 +44,10 @@
     selectionTitle: document.getElementById("selection-title"),
     staticView: document.getElementById("static-view"),
     sourceLabel: document.getElementById("source-label"),
-    sourceLink: document.getElementById("source-link"),
     sourceSelect: document.getElementById("source-select"),
     tooltip: document.getElementById("canvas-tooltip"),
     traceTitle: document.getElementById("trace-title"),
+    traceDuration: document.getElementById("trace-duration"),
     waveformChart: document.getElementById("waveform-chart"),
     waveformSection: document.getElementById("waveform-section"),
     viewer: document.getElementById("segmentation-viewer"),
@@ -55,6 +66,10 @@
     imageRect: null,
     labelPixels: null,
     selectedIndex: record.defaultFilterIndex,
+    imageMode: "registered",
+    channel: "0",
+    playhead: 0,
+    showSegmentation: true,
     spikeHits: [],
   })));
   const activeSourceIndices = protocol.viewers.map(() => 0);
@@ -70,8 +85,13 @@
   const rawHeatmapContext = rawHeatmapCanvas.getContext("2d");
   let rawHeatmapKey = null;
   let state = viewerStates[0][0];
+  const imageCache = new Map();
+  let playing = false;
+  let animationFrame = null;
+  let lastFrameTime = null;
 
   function selectView(view) {
+    if (view !== "interactive") pauseMovie();
     elements.interactiveView.hidden = view !== "interactive";
     elements.staticView.hidden = view !== "static";
     elements.viewButtons.forEach((button) => {
@@ -116,12 +136,100 @@
 
   function loadImage(record) {
     if (!record) return Promise.resolve(null);
-    return new Promise((resolve, reject) => {
+    if (imageCache.has(record.assetPath)) return imageCache.get(record.assetPath);
+    const pending = new Promise((resolve, reject) => {
       const image = new Image();
       image.addEventListener("load", () => resolve(image));
       image.addEventListener("error", reject);
       image.src = record.assetPath;
     });
+    imageCache.set(record.assetPath, pending);
+    pending.catch(() => imageCache.delete(record.assetPath));
+    return pending;
+  }
+
+  function movieRecord() {
+    if (viewer.viewType !== "image" || state.imageMode === "reference") return null;
+    if (state.imageMode === "registered") return viewer.registeredMovie;
+    const raw = viewer.rawOptions[state.channel === "1" ? 1 : 0];
+    if (!raw) return null;
+    return {
+      ...raw,
+      frameTimesSeconds: raw.frameTimes.map(time => time - raw.frameTimes[0]),
+    };
+  }
+
+  function movieDuration() {
+    const movie = movieRecord();
+    return movie ? movie.frameTimesSeconds[movie.frameCount - 1] : 0;
+  }
+
+  function nearestMovieFrame(times, target) {
+    let low = 0;
+    let high = times.length - 1;
+    while (low < high) {
+      const middle = Math.floor((low + high) / 2);
+      if (times[middle] < target) low = middle + 1;
+      else high = middle;
+    }
+    if (low > 0 && target - times[low - 1] < times[low] - target) return low - 1;
+    return low;
+  }
+
+  function updateMovieControls() {
+    const movie = movieRecord();
+    elements.movieTransport.hidden = !movie;
+    elements.moviePlay.disabled = !movie || !imageRecords.movie;
+    elements.moviePlayhead.disabled = elements.moviePlay.disabled;
+    elements.moviePlayhead.max = String(movieDuration());
+    elements.moviePlayhead.value = String(state.playhead);
+    elements.movieTime.textContent = `${state.playhead.toFixed(3)} s`;
+    elements.movieTimeLabel.textContent = state.imageMode === "raw"
+      ? "Raw movie time (s)" : "Registered movie time (s)";
+    elements.moviePlay.textContent = playing ? "\u275a\u275a" : "\u25b6";
+    elements.moviePlay.title = playing ? "Pause movie" : "Play movie";
+    elements.moviePlay.setAttribute("aria-label", elements.moviePlay.title);
+    elements.viewer.dataset.playing = String(playing);
+  }
+
+  function pauseMovie() {
+    playing = false;
+    if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+    lastFrameTime = null;
+    updateMovieControls();
+  }
+
+  function animateMovie(timestamp) {
+    if (!playing) return;
+    if (lastFrameTime !== null) {
+      const duration = movieDuration();
+      state.playhead = duration > 0
+        ? (state.playhead + Math.min((timestamp - lastFrameTime) / 1000, 0.25)) % duration
+        : 0;
+    }
+    lastFrameTime = timestamp;
+    drawViewer();
+    updateMovieControls();
+    animationFrame = requestAnimationFrame(animateMovie);
+  }
+
+  function toggleMovie() {
+    if (playing) {
+      pauseMovie();
+    } else if (movieRecord() && imageRecords.movie) {
+      playing = true;
+      lastFrameTime = null;
+      updateMovieControls();
+      animationFrame = requestAnimationFrame(animateMovie);
+    }
+  }
+
+  function showAssetError(error) {
+    pauseMovie();
+    elements.loading.hidden = false;
+    elements.loading.textContent = "Source assets unavailable";
+    console.error(error);
   }
 
   function containedRect(sourceWidth, sourceHeight, bounds) {
@@ -190,44 +298,71 @@
     ];
   }
 
-  function drawScaleBar(rect) {
-    if (!viewer.micronsPerPixel) return;
-    const scaleMicrons = viewer.id === "slap2" ? 25 : 50;
-    const sourcePixels = scaleMicrons / viewer.micronsPerPixel;
-    const width = sourcePixels / viewer.baseImage.width * rect.width;
-    const x = rect.x + rect.width - width - 22;
-    const y = rect.y + rect.height - 24;
-    context.strokeStyle = "#f8fbfa";
+  function drawWhiteScaleBar(x, y, width, label) {
+    context.save();
+    context.strokeStyle = "#ffffff";
     context.lineWidth = 4;
+    context.lineCap = "butt";
     context.beginPath();
     context.moveTo(x, y);
     context.lineTo(x + width, y);
     context.stroke();
-    drawCanvasText(`${scaleMicrons} µm`, x + width / 2, y - 8, {
-      align: "center",
-      color: "#f8fbfa",
-      size: 13,
+    drawCanvasText(label, x + width / 2, y - 8, {
+      align: "center", color: "#ffffff", size: 13,
     });
+    context.restore();
+  }
+
+  function drawScaleBar(rect) {
+    if (!viewer.micronsPerPixel) return;
+    const scaleMicrons = viewer.id === "slap2" ? 25 : 50;
+    const raw = viewer.rawOptions[0];
+    const sourceWidth = state.imageMode === "raw"
+      ? (raw.displayWidth || raw.nativeWidth) : viewer.baseImage.width;
+    const sourcePixels = scaleMicrons / viewer.micronsPerPixel;
+    const width = sourcePixels / sourceWidth * rect.width;
+    const x = rect.x + rect.width - width - 22;
+    const y = rect.y + rect.height - 24;
+    drawWhiteScaleBar(x, y, width, `${scaleMicrons} µm`);
   }
 
   function drawImageViewer() {
+    if (!imageRecords.base) return;
+    const movie = movieRecord();
+    const showSegmentation = state.showSegmentation && state.imageMode !== "raw";
     const bounds = { x: 28, y: 28, width: 844, height: 650 };
     const rect = containedRect(
-      imageRecords.base.naturalWidth,
-      imageRecords.base.naturalHeight,
+      movie ? (movie.width || movie.frameWidth) : imageRecords.base.naturalWidth,
+      movie ? (movie.height || movie.frameHeight) : imageRecords.base.naturalHeight,
       bounds,
     );
     state.imageRect = rect;
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, elements.canvas.width, elements.canvas.height);
-    context.imageSmoothingEnabled = true;
-    context.filter = `brightness(${state.backgroundIntensity})`;
-    context.drawImage(imageRecords.base, rect.x, rect.y, rect.width, rect.height);
+    context.imageSmoothingEnabled = state.imageMode !== "raw" || viewer.id !== "slap2";
+    context.filter = `grayscale(1) brightness(${state.backgroundIntensity})`;
+    if (movie && imageRecords.movie) {
+      const frameIndex = nearestMovieFrame(movie.frameTimesSeconds, state.playhead);
+      elements.canvas.dataset.movieFrame = String(frameIndex);
+      context.drawImage(
+        imageRecords.movie,
+        frameIndex % movie.sheetColumns * movie.frameWidth,
+        Math.floor(frameIndex / movie.sheetColumns) * movie.frameHeight,
+        movie.frameWidth, movie.frameHeight,
+        rect.x, rect.y, rect.width, rect.height,
+      );
+    } else {
+      delete elements.canvas.dataset.movieFrame;
+      context.drawImage(imageRecords.base, rect.x, rect.y, rect.width, rect.height);
+    }
+    elements.canvas.dataset.imageMode = state.imageMode;
     context.filter = "none";
     context.imageSmoothingEnabled = false;
     context.globalAlpha = 1;
-    context.drawImage(imageRecords.overlay, rect.x, rect.y, rect.width, rect.height);
-    drawSelectionMask(rect);
+    if (showSegmentation) {
+      context.drawImage(imageRecords.overlay, rect.x, rect.y, rect.width, rect.height);
+      drawSelectionMask(rect);
+    }
     context.strokeStyle = "#aab6b3";
     context.lineWidth = 1;
     context.strokeRect(rect.x, rect.y, rect.width, rect.height);
@@ -275,13 +410,40 @@
   }
 
   function spikeMapLayout() {
-    const plot = { left: 88, right: 872, top: 42, bottom: 650 };
+    const plot = { left: 170, right: 872, top: 42, bottom: 650 };
     return {
       plot,
       x: (timeMs) => plot.left + (timeMs - viewer.rawTimeStartMs)
         / (viewer.rawTimeEndMs - viewer.rawTimeStartMs) * (plot.right - plot.left),
       y: (row) => plot.top + (row + 0.5) / viewer.rawRows * (plot.bottom - plot.top),
     };
+  }
+
+  function drawProbeAnatomy(plot) {
+    const left = 78;
+    const width = 78;
+    drawCanvasText("CCF", left + width / 2, 29, {align: "center", color: "#4d5553", size: 12});
+    viewer.rawOptions[0].anatomySegments.forEach((segment, index) => {
+      const top = plot.top + segment.startRow / viewer.rawRows * (plot.bottom - plot.top);
+      const bottom = plot.top + segment.endRow / viewer.rawRows * (plot.bottom - plot.top);
+      context.fillStyle = index % 2 ? "#eef1f0" : "#e2e7e5";
+      context.fillRect(left, top, width, bottom - top);
+      if (bottom - top >= 15) {
+        drawCanvasText(segment.label, left + width / 2, (top + bottom) / 2, {
+          align: "center", baseline: "middle", color: "#3f4745", size: 12,
+        });
+      }
+      if (segment.startRow > 0) {
+        context.strokeStyle = "rgba(70, 80, 77, 0.7)";
+        context.lineWidth = 1;
+        context.beginPath();
+        context.moveTo(left, top);
+        context.lineTo(plot.right, top);
+        context.stroke();
+      }
+    });
+    context.strokeStyle = "#9ba7a4";
+    context.strokeRect(left, plot.top, width, plot.bottom - plot.top);
   }
 
   function drawSpikeMap() {
@@ -297,92 +459,72 @@
       plot.right - plot.left,
       plot.bottom - plot.top,
     );
+    drawProbeAnatomy(plot);
 
-    const selected = currentFilter();
-    const selectedY = layout.y(selected.rawRow);
-    const bandHeight = Math.max(
-      5,
-      selected.spreadUm / (viewer.rawDepthMaxUm - viewer.rawDepthMinUm)
-        * (plot.bottom - plot.top),
-    );
-    context.fillStyle = filterColor(state.selectedIndex);
-    context.globalAlpha = 0.2;
-    context.fillRect(plot.left, selectedY - bandHeight / 2, plot.right - plot.left, bandHeight);
-    context.globalAlpha = 1;
-    context.strokeStyle = filterColor(state.selectedIndex);
-    context.lineWidth = 1.5;
-    context.beginPath();
-    context.moveTo(plot.left, selectedY);
-    context.lineTo(plot.right, selectedY);
-    context.stroke();
-
-    state.spikeHits = [];
-    viewer.spikeEvents.forEach((event) => {
-      const x = layout.x(event.timeMs);
-      const y = layout.y(event.row);
-      const isSelected = event.filterIndex === state.selectedIndex;
-      const radius = isSelected ? 5 : 2.5;
-      context.fillStyle = filterColor(event.filterIndex);
-      context.globalAlpha = isSelected ? 1 : 0.82;
+    if (state.showSegmentation) {
+      const selected = currentFilter();
+      const selectedY = layout.y(selected.rawRow);
+      const bandHeight = Math.max(
+        5,
+        selected.spreadUm / (viewer.rawDepthMaxUm - viewer.rawDepthMinUm)
+          * (plot.bottom - plot.top),
+      );
+      context.fillStyle = filterColor(state.selectedIndex);
+      context.globalAlpha = 0.2;
+      context.fillRect(plot.left, selectedY - bandHeight / 2, plot.right - plot.left, bandHeight);
+      context.globalAlpha = 1;
+      context.strokeStyle = filterColor(state.selectedIndex);
+      context.lineWidth = 1.5;
       context.beginPath();
-      context.arc(x, y, radius, 0, Math.PI * 2);
-      context.fill();
-      if (isSelected) {
-        context.strokeStyle = "#ffffff";
-        context.lineWidth = 1.5;
-        context.stroke();
-      }
-      state.spikeHits.push({ filterIndex: event.filterIndex, radius: Math.max(radius, 7), x, y });
-    });
+      context.moveTo(plot.left, selectedY);
+      context.lineTo(plot.right, selectedY);
+      context.stroke();
+
+      state.spikeHits = [];
+      viewer.spikeEvents.forEach((event) => {
+        const x = layout.x(event.timeMs);
+        const y = layout.y(event.row);
+        const isSelected = event.filterIndex === state.selectedIndex;
+        const radius = isSelected ? 5 : 2.5;
+        context.fillStyle = filterColor(event.filterIndex);
+        context.globalAlpha = isSelected ? 1 : 0.82;
+        context.beginPath();
+        context.arc(x, y, radius, 0, Math.PI * 2);
+        context.fill();
+        if (isSelected) {
+          context.strokeStyle = "#ffffff";
+          context.lineWidth = 1.5;
+          context.stroke();
+        }
+        state.spikeHits.push({ filterIndex: event.filterIndex, radius: Math.max(radius, 7), x, y });
+      });
+    } else {
+      state.spikeHits = [];
+    }
     context.globalAlpha = 1;
 
     context.strokeStyle = "#9ba7a4";
     context.lineWidth = 1;
     context.strokeRect(plot.left, plot.top, plot.right - plot.left, plot.bottom - plot.top);
-    for (let index = 0; index <= 4; index += 1) {
-      const fraction = index / 4;
-      const x = plot.left + fraction * (plot.right - plot.left);
-      const time = viewer.rawTimeStartMs
-        + fraction * (viewer.rawTimeEndMs - viewer.rawTimeStartMs);
-      context.beginPath();
-      context.moveTo(x, plot.bottom);
-      context.lineTo(x, plot.bottom + 6);
-      context.stroke();
-      drawCanvasText(`${formatNumber(time, 0)}`, x, plot.bottom + 22, {
-        align: "center",
-        color: "#68716f",
-        size: 12,
-      });
-    }
+    const timeScaleMs = 20;
+    const timeScaleWidth = timeScaleMs / (viewer.rawTimeEndMs - viewer.rawTimeStartMs)
+      * (plot.right - plot.left);
+    drawWhiteScaleBar(plot.right - timeScaleWidth - 22, plot.bottom - 24, timeScaleWidth, "20 ms");
     for (let index = 0; index <= 4; index += 1) {
       const fraction = index / 4;
       const y = plot.top + fraction * (plot.bottom - plot.top);
       const depth = viewer.rawDepthMaxUm
         - fraction * (viewer.rawDepthMaxUm - viewer.rawDepthMinUm);
       context.beginPath();
-      context.moveTo(plot.left - 6, y);
-      context.lineTo(plot.left, y);
+      context.moveTo(72, y);
+      context.lineTo(78, y);
       context.stroke();
-      drawCanvasText(`${formatNumber(depth, 0)}`, plot.left - 10, y + 4, {
+      drawCanvasText(`${formatNumber(depth, 0)}`, 67, y + 4, {
         align: "right",
         color: "#68716f",
         size: 12,
       });
     }
-    const voltageLabel = state.commonModeCorrected
-      ? "Common-mode-corrected AP voltage"
-      : "Raw AP voltage";
-    drawCanvasText(`${voltageLabel} + detected sorted spikes`, (plot.left + plot.right) / 2, 23, {
-      align: "center",
-      color: "#293133",
-      size: 14,
-      weight: 700,
-    });
-    drawCanvasText("Excerpt time (ms)", (plot.left + plot.right) / 2, 697, {
-      align: "center",
-      color: "#68716f",
-      size: 12,
-    });
     context.save();
     context.translate(20, (plot.top + plot.bottom) / 2);
     context.rotate(-Math.PI / 2);
@@ -443,6 +585,7 @@
   }
 
   function filterAt(event) {
+    if (!state.showSegmentation || (viewer.viewType === "image" && state.imageMode === "raw")) return -1;
     const point = canvasCoordinates(event);
     return viewer.viewType === "spike-map" ? spikeFilterAt(point) : imageFilterAt(point);
   }
@@ -479,15 +622,11 @@
         ["Pixels", formatNumber(filter.pixelCount, 0)],
         ["Soma probability", formatNumber(filter.somaProbability, 3)],
         ["Dendrite probability", formatNumber(filter.dendriteProbability, 3)],
-        ["Centroid x", `${formatNumber(filter.centroidX * viewer.micronsPerPixel, 1)} µm`],
-        ["Centroid y", `${formatNumber(filter.centroidY * viewer.micronsPerPixel, 1)} µm`],
       ];
     }
     return [
       ["Source", String(filter.id + 1)],
-      ["Footprint pixels", formatNumber(filter.pixelCount, 0)],
-      ["Centroid x", `${formatNumber(filter.centroidX * viewer.micronsPerPixel, 1)} µm`],
-      ["Centroid y", `${formatNumber(filter.centroidY * viewer.micronsPerPixel, 1)} µm`],
+      ["Pixels", formatNumber(filter.pixelCount, 0)],
       ["Imaging path", viewer.panelLabel],
       ["Signal", "iGluSnFR4f"],
     ];
@@ -562,6 +701,7 @@
       .map(([term, value]) => `<div><dt>${term}</dt><dd title="${value}">${value}</dd></div>`)
       .join("");
     elements.traceTitle.textContent = viewer.traceLabel;
+    elements.traceDuration.textContent = `${viewer.traceTimesSeconds.at(-1).toFixed(1)} s excerpt`;
     const traceTimes = viewer.traceTimesSeconds;
     lineChart(elements.activityChart, traceTimes, selectedTrace(), {
       ariaLabel: `${filter.label} ${viewer.traceLabel}`,
@@ -591,6 +731,7 @@
       });
     }
     drawViewer();
+    updateMovieControls();
   }
 
   function selectFilter(index) {
@@ -623,7 +764,9 @@
       + "</button>"
     )).join("");
     elements.modalitySelector.querySelectorAll(".modality-tab").forEach((button) => {
-      button.addEventListener("click", () => activateModality(Number(button.dataset.viewerIndex)));
+      button.addEventListener("click", () => {
+        activateModality(Number(button.dataset.viewerIndex)).catch(showAssetError);
+      });
     });
   }
 
@@ -641,9 +784,8 @@
     elements.filterLabel.textContent = selectionLabel;
     elements.selectionKicker.textContent = selectionLabel;
     elements.sourceLabel.textContent = modality.sourceLabel;
-    elements.sourceLink.href = viewer.asset.dandiset_url;
     elements.canvas.setAttribute("aria-label", `${viewerTitles[modality.id]} filter map`);
-    document.title = `Unit extraction · ${modality.label}`;
+    document.title = `Raw signals and extraction · ${modality.label}`;
 
     elements.waveformSection.hidden = !viewer.waveformDataBase64;
     elements.backgroundLabel.textContent = modality.id === "neuropixels"
@@ -652,6 +794,18 @@
     elements.background.value = String(Math.round(state.backgroundIntensity * 100));
     elements.commonModeControl.hidden = modality.id !== "neuropixels";
     elements.commonModeToggle.checked = state.commonModeCorrected;
+    elements.imageModes.hidden = viewer.viewType !== "image";
+    elements.imageModeButtons.forEach(button => {
+      button.setAttribute("aria-pressed", String(button.dataset.imageMode === state.imageMode));
+    });
+    elements.channelControl.hidden = viewer.id !== "slap2" || state.imageMode !== "raw";
+    elements.channelSelect.value = state.channel;
+    elements.segmentationLabel.textContent = viewer.id === "neuropixels" ? "Sorted spikes" : "Segmentation";
+    elements.segmentationToggle.disabled = viewer.viewType === "image" && state.imageMode === "raw";
+    elements.segmentationToggle.checked = state.showSegmentation && !elements.segmentationToggle.disabled;
+    elements.segmentationToggle.parentElement.title = elements.segmentationToggle.disabled
+      ? "Raw pixels are not in the registered segmentation coordinates" : "Show extracted sources";
+    updateMovieControls();
     elements.tooltip.hidden = true;
     populateSourceSelect();
     populateFilterSelect();
@@ -659,6 +813,7 @@
 
   async function activateSource(index) {
     if (index < 0 || index >= modality.sources.length) return;
+    pauseMovie();
     activeSourceIndices[activeViewerIndex] = index;
     viewer = modality.sources[index];
     state = viewerStates[activeViewerIndex][index];
@@ -666,6 +821,7 @@
     waveformValues = decodedViewers[activeViewerIndex][index].waveforms;
     rawValues = decodedViewers[activeViewerIndex][index].raw;
     imageRecords = {};
+    state.imageRect = null;
     rawHeatmapKey = null;
     const token = ++viewerLoadToken;
     updateViewerChrome();
@@ -678,13 +834,14 @@
     if (viewer.viewType === "image") {
       elements.loading.hidden = false;
       elements.loading.textContent = "Loading source image";
-      const [base, labels, overlay] = await Promise.all([
+      const [base, labels, overlay, movie] = await Promise.all([
         loadImage(viewer.baseImage),
         loadImage(viewer.labelImage),
         loadImage(viewer.filterOverlay),
+        loadImage(movieRecord()),
       ]);
       if (token !== viewerLoadToken) return;
-      imageRecords = { base, labels, overlay };
+      imageRecords = { base, labels, overlay, movie };
       buildLabelPixels();
     }
     if (token !== viewerLoadToken) return;
@@ -705,7 +862,34 @@
       button.addEventListener("click", () => selectView(button.dataset.view));
     });
     elements.sourceSelect.addEventListener("change", () => {
-      activateSource(Number(elements.sourceSelect.value));
+      activateSource(Number(elements.sourceSelect.value)).catch(showAssetError);
+    });
+    elements.imageModeButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        pauseMovie();
+        state.imageMode = button.dataset.imageMode;
+        state.playhead = 0;
+        activateSource(activeSourceIndices[activeViewerIndex]).catch(showAssetError);
+      });
+    });
+    elements.channelSelect.addEventListener("change", () => {
+      state.channel = elements.channelSelect.value;
+      activateSource(activeSourceIndices[activeViewerIndex]).catch(showAssetError);
+    });
+    elements.segmentationToggle.addEventListener("change", () => {
+      state.showSegmentation = elements.segmentationToggle.checked;
+      drawViewer();
+    });
+    elements.moviePlay.addEventListener("click", toggleMovie);
+    elements.moviePlayhead.addEventListener("input", () => {
+      const playhead = Number(elements.moviePlayhead.value);
+      pauseMovie();
+      state.playhead = playhead;
+      drawViewer();
+      updateMovieControls();
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) pauseMovie();
     });
     elements.filterSelect.addEventListener("change", () => selectFilter(Number(elements.filterSelect.value)));
     elements.background.addEventListener("input", () => {
@@ -734,9 +918,5 @@
     await activateModality(0);
   }
 
-  initialize().catch((error) => {
-    elements.loading.hidden = false;
-    elements.loading.textContent = "Viewer assets unavailable";
-    throw error;
-  });
+  initialize().catch(showAssetError);
 })();

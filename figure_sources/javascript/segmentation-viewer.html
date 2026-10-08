@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Unit extraction across recording modalities</title>
+  <title>Raw recordings and extracted neural signals</title>
   <style>__SEGMENTATION_CSS__</style>
 </head>
 <body>
@@ -38,6 +38,25 @@
       </label>
       </section>
 
+      <section class="background-controls" aria-label="Image and segmentation controls">
+        <div class="image-modes" id="image-modes" role="group" aria-label="Image background">
+          <button type="button" data-image-mode="registered" aria-pressed="true">Registered</button>
+          <button type="button" data-image-mode="raw" aria-pressed="false">Raw</button>
+          <button type="button" data-image-mode="reference" aria-pressed="false">Reference</button>
+        </div>
+        <label class="toggle-control" for="segmentation-toggle">
+          <input id="segmentation-toggle" type="checkbox" checked>
+          <span id="segmentation-label">Segmentation</span>
+        </label>
+        <label class="select-control channel-control" id="channel-control" for="channel-select" hidden>
+          <span>Channel</span>
+          <select id="channel-select">
+            <option value="0">iGluSnFR4f</option>
+            <option value="1">RCaMP3</option>
+          </select>
+        </label>
+      </section>
+
       <section class="workspace">
       <div class="visual-panel">
         <div class="canvas-shell">
@@ -51,6 +70,14 @@
           <div class="canvas-tooltip" id="canvas-tooltip" hidden></div>
           <div class="loading-status" id="loading-status">Loading source image</div>
         </div>
+        <section class="movie-transport" id="movie-transport" aria-label="Movie playback" hidden>
+          <button id="movie-play" type="button" title="Play movie" aria-label="Play movie" disabled>&#9654;</button>
+          <label class="movie-timeline" for="movie-playhead">
+            <input id="movie-playhead" type="range" min="0" max="4" step="0.001" value="0" aria-label="Movie time">
+            <span id="movie-time-label">Registered movie time (s)</span>
+          </label>
+          <output id="movie-time" for="movie-playhead">0.000 s</output>
+        </section>
       </div>
 
       <aside class="inspector" aria-live="polite">
@@ -70,6 +97,7 @@
         <section class="chart-section">
           <div class="chart-heading">
             <h3 id="trace-title"></h3>
+            <span id="trace-duration"></span>
           </div>
           <svg id="activity-chart" viewBox="0 0 640 230" role="img"></svg>
         </section>
@@ -81,15 +109,12 @@
           <svg id="waveform-chart" viewBox="0 0 640 190" role="img"></svg>
         </section>
 
-        <a class="source-link" id="source-link" href="#" target="_blank" rel="noreferrer">
-          Open source NWB on DANDI ↗
-        </a>
       </aside>
       </section>
     </div>
 
-    <section class="static-view" id="static-view" aria-label="Static unit-extraction overview" hidden>
-      <img src="__SEGMENTATION_STATIC_IMAGE__" alt="Neuropixels, mesoscope, and SLAP2 unit-extraction filters with twenty vertically stacked activity traces per modality.">
+    <section class="static-view" id="static-view" aria-label="Static recording and extraction overview" hidden>
+      <img src="__SEGMENTATION_STATIC_IMAGE__" alt="Neuropixels, mesoscope, and SLAP2 raw recordings and unit-extraction filters with ten vertically stacked activity traces per modality.">
     </section>
   </main>
   <script id="segmentation-data" type="application/json">__SEGMENTATION_DATA__</script>

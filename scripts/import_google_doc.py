@@ -1357,7 +1357,10 @@ def add_segmentation_viewer_figures(markdown: str) -> str:
     heading = "## Units extraction"
     if markdown.count(heading) != 1:
         raise RuntimeError("Expected one Units extraction heading.")
-    if ":label: fig-segmentation-viewers\n" in markdown:
+    if (
+        ":label: fig-segmentation-viewers\n" in markdown
+        or "(fig-segmentation-viewers)=\n" in markdown
+    ):
         return markdown
     legacy_pattern = re.compile(
         r"\n:::\{iframe\} \./interactive/segmentation-viewer\.html\n"

@@ -1,0 +1,117 @@
+{
+  "planes": [
+    {
+      "bandOverlay": {
+        "alpha": 150,
+        "assetPath": "media/slap2-acquisition-bands/dmd1-bands.png",
+        "color": "#25AAE1",
+        "sha256": "ebc0ed347326620b6cb81c80fb25f21bc8cb7693573a9a24a85d190a04b5d862"
+      },
+      "displayContrast": {
+        "gamma": 0.6,
+        "highPercentile": 99.8,
+        "highValue": 450.3571140747073,
+        "lowPercentile": 1,
+        "lowValue": -1.0
+      },
+      "displayTransform": "transpose-for-publication",
+      "downsampling": {
+        "factor": 2,
+        "mask": "any",
+        "reference": "mean"
+      },
+      "height": 640,
+      "maskDataset": "AcquisitionContainer/AcquisitionPlan/rasterROIMasks",
+      "maskSha256": "68a7dda01663b2ecf1ae01269b2ed2c147054529262e363bccb02b1cc4a188f3",
+      "nativeHeight": 800,
+      "nativeMaskPixelCount": 10812,
+      "nativeWidth": 1280,
+      "optionId": "dmd1-composite",
+      "plane": "DMD1",
+      "referenceImage": {
+        "assetPath": "media/slap2-acquisition-bands/dmd1-reference.png",
+        "sha256": "f5317e01dcb1d820e4178006b0eff32ed599c6046023cad19556b36ced5523bc"
+      },
+      "referenceProjectionSha256": "5215884a6e343f8830a46739b56014e56ba5e305f297d572ab6898a522fa19ba",
+      "regionCount": 6,
+      "session": "796630_2025-08-28_14-25-34",
+      "sources": [
+        {
+          "contentLength": 844516,
+          "contentType": "application/octet-stream",
+          "etag": "7c300c32e0e5707a57db7f10d4100c4f",
+          "lastModified": "Fri, 20 Mar 2026 22:47:43 GMT",
+          "sha256": "7f8dd04f366c1694b997cad7007f53fb4e03ab1fe5582c7735df36054e728813",
+          "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/796630_2025-08-28_14-25-34/slap2/dynamic_data/activity_20250828_142403_DMD1.meta"
+        },
+        {
+          "contentLength": 86197460,
+          "contentType": "application/octet-stream",
+          "etag": "84816a6c968f57d05ca866d734239c89-2",
+          "lastModified": "Fri, 20 Mar 2026 22:49:42 GMT",
+          "sha256": "c827500521a02296ced34658f8da30d66bfc4f6c6a814f15a2273f65f4e0a408",
+          "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/796630_2025-08-28_14-25-34/slap2/dynamic_data/reference_stack/refStack_20250828_140250_DMD1-REFERENCE.tif"
+        }
+      ],
+      "width": 400
+    },
+    {
+      "bandOverlay": {
+        "alpha": 150,
+        "assetPath": "media/slap2-acquisition-bands/dmd2-bands.png",
+        "color": "#25AAE1",
+        "sha256": "6f8058b945c02333eed7acfa5f4ec9460fe24ad457a38edcfc1a826f470264d3"
+      },
+      "displayContrast": {
+        "gamma": 0.6,
+        "highPercentile": 99.8,
+        "highValue": 155.98974310302756,
+        "lowPercentile": 1,
+        "lowValue": -1.0
+      },
+      "displayTransform": "transpose-for-publication",
+      "downsampling": {
+        "factor": 2,
+        "mask": "any",
+        "reference": "mean"
+      },
+      "height": 640,
+      "maskDataset": "AcquisitionContainer/AcquisitionPlan/rasterROIMasks",
+      "maskSha256": "0b8219115b836a467eccbb22c916e532c1dba05b378d825991235c41f52f754f",
+      "nativeHeight": 800,
+      "nativeMaskPixelCount": 13984,
+      "nativeWidth": 1280,
+      "optionId": "dmd2-composite",
+      "plane": "DMD2",
+      "referenceImage": {
+        "assetPath": "media/slap2-acquisition-bands/dmd2-reference.png",
+        "sha256": "40160498f214e4c8e9797dd05f0a50e089ac6c6b688de8b297da7aa697d1b522"
+      },
+      "referenceProjectionSha256": "a19dd2b041f5d361e910570146f3cf2d01950860f920dbb508b043a7f335b851",
+      "regionCount": 6,
+      "session": "796630_2025-08-28_14-25-34",
+      "sources": [
+        {
+          "contentLength": 826945,
+          "contentType": "application/octet-stream",
+          "etag": "56169d61fd16ededcd1ed37cb58c32ba",
+          "lastModified": "Fri, 20 Mar 2026 22:49:42 GMT",
+          "sha256": "79b259512e9c8592105453f1e4480c5fa840bcbc9433f19fbd46ed1a7dcedc2a",
+          "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/796630_2025-08-28_14-25-34/slap2/dynamic_data/activity_20250828_142403_DMD2.meta"
+        },
+        {
+          "contentLength": 86197371,
+          "contentType": "application/octet-stream",
+          "etag": "ac2c343b3b04c12f525d46bc256c58f3-2",
+          "lastModified": "Fri, 20 Mar 2026 22:49:42 GMT",
+          "sha256": "c5fd6827d0aaedde8fae9eb07c19be774cd508ad0782be6703826172ba8d6f3e",
+          "url": "https://aind-open-data.s3.us-west-2.amazonaws.com/796630_2025-08-28_14-25-34/slap2/dynamic_data/reference_stack/refStack_20250828_140250_DMD2-REFERENCE.tif"
+        }
+      ],
+      "width": 400
+    }
+  ],
+  "rawNeuralSha256": "d9c5e84a3417c44ec6a929763e59bb61db20f2ff7bc3a7a55b3bbaa32b6f99d8",
+  "retrievedDate": "2026-10-07",
+  "version": 1
+}
