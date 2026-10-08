@@ -520,50 +520,6 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     assert "cohort-specific order" not in hardware_section
 
 
-def test_importer_preserves_opening_figure_narrative() -> None:
-    importer = runpy.run_path(str(REPO_ROOT / "scripts" / "import_google_doc.py"))
-    render_figure = importer["render_figure"]
-    normalize = importer["normalize_figure_references"]
-
-    figure_1 = render_figure("image12.png")
-    assert "./images/figures/generated/figure-01-overview.svg" in figure_1
-    assert "Distributed predictive-processing hypotheses" in figure_1
-    assert "**B,** To sample these nested scales" in figure_1
-    assert "**C,** Five cohort timelines" in figure_1
-
-    figure_2 = render_figure("image10.png")
-    assert figure_2 == ""
-
-    hardware = render_figure("image8.png")
-    assert "./images/figures/generated/multimodal-hardware.svg" in hardware
-    assert "Multimodal recording hardware" in hardware
-    assert "nine native-resolution images" in hardware
-    assert "cohort-specific order" not in hardware
-    assert "[Figure 2](#fig-interactive-experimental-design)" in importer[
-        "INTERACTIVE_DESIGN_BLOCK"
-    ]
-    assert "[Figure 4](#fig-recording-session-inventory)" in importer[
-        "DATA_EXPLORER_BLOCK"
-    ]
-    assert "[Figure 5](#fig-aligned-neural-signals)" in importer["NEURAL_VIEWER_BLOCK"]
-    assert "Supplementary Figure 3" in importer["NEUROPIXELS_TRAJECTORY_BLOCK"]
-    assert "332 probe" in importer["NEUROPIXELS_TRAJECTORY_BLOCK"]
-    trajectory_text = " ".join(
-        importer["NEUROPIXELS_TRAJECTORY_BLOCK"].split()
-    )
-    assert "trajectories extend laterally toward the L direction marker" in trajectory_text
-
-    source = (
-        "brain fixation and brain histology (see **Figure 2**). "
-        "The screen was positioned 15 cm from the mouse's right eye (see **Figure 2**). "
-        "The rig can insert six Neuropixels probes simultaneously (see **Figure 2**)."
-    )
-    normalized = normalize(source)
-    assert "[Figure 1](#fig-graphical-abstract)" in normalized
-    assert "[Figure 3](#fig-multimodal-pipelines)" in normalized
-    assert "see **Figure 2**" not in normalized
-
-
 def test_bibliography_uses_resolved_myst_citations() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     bibliography = (REPO_ROOT / "references.bib").read_text(encoding="utf-8")
@@ -685,25 +641,6 @@ def test_methods_are_collapsed_as_one_section() -> None:
         manuscript[:methods_start],
         re.MULTILINE,
     )
-
-    import_script = runpy.run_path(
-        str(REPO_ROOT / "scripts" / "import_google_doc.py")
-    )
-    wrap_methods_dropdown = import_script["wrap_methods_dropdown"]
-    relocate_figure = import_script["relocate_multimodal_pipeline_figure"]
-    source = "# Background\n\n# Methods\n\n## Procedure\n\nText.\n\n# Data records\n"
-    wrapped = wrap_methods_dropdown(source)
-    assert wrapped.count("::::{dropdown} Show complete Methods") == 1
-    assert wrap_methods_dropdown(wrapped) == wrapped
-
-    figure_source = (
-        "# Background\n\n# Methods\n\n"
-        ":::{figure} figure.png\n:label: fig-multimodal-pipelines\n\nCaption.\n:::\n\n"
-        "## Procedure\n\nText.\n\n# Data records\n"
-    )
-    relocated = relocate_figure(figure_source)
-    assert relocated.index("## Multimodal recording hardware") < relocated.index("# Methods")
-    assert relocate_figure(relocated) == relocated
 
 
 def test_supplementary_studies_table_is_complete() -> None:
@@ -1028,29 +965,6 @@ def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
         "([DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files))"
     ) in manuscript
 
-    importer = runpy.run_path(str(REPO_ROOT / "scripts" / "import_google_doc.py"))
-    for function_name in (
-        "add_segmentation_viewer_figures",
-        "add_slap2_nwb_contents",
-    ):
-        assert importer[function_name](manuscript) == manuscript
-
-    legacy = manuscript.replace(
-        "## Raw data across recording modalities",
-        "# Data validation\n\n## Raw data across recording modalities",
-        1,
-    )
-    assert importer["add_slap2_nwb_contents"](legacy) == legacy
-    assert "DANDI:001424" in importer["SLAP2_RAW_SOURCE"]
-    assert importer["SEGMENTATION_VIEWER_BLOCK"].count(":::{iframe}") == 1
-    assert ":label: fig-segmentation-viewers" in importer["SEGMENTATION_VIEWER_BLOCK"]
-    behavior_and_neural = importer["render_figure"]("image6.png")
-    assert ":label: fig-behavior-tracking" in behavior_and_neural
-    assert ":label: fig-neuropixels-event-responses" in behavior_and_neural
-    assert behavior_and_neural.index(":label: fig-behavior-tracking") < (
-        behavior_and_neural.index(":label: fig-neuropixels-event-responses")
-    )
-
 
 def test_data_explorer_uses_generated_assets_without_manuscript_data() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
@@ -1370,54 +1284,6 @@ def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:
     assert "container-type: inline-size" in stylesheet
     assert "max-width: 900px" not in stylesheet
     assert "@container (max-width: 560px)" in stylesheet
-
-
-def test_docx_text_formatting_artifacts_are_normalized() -> None:
-    normalize_text_export_artifacts = runpy.run_path(
-        str(REPO_ROOT / "scripts" / "import_google_doc.py")
-    )["normalize_text_export_artifacts"]
-    markdown = r"""- Cell extraction ([<u>Suite2p</u>](https://suite2p.org))
-
-> The default configuration used Suite2p's sparse detection mode.
-
-- Packaging used aind-eye-tracking-nwb
-
-> ([<u>repository</u>](https://example.org/repository))
-
-> A genuine quotation remains.
-
-> i\. R(downward, 90° shift) \> R(45° shift),\
-> because this is a bigger change in orientation
->
-> ii\. R(halt) \< R(90°) and R(45°), because the halt involves a smaller change in velocity
-
-Raw \autocite{noauthor_allenneuraldynamicsgiant-matlab_2026} and
-view~\autocite{pnevmatikakis_normcorre_2017} use \textit{activity image} at
-\$1.33\$~pixels. A sentence ends.. Neuropixels node**s** were processed with with care.
-
-Paragraph before figure.\
-
-:::{figure} image.png
-:::
-
--
-"""
-
-    normalized = normalize_text_export_artifacts(markdown)
-
-    assert "<u>" not in normalized
-    assert "\n  The default configuration used Suite2p" in normalized
-    assert "aind-eye-tracking-nwb ([repository](https://example.org/repository))" in normalized
-    assert "\n> A genuine quotation remains." in normalized
-    assert "  1. R(downward, 90° shift) > R(45° shift)" in normalized
-    assert "  2. R(halt) < R(90°) and R(45°)" in normalized
-    assert "\\autocite" not in normalized
-    assert "\\textit" not in normalized
-    assert "[$1.33$" not in normalized
-    assert "$1.33$ pixels" in normalized
-    assert "ends. Neuropixels nodes were processed with care" in normalized
-    assert "figure.\\" not in normalized
-    assert "\n-\n" not in normalized
 
 
 def test_manuscript_has_no_docx_formatting_artifacts() -> None:

@@ -13,9 +13,10 @@ Predictive Processing Community Project data release. Manuscript, authorship met
 editable figure sources, committed data snapshots, generated assets, interactive JavaScript
 figures, and build code all live here so a result can be traced end to end.
 
-It is a **publication**, not an application. The primary outputs are `index.md`, the rendered
-static figures under `images/figures/generated/`, and the interactive figures under
-`interactive/`. Pushes to `main` deploy to GitHub Pages.
+It is a **publication**, not an application. [index.md](index.md) is the sole authoritative
+manuscript. The other primary outputs are the rendered static figures under
+`images/figures/generated/` and the interactive figures under `interactive/`.
+Pushes to `main` deploy to GitHub Pages.
 
 ## Setup
 
@@ -59,7 +60,7 @@ would currently rewrite most files. Do not introduce it as part of an unrelated 
 | `tests/` | Publication and figure regression checks |
 | `authors.yml`, `author_avatars.json` | **Generated** authorship snapshots — never hand-edit |
 | `myst.yml` | Publication, plugin, navigation, static-asset config |
-| `docs/` | Longer-form references (migration notes, agent guidance) |
+| `docs/` | Longer-form references (analysis notes, agent guidance) |
 
 ## The core architecture: extractor → committed intermediate → renderers
 
@@ -92,8 +93,6 @@ before writing a new one; `extract_neuropixels_event_responses.py` and
   `author_avatars.json`.
 - **Never edit `authors.yml` directly, and never run `scripts/sync_authors.py`.** Authorship
   sync is maintainer-only; contributors use the P3 contribution portal.
-- **`scripts/import_google_doc.py` is destructive** — it overwrites `index.md`, imported PNGs,
-  and their manifest. Do not run it over unreconciled repository edits.
 - **Do not commit NWB files or other large primary datasets.** Cite a versioned DANDI or S3
   asset and record URL, path, version/DOI, retrieval date, and checksum.
 - **Binary size tiers:** <10 MiB fine if required; 10–100 MiB needs maintainer approval;

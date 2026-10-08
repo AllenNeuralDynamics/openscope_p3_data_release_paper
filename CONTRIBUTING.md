@@ -2,6 +2,8 @@
 
 ## Manuscript changes
 
+[index.md](index.md) is the sole authoritative manuscript.
+
 We welcome contributions from OpenScope Predictive Processing Community members. Coordinate substantial scientific or structural changes in an issue or discussion before starting so parallel edits do not conflict.
 
 1. Create a focused branch from the latest `main` and edit `index.md` using MyST Markdown.
@@ -10,8 +12,6 @@ We welcome contributions from OpenScope Predictive Processing Community members.
 4. Keep prose, figure, and data-snapshot changes narrowly scoped. Separate unrelated scientific revisions when practical.
 5. Update generated files in the same pull request as their source; never edit generated outputs without updating their owner.
 6. In the pull request, summarize the scientific change, identify source data or references, list regenerated assets, report validation, and request review from the relevant section or data owner.
-
-During the Google Doc cutover, `scripts/import_google_doc.py` is destructive: it replaces `index.md`, imported PNGs, and their manifest. Do not run it over repository-only edits that have not been reconciled with the source document.
 
 ## Authorship metadata
 
