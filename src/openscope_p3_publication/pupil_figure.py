@@ -15,7 +15,7 @@ from .figures import (
     FIGURE_TYPE_SCALE,
     JAVASCRIPT_DIR,
     REPO_ROOT,
-    load_embed_auto_height,
+    load_figure_controls,
     load_figure_stylesheet,
     normalized_text_bytes,
     platform_logo_data_uris,
@@ -639,7 +639,7 @@ def write_pupil_event_html(
             f"data:image/svg+xml;base64,{static_data}",
         )
         .replace("__PUPIL_EVENT_JS__", javascript)
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     return output

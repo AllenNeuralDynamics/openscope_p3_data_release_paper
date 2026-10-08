@@ -7,6 +7,7 @@ import runpy
 import struct
 import urllib.parse
 from copy import deepcopy
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -753,6 +754,7 @@ def test_supplementary_studies_table_is_complete() -> None:
 
 def test_supplementary_and_power_figures_are_current() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    prose = " ".join(manuscript.split())
 
     for number in range(1, 8):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
@@ -763,7 +765,7 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert manuscript.count(
         "[Supplementary Figure 2](#fig-supp-neuropixels-unit-yield)"
     ) == 2
-    assert "images/figures/generated/supplementary-neuropixels-unit-yield.svg" not in manuscript
+    assert "images/figures/generated/supplementary-neuropixels-unit-yield.svg" in manuscript
     assert "60 sessions from 16 mice" in manuscript
     assert "./interactive/neuropixels-trajectories.html" in manuscript
     assert ":label: fig-supp-neuropixels-recorded-trajectories" in manuscript
@@ -779,10 +781,9 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert manuscript.count("[Supplementary Figure 4](#fig-supp-eye-tracking)") == 2
     assert "./interactive/eye-tracking-viewer.html" in manuscript
     assert ":label: fig-supp-eye-tracking\n:enumerated: false" in manuscript
-    assert "raw eye-camera video (left)" in manuscript
-    assert "same video with the NWB-packaged pupil" in manuscript
-    assert "The optional **Filtered** view" in manuscript
-    assert "isolated runs of one to four samples" in manuscript
+    assert "raw pupil x position, y position, and area" in prose
+    assert "without display-time outlier interpolation" in prose
+    assert "isolated runs of one to four samples" in prose.lower()
     assert "**B,** a dorsal projection" in manuscript
     assert manuscript.count(
         "[Figure 8](#fig-supp-optotagging-heatmaps)"
@@ -800,9 +801,8 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "**B,** Overall optotagged-cell yield" in manuscript
     assert "**C,** Yield by Allen major parent area" in manuscript
     assert "**D,** The 18 structures with the highest mean yield" in manuscript
-    assert "selectors constrain the view to available values" in manuscript
-    assert "gray dots denote individual sessions and teal bars or lines denote means" in manuscript
-    assert "include only sessions sampling that area" in manuscript
+    assert "gray dots denote individual sessions and teal bars or lines denote means" in prose
+    assert "include only sessions sampling that area" in prose
     assert "./interactive/pupil-event-responses.html" in manuscript
     assert ":label: fig-supp-pupil-event-responses\n:enumerated: false" in manuscript
     assert (
@@ -811,15 +811,15 @@ def test_supplementary_and_power_figures_are_current() -> None:
     ) in manuscript
     assert "display-synchronized `start_time`" in manuscript
     assert "row i−2 `stop_time` to row i−1 `start_time`" in manuscript
-    assert "both repeats of standard control C1" in manuscript
-    assert "Duration responses use the following commanded interstimulus interval" in manuscript
-    assert "display-recorded stimulus interval" in manuscript
-    assert "vertically aligned pupil and running panels" in manuscript
+    assert "both repeats of standard control C1" in prose
+    assert "Duration responses use the following commanded interstimulus interval" in prose
+    assert "display-recorded stimulus interval" in prose
+    assert "[Methods](#pupil-running-response-summaries)" in manuscript
     assert "without any temporal filtering" in manuscript
-    assert "Individual traces show means ±1 SEM across valid trials" in manuscript
-    assert "Population trace bands show ±1 SEM across mice" in manuscript
+    assert "Individual traces show means ±1 SEM across valid trials" in prose
+    assert "Population trace bands show ±1 SEM across mice" in prose
     assert "SLAP2 duration pupil responses are marked unavailable" in manuscript
-    assert "Mouse 830846's duration running panel is explicitly unavailable" in manuscript
+    assert "Mouse 830846's duration running panel is explicitly unavailable" in prose
     assert "60 Neuropixels sessions from 16 mice" in manuscript
     assert "86 mesoscope sessions from 10 mice" in manuscript
     assert "./interactive/neuropixels-event-responses.html" in manuscript
@@ -857,9 +857,9 @@ def test_supplementary_and_power_figures_are_current() -> None:
     matrix_areas, _matrix_columns = response_matrix(load_neuropixels_event_responses())
     assert (
         f"same {len(matrix_areas)} frontal, visual, hippocampal, and thalamic areas"
-        in manuscript
+        in prose
     )
-    assert "at least 10 tested units in at least eight of the 16 events" in manuscript
+    assert "at least 10 tested units in at least eight of the 16 events" in prose
     assert "12,968 sorted units" in manuscript
     assert "8,093 passed the manuscript QC thresholds" in manuscript
     # The four sessions come from 830794, not the 830846 the figure first used.
@@ -877,9 +877,12 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "[Methods](#neuropixels-response-summaries)" in figure_caption
     assert "(neuropixels-response-summaries)=\n" in manuscript
     # Disclosures the caption must carry, each recording a real limitation.
-    assert "subsequence of that fixed order, not a re-embedding" in manuscript
+    assert "a subsequence of the fixed order rather than re-embedding" in " ".join(
+        (REPO_ROOT / "figure_sources/javascript/neuropixels-event-responses.html")
+        .read_text(encoding="utf-8").split()
+    )
     assert "hatched, not shaded" in manuscript
-    assert "selected on the statistical test rather than on the plotted effect" in manuscript
+    assert "selected on the statistical test rather than on the plotted effect" in prose
     assert "revised upstream in August 2026" in manuscript
     # Responsiveness is defined in prose, not in the caption.
     assert "### Defining responsiveness per mismatch event" in manuscript
@@ -975,31 +978,44 @@ def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     )
     assert manuscript.count(":::{iframe} ./interactive/neural-viewer.html") == 1
     assert ":::{iframe} ./interactive/segmentation-viewer.html" not in manuscript
-    assert "**D-F,** Extracted sources" in segmentation_text
-    assert "**G-I,** Ten activity-bearing filters" in segmentation_text
-    assert "Probe A, the VISp L2/3 plane at 152 µm, and SLAP2 DMD1" in segmentation_text
-    assert "DMD1 above DMD2" in segmentation_text
-    assert "all 60 frames of each committed raw movie" in segmentation_text
-    assert "every probe or imaging plane" in segmentation_text
-    assert "complete NWB segmentation" in segmentation_text
-    assert "30 s for imaging" in segmentation_text
-    assert "SLAP2 trace samples are approximately 200 Hz" in segmentation_text
-    assert "common-mode-corrected AP voltage" in segmentation_text
+    caption = segmentation_captions.split("\n\n", maxsplit=1)[1].split("\n:::", maxsplit=1)[0]
+    assert len(caption.split()) < 250
+    assert "**(D-F)** Extracted units or sources" in segmentation_text
     assert (
-        "fast-scanning x axis is horizontal for mesoscope and vertical for SLAP2"
+        "**(G-I)** Activity traces from ten activity-bearing units or sources"
         in segmentation_text
     )
+    assert "layer 2/3 plane at 152 µm depth (E), and SLAP2 DMD1 (F)" in segmentation_text
+    assert "DMD1, top; DMD2, bottom" in segmentation_text
+    assert "common-mode-corrected voltage" in segmentation_text
+    assert "sampled evenly across extraction order" in segmentation_text
+    assert "annotated somatic region" in segmentation_text
+    assert "six targeted raster regions" in segmentation_text
+    assert "sampled brain regions indicated" in segmentation_text
+    assert "30 s (H, I;" in segmentation_text
+    for excluded in ("Scale bars:", "Image contrast", "Interactive", "gamma", "pixel-replacement"):
+        assert excluded not in caption
+
+    methods_start = manuscript.index("(recording-display-methods)=")
+    methods_stop = manuscript.index("### NWB data packaging", methods_start)
+    methods = " ".join(manuscript[methods_start:methods_stop].split())
+    assert methods_stop < manuscript.index("# Data records")
+    for detail in (
+        "all 60 frames of each committed raw movie",
+        "complete NWB segmentation",
+        "SLAP2 trace samples are approximately 200 Hz",
+        "common-mode-corrected AP voltage",
+        "user-drawn `soma` ROI",
+        "20 ms and 1000 µm",
+        "not fluorescence intensity or extracted-source segmentation",
+        "without segmentation overlays",
+        "Movie excerpts displayed beneath segmentation masks",
+        "separate elapsed-time windows",
+        "source recordings, not reconstructed from extracted traces",
+    ):
+        assert detail in methods
+    assert "vertical for SLAP2 in F and the interactive views" not in manuscript
     assert "mark its direction" not in segmentation_text
-    assert "Ten activity-bearing filters sampled evenly across filter order" in segmentation_text
-    assert "somatic band in F" in segmentation_text
-    assert "user-drawn `soma` ROI" in segmentation_text
-    assert "20 ms and 1000 µm" in segmentation_text
-    assert "cyan acquisition bands" in segmentation_text
-    assert "not fluorescence intensity or extracted-source segmentation" in segmentation_text
-    assert "sampled areas listed above each probe" in segmentation_text
-    assert "registered movies beneath the imaging masks" in segmentation_text
-    assert "separate elapsed-time axes" in segmentation_text
-    assert "without segmentation overlays" in segmentation_text
     assert "activity image" not in segmentation_text.lower()
     assert "QC-passing" not in segmentation_text
     assert "first sequence omission" not in segmentation_text
@@ -1131,8 +1147,73 @@ def test_analysis_plan_is_concise_prose() -> None:
     assert "@rule2020stable" in plan
 
 
+def test_all_publication_viewers_default_to_static() -> None:
+    class FigureElements(HTMLParser):
+        def __init__(self) -> None:
+            super().__init__()
+            self.elements: list[dict[str, str | None]] = []
+            self.parents: list[tuple[str, dict[str, str | None]]] = []
+
+        def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+            attributes = dict(attrs)
+            if self.parents:
+                attributes["parent_tag"] = self.parents[-1][0]
+                attributes["parent_class"] = self.parents[-1][1].get("class")
+            if tag in {"button", "section", "div", "header"}:
+                self.elements.append(attributes)
+            if tag not in {"area", "base", "br", "col", "embed", "hr", "img", "input",
+                           "link", "meta", "param", "source", "track", "wbr"}:
+                self.parents.append((tag, attributes))
+
+        def handle_endtag(self, tag: str) -> None:
+            for index in range(len(self.parents) - 1, -1, -1):
+                if self.parents[index][0] == tag:
+                    del self.parents[index:]
+                    break
+
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    paths = re.findall(r"^:::\{iframe\} \./(interactive/[^\n]+)", manuscript, re.MULTILINE)
+    assert len(paths) == 14
+    for relative_path in paths:
+        html = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+        parser = FigureElements()
+        parser.feed(html)
+        toolbar = [item for item in parser.elements if item.get("class") == "figure-toolbar"]
+        assert len(toolbar) == 1 and toolbar[0].get("parent_tag") == "main", relative_path
+        modes = [item for item in parser.elements if item.get("data-view") is not None]
+        assert len(modes) == 2, relative_path
+        assert modes[0]["data-view"] == "static", relative_path
+        assert all(
+            item.get("parent_class") == "figure-mode-switch" for item in modes
+        ), relative_path
+        buttons = [item for item in parser.elements if item.get("data-view") == "static"]
+        assert len(buttons) == 1, relative_path
+        assert (
+            buttons[0].get("aria-pressed") == "true"
+            or buttons[0].get("aria-selected") == "true"
+        ), relative_path
+        static = [item for item in parser.elements
+                  if item.get("id") in {"static-view", "static-panel", "panel-static"}]
+        assert len(static) == 1 and "hidden" not in static[0], relative_path
+        interactive = [item for item in parser.elements
+                       if item.get("id") in {"interactive-view", "playback-view"}]
+        assert len(interactive) == 1 and "hidden" in interactive[0], relative_path
+        legend = [item for item in parser.elements if item.get("id") == "figure-legend"]
+        toggle = [item for item in parser.elements if item.get("id") == "figure-legend-toggle"]
+        assert len(legend) == 1 and "hidden" in legend[0], relative_path
+        assert len(toggle) == 1, relative_path
+        assert toggle[0].get("aria-controls") == "figure-legend", relative_path
+        assert toggle[0].get("aria-expanded") == "false", relative_path
+        assert toggle[0].get("aria-label") == "Figure legend", relative_path
+        assert toggle[0].get("title") == "Figure legend", relative_path
+        assert toggle[0].get("parent_class") == "figure-toolbar", relative_path
+        assert "function syncLegend()" in html and "toggle.focus()" in html, relative_path
+        assert "__EMBED_AUTO_HEIGHT_JS__" not in html, relative_path
+
+
 def test_figure_captions_and_interactive_placement() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    prose = " ".join(manuscript.split())
 
     captioned_figures = re.findall(
         r"^:::\{(?:figure|iframe)\} [^\n]+\n"
@@ -1142,6 +1223,7 @@ def test_figure_captions_and_interactive_placement() -> None:
     )
     assert captioned_figures
     for options, caption in captioned_figures:
+        assert not re.search(r"\*\*(?:Interactive|Static)\*\*|CSV export|checkboxes", caption)
         if ":enumerated: false" not in options:
             assert not re.match(r"(?:\*\*)?(?:Supplementary )?Figure\s+\d", caption)
 
@@ -1153,39 +1235,32 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "eight outlined habituation and training sessions" in manuscript
     assert "a standard control precedes each context" in manuscript
     assert "control and system-identification stimuli" in manuscript
-    assert "vertical selector above\nthe Context block" in manuscript
     assert "Sources: pinned\n[example tables]" in manuscript
     assert "generate_experiment_csv.py" in manuscript
     assert "**D,** Context panels summarize" not in manuscript
     assert "Rows compare Neuropixels electrophysiology" in manuscript
     assert "Columns show each rig geometry" in manuscript
     assert "nine native-resolution images" in manuscript
-    assert re.search(
-        r"searchable, filterable tables sourced from local\s+CSV snapshots",
-        manuscript,
-    )
+    assert "Failed, repeated, and aborted acquisition attempts are retained" in manuscript
     assert "./interactive/neural-viewer.html" in manuscript
     assert ":label: fig-aligned-neural-signals" in manuscript
     assert ":placeholder: ./images/figures/generated/raw-neural-recordings.svg" in manuscript
-    assert "Representative raw-data excerpts from one public session" in manuscript
-    assert "**Static** view arranges all available recordings" in manuscript
-    assert "overlapping raw-image cards" in manuscript
-    assert "**A,** all six Neuropixels probe heatmaps" in manuscript
-    assert "eight mesoscope plane stills" in manuscript
-    assert "two SLAP2 reference projections" in manuscript
+    assert "Representative data from one recording session per modality" in manuscript
+    assert "**(A)** Raw voltage heatmaps from six Neuropixels probes" in manuscript
+    assert "**(B)** Raw mesoscope images from eight planes" in manuscript
+    assert "two imaging depths (DMD1, top; DMD2, bottom)" in manuscript
     assert "black-referenced display gain" in manuscript
     assert "1st–99.5th max-channel percentiles" in manuscript
     assert "640 × 400 lossless grayscale frames" in manuscript
-    assert "fast-scanning x axis horizontal, matching C and F" in manuscript
+    assert "fast-scanning x axis horizontal" in manuscript
     assert "comes from one acquisition cycle; unsampled pixels are black" in manuscript
     assert "reference or temporally averaged image blended into the raw signal" in manuscript
     assert "reference-stack maximum projection" in manuscript
     assert "99.8th percentiles with gamma 0.6" in manuscript
-    assert "shown to introduce the native acquisition formats" in manuscript
     assert "Event-aligned raw data across recording modalities" not in manuscript
     assert "prediction-violating event" not in manuscript
     assert re.search(r"Microscopy\s+playback uses elapsed time", manuscript)
-    assert "raw AP acquisition stream supplied to spike sorting" in manuscript
+    assert re.search(r"raw AP acquisition stream supplied to spike\s+sorting", manuscript)
     assert "AP samples are not median-corrected" in manuscript
     assert "remain visible as vertical stripes" in manuscript
     assert "ecephys_830846_2026-03-09_10-32-54" in manuscript
@@ -1225,11 +1300,11 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "compared on one shared cm/s axis" in manuscript
     assert "each bar is the\nmean across mice" in manuscript
     assert "legend values report included mice" in manuscript
-    assert "and reconstructed stimulus state for the selected modality" in manuscript
+    assert "camera-display processing are described" in manuscript
     assert "paired control-versus-context running" not in manuscript
     assert "8192 counts/revolution, an 8.255 cm disc radius" in manuscript
     assert "1st–99th luminance percentiles" in manuscript
-    assert "maps median luminance to 35%" in manuscript
+    assert "maps median luminance to 35%" in prose
     assert "Event-centered excerpts from real Neuropixels" not in manuscript
     assert "figure-06-behavior-tracking-plan.png" not in manuscript
     assert "continuous raw\nbehavioral videos" in manuscript
@@ -1255,8 +1330,8 @@ def test_figure_captions_and_interactive_placement() -> None:
     ):
         assert f"[Figure {number}](#{label})" in manuscript
     assert re.search(r"\[\]\(#fig-", manuscript) is None
-    assert "NWB running\nspeed and stimulus rows share the sync-file clock" in manuscript
-    assert "reported dropped frames are removed before mapping" in manuscript
+    assert "NWB running speed and stimulus rows share the sync-file clock" in prose
+    assert "reported dropped frames are removed before mapping" in prose
     assert "per-frame Harp timestamps on the acquisition clock" in manuscript
     assert "DeepLabCut" in manuscript
     assert "- Motion energy of the face?" not in manuscript
@@ -1378,7 +1453,9 @@ def test_interactive_figure_has_static_fallback() -> None:
         ":placeholder: ./images/figures/generated/figure-02-context-controls.svg"
         in manuscript
     )
-    assert "The **Interactive** view" in manuscript
+    viewer = (REPO_ROOT / "interactive/experimental-design.html").read_text(encoding="utf-8")
+    assert 'aria-controls="figure-legend"' in viewer
+    assert 'data-view="static" aria-pressed="true"' in viewer
     assert "control and system-identification stimuli" in manuscript
 
 def test_unit_yield_summary_means_are_order_independent() -> None:

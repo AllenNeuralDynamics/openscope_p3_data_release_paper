@@ -11,12 +11,25 @@ __SIMULATOR_CSS__
 </head>
 <body>
   <main class="viewer" id="stimulus-viewer">
-    <div class="view-switch" role="group" aria-label="Interactive or static view">
-      <button type="button" class="view-button active" data-view="playback" aria-pressed="true">Interactive</button>
-      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
-    </div>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" class="view-button active" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" class="view-button" data-view="playback" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
 
-    <div id="playback-view">
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive figure legend</h2>
+      <p>Reconstructions of the visual stimuli used in the standard oddball, sensorimotor,
+        sequence, and duration contexts, with their control and receptive-field blocks.
+        Gratings and omissions follow recorded stimulus-table excerpts; the zebra movie
+        is the canonical source clip. Playback illustrates stimulus structure rather than
+        neural or behavioral measurements.</p>
+    </section>
+
+    <div id="playback-view" hidden>
       <section class="playback-bar" aria-label="Shared session architecture">
         <div class="context-selector" id="context-selector">
           <span class="context-selector-label">Select context block</span>
@@ -45,7 +58,7 @@ __SIMULATOR_CSS__
       </section>
     </div>
 
-    <section class="static-panel" id="static-panel" aria-label="Static experimental-design summary" hidden>
+    <section class="static-panel" id="static-panel" aria-label="Static experimental-design summary">
       <img src="__PANEL_D_IMAGE__" alt="Two panels showing the shared session timeline and detailed context, control, receptive-field, and zebra-movie blocks.">
     </section>
   </main>

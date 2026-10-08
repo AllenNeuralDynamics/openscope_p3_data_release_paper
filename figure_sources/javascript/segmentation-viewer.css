@@ -132,8 +132,11 @@ html.is-embedded .viewer { min-height: 0; }
   padding: 12px 22px;
   display: flex;
   align-items: center;
+  gap: 16px;
   border-bottom: 1px solid var(--line);
 }
+
+.figure-header h1 { min-width: 0; flex: 1; }
 
 .selection-kicker {
   margin: 0;

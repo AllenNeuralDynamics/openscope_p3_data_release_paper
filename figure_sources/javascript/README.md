@@ -4,6 +4,17 @@ This folder contains the reviewable source for interactive publication figures. 
 
 `embed-auto-height.js` is shared by every generated embed. On the same-origin published site, it keeps each MyST iframe wrapper equal to the interactive root's responsive content height and updates that height when controls or tables change.
 
+All manuscript viewers start in Static mode. The main caption describes the static
+panels; the interactive scientific legend is available from a question-mark button.
+`figure-legend.js` and `figure-legend.css` provide the shared disclosure, expanded
+state, Escape handling, and closing on Static selection. Keep each legend's text
+in its owning HTML template and load the scripts through `load_figure_controls()`.
+Existing viewers retain their own view-state logic. Simple chart/table wrappers
+can use `data-simple-view` with `interactive-view` and `static-view` sections.
+Every embed has the same `figure-toolbar`: a two-button `figure-mode-switch`
+(Static, Interactive) and a separate circular legend button at the top right.
+Secondary analysis tabs stay inside the interactive content, below the toolbar.
+
 `figure-typography.css` defines the shared panel-title, section-title, body, control, metadata, and axis roles. Every generated interactive stylesheet is composed with this file, and visible text must remain at least 12 px at publication width. Static SVG generators use the matching scale in `openscope_p3_publication.figures.FIGURE_TYPE_SCALE`.
 
 `figure_sources/data/stimulus-viewer-sources.json` pins the upstream stimulus repository revision, canonical example CSVs, generator, Bonsai workflow, movie, checksums, and DANDI locations. Compact excerpts under `figure_sources/data/stimulus-table-excerpts/` preserve contiguous source rows and their generated pseudo-random order for every displayed context and control block. The viewer renders those rows directly; recorded synchronized tables remain inside each public NWB file.

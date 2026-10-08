@@ -109,7 +109,7 @@ For an interactive figure, keep generated HTML under `interactive/` and provide 
 :title: Short accessible title for the interactive figure
 :placeholder: ./images/figures/generated/example.svg
 
-One caption shared by the interactive and static views.
+Caption describing the static panels, scientific encodings, and sample sizes.
 :::
 ```
 
@@ -118,6 +118,12 @@ Generated HTML belongs in `interactive/` and must be listed through `project.sta
 - Use stable, unique labels and page-relative paths so cross-references survive reordering.
 - Put explanatory science in the manuscript caption, not only in the HTML application.
 - Give interactive controls semantic markup, keyboard access, accessible names, responsive layout, and a useful initial state.
+- Default every viewer to Static in both its HTML and initialization code. Put
+	interactive-specific scientific descriptions behind the question-mark legend
+	control, not in the manuscript caption. Use the shared `figure-legend.js` and
+	`figure-legend.css` assets; the control must close with Escape or Static view.
+	Use one top toolbar with the Static/Interactive switch on the left and a
+	separate circular question-mark button on the right. Analysis tabs belong below it.
 - Generate both outputs deterministically and verify interactive plus static rendering at desktop and mobile sizes.
 - Preview with `myst start`; use `myst build --html` to catch path and static-asset errors.
 

@@ -118,7 +118,10 @@ def test_wavemap_viewer_has_no_pdf_download_control() -> None:
     assert "pdf-link" not in template
     assert "pdf-link" not in stylesheet
     assert "supplementary-wavemap.pdf" not in template
-    assert template.count('role="tab"') == 4
+    assert template.count('role="tab"') == 3
+    assert 'class="figure-mode-switch"' in template
+    assert template.count('data-view="') == 2
+    assert 'data-view="static" aria-pressed="true"' in template
     assert "__WAVEMAP_STATIC__" in template
     assert 'alt="WaveMAP:' in template
     assert "Supplementary Figure 9" not in template

@@ -8,16 +8,44 @@
 </head>
 <body>
   <main class="viewer" id="segmentation-viewer" data-modality="neuropixels">
-    <div class="view-switch" role="group" aria-label="Interactive or static view">
-      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
-      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
-    </div>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" class="view-button active" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" class="view-button" data-view="interactive" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle"
+        aria-label="Figure legend" title="Figure legend"
+        aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
 
-    <div id="interactive-view">
+    <div id="interactive-view" hidden>
       <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality" role="tablist"></nav>
       <header class="figure-header">
         <h1 id="viewer-title"></h1>
       </header>
+
+      <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+        <h2 id="figure-legend-title">Interactive figure legend</h2>
+        <p data-legend-modality="neuropixels">Representative extracellular recordings from six
+          Neuropixels probes. The voltage map shows recording depth and sampled anatomical regions;
+          colored markers identify spikes assigned to sorted units. The selected unit's activity is
+          reported as firing rate (spikes/s), alongside its mean spike template. Common-mode
+          correction removes the across-contact median at each time point.</p>
+        <p data-legend-modality="mesoscope" hidden>Representative calcium recordings from eight
+          mesoscope imaging planes in VISp and VISl. Raw images are unprocessed fluorescence frames;
+          registered movies are motion corrected and decrosstalked. The reference is the registered
+          mean image. Colored outlines identify extracted regions of interest, with the selected
+          region's activity reported as &Delta;F/F (%).</p>
+        <p data-legend-modality="slap2" hidden>Representative SLAP2 recordings from two imaging
+          depths. Raw movies show individual iGluSnFR4f or RCaMP3 detector samples from single
+          acquisition cycles, with unsampled pixels black and no reference-image background.
+          Registered movies and extracted source traces use iGluSnFR4f; the reference is the
+          registered mean image. Outlines identify extracted sources; source counts are not
+          neuron counts. Source activity is reported as &Delta;F/F (%), including when the raw
+          RCaMP3 channel is displayed.</p>
+        <p id="figure-legend-imaging" hidden>Segmentation masks use registered coordinates and
+          are not overlaid on raw frames. Movie and trace excerpts have separate time axes.</p>
+      </section>
 
       <section class="toolbar" aria-label="Viewer controls">
       <label class="select-control source-control" for="source-select">
@@ -113,7 +141,7 @@
       </section>
     </div>
 
-    <section class="static-view" id="static-view" aria-label="Static recording and extraction overview" hidden>
+    <section class="static-view" id="static-view" aria-label="Static recording and extraction overview">
       <img src="__SEGMENTATION_STATIC_IMAGE__" alt="Neuropixels, mesoscope, and SLAP2 raw recordings and unit-extraction filters with ten vertically stacked activity traces per modality.">
     </section>
   </main>

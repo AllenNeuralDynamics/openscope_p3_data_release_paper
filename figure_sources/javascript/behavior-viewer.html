@@ -11,12 +11,24 @@ __BEHAVIOR_CSS__
 </head>
 <body>
   <main class="viewer" id="behavior-viewer">
-    <div class="view-switch" role="group" aria-label="Interactive or static view">
-      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
-      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
-    </div>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" class="view-button active" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" class="view-button" data-view="interactive" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
 
-    <div id="interactive-view">
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive figure legend</h2>
+      <p>Camera video, reconstructed visual stimulus, and wheel speed are synchronized within
+        each representative Neuropixels, mesoscope, or SLAP2 session. The event marker denotes
+        the selected mismatch presentation. These short excerpts illustrate the recorded
+        behavioral streams rather than population-level effects.</p>
+    </section>
+
+    <div id="interactive-view" hidden>
       <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
 
       <header class="session-header">
@@ -83,7 +95,7 @@ __BEHAVIOR_CSS__
       </section>
     </div>
 
-    <section class="static-view" id="static-view" aria-label="Static synchronized behavior overview" hidden>
+    <section class="static-view" id="static-view" aria-label="Static synchronized behavior overview">
       <div class="static-shell">
         <img src="__BEHAVIOR_STATIC_IMAGE__" alt="Static rows showing camera views and full-session block-annotated running profiles from the same mice, followed by one shared-axis comparison of mouse-level mean running speed across modalities and protocol blocks.">
       </div>

@@ -173,7 +173,7 @@ def verified_waveform_sampling_rate(snapshot: dict) -> float | None:
 def build_wavemap_publication(output_root: Path = REPO_ROOT) -> tuple[Path, ...]:
     """Build the WaveMAP figure and stage its local runtime assets."""
     from openscope_p3_publication.figures import (
-        load_embed_auto_height,
+        load_figure_controls,
         load_figure_stylesheet,
     )
     from openscope_p3_publication.wavemap_publication_figures import (
@@ -202,7 +202,7 @@ def build_wavemap_publication(output_root: Path = REPO_ROOT) -> tuple[Path, ...]
             "__WAVEMAP_STATIC__",
             "data:image/svg+xml;base64," + base64.b64encode(svg.read_bytes()).decode("ascii"),
         )
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
     )
     wrapper = interactive_dir / "wavemap-supplement.html"
     wrapper.write_text(html, encoding="utf-8", newline="\n")

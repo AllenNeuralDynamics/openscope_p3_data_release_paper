@@ -8,14 +8,16 @@ across for the same session.
 
 from __future__ import annotations
 
+import base64
 import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 from .figures import (
     JAVASCRIPT_DIR,
     REPO_ROOT,
-    load_embed_auto_height,
+    load_figure_controls,
     load_figure_stylesheet,
     write_svg_output,
 )
@@ -473,6 +475,11 @@ def write_sensorimotor_running_html(
     """Render the interactive locomotion table to ``output``."""
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_running_data(data_path, provenance_path)
+    with TemporaryDirectory(prefix="sensorimotor-running-static-") as directory:
+        static_path = write_sensorimotor_running_svg(
+            Path(directory) / "sensorimotor-running.svg", data_path, provenance_path
+        )
+        static_image = base64.b64encode(static_path.read_bytes()).decode("ascii")
     template = (JAVASCRIPT_DIR / "sensorimotor-running.html").read_text(
         encoding="utf-8"
     )
@@ -483,13 +490,16 @@ def write_sensorimotor_running_html(
     html = (
         template.replace("__SENSORIMOTOR_RUNNING_CSS__", stylesheet)
         .replace(
+            "__SENSORIMOTOR_RUNNING_STATIC_IMAGE__", f"data:image/svg+xml;base64,{static_image}"
+        )
+        .replace(
             "__SENSORIMOTOR_RUNNING_DATA__",
             json.dumps(
                 payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True
             ),
         )
         .replace("__SENSORIMOTOR_RUNNING_JS__", javascript)
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     return output

@@ -10,14 +10,30 @@ __WAVEMAP_STYLE__
 </head>
 <body>
   <main class="wavemap-supplement">
-    <nav class="view-tabs" role="tablist" aria-label="WaveMAP figure view">
-      <button id="tab-area" role="tab" aria-selected="true" aria-controls="panel-area" tabindex="0" data-view="area">Waveforms</button>
-      <button id="tab-labels" role="tab" aria-selected="false" aria-controls="panel-labels" tabindex="-1" data-view="labels">FS/SST</button>
-      <button id="tab-context" role="tab" aria-selected="false" aria-controls="panel-context" tabindex="-1" data-view="context">Context</button>
-      <button id="tab-static" role="tab" aria-selected="false" aria-controls="panel-static" tabindex="-1" data-view="static">Static</button>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" data-view="interactive" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive figure legend</h2>
+      <p>Area-specific WaveMAP embeddings summarize extracellular waveform variation.
+        Waveform clusters, putative fast-spiking and optotagged SST overlays, and
+        session-normalized context composition provide complementary views of the same
+        waveform populations. Embedding coordinates are descriptive waveform features,
+        not anatomical positions or evidence of context-dependent cell-type conversion.</p>
+    </section>
+    <div id="interactive-view" hidden>
+    <nav class="view-tabs" role="tablist" aria-label="WaveMAP analysis">
+      <button id="tab-area" role="tab" aria-selected="true" aria-controls="panel-area" tabindex="0">Waveforms</button>
+      <button id="tab-labels" role="tab" aria-selected="false" aria-controls="panel-labels" tabindex="-1">FS/SST</button>
+      <button id="tab-context" role="tab" aria-selected="false" aria-controls="panel-context" tabindex="-1">Context</button>
     </nav>
     <section id="panel-area" role="tabpanel" aria-labelledby="tab-area">
-      <iframe src="./wavemap-area-explorer.html" title="Area-specific WaveMAP embeddings and waveforms"></iframe>
+      <iframe data-src="./wavemap-area-explorer.html" title="Area-specific WaveMAP embeddings and waveforms"></iframe>
     </section>
     <section id="panel-labels" role="tabpanel" aria-labelledby="tab-labels" hidden>
       <iframe data-src="./fs-sst-wavemap-explorer.html" title="Putative FS and optotagged SST populations in waveform space"></iframe>
@@ -25,7 +41,8 @@ __WAVEMAP_STYLE__
     <section id="panel-context" role="tabpanel" aria-labelledby="tab-context" hidden>
       <iframe data-src="./wavemap-context-explorer.html" title="Session-normalized WaveMAP context composition"></iframe>
     </section>
-    <section id="panel-static" role="tabpanel" aria-labelledby="tab-static" hidden>
+    </div>
+    <section id="panel-static" aria-label="Static WaveMAP summary">
       <img src="__WAVEMAP_STATIC__" alt="WaveMAP: regional embeddings, mean waveforms, FS/SST overlays, and context-composition matrices.">
     </section>
   </main>

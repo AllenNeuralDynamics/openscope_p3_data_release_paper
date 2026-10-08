@@ -1,6 +1,7 @@
 const tabs = [...document.querySelectorAll('[role="tab"]')];
+const viewButtons = [...document.querySelectorAll('.figure-mode-switch [data-view]')];
 
-function selectView(selected, focus = false) {
+function selectAnalysis(selected, focus = false) {
   tabs.forEach((tab) => {
     const active = tab === selected;
     tab.setAttribute("aria-selected", String(active));
@@ -16,6 +17,18 @@ function selectView(selected, focus = false) {
   window.dispatchEvent(new Event("resize"));
 }
 
+function selectView(view) {
+  document.getElementById("interactive-view").hidden = view !== "interactive";
+  document.getElementById("panel-static").hidden = view !== "static";
+  viewButtons.forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.view === view));
+  });
+  if (view === "interactive") {
+    selectAnalysis(tabs.find(tab => tab.getAttribute("aria-selected") === "true") || tabs[0]);
+  }
+  window.dispatchEvent(new Event("resize"));
+}
+
 function fitFrame(frame) {
   try {
     const body = frame.contentDocument?.body;
@@ -26,8 +39,12 @@ function fitFrame(frame) {
   }
 }
 
+viewButtons.forEach((button) => {
+  button.addEventListener("click", () => selectView(button.dataset.view));
+});
+
 tabs.forEach((tab, index) => {
-  tab.addEventListener("click", () => selectView(tab));
+  tab.addEventListener("click", () => selectAnalysis(tab));
   tab.addEventListener("keydown", (event) => {
     let next = index;
     if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
@@ -36,7 +53,7 @@ tabs.forEach((tab, index) => {
     else if (event.key === "End") next = tabs.length - 1;
     else return;
     event.preventDefault();
-    selectView(tabs[next], true);
+    selectAnalysis(tabs[next], true);
   });
 });
 
@@ -51,5 +68,7 @@ document.querySelectorAll("iframe").forEach((frame) => {
 });
 
 window.addEventListener("resize", () => {
-  document.querySelectorAll('section:not([hidden]) iframe').forEach(fitFrame);
+  document.querySelectorAll('#interactive-view:not([hidden]) section:not([hidden]) iframe')
+    .forEach(fitFrame);
 });
+selectView("static");

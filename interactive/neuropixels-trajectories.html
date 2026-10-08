@@ -100,11 +100,7 @@ html.is-embedded .viewer { min-height: 0; }
   font-weight: 650;
 }
 
-.viewer.static-active .toolbar {
-  display: flex;
-}
-
-.viewer.static-active .toolbar > :not(.mode-switch),
+.viewer.static-active .toolbar,
 .viewer.static-active .probe-filter,
 .viewer.static-active .source-strip {
   display: none;
@@ -424,6 +420,119 @@ input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; }
 }
+
+.figure-toolbar {
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #d3d8d6;
+  background: #fff;
+}
+
+.figure-mode-switch {
+  justify-self: start;
+  display: inline-grid;
+  grid-template-columns: repeat(2, 88px);
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid #d3d8d6;
+  border-radius: 6px;
+  background: #f4f7f6;
+}
+
+.figure-mode-switch > button {
+  position: static;
+  min-width: 0;
+  width: 88px;
+  min-height: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #68716f;
+  font: 650 14px "Myriad Pro", "Aptos", sans-serif;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.figure-mode-switch > button::after { content: none; }
+.figure-mode-switch > button:hover { color: #293133; background: #e8eeeb; }
+.figure-mode-switch > button[aria-pressed="true"] {
+  color: #293133;
+  background: #fff;
+  box-shadow: 0 1px 3px #29313326;
+}
+.figure-mode-switch > button:focus-visible {
+  outline: 2px solid #167f8c;
+  outline-offset: 1px;
+}
+
+button.legend-toggle {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  flex: 0 0 36px;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #8f9b98;
+  border-radius: 50%;
+  background: #fff;
+  color: #293133;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.figure-toolbar > .legend-toggle { grid-column: 2; justify-self: end; }
+
+button.legend-toggle:hover,
+button.legend-toggle[aria-expanded="true"] {
+  border-color: #167f8c;
+  background: #dceff0;
+}
+
+button.legend-toggle:focus-visible {
+  outline: 3px solid #167f8c;
+  outline-offset: 2px;
+}
+
+.figure-legend {
+  min-width: 0;
+  padding: 14px 22px;
+  border-bottom: 1px solid #d3d8d6;
+  background: #f4f7f6;
+  color: #293133;
+  font-size: var(--figure-type-control, 14px);
+  line-height: 1.5;
+}
+
+.figure-legend h2 {
+  margin: 0 0 8px;
+  font-size: var(--figure-type-section-title, 16px);
+  line-height: 1.3;
+}
+
+.figure-legend p { max-width: 85ch; margin: 0; }
+.figure-legend p + p { margin-top: 8px; }
+.figure-legend[hidden], .legend-toggle[hidden] { display: none !important; }
+
+[data-simple-view] > [hidden] { display: none !important; }
+[data-simple-view] #static-view img { width: 100%; height: auto; display: block; }
+
+@media (max-width: 520px) {
+  .figure-legend { padding: 12px 14px; }
+}
   </style>
   <script type="importmap">
     {
@@ -435,12 +544,16 @@ input:focus-visible {
   </script>
 </head>
 <body>
-  <main class="viewer" id="trajectory-viewer">
-    <section class="toolbar" aria-label="Trajectory controls">
-      <div class="mode-switch" role="group" aria-label="Figure view">
-        <button type="button" class="mode-button active" data-view="interactive" aria-pressed="true">Interactive</button>
-        <button type="button" class="mode-button" data-view="static" aria-pressed="false">Static</button>
+  <main class="viewer static-active" id="trajectory-viewer">
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" class="mode-button active" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" class="mode-button" data-view="interactive" aria-pressed="false">Interactive</button>
       </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
+    <section class="toolbar" aria-label="Trajectory controls">
       <label for="mouse-select">Mouse</label>
       <select id="mouse-select"></select>
       <label for="camera-select">View</label>
@@ -456,6 +569,14 @@ input:focus-visible {
       </label>
       <button id="reset-view" class="command-button" type="button">Reset view</button>
     </section>
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive figure legend</h2>
+      <p>Localized Neuropixels insertions are rendered within the Allen CCF 2017 brain surface.
+        Line color identifies probe port A-F. The selected insertion is linked to its source
+        NWB and ordered dorsal-to-tip anatomical profile. Mouse and probe selections restrict
+        the displayed insertions; camera orientation changes the projection, not the
+        recorded anatomical coordinates.</p>
+    </section>
     <section class="probe-filter" aria-label="Probe filters">
       <span class="filter-label">Probes</span>
       <label><input type="checkbox" data-probe="A" checked><span class="swatch probe-a"></span>A</label>
@@ -466,7 +587,7 @@ input:focus-visible {
       <label><input type="checkbox" data-probe="F" checked><span class="swatch probe-f"></span>F</label>
       <output id="visible-count" aria-live="polite"></output>
     </section>
-    <section id="interactive-view" class="interactive-layout">
+    <section id="interactive-view" class="interactive-layout" hidden>
       <section class="scene-shell" aria-label="Three-dimensional Allen CCF trajectory view">
         <canvas id="brain-canvas"></canvas>
         <canvas id="orientation-canvas" class="orientation" width="88" height="88" aria-label="Camera-relative axes: dorsal, lateral, and anterior"></canvas>
@@ -489,7 +610,7 @@ input:focus-visible {
         </div>
       </aside>
     </section>
-    <section id="static-view" class="static-view" hidden>
+    <section id="static-view" class="static-view">
       <img src="media/neuropixels-trajectories/supplementary-neuropixels-trajectories.svg" alt="Semi-transparent, depth-shaded oblique and dorsal projections of all localized Neuropixels insertions on the Allen CCF whole-brain surface, with 2 millimeter scale bars">
     </section>
     <footer class="source-strip">
@@ -887,15 +1008,76 @@ elements.renderStatus.textContent = "";
 elements.renderStatus.hidden = true;
 
 function animate() {
-  controls.update();
-  resizeRenderer();
-  renderer.render(scene, camera);
-  renderOrientationGizmo();
+  if (!elements.interactiveView.hidden) {
+    controls.update();
+    resizeRenderer();
+    renderer.render(scene, camera);
+    renderOrientationGizmo();
+  }
   requestAnimationFrame(animate);
 }
 animate();
   </script>
   <script>
+(() => {
+  "use strict";
+
+  const toggle = document.getElementById("figure-legend-toggle");
+  const legend = document.getElementById("figure-legend");
+  const staticButton = document.querySelector('[data-view="static"]');
+
+  function setLegendOpen(open) {
+    if (!toggle || !legend) return;
+    legend.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+  }
+
+  function syncLegend() {
+    if (!toggle || !staticButton) return;
+    const isStatic = staticButton.getAttribute("aria-pressed") === "true"
+      || staticButton.getAttribute("aria-selected") === "true";
+    toggle.hidden = isStatic;
+    if (isStatic) setLegendOpen(false);
+  }
+
+  if (toggle && legend) {
+    toggle.addEventListener("click", () => setLegendOpen(legend.hidden));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !legend.hidden) {
+        setLegendOpen(false);
+        toggle.focus();
+      }
+    });
+    if (staticButton) {
+      new MutationObserver(syncLegend).observe(staticButton, {
+        attributes: true,
+        attributeFilter: ["aria-pressed", "aria-selected"],
+      });
+    }
+    syncLegend();
+  }
+
+  const simpleViewer = document.querySelector("[data-simple-view]");
+  if (simpleViewer) {
+    const buttons = simpleViewer.querySelectorAll("[data-view]");
+    function selectView(view) {
+      simpleViewer.querySelector("#interactive-view").hidden = view !== "interactive";
+      simpleViewer.querySelector("#static-view").hidden = view !== "static";
+      buttons.forEach((button) => {
+        const active = button.dataset.view === view;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+      syncLegend();
+      window.dispatchEvent(new Event("resize"));
+    }
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => selectView(button.dataset.view));
+    });
+    selectView("static");
+  }
+})();
+
 (() => {
   "use strict";
 

@@ -14,6 +14,7 @@ import zlib
 from dataclasses import asdict, dataclass
 from html import escape
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIGURE_SANS_FONT = "Myriad Pro, Arial, sans-serif"
@@ -1316,12 +1317,19 @@ def load_embed_auto_height() -> str:
     return (JAVASCRIPT_DIR / "embed-auto-height.js").read_text(encoding="utf-8")
 
 
+def load_figure_controls() -> str:
+    """Load shared legend controls and embedded-figure sizing."""
+    legend = (JAVASCRIPT_DIR / "figure-legend.js").read_text(encoding="utf-8")
+    return f"{legend}\n\n{load_embed_auto_height()}"
+
+
 def load_figure_stylesheet(name: str) -> str:
     typography = (JAVASCRIPT_DIR / "figure-typography.css").read_text(
         encoding="utf-8"
     )
     stylesheet = (JAVASCRIPT_DIR / name).read_text(encoding="utf-8")
-    return f"{typography}\n\n{stylesheet}"
+    legend = (JAVASCRIPT_DIR / "figure-legend.css").read_text(encoding="utf-8")
+    return f"{typography}\n\n{stylesheet}\n\n{legend}"
 
 
 def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
@@ -1351,7 +1359,7 @@ def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
         )
         .replace("__SIMULATOR_JS__", javascript)
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     return output
@@ -1382,7 +1390,7 @@ def write_data_explorer_html(
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
         )
         .replace("__DATA_EXPLORER_JS__", javascript)
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     media_output = output.parent / "media" / "data-explorer"
@@ -1400,7 +1408,7 @@ def write_nwb_file_contents_html(
     javascript = (JAVASCRIPT_DIR / "nwb-file-contents.js").read_text(encoding="utf-8")
     html = template.replace("__NWB_FILE_CONTENTS_CSS__", stylesheet).replace(
         "__NWB_FILE_CONTENTS_JS__", javascript
-    )
+    ).replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
     for modality in ("neuropixels", "mesoscope", "slap2"):
         tree = (DATA_DIR / "nwb-file-contents" / f"{modality}.html").read_text(
             encoding="utf-8"
@@ -1428,6 +1436,18 @@ def write_literature_comparison_html(
         "parameters": [row[0] for row in rows[1:]],
         "values": [row[1:] for row in rows[1:]],
     }
+    static_table = (
+        '<table aria-label="Published oddball paradigms comparison"><thead><tr>'
+        + "".join(f'<th scope="col">{escape(value)}</th>' for value in rows[0])
+        + "</tr></thead><tbody>"
+        + "".join(
+            f'<tr><th scope="row">{escape(row[0])}</th>'
+            + "".join(f"<td>{escape(value)}</td>" for value in row[1:])
+            + "</tr>"
+            for row in rows[1:]
+        )
+        + "</tbody></table>"
+    )
     template = (JAVASCRIPT_DIR / "literature-comparison.html").read_text(
         encoding="utf-8"
     )
@@ -1437,12 +1457,13 @@ def write_literature_comparison_html(
     )
     html = (
         template.replace("__LITERATURE_CSS__", stylesheet)
+        .replace("__LITERATURE_STATIC_TABLE__", static_table)
         .replace(
             "__LITERATURE_DATA__",
             json.dumps(payload, ensure_ascii=True, separators=(",", ":")),
         )
         .replace("__LITERATURE_JS__", javascript)
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     return output
@@ -1455,17 +1476,23 @@ def write_unit_yield_html(
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_unit_yield_data(data_path, provenance_path)
+    with TemporaryDirectory(prefix="unit-yield-static-") as directory:
+        static_path = write_unit_yield_svg(
+            Path(directory) / "unit-yield.svg", data_path, provenance_path
+        )
+        static_image = base64.b64encode(normalized_text_bytes(static_path)).decode("ascii")
     template = (JAVASCRIPT_DIR / "unit-yield.html").read_text(encoding="utf-8")
     stylesheet = load_figure_stylesheet("unit-yield.css")
     javascript = (JAVASCRIPT_DIR / "unit-yield.js").read_text(encoding="utf-8")
     html = (
         template.replace("__UNIT_YIELD_CSS__", stylesheet)
+        .replace("__UNIT_YIELD_STATIC_IMAGE__", f"data:image/svg+xml;base64,{static_image}")
         .replace(
             "__UNIT_YIELD_DATA__",
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
         )
         .replace("__UNIT_YIELD_JS__", javascript)
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     return output
@@ -1712,7 +1739,7 @@ def write_optotagging_heatmap_html(
             ),
         )
         .replace("__OPTOTAGGING_JS__", javascript)
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
     )
     output.write_text(html, encoding="utf-8", newline="\n")
 
@@ -2200,7 +2227,7 @@ def write_neuropixels_trajectory_html(
             ),
         )
         .replace("__NEUROPIXELS_TRAJECTORY_JS__", javascript)
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     media_output = output.parent / "media" / "neuropixels-trajectories"
@@ -2519,7 +2546,7 @@ def write_eye_tracking_viewer_html(
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
         )
         .replace("__EYE_TRACKING_JS__", javascript)
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     media_output = output.parent / "media" / "eye-tracking-viewer"
@@ -3173,7 +3200,7 @@ def write_behavior_viewer_html(
             json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True),
         )
         .replace("__BEHAVIOR_JS__", javascript)
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
     )
     output.write_text(html, encoding="utf-8", newline="\n")
     media_output = output.parent / "media" / "behavior-viewer"
@@ -4351,7 +4378,7 @@ def write_segmentation_viewer_html(
             f"{static_media_dir}/{static_output.name}",
         )
         .replace("__SEGMENTATION_JS__", javascript)
-        .replace("__EMBED_AUTO_HEIGHT_JS__", load_embed_auto_height())
+        .replace("__EMBED_AUTO_HEIGHT_JS__", load_figure_controls())
         .replace(
             "__SEGMENTATION_DATA__",
             json.dumps(

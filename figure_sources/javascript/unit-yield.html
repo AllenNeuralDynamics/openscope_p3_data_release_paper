@@ -10,7 +10,23 @@ __UNIT_YIELD_CSS__
   </style>
 </head>
 <body>
-  <main class="viewer" id="unit-yield-viewer">
+  <main class="viewer" id="unit-yield-viewer" data-simple-view>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" data-view="interactive" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive figure legend</h2>
+      <p>QC-passing Neuropixels units per probe are summarized by recording day, either as
+        absolute yield or relative to each mouse's first day. Mouse trajectories and daily
+        means describe the included session records; the accompanying table retains
+        session identity, probe counts, and quality-control totals.</p>
+    </section>
+    <div id="interactive-view" hidden>
     <section class="toolbar" aria-label="Unit-yield controls">
       <div class="metric-switch" role="group" aria-label="Yield metric">
         <button type="button" class="metric-button active" data-metric="percent" aria-pressed="true">% of day 1</button>
@@ -49,6 +65,10 @@ __UNIT_YIELD_CSS__
         </table>
       </section>
     </details>
+    </div>
+    <section id="static-view" aria-label="Static Neuropixels unit-yield summary">
+      <img src="__UNIT_YIELD_STATIC_IMAGE__" alt="QC-passing units per probe across recording days, normalized to each mouse's first day, with individual mouse trajectories and daily means.">
+    </section>
   </main>
   <script id="unit-yield-data" type="application/json">__UNIT_YIELD_DATA__</script>
   <script>

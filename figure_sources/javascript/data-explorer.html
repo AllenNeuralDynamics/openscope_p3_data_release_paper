@@ -11,12 +11,25 @@ __DATA_EXPLORER_CSS__
 </head>
 <body>
   <main class="explorer" id="data-explorer">
-    <div class="view-switch" role="group" aria-label="Interactive or static view">
-      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
-      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
-    </div>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" class="view-button active" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" class="view-button" data-view="interactive" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
 
-    <div id="interactive-view">
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive figure legend</h2>
+      <p>The inventory retains failed, repeated, and aborted acquisition attempts; the Sessions
+        table contains records with valid session IDs and QC status Pass. Session colors identify
+        stimulus contexts. Source links distinguish final-release
+        DANDI assets from public acquisition and intermediate products in S3; internal processing
+        products are not publicly browsable. Filtered tables retain the underlying source records.</p>
+    </section>
+
+    <div id="interactive-view" hidden>
       <header class="explorer-header">
         <nav class="dataset-tabs" id="dataset-tabs" aria-label="Choose a data table"></nav>
         <p class="data-access-note" id="data-access-note" hidden>
@@ -47,7 +60,7 @@ __SESSION_INVENTORY_INTERACTIVE_SVG__
       </section>
     </div>
 
-    <section class="static-view" id="static-view" aria-label="Static session inventory" hidden>
+    <section class="static-view" id="static-view" aria-label="Static session inventory">
       <div class="static-shell">
         <img src="__SESSION_INVENTORY_STATIC_IMAGE__" alt="Recording sessions per mouse across Neuropixels, mesoscope, SLAP2 Glutamate, and SLAP2 Voltage groups.">
       </div>

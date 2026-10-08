@@ -18,12 +18,16 @@ __NEUROPIXELS_TRAJECTORY_CSS__
   </script>
 </head>
 <body>
-  <main class="viewer" id="trajectory-viewer">
-    <section class="toolbar" aria-label="Trajectory controls">
-      <div class="mode-switch" role="group" aria-label="Figure view">
-        <button type="button" class="mode-button active" data-view="interactive" aria-pressed="true">Interactive</button>
-        <button type="button" class="mode-button" data-view="static" aria-pressed="false">Static</button>
+  <main class="viewer static-active" id="trajectory-viewer">
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" class="mode-button active" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" class="mode-button" data-view="interactive" aria-pressed="false">Interactive</button>
       </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
+    <section class="toolbar" aria-label="Trajectory controls">
       <label for="mouse-select">Mouse</label>
       <select id="mouse-select"></select>
       <label for="camera-select">View</label>
@@ -39,6 +43,14 @@ __NEUROPIXELS_TRAJECTORY_CSS__
       </label>
       <button id="reset-view" class="command-button" type="button">Reset view</button>
     </section>
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive figure legend</h2>
+      <p>Localized Neuropixels insertions are rendered within the Allen CCF 2017 brain surface.
+        Line color identifies probe port A-F. The selected insertion is linked to its source
+        NWB and ordered dorsal-to-tip anatomical profile. Mouse and probe selections restrict
+        the displayed insertions; camera orientation changes the projection, not the
+        recorded anatomical coordinates.</p>
+    </section>
     <section class="probe-filter" aria-label="Probe filters">
       <span class="filter-label">Probes</span>
       <label><input type="checkbox" data-probe="A" checked><span class="swatch probe-a"></span>A</label>
@@ -49,7 +61,7 @@ __NEUROPIXELS_TRAJECTORY_CSS__
       <label><input type="checkbox" data-probe="F" checked><span class="swatch probe-f"></span>F</label>
       <output id="visible-count" aria-live="polite"></output>
     </section>
-    <section id="interactive-view" class="interactive-layout">
+    <section id="interactive-view" class="interactive-layout" hidden>
       <section class="scene-shell" aria-label="Three-dimensional Allen CCF trajectory view">
         <canvas id="brain-canvas"></canvas>
         <canvas id="orientation-canvas" class="orientation" width="88" height="88" aria-label="Camera-relative axes: dorsal, lateral, and anterior"></canvas>
@@ -72,7 +84,7 @@ __NEUROPIXELS_TRAJECTORY_CSS__
         </div>
       </aside>
     </section>
-    <section id="static-view" class="static-view" hidden>
+    <section id="static-view" class="static-view">
       <img src="__NEUROPIXELS_TRAJECTORY_STATIC_IMAGE__" alt="Semi-transparent, depth-shaded oblique and dorsal projections of all localized Neuropixels insertions on the Allen CCF whole-brain surface, with 2 millimeter scale bars">
     </section>
     <footer class="source-strip">

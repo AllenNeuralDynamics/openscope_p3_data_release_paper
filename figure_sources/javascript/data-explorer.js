@@ -413,5 +413,5 @@
   elements.inventoryView.addEventListener("keydown", activateMouse);
   buildTabs();
   selectTable("inventory");
-  selectView("interactive");
+  selectView("static");
 })();

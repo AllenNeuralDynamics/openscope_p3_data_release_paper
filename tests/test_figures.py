@@ -1551,6 +1551,15 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert 'id="filter-select"' in html
     assert 'id="activity-chart"' in html
     assert 'id="background-intensity"' in html
+    assert 'id="figure-legend-toggle"' in html
+    assert 'aria-label="Figure legend" title="Figure legend"' in html
+    assert 'aria-expanded="false" aria-controls="figure-legend"' in html
+    assert 'aria-labelledby="figure-legend-title" hidden' in html
+    assert html.count('data-legend-modality="') == 3
+    assert 'section.dataset.legendModality !== modality.id' in html
+    assert 'toggle.focus()' in html
+    assert 'event.key === "Escape"' in html
+    assert 'setLegendOpen(false)' in html
     assert 'id="common-mode-toggle"' in html
     assert 'id="common-mode-control"' in html
     assert '<option value="merged">' not in html
@@ -1563,7 +1572,7 @@ def test_segmentation_viewer_outputs_are_deterministic(tmp_path: Path) -> None:
     assert '"assetPath":"media/segmentation-movies/slap2-dmd1-detector-1-raw.webp"' in html
     assert (tmp_path / "media/segmentation-movies/slap2-dmd1.webp").is_file()
     assert (tmp_path / "media/neural-viewer/slap2-dmd1-composite.webp").is_file()
-    assert 'class="view-button active" data-view="interactive"' in html
+    assert 'class="view-button active" data-view="static"' in html
     assert 'data-view="static"' in html
     assert 'id="interactive-view"' in html
     assert 'id="static-view"' in html
@@ -1812,9 +1821,9 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert 'data-view="static"' in html
     assert ">Interactive</button>" in html
     assert ">Static</button>" in html
-    assert 'class="view-button active" data-view="playback" aria-pressed="true"' in html
-    assert '<div id="playback-view">' in html
-    assert 'selectView("playback")' in html
+    assert 'class="view-button active" data-view="static" aria-pressed="true"' in html
+    assert '<div id="playback-view" hidden>' in html
+    assert 'selectView("static")' in html
     assert 'id="static-panel"' in html
     assert "detailed context, control, receptive-field, and zebra-movie blocks" in html
     assert "selectView" in html
@@ -2106,8 +2115,9 @@ def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
     assert 'data-view="interactive"' in html
     assert 'data-view="static"' in html
     assert 'id="static-view"' in html
-    assert 'class="view-button active" data-view="interactive" aria-pressed="true"' in html
-    assert '<div id="interactive-view">' in html
+    assert 'class="view-button active" data-view="static" aria-pressed="true"' in html
+    assert '<div id="interactive-view" hidden>' in html
+    assert 'selectView("static")' in html
     assert 'selectView("interactive")' in html
     assert '<g class="session-target" data-session-id=' in html
     assert "__SESSION_INVENTORY_SVG__" not in html

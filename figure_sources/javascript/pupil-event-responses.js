@@ -30,7 +30,7 @@
     mouseId: "830846",
     scale: "percent",
     scope: "mouse",
-    view: "interactive",
+    view: "static",
   };
 
   const modalityTabs = document.getElementById("modality-tabs");

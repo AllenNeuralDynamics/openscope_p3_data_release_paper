@@ -34,6 +34,8 @@
     filterLabel: document.getElementById("filter-label"),
     filterMetadata: document.getElementById("filter-metadata"),
     filterSelect: document.getElementById("filter-select"),
+    legendImaging: document.getElementById("figure-legend-imaging"),
+    legendSections: document.querySelectorAll("[data-legend-modality]"),
     loading: document.getElementById("loading-status"),
     interactiveView: document.getElementById("interactive-view"),
     modalitySelector: document.getElementById("modality-selector"),
@@ -91,7 +93,9 @@
   let lastFrameTime = null;
 
   function selectView(view) {
-    if (view !== "interactive") pauseMovie();
+    if (view !== "interactive") {
+      pauseMovie();
+    }
     elements.interactiveView.hidden = view !== "interactive";
     elements.staticView.hidden = view !== "static";
     elements.viewButtons.forEach((button) => {
@@ -780,6 +784,10 @@
   function updateViewerChrome() {
     elements.viewer.dataset.modality = modality.id;
     elements.viewerTitle.textContent = viewerTitles[modality.id];
+    elements.legendSections.forEach(section => {
+      section.hidden = section.dataset.legendModality !== modality.id;
+    });
+    elements.legendImaging.hidden = viewer.viewType !== "image";
     const selectionLabel = modality.id === "neuropixels" ? "Selected unit" : "Selected ROI";
     elements.filterLabel.textContent = selectionLabel;
     elements.selectionKicker.textContent = selectionLabel;
@@ -914,7 +922,7 @@
 
   async function initialize() {
     configureControls();
-    selectView("interactive");
+    selectView("static");
     await activateModality(0);
   }
 
