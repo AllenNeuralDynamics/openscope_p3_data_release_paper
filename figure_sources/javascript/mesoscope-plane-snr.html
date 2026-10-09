@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mesoscope ROI signal-to-noise by imaging plane</title>
+<style>
+__MESOSCOPE_CSS__
+</style>
+</head>
+<body>
+<main class="viewer" id="mesoscope-plane-snr" data-simple-view>
+  <header class="figure-toolbar">
+    <div class="figure-mode-switch" role="group" aria-label="Figure view">
+      <button type="button" data-view="static" aria-pressed="true">Static</button>
+      <button type="button" data-view="interactive" aria-pressed="false">Interactive</button>
+    </div>
+    <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+      title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+  </header>
+
+  <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+    <h2 id="figure-legend-title">Interactive figure legend</h2>
+    <p>Selecting a definition switches every panel. The plane strip orders the eight
+      simultaneously acquired planes by depth within area; the map fills each segmented ROI
+      with its value on a shared per-metric scale; the scatter plots every ROI in the
+      selected plane against its segmented area in pixels; and selecting an ROI draws its
+      60-second dF/F excerpt with detected events. Each definition is computed over the
+      complete recording, not over the displayed excerpt.</p>
+  </section>
+
+  <div id="interactive-view" hidden>
+  <header class="viewer-head">
+    <div>
+      <h1 id="title">Mesoscope ROI signal-to-noise by imaging plane</h1>
+      <p class="sub" id="subtitle"></p>
+    </div>
+    <div class="metric-picker" id="metric-picker" role="radiogroup" aria-label="SNR definition"></div>
+  </header>
+
+  <nav class="plane-strip" id="plane-strip" aria-label="Imaging plane"></nav>
+
+  <div class="panels">
+    <section class="panel panel-map">
+      <h2>Segmented ROIs, shaded by <span class="metric-name" id="map-metric"></span></h2>
+      <div class="canvas-wrap">
+        <canvas id="map" width="512" height="512" tabindex="0"
+                aria-label="Imaging plane with segmented ROIs shaded by the selected SNR definition"></canvas>
+      </div>
+      <div class="colorbar" id="colorbar" aria-hidden="true"></div>
+      <p class="cap" id="map-caption"></p>
+    </section>
+
+    <section class="panel panel-scatter">
+      <h2><span class="metric-name" id="scatter-metric"></span> against ROI area</h2>
+      <div class="canvas-wrap">
+        <canvas id="scatter" width="420" height="330"
+                aria-label="Scatter of the selected SNR definition against ROI mask area"></canvas>
+      </div>
+      <p class="cap" id="scatter-caption"></p>
+    </section>
+
+    <section class="panel panel-trace">
+      <h2>dF/F excerpt for the selected ROI</h2>
+      <div class="canvas-wrap">
+        <canvas id="trace" width="900" height="260"
+                aria-label="dF/F and detected-event excerpt for the selected region of interest"></canvas>
+      </div>
+      <table class="roi-table" id="roi-table">
+        <caption>All three definitions for this ROI, with the quantities they are built from</caption>
+        <thead><tr><th scope="col">Definition</th><th scope="col">Value</th><th scope="col">Signal term</th><th scope="col">Noise term</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+
+  <footer class="viewer-foot">
+    <p id="provenance"></p>
+  </footer>
+  </div>
+
+  <section class="static-view" id="static-view" aria-label="Static signal-to-noise overview">
+    <img src="__MESOSCOPE_STATIC_IMAGE__" alt="Per-plane median, interquartile range and 5th-95th percentile of three ROI signal-to-noise definitions across eight simultaneously-acquired mesoscope imaging planes, each panel annotated with its rank correlation against ROI mask area.">
+  </section>
+</main>
+
+<script id="mesoscope-data" type="application/json">__MESOSCOPE_DATA__</script>
+<script>
+__MESOSCOPE_JS__
+</script>
+<script>
+__MESOSCOPE_CONTROLS_JS__
+</script>
+</body>
+</html>

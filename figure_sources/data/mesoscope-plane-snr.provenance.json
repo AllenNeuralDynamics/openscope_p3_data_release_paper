@@ -1,0 +1,43 @@
+{
+  "extraction_date": "2026-09-13",
+  "merge_script": {
+    "path": "scripts/merge_mesoscope_parts.py",
+    "sha256": "bf4717e53ad8b6faed3baa5a62cf8f4cb5cd55229be2f043dcd9ec28b5d0fd87"
+  },
+  "metric_module": {
+    "note": "Definitions are implemented in the openscope-ophys-qc checkout named below; the extractor imports them rather than reimplementing them.",
+    "path": "src/snr_three_metrics.py",
+    "repository": "https://github.com/davisgrubin/openscope-ophys-qc"
+  },
+  "metrics": [
+    "event_amplitude_snr",
+    "frac_events_gt4sd",
+    "percentile_range_snr"
+  ],
+  "output_path": "figure_sources/data/mesoscope-plane-snr.json",
+  "plane_count": 8,
+  "read_from": {
+    "note": "The extractor read the processed asset directly from the AIND bucket, not the DANDI packaging of it above. Both carry the same processing-pipeline output for this session; the release asset is the citable pin.",
+    "uri": "s3://aind-open-data/multiplane-ophys_839909_2026-02-20-12-53-27_processed_2026-02-21_14-17-01/pophys.nwb.zarr"
+  },
+  "release_asset": {
+    "api_url": "https://api.dandiarchive.org/api/assets/ed37002e-6626-4417-89cc-13fa087293e5/",
+    "asset_id": "ed37002e-6626-4417-89cc-13fa087293e5",
+    "content_size": 3792574292,
+    "dandiset_id": "001768",
+    "dandiset_url": "https://dandiarchive.org/dandiset/001768/draft/files",
+    "path": "sub-839909/sub-839909_ses-multiplane-ophys-839909-2026-02-20-12-53-27_ophys.nwb",
+    "retrieved_date": "2026-09-14",
+    "sha256": "913b868f0cdade9dfffa4cb3b030e5f0e626850f521865c5a368b63e0a2e4441",
+    "url": "https://dandiarchive.s3.amazonaws.com/blobs/a94/d12/a94d12cd-0a63-4b6b-b29a-78d450202dbd",
+    "version": "draft"
+  },
+  "roi_count": 1810,
+  "schema_version": 1,
+  "script": {
+    "path": "scripts/extract_mesoscope_plane_snr.py",
+    "sha256": "257c856cf0134194cbe6a88b22f6f8b7eff1704728509ebc524cce8bf126b125"
+  },
+  "session_id": "multiplane-ophys_839909_2026-02-20_12-53-27",
+  "vendored_sha256": "7682b691faa3a43ec8b3f0ada133a1a5ade95ca3a21df6317ee2d151344b2ee5"
+}

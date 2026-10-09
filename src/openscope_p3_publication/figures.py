@@ -6614,6 +6614,10 @@ def write_neuropixels_trajectory_svg(
 
 
 def main() -> None:
+    from .mesoscope_plane_snr_figure import (
+        write_mesoscope_plane_snr_html,
+        write_mesoscope_plane_snr_svg,
+    )
     from .mismatch_adjacency_figure import write_mismatch_adjacency_svg
     from .neural_response_figure import (
         write_neuropixels_event_html,
@@ -6647,6 +6651,10 @@ def main() -> None:
     )
     neural_viewer_path = write_neural_viewer_html()
     segmentation_viewer_path = write_segmentation_viewers()
+    mesoscope_plane_snr_svg_path = write_mesoscope_plane_snr_svg()
+    mesoscope_plane_snr_html_path = write_mesoscope_plane_snr_html(
+        static_output=mesoscope_plane_snr_svg_path
+    )
     unit_yield_html_path = write_unit_yield_html()
     trajectory_html_path = write_neuropixels_trajectory_html()
     optotagging_source_path = write_optotagging_static_source()
@@ -6679,6 +6687,8 @@ def main() -> None:
     print(f"Wrote {NEURAL_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {segmentation_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {SEGMENTATION_VIEWER_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
+    print(f"Wrote {mesoscope_plane_snr_svg_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {mesoscope_plane_snr_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {trajectory_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
