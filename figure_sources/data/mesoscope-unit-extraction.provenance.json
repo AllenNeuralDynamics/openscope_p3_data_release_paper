@@ -1,0 +1,56 @@
+{
+  "description": "Mesoscope column (panels B, F, J) of the cross-modality unit-extraction figure. The panels and the stacked composite are both produced offline by the renderer scripts below and committed under figure_sources/media; openscope_p3_publication.figures.write_unit_extraction_mesoscope_svg only wraps the committed composite in SVG, so the build re-encodes no image bytes and its output is identical on every platform.",
+  "cohort": {
+    "sessions": 81,
+    "qc_pass_total": 83,
+    "released_total": 91,
+    "mice": 10,
+    "rois": 175508,
+    "classes": {
+      "Low SNR": 51694,
+      "Intermediate": 85860,
+      "High SNR": 37954
+    },
+    "class_fit": "k-means (k = 3) on the standardised (<2, 2-4, >4 SD) event-amplitude fractions, fitted once over the whole cohort and ordered by the centroid's >4 SD fraction",
+    "per_session_label_agreement": 0.8619,
+    "omitted_qc_pass_sessions": [
+      "842971_2026-04-29",
+      "845342_2026-04-02"
+    ],
+    "omission_reason": "no resolvable processed-asset path in the session inventory"
+  },
+  "example_session": "multiplane-ophys_839909_2026-02-26",
+  "panels": {
+    "panel-b.png": {
+      "sha256": "fa96837763a3e1916d9b0885bef1cb384cc80f95e99a37c56e4db5ab43a90414"
+    },
+    "panel-f.png": {
+      "sha256": "174c6e88d51e5e5d2d3023458bf5206ede9c0646ad9af78c32cc13d102059d51"
+    },
+    "panel-j.png": {
+      "sha256": "ac8ebb8590ab379500e17fde5ee23d87fbf0cbe0bd29f59e1ca3af0aa20000ce"
+    }
+  },
+  "renderer": {
+    "scripts/mesoscope_matched_panels.py": {
+      "sha256": "c140e59d90cd41ab1c35ecbadec8f44d1770467530990136d009c18d278f5569"
+    },
+    "scripts/build_mesoscope_unit_extraction_panels.py": {
+      "sha256": "339d744d2dbde44ee9c20e9ffa846f2bd665bd788c00494ec23b0438414aa348"
+    }
+  },
+  "source_table": {
+    "name": "mesoscope_roi_metrics_cohort81.csv.gz",
+    "sha256": "9a99329862c87b4705b2e68415742a229d5c2aa1ab7cbd2e817c5bd91b9fc7f5",
+    "rows": 175508,
+    "note": "not committed: 37 MB per-ROI table produced on the analysis cluster; the checksum pins the table the panels were rendered from"
+  },
+  "note": "The renderer scripts need scipy, which is not a repo dependency, and the uncommitted per-ROI cohort table; they are committed as the record of how the panel PNGs were produced, not as part of the figure build.",
+  "composite": {
+    "figure-06-unit-extraction-mesoscope.png": {
+      "sha256": "c6ba07cdf4d17e3387cd4d9c098595a66935b05146e25e0415d448c50a0de211",
+      "width": 2840,
+      "height": 5680
+    }
+  }
+}

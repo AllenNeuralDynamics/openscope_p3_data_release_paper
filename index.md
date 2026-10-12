@@ -1048,12 +1048,16 @@ compares the spatial filters and matched activity traces from representative
 sessions. The preprocessing, segmentation, source-extraction, and curation
 procedures are described under [Data processing](#data-processing) in Methods.
 
-:::{figure} ./images/figures/generated/figure-07-unit-extraction-plan.svg
-:label: fig-unit-extraction-plan
-:alt: Draft panel plan for unit extraction and signal-to-noise analysis across modalities.
-:width: 100%
+[Figure 6](#fig-unit-extraction-plan) reports unit extraction and event-amplitude
+signal quality for the mesoscope cohort.
 
-Draft plan for unit extraction and signal-to-noise analysis across recording modalities.
+:::{iframe} ./interactive/mesoscope-plane-snr.html
+:label: fig-unit-extraction-plan
+:width: 100%
+:title: Unit extraction and event-amplitude signal quality for mesoscope two-photon imaging.
+:placeholder: ./images/figures/generated/figure-06-unit-extraction-mesoscope.svg
+
+Unit extraction and event-amplitude signal quality for mesoscope two-photon imaging. Panel letters follow the cross-modality plan, in which the mesoscope occupies the **B**, **F**, **J** column; the Neuropixels (**A**, **E**, **I**) and SLAP2 (**C**, **G**, **K** and **D**, **H**, **L**) columns are in preparation. **B,** One representative session, `multiplane-ophys_839909_2026-02-26`, with all 1,959 segmented ROIs outlined on the average projection of each of eight simultaneously acquired planes — VISp at 54, 188, 296, 394 µm and VISl at 54, 186, 284, 400 µm — coloured by the quality class defined in **F**. Beneath, a 60 s `dF/F` excerpt from one ROI with the processing pipeline's own OASIS event onsets, and that ROI's footprint on the average projection. **F,** How the measure is constructed: each detected event is assigned an amplitude in standard deviations of that ROI's own non-event `dF/F` noise, and each ROI is summarised by the fraction of its events falling below 2 SD, between 2 and 4 SD, and above 4 SD. Three ROIs illustrate the resulting classes, and the scatter places every ROI of the cohort in that feature space. Classes come from a k-means fit (k = 3) on the three standardised fractions, ordered by the centroid's > 4 SD fraction. The fit is performed **once over the whole cohort** rather than within each session, matching the SLAP2 column; 86% of ROIs keep the label a within-session fit would have given them, and the per-session label is retained in the released table as `amp_threshold_quality_class_session`. Fitting within each session compresses precisely the across-session variation shown in **J**, narrowing the per-session High SNR share from 6.3–41.2% to a much tighter band. **J,** Where the classes sit. Class composition is nearly identical between the two imaged areas (22% High SNR in VISp against 21% in VISl) but depends strongly on imaging depth, the High SNR share falling from 38% at 151–250 µm to 16% at 251–350 µm and 2.6% below 350 µm (38,517 ROIs); the shallowest bin (25,295 ROIs at ≤ 150 µm) sits at 25%, below the 151–250 µm peak. Pooling each animal's sessions gives a High SNR share between 8% and 34% across the ten mice, and the strip beneath shows every session individually so that within-animal spread remains visible. Depths are reported in µm rather than named cortical layers because these planes are not registered to a layer atlas, and the counting unit is the somatic ROI, which is not equivalent to the glutamate-release sources counted in the SLAP2 panels. The cohort is 81 of the 83 QC-Pass mesoscope sessions of the 91 released, covering all 10 mice, 175,508 ROIs (51,694 Low SNR, 85,860 Intermediate, 37,954 High SNR); the two QC-Pass sessions omitted lack a resolvable processed-asset path. Switch to the interactive view for per-session and per-plane detail, including the three candidate signal-to-noise definitions evaluated on one session and a rotatable depth view of ROI positions.
 :::
 
 ### Neuropixels recordings
@@ -1068,25 +1072,32 @@ Draft plan for unit extraction and signal-to-noise analysis across recording mod
 
 ### Mesoscope two photon imaging
 
-GROUP 1
+Event extraction quality is reported in [Figure 6](#fig-unit-extraction-plan) over
+81 of the 83 QC-Pass mesoscope sessions of the 91 released, covering all
+10 mice and 175,508 segmented ROIs. Events are the processing
+pipeline's own OASIS series rather than a re-detection, and each event is measured
+as an amplitude in standard deviations of its ROI's non-event `dF/F` noise. Summarising
+every ROI by the fraction of its events below 2 SD, between 2 and 4 SD, and above 4 SD
+separates ROIs whose detected activity is unambiguous against their own noise floor
+from those whose is not, and a three-way k-means fit over the whole cohort turns that
+description into Low SNR, Intermediate and High SNR classes.
 
-- Motion correction across planes in one session and many sessions.
+Quality is governed far more by imaging depth than by imaged area. The two areas are
+nearly indistinguishable (22% High SNR in VISp against 21%
+in VISl), whereas the High SNR share falls from 38% at 151–250 µm to
+16% at 251–350 µm and 2.6% below 350 µm. The deepest plane of each
+area therefore contributes many more ROIs whose events sit close to their noise floor,
+which is a consideration when pooling ROIs across planes in downstream analyses.
+Per-session composition varies appreciably within as well as between animals
+(6.3–41.2% High SNR across sessions), so session identity is
+worth retaining as a grouping factor.
 
-GROUP 2
-
-- ROI extraction quality
-
-- DFF signal quality (stability of baseline, calcium kernel)
-
-GROUP 2.2
-
-- Event extraction quality (firing rate, the SNR of events, calcium kernel …)
-
-GROUP3
-
-- Cell matching across sessions 2P,Cell stability across sessions.
-
-- TOOLS ACROSS
+Three further quality questions remain in preparation: motion correction across planes
+within and across sessions, baseline and calcium-kernel stability in the `dF/F` series,
+and cell matching across sessions. The signal-to-noise definition used here was selected
+by comparing three candidates on a single session; that comparison, and a rotatable
+depth view of ROI positions, are available in the interactive view of
+[Figure 6](#fig-unit-extraction-plan).
 
 ### SLAP imaging
 

@@ -489,9 +489,11 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
-    assert len(figures) == 6
+    # The mesoscope unit-extraction figure is an iframe, not a static figure
+    # directive, so it is counted by the interactive-viewer tests instead.
+    assert len(figures) == 5
     assert manuscript.count(":::{figure} ./images/figures/imported/") == 1
-    assert manuscript.count(":::{figure} ./images/figures/generated/") == 5
+    assert manuscript.count(":::{figure} ./images/figures/generated/") == 4
     assert "./images/figures/generated/figure-01-overview.svg" in manuscript
     assert "./images/figures/generated/figure-01-panel-c-cohorts.svg" not in manuscript
     assert ":label: fig-experimental-design" not in manuscript
@@ -509,7 +511,7 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     assert "see [Figure 3](#fig-multimodal-pipelines)" in manuscript
     assert "./images/figures/generated/multimodal-hardware.svg" in manuscript
     assert "./images/figures/generated/figure-06-segmentation-viewers.svg" not in manuscript
-    assert "./images/figures/generated/figure-07-unit-extraction-plan.svg" in manuscript
+    assert "./images/figures/generated/figure-06-unit-extraction-mesoscope.svg" in manuscript
     assert "./images/figures/generated/figure-08-basic-stimuli-plan.svg" in manuscript
     assert "./images/figures/generated/figure-11-standard-oddball-plan.svg" not in manuscript
     assert "nine native-resolution images" in manuscript
@@ -1087,7 +1089,7 @@ def test_all_publication_viewers_default_to_static() -> None:
 
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     paths = re.findall(r"^:::\{iframe\} \./(interactive/[^\n]+)", manuscript, re.MULTILINE)
-    assert len(paths) == 14
+    assert len(paths) == 15
     for relative_path in paths:
         html = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
         parser = FigureElements()
