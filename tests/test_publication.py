@@ -1087,7 +1087,7 @@ def test_all_publication_viewers_default_to_static() -> None:
 
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     paths = re.findall(r"^:::\{iframe\} \./(interactive/[^\n]+)", manuscript, re.MULTILINE)
-    assert len(paths) == 14
+    assert len(paths) == 15
     for relative_path in paths:
         html = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
         parser = FigureElements()

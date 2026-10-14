@@ -23,3 +23,7 @@ interactive/media/wavemap/
 *.egg-info/
 # Local WaveMAP extraction cache and checkpoints
 .wavemap_work/
+
+.cache/
+figure_sources/data/ecephys-qc-dashboard.json
+interactive/media/ecephys-qc-dashboard/ecephys-qc-dashboard.json

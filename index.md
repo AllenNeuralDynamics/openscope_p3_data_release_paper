@@ -1058,13 +1058,16 @@ Draft plan for unit extraction and signal-to-noise analysis across recording mod
 
 ### Neuropixels recordings
 
-- signal-to-noise
+To support repeated targeting while avoiding blood vessels, each probe's entry point was shifted slightly from its position on the previous day. Across 60 unit-bearing sessions from 16 mice, mean QC-passing unit yield per recorded probe declined from 100% of the day-1 baseline to 80.9% on day 4 ([Supplementary Figure 2](#fig-supp-neuropixels-unit-yield)). We comprehensively evaluated unit stability, signal-to-noise ratio, and physical drift across the entire dataset to ensure robust downstream analyses.
 
-- Stability across one session
+:::{iframe} ./interactive/openscope_qc_dashboard.html
+:label: fig-ecephys-qc-dashboard
+:width: 100%
+:title: Neuropixels Unit Quality Control and Stability
+:placeholder: ./images/figures/generated/openscope_qc_dashboard_static.svg
 
-- Quality control
-
-- To support repeated targeting while avoiding blood vessels, each probe's entry point was shifted slightly from its position on the previous day. Across 60 unit-bearing sessions from 16 mice, mean QC-passing unit yield per recorded probe declined from 100% of the day-1 baseline to 80.9% on day 4 ([Supplementary Figure 2](#fig-supp-neuropixels-unit-yield)).
+Neuropixels unit quality control and signal stability across recording days. Analysis of 192,273 units from 59 CCF-aligned sessions across 16 mice. Displayed distributions include units passing standard quality-control thresholds: inter-spike interval (ISI) violations ratio < 0.01, presence ratio > 0.90, amplitude cutoff < 0.10, SNR ≥ 3.0, and localized cortical depth, excluding unlabeled ('void') channels. **A,** Empirical cumulative distribution functions (ECDFs) of unit SNR comparing initial (first session, blue) and final (last session, orange) recordings. Bold lines denote pooled populations; faint lines show individual mice. **B,** ECDF of refractory-period ISI violation ratios, evaluating single-unit contamination and isolation stability across session stages. **C,** Physical recording stability quantified by peak-to-peak waveform drift (µm). **D,** Spatial profile of unit SNR as a function of depth from cortical entry across individual mice (50 µm depth bins; 0 = brain surface). Figures are regenerated offline from the committed snapshot and provenance derived from [Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files).
+:::
 
 ### Mesoscope two photon imaging
 

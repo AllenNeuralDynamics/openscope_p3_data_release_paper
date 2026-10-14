@@ -1,0 +1,50 @@
+:root { --accent: #283185; --ink: #303536; --muted: #707674; --line: #d0d4d2; --wash: #f6f7f7; --paper: #fff; --box-bg: #eef0f2; }
+        body { font-family: 'Myriad Pro', Arial, sans-serif; margin: 0; padding: 20px; background: var(--wash); color: var(--ink); }
+        .viewer { max-width: 1450px; margin: 0 auto; background: var(--paper); border: 1px solid var(--line); border-radius: 5px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .header { border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;}
+        h1 { margin: 0; color: var(--accent); font-size: 1.6rem; }
+        p.subtitle { margin: 5px 0 0 0; color: var(--muted); font-size: 0.95rem; }
+        .layout-grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+        .layout-grid.csd-mode { grid-template-columns: 1fr; }
+        .sidebar { background: var(--wash); padding: 15px; border-radius: 5px; border: 1px solid var(--line); height: fit-content; max-height: 85vh; overflow-y: auto;}
+        .control-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+        label { font-size: 0.85rem; font-weight: bold; color: var(--ink); }
+        select, input[type="number"] { padding: 6px; border: 1px solid #c5c9c7; border-radius: 4px; font-size: 0.85rem; width: 100%; box-sizing: border-box;}
+        optgroup { font-weight: bold; color: var(--accent); }
+        option { color: var(--ink); font-weight: normal; }
+        .qc-panel { background: #fff; border: 1px solid var(--accent); border-radius: 4px; padding: 10px; margin-bottom: 15px; }
+        .qc-panel h3 { margin: 0 0 10px 0; font-size: 0.9rem; color: var(--accent); }
+        .qc-dynamic-row { display: flex; gap: 5px; margin-bottom: 6px; align-items: center; }
+        .qc-dynamic-row select { padding: 4px; font-size: 0.75rem; }
+        .qc-dynamic-row select:first-child { flex: 2; }
+        .qc-dynamic-row select:nth-child(2) { flex: 1; }
+        .qc-dynamic-row input { flex: 1; padding: 4px; font-size: 0.75rem; min-width: 0; }
+        .qc-dynamic-row button { background: #d1495b; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 4px 8px; font-weight: bold; }
+        .add-rule-btn { width: 100%; padding: 6px; margin-top: 5px; background: var(--wash); border: 1px dashed var(--accent); color: var(--accent); cursor: pointer; border-radius: 4px; font-weight: bold;}
+        .qc-row-void { display: flex; justify-content: flex-start; gap: 10px; align-items: center; margin-top: 10px; font-size: 0.8rem; border-top: 1px dashed var(--line); padding-top: 10px;}
+        .log-toggle-row { display: flex; gap: 15px; margin-top: 5px; font-size: 0.85rem; align-items: center; font-weight: bold; color: var(--accent); }
+        .tabs { display: flex; gap: 5px; border-bottom: 1px solid var(--line); margin-bottom: 15px; flex-wrap: wrap;}
+        .tab-btn { padding: 8px 15px; background: transparent; border: 1px solid transparent; border-bottom: none; cursor: pointer; font-size: 0.95rem; font-weight: bold; color: var(--muted); }
+        .tab-btn.active { color: var(--ink); border: 1px solid var(--line); border-bottom: 1px solid var(--paper); border-radius: 5px 5px 0 0; margin-bottom: -1px; background: var(--paper); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .warning-box { padding: 40px; text-align: center; color: var(--muted); font-size: 1.1rem; border: 2px dashed var(--line); margin-top: 50px; background: #fff;}
+        .loading-box { padding: 40px; text-align: center; color: var(--accent); font-size: 1.2rem; font-weight: bold; margin-top: 50px;}
+        .plot-area { width: 100%; height: 700px; }
+        .stats { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; color: var(--muted); margin-top: 10px; text-align: right; border-top: 1px solid var(--line); padding-top: 10px;}
+        hr { border: none; border-top: 1px dashed #ccc; margin: 15px 0; }
+        .csd-control-grid { display:grid; grid-template-columns:repeat(3,minmax(180px,1fr)); gap:10px 14px; margin:8px 0 6px 0; }
+        .csd-status { padding:9px 11px; margin:10px 0 8px 0; background:#f2f4f5; border-left:3px solid var(--accent); font-size:0.82rem; color:var(--muted); line-height:1.45; }
+        .csd-overlay-note { padding:8px 11px; margin:8px 0 10px 0; background:#fafafa; border:1px solid #dedede; border-radius:4px; font-size:0.80rem; line-height:1.45; color:var(--muted); }
+        .csd-panel-title { font-weight:bold; margin:14px 0 3px 0; color:var(--ink); }
+        .csd-plot { height:640px; width:100%; overflow:visible; }
+        .csd-spectrum-plot { height:540px; width:100%; overflow:visible; }
+        .csd-band-plot { height:500px; width:100%; overflow:visible; }
+        
+        /* Toolbars required by tests */
+        .figure-toolbar { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .figure-mode-switch { display: flex; gap: 5px; }
+        .figure-mode-switch button { padding: 5px 10px; cursor: pointer; border: 1px solid #ccc; background: #eee; }
+        .figure-mode-switch button[aria-pressed="true"] { background: var(--accent); color: white; border-color: var(--accent); }
+        .legend-toggle { width: 26px; height: 26px; border-radius: 50%; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+        .figure-legend { background: #fff; padding: 15px; border: 1px solid var(--line); border-radius: 4px; margin-bottom: 15px; }

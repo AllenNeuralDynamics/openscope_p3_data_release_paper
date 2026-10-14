@@ -668,7 +668,7 @@ def test_optotagging_results_snapshot_is_source_backed() -> None:
     )
 
     assert hashlib.sha256(data_path.read_bytes()).hexdigest() == provenance["output_sha256"]
-    assert provenance["output_path"] == str(data_path.relative_to(REPO_ROOT))
+    assert provenance["output_path"] == data_path.relative_to(REPO_ROOT).as_posix()
     assert provenance["rows"] == 133556
     assert provenance["sessions"] == 60
     assert provenance["dandiset_id"] == "001637"
