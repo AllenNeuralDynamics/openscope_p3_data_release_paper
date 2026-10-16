@@ -16,6 +16,45 @@ Maintainers can refresh and commit all three publication tables by manually runn
 
 `neuropixels-unit-yield.csv` contains one row for each unit-bearing session NWB in the July 30, 2026 snapshot of draft Dandiset 001637. It records total units, units passing all three manuscript QC thresholds, and the available `Probe*` electrode groups. The DANDI asset-manifest checksum, thresholds, skipped schema-only NWBs, and vendored checksum are recorded in `neuropixels-unit-yield.provenance.json`. Regenerate it with `uv run --with h5py --with numpy --with remfile python scripts/extract_neuropixels_unit_yield.py`.
 
+## Neuropixels unit table
+
+`neuropixels-units.parquet` lists every sorted unit in all 60 session NWBs of
+[DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files) (draft,
+retrieved October 16, 2026): 195,447 units, including units the sorter labelled
+`noise`. Each row is one `(session_id, unit_id)` pair, where `unit_id` is the NWB
+`unit_name` and joins with `optotagging-results.parquet`.
+
+Columns:
+
+- Identity: `session_id`, `asset_id`, `subject_id`, `unit_id`, `nwb_unit_index`
+  (row in the NWB `units` table), and `probe`.
+- Quality: `decoder_label` (`sua`, `mua`, or `noise`) and `default_qc` (the NWB
+  flag). No QC rule is applied; filter on the metrics below as needed.
+- Anatomy, coarse to fine: `brain_division` (Allen major division such as
+  `Isocortex`, `HPF`, or `TH`; `Other` for fiber tracts, ventricles, and `void`),
+  `brain_area` (layers and hyphenated subdivisions collapsed to their parent,
+  for example `VISp2/3` → `VISp` and `DG-mo` → `DG`), and `brain_structure` (the
+  NWB electrode `location` of the unit's peak channel). `brain_area` and
+  `brain_division` are null when the structure is not in the Allen ontology.
+- `ccf_ap_um`, `ccf_dv_um`, `ccf_ml_um`: CCF coordinates of the peak channel.
+- Metrics copied from the NWB `units` table: `num_spikes`, `firing_rate`,
+  `amplitude_cutoff`, `isi_violations_ratio`, `presence_ratio`, `snr`,
+  `amplitude_median`, `d_prime`, `isolation_distance`, `l_ratio`, `nn_hit_rate`,
+  `drift_ptp`, `peak_to_valley`, `half_width`, `depth`, and `decoder_probability`.
+
+`neuropixels-units.provenance.json` records the DANDI asset manifest (IDs,
+paths, digests), QC thresholds, column descriptions, counts, and the parquet
+checksum. Unit IDs are tied to these exact uploads: a re-uploaded NWB gets a new
+DANDI asset ID, and the table must then be re-extracted. Refresh both files with:
+
+```bash
+uv run --with dandi --with h5py --with iblatlas --with remfile --with scipy \
+  --with pyarrow python scripts/extract_neuropixels_units.py
+```
+
+The extractor writes only if every session succeeds. The implementation is in
+[`src/openscope_p3_publication/units.py`](../../src/openscope_p3_publication/units.py).
+
 ## Optotagging results
 
 `optotagging-results.parquet` is the per-unit statistical output of the
