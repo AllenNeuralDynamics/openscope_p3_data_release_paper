@@ -130,7 +130,7 @@ figure modules load committed inputs and produce publication artifacts. The comm
 | [pupil_figure.py](../src/openscope_p3_publication/pupil_figure.py) | Loads and validates the pupil-response intermediate, derives display summaries, and renders static/interactive panels. |
 | [sensorimotor_running.py](../src/openscope_p3_publication/sensorimotor_running.py) | Analysis of locomotion and mismatch timing within sensorimotor sessions. |
 | [sensorimotor_running_figure.py](../src/openscope_p3_publication/sensorimotor_running_figure.py) | Generates the sensorimotor-running static figure and HTML viewer. |
-| [units.py](../src/openscope_p3_publication/units.py) | Builds the all-session Neuropixels unit table: NWB unit metrics, peak-channel CCF location, brain division/area/structure, and manuscript QC. |
+| [units.py](../src/openscope_p3_publication/units.py) | Builds the all-session Neuropixels unit table: NWB unit metrics, peak-channel CCF location, and brain division/area/structure. |
 | [wavemap_figure.py](../src/openscope_p3_publication/wavemap_figure.py) | Orchestrates WaveMAP publication generation and supporting deployment assets from the committed snapshot. |
 | [wavemap_publication_figures.py](../src/openscope_p3_publication/wavemap_publication_figures.py) | Builds the publication-ready WaveMAP static panels and composite outputs. |
 
@@ -151,7 +151,7 @@ the contribution instructions before refreshing anything.
 | [extract_neuropixels_event_responses.py](../scripts/extract_neuropixels_event_responses.py) | Computes per-unit mismatch/control response summaries and compressed spike-density atlases from public NWBs. |
 | [extract_neuropixels_trajectories.py](../scripts/extract_neuropixels_trajectories.py) | Extracts localized probe trajectories, anatomical profiles, and a compact CCF brain surface. |
 | [extract_neuropixels_unit_yield.py](../scripts/extract_neuropixels_unit_yield.py) | Counts total and quality-filtered units per session and records source inventory/provenance. |
-| [extract_neuropixels_units.py](../scripts/extract_neuropixels_units.py) | Streams all Neuropixels session NWBs and writes the per-unit table with brain areas and QC, plus provenance. |
+| [extract_neuropixels_units.py](../scripts/extract_neuropixels_units.py) | Streams all Neuropixels session NWBs and writes the per-unit table with brain areas, plus provenance. |
 | [extract_optotagging_heatmaps.py](../scripts/extract_optotagging_heatmaps.py) | Produces optotagging heatmap data and session atlases from public NWBs. |
 | [extract_optotagging_results.py](../scripts/extract_optotagging_results.py) | Computes per-unit optotagging statistics and writes Parquet results plus provenance. Its default output is an external staging directory. |
 | [extract_optotagging_static_summary.py](../scripts/extract_optotagging_static_summary.py) | Recovers the plotted yield-summary values from the preserved legacy optotagging SVG. |
@@ -207,7 +207,7 @@ Some JSON payloads keep their provenance internally rather than in a separate fi
 | [neuropixels-mismatch-responsiveness.csv](../figure_sources/data/neuropixels-mismatch-responsiveness.csv) | Tabular Neuropixels mismatch-responsiveness results. |
 | [neuropixels-trajectories.json](../figure_sources/data/neuropixels-trajectories.json), [neuropixels-trajectories.provenance.json](../figure_sources/data/neuropixels-trajectories.provenance.json) | Probe trajectories, area profiles, compact CCF surface, and source/exclusion records. |
 | [neuropixels-unit-yield.csv](../figure_sources/data/neuropixels-unit-yield.csv), [neuropixels-unit-yield.provenance.json](../figure_sources/data/neuropixels-unit-yield.provenance.json) | Per-session total/QC-passing unit counts and archive/threshold provenance. |
-| [neuropixels-units.parquet](../figure_sources/data/neuropixels-units.parquet), [neuropixels-units.provenance.json](../figure_sources/data/neuropixels-units.provenance.json) | Every sorted unit in all 60 Neuropixels sessions with metrics, CCF location, brain division/area/structure, and QC, plus DANDI asset provenance. |
+| [neuropixels-units.parquet](../figure_sources/data/neuropixels-units.parquet), [neuropixels-units.provenance.json](../figure_sources/data/neuropixels-units.provenance.json) | Every sorted unit in all 60 Neuropixels sessions with metrics, CCF location, and brain division/area/structure, plus DANDI asset provenance. |
 | [optotagging-heatmaps.json](../figure_sources/data/optotagging-heatmaps.json), [optotagging-heatmaps.provenance.json](../figure_sources/data/optotagging-heatmaps.provenance.json) | Optotagging viewer metadata and atlas/source provenance. |
 | [optotagging-results.parquet](../figure_sources/data/optotagging-results.parquet), [optotagging-results.provenance.json](../figure_sources/data/optotagging-results.provenance.json) | Historical per-unit optotagging statistics and their source/analysis provenance, not the viewer's full PSTH arrays. |
 | [optotagging-static-summary.json](../figure_sources/data/optotagging-static-summary.json) | Numeric yield-summary values recovered from the legacy static plot. |

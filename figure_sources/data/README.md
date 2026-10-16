@@ -28,10 +28,8 @@ Columns:
 
 - Identity: `session_id`, `asset_id`, `subject_id`, `unit_id`, `nwb_unit_index`
   (row in the NWB `units` table), and `probe`.
-- Quality: `decoder_label` (`sua`, `mua`, or `noise`), `default_qc` (the NWB
-  flag), and `qc_pass`, the manuscript rule `isi_violations_ratio < 0.5`,
-  `presence_ratio > 0.8`, and `amplitude_cutoff < 0.1`. Units missing any of
-  these metrics fail.
+- Quality: `decoder_label` (`sua`, `mua`, or `noise`) and `default_qc` (the NWB
+  flag). No QC rule is applied; filter on the metrics below as needed.
 - Anatomy, coarse to fine: `brain_division` (Allen major division such as
   `Isocortex`, `HPF`, or `TH`; `Other` for fiber tracts, ventricles, and `void`),
   `brain_area` (layers and hyphenated subdivisions collapsed to their parent,

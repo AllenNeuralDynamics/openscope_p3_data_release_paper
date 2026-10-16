@@ -610,7 +610,6 @@
     "metrics": "copied from the NWB units table as float32; NaN when absent",
     "nwb_unit_index": "row position in the NWB units table",
     "probe": "units/device_name",
-    "qc_pass": "isi_violations_ratio < 0.5 and presence_ratio > 0.8 and amplitude_cutoff < 0.1",
     "unit_id": "units/unit_name (falls back to units/id); joins per-unit snapshots"
   },
   "dandiset_id": "001637",
@@ -622,13 +621,7 @@
   },
   "module": "src/openscope_p3_publication/units.py",
   "output_path": "neuropixels-units.parquet",
-  "output_sha256": "aeff7be6222a204ec5f4d0250df665fe8aaaaca5c946fe3b00f0f996d75258b7",
-  "qc_pass_units": 105309,
-  "qc_thresholds": {
-    "amplitude_cutoff_max": 0.1,
-    "isi_violations_ratio_max": 0.5,
-    "presence_ratio_min": 0.8
-  },
+  "output_sha256": "eae1ab0126180f75d997e8bcdc5d3dda1a9652d7f071d019e89343e5b259f354",
   "retrieved_date": "2026-10-16",
   "rows": 195447,
   "script": "scripts/extract_neuropixels_units.py",

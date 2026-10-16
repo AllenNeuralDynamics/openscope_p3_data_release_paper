@@ -26,4 +26,3 @@ def test_committed_unit_table_matches_provenance() -> None:
     assert provenance["skipped_sessions"] == []
     assert not table.duplicated(["session_id", "unit_id"]).any()
     assert set(table["asset_id"]) == {asset["asset_id"] for asset in provenance["asset_manifest"]}
-    assert int(table["qc_pass"].sum()) == provenance["qc_pass_units"]

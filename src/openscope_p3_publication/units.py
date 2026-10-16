@@ -6,7 +6,7 @@ placed at its extremum (peak) channel. Three anatomy levels are recorded:
 sub-parcels collapsed, e.g. VISp), and ``brain_structure`` (the electrode table's fully
 detailed ``location``, e.g. VISp2/3), plus the CCF coordinates of that channel.
 Figures can then filter by
-``decoder_label`` / ``qc_pass`` and group by area without re-reading NWBs.
+``decoder_label`` or the quality metrics and group by area without re-reading NWBs.
 """
 
 from __future__ import annotations
@@ -32,12 +32,6 @@ UNIT_TABLE_NAME = "neuropixels-units.parquet"
 UNIT_TABLE_PROVENANCE_NAME = "neuropixels-units.provenance.json"
 ELECTRODES_PATH = "general/extracellular_ephys/electrodes"
 
-# Manuscript QC thresholds, shared with scripts/extract_neuropixels_unit_yield.py.
-QC_THRESHOLDS = {
-    "amplitude_cutoff_max": 0.1,
-    "isi_violations_ratio_max": 0.5,
-    "presence_ratio_min": 0.8,
-}
 ALLEN_MAJOR_DIVISIONS = (
     "Isocortex",
     "OLF",
@@ -269,28 +263,17 @@ def area_annotations(
     return pd.DataFrame(records, columns=["brain_structure", "brain_area", "brain_division"])
 
 
-def qc_pass_mask(table: pd.DataFrame) -> pd.Series:
-    """Return the manuscript QC rule; units with any missing metric fail."""
-
-    return (
-        table["isi_violations_ratio"].lt(QC_THRESHOLDS["isi_violations_ratio_max"])
-        & table["presence_ratio"].gt(QC_THRESHOLDS["presence_ratio_min"])
-        & table["amplitude_cutoff"].lt(QC_THRESHOLDS["amplitude_cutoff_max"])
-    )
-
-
 def build_unit_table(
     frames: Iterable[pd.DataFrame],
     *,
     brain_regions: Any | None = None,
 ) -> pd.DataFrame:
-    """Combine per-session rows, add areas and ``qc_pass``, and fix order and dtypes."""
+    """Combine per-session rows, add areas, and fix order and dtypes."""
 
     table = pd.concat(list(frames), ignore_index=True)
     known = table["brain_structure"].dropna().unique()
     areas = area_annotations(known, brain_regions=brain_regions)
     table = table.merge(areas, on="brain_structure", how="left", validate="many_to_one")
-    table["qc_pass"] = qc_pass_mask(table)
     table = table.sort_values(["session_id", "nwb_unit_index"], kind="stable")
     table = table.reset_index(drop=True)
     for column in (
@@ -315,7 +298,6 @@ def build_unit_table(
         "nwb_unit_index",
         "probe",
         "decoder_label",
-        "qc_pass",
         "default_qc",
         "brain_division",
         "brain_area",
@@ -363,16 +345,10 @@ def write_unit_table(
             str(label): int(count)
             for label, count in table["decoder_label"].value_counts().sort_index().items()
         },
-        "qc_pass_units": int(table["qc_pass"].sum()),
-        "qc_thresholds": QC_THRESHOLDS,
         "columns": {
             "unit_id": "units/unit_name (falls back to units/id); joins per-unit snapshots",
             "nwb_unit_index": "row position in the NWB units table",
             "probe": "units/device_name",
-            "qc_pass": (
-                "isi_violations_ratio < 0.5 and presence_ratio > 0.8 and "
-                "amplitude_cutoff < 0.1"
-            ),
             "brain_division": (
                 "Allen major division ancestor of brain_structure (e.g. Isocortex, TH, HPF); "
                 "'Other' for ontology regions outside the twelve divisions; null outside "
@@ -399,10 +375,8 @@ def write_unit_table(
         ).hexdigest(),
         "skipped_sessions": skipped,
     }
-    provenance_path.write_text(
-        json.dumps(provenance, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    with provenance_path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(json.dumps(provenance, indent=2, sort_keys=True) + "\n")
     return parquet_path, provenance_path
 
 
