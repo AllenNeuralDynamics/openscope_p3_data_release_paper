@@ -89,8 +89,7 @@ The optotagging Static view is rendered by
 committed numeric atlas and `figure_sources/data/optotagging-static-summary.json`.
 That summary holds per-session tagged-unit counts (5 Hz pulse train, p < 0.05 and
 modulation index > 0.1) computed from `figure_sources/data/optotagging-results.parquet`.
-Regenerate it with `python scripts/extract_optotagging_unit_areas.py` (writes a local,
-uncommitted unit-area cache) followed by
+Brain areas come from `figure_sources/data/neuropixels-units.parquet`. Regenerate it with
 `python scripts/build_optotagging_yield_summary.py`.
 
 Do not edit files under `interactive/` directly; they are generated and checked for drift in CI.

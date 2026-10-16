@@ -1,16 +1,15 @@
-"""Build the optotagging yield summary from per-unit metrics and unit locations.
+"""Build the optotagging yield summary from per-unit metrics and the unit table.
 
-Inputs:
-- ``figure_sources/data/optotagging-results.parquet`` (committed per-unit metrics)
-- ``.optotagging_work/optotagging-unit-areas.parquet`` (local, from
-  ``scripts/extract_optotagging_unit_areas.py``; not committed)
+Inputs (both committed):
+- ``figure_sources/data/optotagging-results.parquet`` (per-unit optotagging metrics)
+- ``figure_sources/data/neuropixels-units.parquet`` (``brain_division``/``brain_area``)
 
 Output: ``figure_sources/data/optotagging-static-summary.json`` with per-session tagged
-counts overall, per Allen major division, and per structure (cortical layers collapsed).
+counts overall, per Allen major division, and per brain area.
 
 Run with::
 
-    uv run --with pyarrow --with iblatlas python scripts/build_optotagging_yield_summary.py
+    uv run --with pyarrow --with scipy python scripts/build_optotagging_yield_summary.py
 """
 
 from __future__ import annotations
@@ -24,10 +23,11 @@ import numpy as np
 import pandas as pd
 
 from openscope_p3_publication.optotagging import optotagging_yield_summary
+from openscope_p3_publication.units import UNIT_TABLE_NAME, UNIT_TABLE_PROVENANCE_NAME
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RESULTS_PATH = REPO_ROOT / "figure_sources" / "data" / "optotagging-results.parquet"
-AREAS_PATH = REPO_ROOT / ".optotagging_work" / "optotagging-unit-areas.parquet"
+UNIT_TABLE_PATH = REPO_ROOT / "figure_sources" / "data" / UNIT_TABLE_NAME
 OUTPUT_PATH = REPO_ROOT / "figure_sources" / "data" / "optotagging-static-summary.json"
 REPRESENTATIVE_SESSIONS = (
     "ecephys_830851_2026-03-19_10-49-11",
@@ -64,25 +64,26 @@ def representative_sessions(sessions: list[str], counts: list[int]) -> list[dict
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--results", type=Path, default=RESULTS_PATH)
-    parser.add_argument("--areas", type=Path, default=AREAS_PATH)
+    parser.add_argument("--unit-table", type=Path, default=UNIT_TABLE_PATH)
     parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
     args = parser.parse_args()
 
     results = pd.read_parquet(args.results)
-    areas = pd.read_parquet(args.areas)
-    summary = optotagging_yield_summary(results, areas)
-    areas_provenance_path = args.areas.with_name("optotagging-unit-areas.provenance.json")
-    areas_provenance = json.loads(areas_provenance_path.read_text(encoding="utf-8"))
+    unit_table = pd.read_parquet(
+        args.unit_table, columns=["session_id", "unit_id", "brain_division", "brain_area"]
+    )
+    summary = optotagging_yield_summary(results, unit_table)
+    unit_provenance = json.loads(
+        args.unit_table.with_name(UNIT_TABLE_PROVENANCE_NAME).read_text(encoding="utf-8")
+    )
     summary["source"] = args.results.resolve().relative_to(REPO_ROOT).as_posix()
     summary["source_sha256"] = sha256(args.results)
-    summary["unit_areas"] = {
-        "generator": "scripts/extract_optotagging_unit_areas.py",
-        "sha256": sha256(args.areas),
-        "rows": len(areas),
-        "retrieved_date": areas_provenance.get("retrieved_date"),
-        "location_column": areas_provenance["columns"]["location"],
-        "structure_rule": "cortical layer suffixes collapsed (e.g. VISp2/3 -> VISp)",
-        "major_parent_rule": "nearest Allen major-division ancestor via iblatlas, else Other",
+    summary["unit_table"] = {
+        "source": args.unit_table.resolve().relative_to(REPO_ROOT).as_posix(),
+        "sha256": sha256(args.unit_table),
+        "retrieved_date": unit_provenance["retrieved_date"],
+        "major_parent_column": "brain_division",
+        "structure_column": "brain_area",
     }
     summary["representative_sessions"] = representative_sessions(
         summary["sessions"], summary["overall"]["counts"]

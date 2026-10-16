@@ -154,8 +154,7 @@ the contribution instructions before refreshing anything.
 | [extract_neuropixels_units.py](../scripts/extract_neuropixels_units.py) | Streams all Neuropixels session NWBs and writes the per-unit table with brain areas, plus provenance. |
 | [extract_optotagging_heatmaps.py](../scripts/extract_optotagging_heatmaps.py) | Produces optotagging heatmap data and session atlases from public NWBs. |
 | [extract_optotagging_results.py](../scripts/extract_optotagging_results.py) | Computes per-unit optotagging statistics and writes Parquet results plus provenance. Its default output is an external staging directory. |
-| [extract_optotagging_unit_areas.py](../scripts/extract_optotagging_unit_areas.py) | Streams per-unit CCF locations from public NWBs into a local, gitignored unit-area table used by the yield-summary builder. |
-| [build_optotagging_yield_summary.py](../scripts/build_optotagging_yield_summary.py) | Computes per-session and per-area optotagged-unit yield from the committed results Parquet and the local unit-area table. |
+| [build_optotagging_yield_summary.py](../scripts/build_optotagging_yield_summary.py) | Computes per-session and per-area optotagged-unit yield from the committed results Parquet and the Neuropixels unit table. |
 | [extract_pupil_event_responses.py](../scripts/extract_pupil_event_responses.py) | Computes event-aligned pupil and running summaries with quality control and source provenance. |
 | [extract_raw_neural_excerpts.py](../scripts/extract_raw_neural_excerpts.py) | Extracts compact raw electrophysiology/imaging views; also has a scoped detector-only SLAP2 clip refresh. |
 | [extract_raw_neural_static_frames.py](../scripts/extract_raw_neural_static_frames.py) | Produces deterministic microscopy stills; also supports the scoped SLAP2 acquisition-band products. |

@@ -1742,7 +1742,7 @@ def load_optotagging_static_summary(
     source_path = REPO_ROOT / summary.get("source", "")
     source_session_count = summary.get("source_session_count")
     if (
-        summary.get("version") != 2
+        summary.get("version") != 3
         or not isinstance(source_session_count, int)
         or source_session_count <= 0
         or not source_path.is_file()

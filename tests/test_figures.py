@@ -882,7 +882,7 @@ def test_optotagging_snapshot_is_source_backed(tmp_path: Path) -> None:
     assert summary["source_sha256"] == hashlib.sha256(
         OPTOTAGGING_RESULTS_PATH.read_bytes()
     ).hexdigest()
-    assert summary["version"] == 2
+    assert summary["version"] == 3
     assert summary["rule"] == {
         "condition": "5 hz pulse train_presentations",
         "p_value_lt": 0.05,

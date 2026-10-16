@@ -162,13 +162,10 @@ or to apply an alternative classification appropriate for their analysis.
 `optotagging-static-summary.json` holds the per-session, per-major-parent-area, and
 per-structure yield of putative optotagged cells plotted in panels B-D of the
 optotagging figure. It is computed from `optotagging-results.parquet` with the rule above
-by `scripts/build_optotagging_yield_summary.py`, and records the source checksum. Unit
-CCF locations are kept out of the results Parquet: `scripts/extract_optotagging_unit_areas.py`
-streams them from the public NWBs into a local, gitignored table that the builder joins
-by session and unit. Three sessions without CCF-registered units contribute to overall
-yield only. Regenerate with
-`uv run --with pyarrow --with iblatlas python scripts/build_optotagging_yield_summary.py`
-after running the unit-area extractor.
+by `scripts/build_optotagging_yield_summary.py`, and records the source checksums. Brain
+areas come from `brain_division` and `brain_area` in `neuropixels-units.parquet`, joined by
+session and unit. Regenerate with
+`uv run --with pyarrow --with scipy python scripts/build_optotagging_yield_summary.py`.
 
 `neuropixels-trajectories.json` contains all 332 CCF-localized probe insertions from 57 of the 60 Neuropixels session NWBs in the source inventory, together with each insertion's contiguous CCF area profile and a 100-micrometer whole-brain surface derived from the Allen CCF 2017 25-micrometer annotation volume. Three sessions without electrode `x`, `y`, and `z` coordinates are retained as explicit exclusions in `neuropixels-trajectories.provenance.json`. The provenance record also pins the DANDI inventory, Allen annotation volume, structure graph, and vendored checksums. Regenerate both files with `uv run --with h5py --with numpy --with pynrrd --with remfile --with scikit-image python scripts/extract_neuropixels_trajectories.py`. When only the shared A-F display palette changes, update colors and the vendored checksum without re-fetching NWBs by adding `--refresh-palette-only`.
 
