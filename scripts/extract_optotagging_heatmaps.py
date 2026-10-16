@@ -40,22 +40,24 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MEDIA_DIR = REPO_ROOT / "figure_sources" / "media" / "optotagging"
 DEFAULT_MANIFEST = REPO_ROOT / "figure_sources" / "data" / "optotagging-heatmaps.json"
 DEFAULT_PROVENANCE = DEFAULT_MANIFEST.with_suffix(".provenance.json")
-REPRESENTATIVE_SESSIONS = {
-    "ecephys_830851_2026-03-19_10-49-11": {
-        "target_yield_percentile": 0.50,
-        "optotagged_cell_count": 39,
-    },
-    "ecephys_848390_2026-05-06_09-54-56": {
-        "target_yield_percentile": 0.80,
-        "optotagged_cell_count": 68,
-    },
-    "ecephys_832691_2026-03-24_10-04-30": {
-        "target_yield_percentile": 0.95,
-        "optotagged_cell_count": 84,
-    },
-}
+# Fixed example sessions. Their tagged-unit counts and yield percentiles are computed by
+# scripts/build_optotagging_yield_summary.py and stored in optotagging-static-summary.json.
+REPRESENTATIVE_SESSIONS = (
+    "ecephys_830851_2026-03-19_10-49-11",
+    "ecephys_832691_2026-03-24_10-04-30",
+    "ecephys_848390_2026-05-06_09-54-56",
+)
 DEFAULT_SESSION_ID = "ecephys_830851_2026-03-19_10-49-11"
 SESSION_FILENAME_PATTERN = re.compile(r"[^a-zA-Z0-9_.-]+")
+
+
+def asset_matches_session(asset_path: str, session_id: str) -> bool:
+    """Return whether a DANDI asset path belongs to a session id.
+
+    Session ids use underscores (``ecephys_830851_2026-03-19_10-49-11``) while DANDI
+    paths use hyphens (``ses-ecephys-830851-2026-03-19-10-49-11``).
+    """
+    return session_id.replace("_", "-") in asset_path.replace("_", "-")
 
 
 def atlas_filename(session_id: str, suffix: str) -> str:
@@ -191,13 +193,12 @@ def write_snapshot(
         "session_count": len(sessions),
         "total_unit_count": sum(record["unit_count"] for record in sessions),
         "selection": {
-            "strategy": "nearest_all_session_optotagged_cell_yield_percentiles",
+            "strategy": "fixed_example_sessions",
             "source_session_count": source_session_count or len(assets),
-            "sessions": {
-                session_id: REPRESENTATIVE_SESSIONS[session_id]
-                for session_id in sorted(session_ids)
-                if session_id in REPRESENTATIVE_SESSIONS
-            },
+            "sessions": sorted(
+                session_id for session_id in session_ids if session_id in REPRESENTATIVE_SESSIONS
+            ),
+            "yield_summary": "figure_sources/data/optotagging-static-summary.json",
         },
         "conditions": [
             {
@@ -207,7 +208,7 @@ def write_snapshot(
                 "pulse_width_seconds": condition.pulse_width_seconds,
                 "count_window_seconds": condition.count_window_seconds,
                 "post_delay_seconds": condition.post_delay_seconds,
-                "ordering": "mean_firing_rate_during_exact_pulses",
+                "ordering": "mean_baseline_zscore_during_exact_pulses",
             }
             for condition in CONDITIONS
         ],
@@ -216,7 +217,7 @@ def write_snapshot(
             "baseline": "time < 0 seconds",
             "bin_seconds": PSTH_BIN_SECONDS,
             "display_bin_count": ATLAS_DISPLAY_BINS,
-            "color_limits_zscore": [-3, 3],
+            "color_limits_zscore": [-2, 2],
             "interactive_color_limit_range": [0.5, 8],
             "interactive_color_limit_step": 0.5,
             "window_seconds": list(PSTH_WINDOW),
@@ -233,6 +234,7 @@ def write_snapshot(
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
 
     asset_manifest = [
@@ -290,11 +292,13 @@ def write_snapshot(
         "failed_assets": failed,
         "unit_filter": "decoder_label != 'noise'",
         "notes": (
-            "The three interactive sessions are nearest the 50th, 80th, and 95th "
-            "percentiles of all-session optotagged-cell yield. Session NWBs are streamed "
+            "The three interactive sessions are fixed examples; their optotagged-cell "
+            "counts and all-session yield percentiles are computed in "
+            "optotagging-static-summary.json. Session NWBs are streamed "
             "from DANDI. Heatmaps show 1 ms presentation-aligned PSTHs baseline z-scored "
             "per unit and deterministically reduced to display resolution. Every "
-            "condition is ordered by mean firing rate inside its exact laser pulses. "
+            "condition is ordered by mean baseline z score inside its exact laser "
+            "pulses, highest first. "
             "Allen acronyms are mapped to major parent divisions through the iblatlas "
             "Allen hierarchy. The static yield summary covers all source sessions."
         ),
@@ -302,6 +306,7 @@ def write_snapshot(
     provenance_path.write_text(
         json.dumps(provenance, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     return manifest_path, provenance_path
 
@@ -334,7 +339,9 @@ def main() -> None:
     assets = discover_session_assets()
     if args.session_id:
         selected_assets = [
-            asset for asset in assets if args.session_id in asset["asset_path"]
+            asset
+            for asset in assets
+            if asset_matches_session(asset["asset_path"], args.session_id)
         ]
         if len(selected_assets) != 1:
             raise SystemExit(
@@ -349,7 +356,7 @@ def main() -> None:
                 asset
                 for asset in assets
                 if any(
-                    session_id in asset["asset_path"]
+                    asset_matches_session(asset["asset_path"], session_id)
                     for session_id in REPRESENTATIVE_SESSIONS
                 )
             ]

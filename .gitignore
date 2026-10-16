@@ -23,3 +23,5 @@ interactive/media/wavemap/
 *.egg-info/
 # Local WaveMAP extraction cache and checkpoints
 .wavemap_work/
+# Local optotagging unit-area cache (regenerate with scripts/extract_optotagging_unit_areas.py)
+.optotagging_work/

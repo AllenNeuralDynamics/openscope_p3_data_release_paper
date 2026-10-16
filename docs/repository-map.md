@@ -152,7 +152,8 @@ the contribution instructions before refreshing anything.
 | [extract_neuropixels_unit_yield.py](../scripts/extract_neuropixels_unit_yield.py) | Counts total and quality-filtered units per session and records source inventory/provenance. |
 | [extract_optotagging_heatmaps.py](../scripts/extract_optotagging_heatmaps.py) | Produces optotagging heatmap data and session atlases from public NWBs. |
 | [extract_optotagging_results.py](../scripts/extract_optotagging_results.py) | Computes per-unit optotagging statistics and writes Parquet results plus provenance. Its default output is an external staging directory. |
-| [extract_optotagging_static_summary.py](../scripts/extract_optotagging_static_summary.py) | Recovers the plotted yield-summary values from the preserved legacy optotagging SVG. |
+| [extract_optotagging_unit_areas.py](../scripts/extract_optotagging_unit_areas.py) | Streams per-unit CCF locations from public NWBs into a local, gitignored unit-area table used by the yield-summary builder. |
+| [build_optotagging_yield_summary.py](../scripts/build_optotagging_yield_summary.py) | Computes per-session and per-area optotagged-unit yield from the committed results Parquet and the local unit-area table. |
 | [extract_pupil_event_responses.py](../scripts/extract_pupil_event_responses.py) | Computes event-aligned pupil and running summaries with quality control and source provenance. |
 | [extract_raw_neural_excerpts.py](../scripts/extract_raw_neural_excerpts.py) | Extracts compact raw electrophysiology/imaging views; also has a scoped detector-only SLAP2 clip refresh. |
 | [extract_raw_neural_static_frames.py](../scripts/extract_raw_neural_static_frames.py) | Produces deterministic microscopy stills; also supports the scoped SLAP2 acquisition-band products. |
@@ -206,7 +207,7 @@ Some JSON payloads keep their provenance internally rather than in a separate fi
 | [neuropixels-unit-yield.csv](../figure_sources/data/neuropixels-unit-yield.csv), [neuropixels-unit-yield.provenance.json](../figure_sources/data/neuropixels-unit-yield.provenance.json) | Per-session total/QC-passing unit counts and archive/threshold provenance. |
 | [optotagging-heatmaps.json](../figure_sources/data/optotagging-heatmaps.json), [optotagging-heatmaps.provenance.json](../figure_sources/data/optotagging-heatmaps.provenance.json) | Optotagging viewer metadata and atlas/source provenance. |
 | [optotagging-results.parquet](../figure_sources/data/optotagging-results.parquet), [optotagging-results.provenance.json](../figure_sources/data/optotagging-results.provenance.json) | Historical per-unit optotagging statistics and their source/analysis provenance, not the viewer's full PSTH arrays. |
-| [optotagging-static-summary.json](../figure_sources/data/optotagging-static-summary.json) | Numeric yield-summary values recovered from the legacy static plot. |
+| [optotagging-static-summary.json](../figure_sources/data/optotagging-static-summary.json) | Per-session and per-area optotagged-unit yield computed by `build_optotagging_yield_summary.py` (5 Hz pulse train, p < 0.05 and modulation index > 0.1). |
 | [other-oddball-studies.csv](../figure_sources/data/other-oddball-studies.csv), [other-oddball-studies.provenance.json](../figure_sources/data/other-oddball-studies.provenance.json) | Literature-comparison table and source worksheet provenance. |
 | [pupil-event-responses.json](../figure_sources/data/pupil-event-responses.json), [pupil-event-responses.provenance.json](../figure_sources/data/pupil-event-responses.provenance.json) | Peri-event pupil/running summaries, coverage, quality-control outcomes, and provenance. |
 | [raw-neural-excerpts.json](../figure_sources/data/raw-neural-excerpts.json) | Compact raw electrophysiology/imaging excerpt metadata and scientific payloads with source records. |
@@ -476,7 +477,6 @@ optotagging manifests.
 | [ecephys_832691_2026-03-24_10-04-30.atlas.json](../figure_sources/media/optotagging/ecephys_832691_2026-03-24_10-04-30.atlas.json), [ecephys_832691_2026-03-24_10-04-30.atlas.png](../figure_sources/media/optotagging/ecephys_832691_2026-03-24_10-04-30.atlas.png) | Atlas data and image for the named mouse/session. |
 | [ecephys_848390_2026-05-06_09-54-56.atlas.json](../figure_sources/media/optotagging/ecephys_848390_2026-05-06_09-54-56.atlas.json), [ecephys_848390_2026-05-06_09-54-56.atlas.png](../figure_sources/media/optotagging/ecephys_848390_2026-05-06_09-54-56.atlas.png) | Atlas data and image for the named mouse/session. |
 | [optotagging-static-composite.svg](../figure_sources/media/optotagging/optotagging-static-composite.svg) | Generated composite used in the static optotagging publication output. Although located under source media, it is builder-owned. |
-| [optotagging-static-legacy.svg](../figure_sources/media/optotagging/optotagging-static-legacy.svg) | Preserved legacy plot from which the numeric static-summary values are recovered. |
 
 ### `figure_sources/media/platform-logos/`
 

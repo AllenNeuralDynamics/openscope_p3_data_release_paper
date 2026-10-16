@@ -6,6 +6,7 @@ import datetime as dt
 import hashlib
 import io
 import json
+import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -81,7 +82,7 @@ CONDITIONS = (
         pulse_frequency_hz=40.0,
         pulse_width_seconds=0.006,
         # Preserve the reference notebook's 10 ms response window even though
-        # heatmap ordering uses only the exact 6 ms laser pulse.
+        # the physical laser pulse is 6 ms.
         count_window_seconds=0.010,
         post_delay_seconds=0.002,
     ),
@@ -160,6 +161,31 @@ def discover_session_assets(
                     },
                 }
             )
+    return sorted(records, key=lambda record: record["asset_path"])
+
+
+def pinned_session_assets(provenance_path: Path) -> list[dict[str, Any]]:
+    """Return the exact assets analyzed in an optotagging results snapshot.
+
+    Asset IDs are immutable on DANDI, so re-reading them reproduces the snapshot's unit IDs
+    even after the draft dandiset has been re-uploaded. Skipped sessions are excluded.
+    """
+
+    import requests
+
+    provenance = json.loads(Path(provenance_path).read_text(encoding="utf-8"))
+    skipped = {record["asset_path"] for record in provenance.get("skipped_sessions", [])}
+    records = []
+    for asset in provenance["asset_manifest"]:
+        if asset["asset_path"] in skipped:
+            continue
+        response = requests.head(
+            f"https://api.dandiarchive.org/api/assets/{asset['asset_id']}/download/",
+            allow_redirects=False,
+            timeout=60,
+        )
+        response.raise_for_status()
+        records.append({**asset, "content_url": response.headers["Location"].split("?")[0]})
     return sorted(records, key=lambda record: record["asset_path"])
 
 
@@ -346,17 +372,36 @@ def mean_firing_rate_during_pulses(
     return float(np.mean(pulse_counts / pulse_width_seconds))
 
 
+def laser_on_mask(
+    time_seconds: np.ndarray,
+    condition: ConditionConfig,
+    pulses_per_presentation: int,
+) -> np.ndarray:
+    """Mark PSTH bins whose centers fall inside a presentation's laser pulses."""
+
+    mask = np.zeros(len(time_seconds), dtype=bool)
+    for onset in np.arange(max(1, pulses_per_presentation)) / condition.pulse_frequency_hz:
+        mask |= (time_seconds >= onset) & (
+            time_seconds < onset + condition.pulse_width_seconds
+        )
+    return mask
+
+
 def heatmap_response_scores(
     analysis: SessionAnalysis,
     condition: ConditionConfig,
 ) -> tuple[np.ndarray, str]:
-    """Return the validated condition-specific score used to order heatmap rows."""
+    """Return each unit's mean baseline z score inside the exact laser pulses."""
 
-    pulse_width_ms = condition.pulse_width_seconds * 1_000
-    return (
-        analysis.pulse_firing_rates[condition.table_name],
-        f"mean firing during {pulse_width_ms:g} ms pulses",
-    )
+    name = condition.table_name
+    trials = analysis.trial_counts[name]
+    pulses_per_presentation = round(analysis.pulse_counts[name] / trials) if trials else 1
+    mask = laser_on_mask(analysis.time_seconds, condition, pulses_per_presentation)
+    zscored = baseline_zscore(analysis.psths[name], analysis.time_seconds)
+    label = "mean baseline z during laser pulses"
+    if not mask.any():
+        return np.full(len(zscored), np.nan), label
+    return zscored[:, mask].mean(axis=1), label
 
 
 def strongest_first_indices(response_scores: np.ndarray) -> np.ndarray:
@@ -699,6 +744,248 @@ def analyze_asset(
         remote_file.close()
 
 
+def unit_locations(nwb: Mapping[str, Any]) -> pd.DataFrame:
+    """Return the electrode-table location of every non-noise unit in one NWB."""
+
+    validate_nwb(nwb)
+    session_id = decode_text(nwb["general/session_id"][()])
+    units = nwb["units"]
+    labels = np.asarray(
+        [decode_text(value) for value in units["decoder_label"][:]],
+        dtype=object,
+    )
+    if "unit_name" in units:
+        unit_names = np.asarray(
+            [decode_text(value) for value in units["unit_name"][:]],
+            dtype=object,
+        )
+    else:
+        unit_names = np.asarray([str(value) for value in units["id"][:]], dtype=object)
+    keep = labels != "noise"
+    return pd.DataFrame(
+        {
+            "session_id": session_id,
+            "unit_id": unit_names[keep],
+            "location": _unit_anatomy_acronyms(nwb)[keep],
+        }
+    )
+
+
+def stream_unit_locations(asset: Mapping[str, Any]) -> pd.DataFrame:
+    """Stream one DANDI NWB asset and return its non-noise unit locations."""
+
+    import h5py
+    import remfile
+
+    remote_file = remfile.File(asset["content_url"])
+    try:
+        with h5py.File(remote_file, mode="r") as nwb:
+            return unit_locations(nwb)
+    finally:
+        remote_file.close()
+
+
+def write_unit_locations(
+    locations: pd.DataFrame,
+    *,
+    assets: Iterable[Mapping[str, Any]],
+    skipped: list[dict[str, str]],
+    output_dir: Path,
+) -> tuple[Path, Path]:
+    """Write the deterministic unit-location table kept separate from the metrics."""
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    parquet_path = output_dir / "optotagging-unit-areas.parquet"
+    provenance_path = output_dir / "optotagging-unit-areas.provenance.json"
+
+    ordered = locations.sort_values(
+        ["session_id", "unit_id"],
+        kind="stable",
+    ).reset_index(drop=True)
+    ordered = ordered.astype(
+        {"session_id": "category", "unit_id": "string", "location": "category"}
+    )
+    ordered.to_parquet(parquet_path, index=False, compression="zstd")
+    provenance = {
+        "version": 1,
+        "dandiset_id": DANDISET_ID,
+        "dandiset_version": DANDISET_VERSION,
+        "source_url": (
+            f"https://dandiarchive.org/dandiset/{DANDISET_ID}/"
+            f"{DANDISET_VERSION}/files"
+        ),
+        "retrieved_date": dt.date.today().isoformat(),
+        "output_path": parquet_path.name,
+        "output_sha256": hashlib.sha256(parquet_path.read_bytes()).hexdigest(),
+        "rows": len(ordered),
+        "sessions": int(ordered["session_id"].nunique()),
+        "columns": {
+            "session_id": "general/session_id",
+            "unit_id": "units/unit_name (joins optotagging-results.parquet unit_id)",
+            "location": (
+                "general/extracellular_ephys/electrodes/location at the unit's "
+                "extremum channel; 'Other' when unresolved"
+            ),
+        },
+        "unit_filter": "decoder_label != 'noise'",
+        "asset_manifest": [
+            {
+                key: asset.get(key)
+                for key in ("asset_id", "asset_path", "modified", "size", "digest")
+            }
+            for asset in assets
+        ],
+        "skipped_sessions": skipped,
+    }
+    provenance_path.write_text(
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return parquet_path, provenance_path
+
+
+TAGGING_CONDITION = "5 hz pulse train_presentations"
+TAGGING_P_VALUE_THRESHOLD = 0.05
+TAGGING_MODULATION_INDEX_THRESHOLD = 0.1
+_CORTICAL_LAYER_NAME = re.compile(r" layer \d", re.IGNORECASE)
+UNREGISTERED_LOCATIONS = frozenset({"", "unknown", "Other", "nan", "None"})
+_CORTICAL_LAYER_SUFFIX = re.compile(r"(?:1|2|2/3|3|4|5|6|6a|6b)$")
+
+
+def tagged_unit_mask(results: pd.DataFrame) -> pd.Series:
+    """Return the publication tagging rule: 5 Hz train p < 0.05 and MI > 0.1."""
+
+    return results[f"{TAGGING_CONDITION}__p_value"].lt(TAGGING_P_VALUE_THRESHOLD) & results[
+        f"{TAGGING_CONDITION}__modulation_index"
+    ].gt(TAGGING_MODULATION_INDEX_THRESHOLD)
+
+
+def collapse_cortical_layers(
+    acronyms: Iterable[str],
+    *,
+    brain_regions: Any | None = None,
+) -> np.ndarray:
+    """Strip cortical layer suffixes (VISp2/3 -> VISp) while keeping CA1, DG-mo, etc."""
+
+    if brain_regions is None:
+        from iblatlas.regions import BrainRegions
+
+        brain_regions = BrainRegions()
+    collapsed = []
+    for acronym in acronyms:
+        acronym = str(acronym)
+        ids = np.atleast_1d(brain_regions.acronym2id(acronym))
+        is_layer = False
+        if len(ids) and int(ids[0]) != 0:
+            index = brain_regions.id2index(int(ids[0]))[1][0][0]
+            is_layer = bool(_CORTICAL_LAYER_NAME.search(str(brain_regions.name[index])))
+        collapsed.append(_CORTICAL_LAYER_SUFFIX.sub("", acronym) if is_layer else acronym)
+    return np.asarray(collapsed, dtype=str)
+
+
+def _yield_records(
+    tagged_by_session: pd.DataFrame,
+    sampled_by_session: pd.DataFrame,
+    *,
+    sessions: list[str],
+) -> list[dict[str, Any]]:
+    records = []
+    for label in sampled_by_session.columns:
+        sampled = [session for session in sessions if sampled_by_session.at[session, label] > 0]
+        counts = [int(tagged_by_session.at[session, label]) for session in sampled]
+        records.append(
+            {
+                "label": str(label),
+                "counts": counts,
+                "mean": round(float(np.mean(counts)), 6),
+                "sampled_session_count": len(counts),
+            }
+        )
+    return sorted(records, key=lambda record: (-record["mean"], record["label"]))
+
+
+def optotagging_yield_summary(
+    results: pd.DataFrame,
+    unit_areas: pd.DataFrame,
+    *,
+    brain_regions: Any | None = None,
+) -> dict[str, Any]:
+    """Count tagged units per session overall, per major division, and per structure.
+
+    A session contributes to an area only if it recorded at least one unit there. Units
+    without a registered location (e.g. sessions lacking histology) count toward the
+    overall yield but are excluded from the regional breakdowns.
+    """
+
+    keys = ["session_id", "unit_id"]
+    merged = results[[*keys]].astype(str).assign(tagged=tagged_unit_mask(results).to_numpy())
+    areas = unit_areas[[*keys, "location"]].astype(str)
+    merged = merged.merge(areas, on=keys, how="left", validate="one_to_one")
+    if merged["location"].isna().any():
+        missing = int(merged["location"].isna().sum())
+        raise ValueError(f"{missing} optotagging units have no recorded location.")
+
+    if brain_regions is None:
+        from iblatlas.regions import BrainRegions
+
+        brain_regions = BrainRegions()
+    sessions = sorted(merged["session_id"].unique())
+    overall_counts = [
+        int(count) for count in merged.groupby("session_id")["tagged"].sum().reindex(sessions)
+    ]
+    registered = ~merged["location"].isin(UNREGISTERED_LOCATIONS)
+    unregistered_sessions = sorted(
+        set(sessions) - set(merged.loc[registered, "session_id"].unique())
+    )
+    unregistered_units = int((~registered).sum())
+    merged = merged.loc[registered].copy()
+    regional_sessions = [s for s in sessions if s not in unregistered_sessions]
+
+    locations = merged["location"].unique()
+    collapsed = collapse_cortical_layers(locations, brain_regions=brain_regions)
+    structure = dict(zip(locations, collapsed, strict=True))
+    major = dict(
+        zip(
+            locations,
+            allen_major_parent_acronyms(locations, brain_regions=brain_regions),
+            strict=True,
+        )
+    )
+    merged["structure"] = merged["location"].map(structure)
+    merged["major_parent"] = merged["location"].map(major)
+
+    def tables(column: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+        sampled = pd.crosstab(merged["session_id"], merged[column]).reindex(
+            regional_sessions, fill_value=0
+        )
+        tagged = (
+            merged.loc[merged["tagged"]]
+            .pipe(lambda frame: pd.crosstab(frame["session_id"], frame[column]))
+            .reindex(index=regional_sessions, columns=sampled.columns, fill_value=0)
+        )
+        return tagged, sampled
+
+    return {
+        "version": 2,
+        "rule": {
+            "condition": TAGGING_CONDITION,
+            "p_value_lt": TAGGING_P_VALUE_THRESHOLD,
+            "modulation_index_gt": TAGGING_MODULATION_INDEX_THRESHOLD,
+        },
+        "source_session_count": len(sessions),
+        "sessions": sessions,
+        "overall": {
+            "label": "All areas",
+            "counts": overall_counts,
+            "mean": round(float(np.mean(overall_counts)), 6),
+            "sampled_session_count": len(overall_counts),
+        },
+        "unregistered": {"sessions": unregistered_sessions, "unit_count": unregistered_units},
+        "major_parent": _yield_records(*tables("major_parent"), sessions=regional_sessions),
+        "structures": _yield_records(*tables("structure"), sessions=regional_sessions),
+    }
+
+
 def render_session_heatmaps(
     analysis: SessionAnalysis,
     *,
@@ -733,8 +1020,8 @@ def render_session_heatmaps(
             aspect="auto",
             interpolation="nearest",
             cmap="coolwarm",
-            vmin=-3,
-            vmax=3,
+            vmin=-2,
+            vmax=2,
             extent=(
                 analysis.time_seconds[0],
                 analysis.time_seconds[-1],
@@ -847,7 +1134,7 @@ def write_results(
         ["session_id", "unit_id"],
         kind="stable",
     ).reset_index(drop=True)
-    ordered_metrics.to_parquet(parquet_path, index=False)
+    ordered_metrics.to_parquet(parquet_path, index=False, compression="zstd")
     asset_manifest = [
         {
             key: asset.get(key)
