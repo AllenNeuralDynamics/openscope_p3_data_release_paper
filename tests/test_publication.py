@@ -1200,6 +1200,9 @@ def test_figure_captions_and_interactive_placement() -> None:
     )
     assert "[Figure 5](#fig-aligned-neural-signals)" in manuscript
     assert ":label: fig-unit-extraction-plan" in manuscript
+    assert "2,521 sources have defined classes and 19 are excluded" in manuscript
+    assert "averages exclude zero-event source/context pairs" in manuscript
+    assert "cross-cohort quality-class differences must not be interpreted" in manuscript
     assert "[Figure 7](#fig-basic-stimuli-plan) outlines a comparison" in manuscript
     assert "fig-standard-oddball-plan" not in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
