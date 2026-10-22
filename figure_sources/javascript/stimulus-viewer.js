@@ -32,7 +32,7 @@
     movieReady: false,
     playing: false,
     sessionIndex: 0,
-    view: "playback",
+    view: "static",
   };
 
   let angularCoordinates;
@@ -377,7 +377,7 @@
   buildBlockTrack();
   attachInteractions();
   selectSession(0);
-  selectView("playback");
+  selectView("static");
   setPlaying(false);
   window.setInterval(playbackStep, 1000 / 30);
 })();

@@ -10,8 +10,10 @@ import json
 import shutil
 from contextlib import closing
 from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
+from io import BytesIO
 from pathlib import Path
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 try:
     import h5py
@@ -29,6 +31,17 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = REPO_ROOT / "figure_sources" / "data" / "segmentation-viewers.json"
 DEFAULT_PROVENANCE = DEFAULT_OUTPUT.with_suffix(".provenance.json")
 DEFAULT_MEDIA_DIR = REPO_ROOT / "figure_sources" / "media" / "segmentation-viewers"
+MOVIE_OUTPUT = REPO_ROOT / "figure_sources" / "data" / "segmentation-movies.json"
+MOVIE_MEDIA_DIR = REPO_ROOT / "figure_sources" / "media" / "segmentation-movies"
+MESOSCOPE_PROCESSED = (
+    "https://aind-open-data.s3.us-west-2.amazonaws.com/"
+    "multiplane-ophys_832700_2026-01-29_11-18-09_processed_2026-01-30_19-13-59"
+)
+SLAP2_PROCESSED = (
+    "https://aind-open-data.s3.us-west-2.amazonaws.com/"
+    "SLAP2_796630_2025-08-28_14-25-34/slap"
+)
+SLAP2_REGISTERED = f"{SLAP2_PROCESSED}/slap2_796630_2025-08-28_13-22-27"
 RAW_NEURAL_PATH = REPO_ROOT / "figure_sources" / "data" / "raw-neural-excerpts.json"
 RETRIEVED_DATE = "2026-08-06"
 TRACE_WINDOW_START_SECONDS = -2.0
@@ -142,6 +155,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--provenance", type=Path, default=DEFAULT_PROVENANCE)
     parser.add_argument("--media-dir", type=Path, default=DEFAULT_MEDIA_DIR)
+    parser.add_argument("--movies-only", action="store_true")
+    parser.add_argument("--movie-output", type=Path, default=MOVIE_OUTPUT)
+    parser.add_argument("--movie-media-dir", type=Path, default=MOVIE_MEDIA_DIR)
+    parser.add_argument("--movie-source", choices=(*MESOSCOPE_PLANES, *SLAP2_PLANES))
     return parser.parse_args()
 
 
@@ -718,8 +735,242 @@ def extract_slap2(asset_record: dict, media_dir: Path) -> dict:
     }
 
 
+def movie_source_record(url: str) -> dict:
+    """Record the identity of a public processed-movie source."""
+    with urlopen(Request(url, method="HEAD"), timeout=60) as response:
+        return {
+            "url": url,
+            "etag": response.headers.get("ETag", "").strip('"'),
+            "contentLength": int(response.headers["Content-Length"]),
+            "lastModified": response.headers.get("Last-Modified"),
+        }
+
+
+def save_registered_movie(
+    frames: np.ndarray,
+    times: np.ndarray,
+    viewer: dict,
+    media_dir: Path,
+    sources: list[dict],
+    parameters: dict,
+) -> dict:
+    """Save a compact real-movie sprite in the committed mask coordinates."""
+    expected_shape = (viewer["baseImage"]["height"], viewer["baseImage"]["width"])
+    if frames.ndim != 3 or frames.shape[1:] != expected_shape:
+        raise RuntimeError(f"Registered movie does not match {viewer['sourceId']} mask geometry.")
+    if len(times) != len(frames) or not np.all(np.diff(times) > 0):
+        raise RuntimeError("Movie timestamps must be strictly increasing.")
+    decoded_sha256 = hashlib.sha256(
+        np.ascontiguousarray(frames, dtype="<f4").tobytes()
+    ).hexdigest()
+    finite = frames[np.isfinite(frames)]
+    low, high = np.percentile(finite, [1, 99.5])
+    if high <= low:
+        raise RuntimeError("Registered movie has no display contrast.")
+    gray = np.rint(normalize(frames, 1, 99.5) * 255).astype(np.uint8)
+    frame_width = (expected_shape[1] + 1) // 2
+    frame_height = (expected_shape[0] + 1) // 2
+    columns = 10
+    rows = (len(frames) + columns - 1) // columns
+    sheet = Image.new("L", (columns * frame_width, rows * frame_height))
+    for index, frame in enumerate(gray):
+        image = Image.fromarray(frame).resize(
+            (frame_width, frame_height), Image.Resampling.BOX
+        )
+        sheet.paste(image, (index % columns * frame_width, index // columns * frame_height))
+    output = media_dir / f"{viewer['id']}-{viewer['sourceId']}.webp"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    sheet.save(output, format="WEBP", lossless=True, method=6, exact=True)
+    if output.stat().st_size >= 10 * 1024 * 1024:
+        raise RuntimeError("Movie excerpt exceeds the publication binary size limit.")
+    return {
+        "assetPath": f"media/segmentation-movies/{output.name}",
+        "baseImageSha256": viewer["baseImage"]["sha256"],
+        "coordinateSystem": "registered-segmentation-image",
+        "displayTransform": viewer["displayTransform"],
+        "frameCount": len(frames),
+        "frameHeight": frame_height,
+        "frameWidth": frame_width,
+        "frameTimesSeconds": np.round(times - times[0], 6).tolist(),
+        "height": expected_shape[0],
+        "width": expected_shape[1],
+        "modality": viewer["id"],
+        "sourceId": viewer["sourceId"],
+        "session": viewer["session"],
+        "sheetColumns": columns,
+        "sheetRows": rows,
+        "sha256": sha256(output),
+        "decodedFramesSha256": decoded_sha256,
+        "displayContrast": {"lowPercentile": 1, "highPercentile": 99.5,
+                            "lowValue": float(low), "highValue": float(high)},
+        "sources": sources,
+        "parameters": parameters,
+    }
+
+
+def extract_mesoscope_movie(viewer: dict, plane: str, media_dir: Path) -> dict:
+    """Extract a registered movie and verify its ROI identities against the NWB."""
+    root = f"{MESOSCOPE_PROCESSED}/{plane}"
+    extraction_url = f"{root}/extraction/{plane}_extraction.h5"
+    movie_url = f"{root}/decrosstalk/{plane}_decrosstalk.h5"
+    asset = ASSETS["mesoscope"]
+    sources = [validate_asset(asset), movie_source_record(extraction_url),
+               movie_source_record(movie_url)]
+    with closing(remfile.File(asset.url)) as remote, h5py.File(remote, "r") as nwb:
+        series = nwb[f"processing/{plane}/dff_timeseries/dff_timeseries"]
+        timestamps = np.asarray(series["timestamps"][:], dtype=float)
+        event_time, _ = first_mismatch_event(nwb, "Sensory-motor mismatch block_presentations")
+        first = int(np.searchsorted(timestamps, event_time + TRACE_WINDOW_START_SECONDS))
+        indices = np.flatnonzero(
+            (timestamps >= timestamps[first]) & (timestamps < timestamps[first] + 4)
+        )
+        expected_labels = np.asarray(
+            nwb[f"processing/{plane}/images/segmentation_mask_image"][:]
+        )
+        expected_traces = np.asarray(series["data"][first:first + 4], dtype=np.float32).T
+    committed_traces = np.frombuffer(
+        base64.b64decode(viewer["traceDataBase64"]), dtype="<f4"
+    ).reshape(viewer["traceRows"], viewer["traceColumns"])
+    if not np.array_equal(committed_traces[:, :4], expected_traces, equal_nan=True):
+        raise RuntimeError(f"{plane} movie does not match the committed trace window.")
+    with closing(remfile.File(extraction_url)) as remote, h5py.File(remote, "r") as extraction:
+        coordinates = np.asarray(extraction["rois/coords"][:], dtype=int)
+        shape = np.asarray(extraction["rois/shape"][:], dtype=int)
+        labels = np.zeros(tuple(shape[1:]), dtype=expected_labels.dtype)
+        labels[coordinates[1], coordinates[2]] = coordinates[0] + 1
+        if not np.array_equal(labels, expected_labels):
+            raise RuntimeError(f"{plane} processed movie and NWB use different ROI coordinates.")
+    with closing(remfile.File(movie_url)) as remote, h5py.File(remote, "r") as movie:
+        dataset = movie["data"]
+        if dataset.shape[0] != len(timestamps):
+            raise RuntimeError(f"{plane} movie and NWB frame counts differ.")
+        frames = np.asarray(dataset[indices[0]:indices[-1] + 1], dtype=np.float32)
+    return save_registered_movie(
+        frames, timestamps[indices], viewer, media_dir, sources,
+        {"dataset": "data", "frameStart": int(indices[0]),
+         "frameStop": int(indices[-1] + 1), "nwbStartTime": float(timestamps[indices[0]]),
+         "nwbStopTime": float(timestamps[indices[-1]]), "roiLabelsVerified": True,
+         "processing": "motion corrected and decrosstalked", "transpose": False},
+    )
+
+
+def extract_slap2_movie(viewer: dict, plane: str, media_dir: Path) -> dict:
+    """Extract registered SLAP2 pixels from a verified processing product."""
+    import tifffile
+
+    asset = ASSETS["slap2"]
+    summary_url = f"{SLAP2_PROCESSED}/experiment_summary.h5"
+    trial = 6
+    alignment_url = f"{SLAP2_REGISTERED}/E1T{trial}{plane}_ALIGNMENTDATA.mat"
+    movie_url = f"{SLAP2_REGISTERED}/E1T{trial}{plane}_REGISTERED_DOWNSAMPLED-80Hz.tif"
+    sources = [validate_asset(asset), movie_source_record(summary_url),
+               movie_source_record(alignment_url), movie_source_record(movie_url)]
+    with closing(remfile.File(summary_url)) as remote, h5py.File(remote, "r") as summary:
+        reference = np.asarray(summary[f"{plane}/visualizations/mean_im"][0])
+        counts = np.asarray(summary[f"{plane}/frame_info/trial_num_frames"][:], dtype=int)
+        trial_start = int(counts[:trial - 1].sum())
+        user_masks = np.asarray(summary[f"{plane}/user_rois/mask"][:])
+    somatic_band = None
+    if user_masks.size:
+        from scipy.io import loadmat
+
+        annotation_url = f"{SLAP2_REGISTERED}/ANNOTATIONS.mat"
+        with urlopen(annotation_url, timeout=60) as response:
+            annotation_bytes = response.read()
+        annotations = loadmat(BytesIO(annotation_bytes), simplify_cells=True)["ROIs"]
+        matches = [
+            annotation["roiData"] for annotation in annotations
+            if f"{plane}_REGISTERED" in annotation["fn"]
+            and isinstance(annotation["roiData"], dict)
+            and annotation["roiData"].get("Label") == "soma"
+        ]
+        if len(matches) != 1 or not np.array_equal(matches[0]["mask"], user_masks[:, :, 0]):
+            raise RuntimeError(f"{plane} somatic annotation does not match the processing mask.")
+        rows, columns = np.nonzero(user_masks[:, :, 0])
+        somatic_band = {
+            "sourceLabel": "soma",
+            "coordinateSystem": "registered-segmentation-image",
+            "boundsXY": [int(columns.min()), int(rows.min()),
+                         int(columns.max()) + 1, int(rows.max()) + 1],
+            "pixelCount": len(rows),
+            "maskSha256": hashlib.sha256(user_masks[:, :, 0].tobytes()).hexdigest(),
+            "annotationSha256": hashlib.sha256(annotation_bytes).hexdigest(),
+            "annotationUrl": annotation_url,
+            "baseImageSha256": viewer["baseImage"]["sha256"],
+        }
+        sources.append({**movie_source_record(annotation_url),
+                        "sha256": somatic_band["annotationSha256"]})
+    with closing(remfile.File(asset.url)) as remote, h5py.File(remote, "r") as nwb:
+        packaged = np.asarray(nwb[f"processing/ophys/{plane}_mean_image_channel0/data"][0])
+        if not np.array_equal(reference, packaged, equal_nan=True):
+            raise RuntimeError(f"{plane} movie reference differs from the pinned NWB.")
+        timestamps = nwb[f"processing/ophys/Fluorescence_{plane}/{plane}_dFF/timestamps"]
+        trial_nwb_start = float(timestamps[trial_start])
+    with closing(remfile.File(alignment_url)) as remote, h5py.File(remote, "r") as alignment:
+        interval = float(np.asarray(alignment["aData/frametime"][:]).item())
+        channels = int(np.asarray(alignment["aData/numChannels"][:]).item())
+        total_frames = alignment["aData/DSframes"].size
+    first = max(0, int(round((130.0 - trial_nwb_start) / interval)))
+    indices = np.arange(first, min(first + int(4 / interval), total_frames),
+                        max(1, int(round(0.1 / interval))), dtype=int)
+    if len(indices) < 30 or channels != 2:
+        raise RuntimeError(f"{plane} registered movie has unexpected duration or channels.")
+    with closing(remfile.File(movie_url)) as remote, tifffile.TiffFile(remote) as movie:
+        frames = np.stack([movie.pages[int(index) * channels].asarray().T for index in indices])
+    record = save_registered_movie(
+        frames, indices * interval, viewer, media_dir, sources,
+        {"trial": trial, "channelIndex": 0, "channel": "iGluSnFR4f",
+         "frameIndices": indices.tolist(), "frameIntervalSeconds": interval,
+         "nwbTrialStartTime": trial_nwb_start, "referenceImageVerified": True,
+         "processing": "motion corrected", "transpose": True,
+         "timeAlignment": "registered frame interval anchored to the same NWB trial; "
+                          "movie and 30-second trace retain separate elapsed-time axes"},
+    )
+    if somatic_band is not None:
+        record["somaticBand"] = somatic_band
+    return record
+
+
+def extract_registered_movies(args: argparse.Namespace) -> None:
+    """Refresh only compact movie excerpts without replacing extraction snapshots."""
+    segmentation = json.loads(args.output.read_text(encoding="utf-8"))
+    records = []
+    snapshot = {}
+    if args.movie_output.exists():
+        snapshot = json.loads(args.movie_output.read_text(encoding="utf-8"))
+        records = snapshot["movies"]
+    for modality in segmentation["viewers"]:
+        if modality["id"] == "neuropixels":
+            continue
+        for viewer in modality["sources"]:
+            plane = viewer["sourceId"].upper() if modality["id"] == "slap2" else next(
+                name for name in MESOSCOPE_PLANES if name.lower() == viewer["sourceId"]
+            )
+            if args.movie_source is not None and plane != args.movie_source:
+                continue
+            print(f"Extracting registered movie: {modality['id']} {plane}", flush=True)
+            extractor = (
+                extract_slap2_movie if modality["id"] == "slap2" else extract_mesoscope_movie
+            )
+            record = extractor(viewer, plane, args.movie_media_dir)
+            records = [item for item in records if (item["modality"], item["sourceId"])
+                       != (record["modality"], record["sourceId"])]
+            records.append(record)
+            write_json(args.movie_output, {
+                **snapshot,
+                "version": 1,
+                "retrievedDate": datetime.now(UTC).date().isoformat(),
+                "segmentationSha256": sha256(args.output),
+                "movies": sorted(records, key=lambda item: (item["modality"], item["sourceId"])),
+            })
+            print(f"Wrote {record['assetPath']} ({record['frameCount']} frames)", flush=True)
+
+
 def main() -> None:
     args = parse_args()
+    if args.movies_only:
+        extract_registered_movies(args)
+        return
     asset_records = {key: validate_asset(asset) for key, asset in ASSETS.items()}
     if args.media_dir.exists():
         shutil.rmtree(args.media_dir)

@@ -3,10 +3,14 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import shutil
+from datetime import UTC, datetime
+from io import BytesIO
 from pathlib import Path
+from urllib.request import urlopen
 
 from openscope_p3_publication.figures import (
     NEURAL_EXCERPTS_PATH,
@@ -14,6 +18,7 @@ from openscope_p3_publication.figures import (
     NEURAL_STATIC_FRAME_DIR,
     NEURAL_STATIC_FRAME_PROVENANCE_PATH,
     NEURAL_STATIC_SELECTIONS,
+    REPO_ROOT,
     SLAP2_STATIC_COMPOSITES,
     load_neural_excerpts,
 )
@@ -94,7 +99,100 @@ def apply_hue_preserving_gamma(
     return output
 
 
+def extract_slap2_acquisition_bands() -> None:
+    """Extract reference projections and recorded raster-region masks for panel C."""
+    import h5py
+    import numpy as np
+    import tifffile
+
+    payload = load_neural_excerpts()
+    session = next(record for record in payload["sessions"] if record["id"] == "slap2")
+    media_dir = REPO_ROOT / "figure_sources/media/slap2-acquisition-bands"
+    output = REPO_ROOT / "figure_sources/data/slap2-acquisition-bands.json"
+    media_dir.mkdir(parents=True, exist_ok=True)
+    records = []
+    for plane in ("DMD1", "DMD2"):
+        metadata_source = next(
+            record for record in session["sources"] if record["url"].endswith(f"{plane}.meta")
+        )
+        reference_source = next(
+            record for record in session["sources"]
+            if record["url"].endswith(f"{plane}-REFERENCE.tif")
+        )
+        blobs = []
+        for record in (metadata_source, reference_source):
+            with urlopen(record["url"], timeout=180) as response:
+                blob = response.read()
+            if hashlib.sha256(blob).hexdigest() != record["sha256"]:
+                raise RuntimeError(f"Pinned SLAP2 source checksum changed: {record['url']}")
+            blobs.append(blob)
+        with h5py.File(BytesIO(blobs[0]), "r") as metadata:
+            plan = metadata["AcquisitionContainer/AcquisitionPlan"]
+            masks = [np.asarray(metadata[reference][:], dtype=bool)
+                     for reference in plan["rasterROIMasks"][:].flat]
+            mask = np.logical_or.reduce(masks).T
+            region_count = int(plan["ROIs/rois"].size)
+        reference = tifffile.imread(BytesIO(blobs[1])).max(axis=0)
+        if reference.shape != (800, 1280) or mask.shape != reference.shape:
+            raise RuntimeError(f"Unexpected {plane} acquisition mask/reference geometry.")
+        downsampled = reference.reshape(400, 2, 640, 2).mean(axis=(1, 3)).T
+        sampled = mask.reshape(400, 2, 640, 2).any(axis=(1, 3)).T
+        low, high = np.percentile(downsampled, [1, 99.8])
+        if high <= low:
+            raise RuntimeError(f"{plane} reference projection has no contrast.")
+        gray = np.rint(255 * np.clip((downsampled - low) / (high - low), 0, 1) ** 0.6)
+        gray = gray.astype(np.uint8)
+        overlay = np.zeros((*sampled.shape, 4), dtype=np.uint8)
+        overlay[sampled] = (37, 170, 225, 150)
+        reference_path = media_dir / f"{plane.lower()}-reference.png"
+        overlay_path = media_dir / f"{plane.lower()}-bands.png"
+        Image.fromarray(gray).convert("RGB").save(reference_path, compress_level=9)
+        Image.fromarray(overlay).save(overlay_path, compress_level=9)
+        records.append({
+            "plane": plane,
+            "optionId": f"{plane.lower()}-composite",
+            "session": session["session"],
+            "width": 400,
+            "height": 640,
+            "nativeWidth": 1280,
+            "nativeHeight": 800,
+            "displayTransform": "transpose-for-publication",
+            "maskDataset": "AcquisitionContainer/AcquisitionPlan/rasterROIMasks",
+            "regionCount": region_count,
+            "nativeMaskPixelCount": int(np.count_nonzero(mask)),
+            "maskSha256": hashlib.sha256(np.ascontiguousarray(mask).tobytes()).hexdigest(),
+            "referenceProjectionSha256": hashlib.sha256(reference.tobytes()).hexdigest(),
+            "referenceImage": {
+                "assetPath": f"media/slap2-acquisition-bands/{reference_path.name}",
+                "sha256": file_sha256(reference_path),
+            },
+            "bandOverlay": {
+                "assetPath": f"media/slap2-acquisition-bands/{overlay_path.name}",
+                "sha256": file_sha256(overlay_path),
+                "color": "#25AAE1",
+                "alpha": 150,
+            },
+            "displayContrast": {"lowPercentile": 1, "highPercentile": 99.8,
+                                "lowValue": float(low), "highValue": float(high), "gamma": 0.6},
+            "downsampling": {"factor": 2, "reference": "mean", "mask": "any"},
+            "sources": [metadata_source, reference_source],
+        })
+        print(f"Wrote {plane}: {region_count} raster regions", flush=True)
+    output.write_text(
+        json.dumps({"version": 1, "retrievedDate": datetime.now(UTC).date().isoformat(),
+                    "rawNeuralSha256": file_sha256(NEURAL_EXCERPTS_PATH), "planes": records},
+                   indent=2, sort_keys=True) + "\n",
+        encoding="utf-8", newline="\n",
+    )
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--slap2-bands-only", action="store_true")
+    args = parser.parse_args()
+    if args.slap2_bands_only:
+        extract_slap2_acquisition_bands()
+        return
     payload = load_neural_excerpts()
     sessions = {session["id"]: session for session in payload["sessions"]}
     if NEURAL_STATIC_FRAME_DIR.exists():

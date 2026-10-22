@@ -276,4 +276,5 @@
     ? requestedSession
     : OPTOTAGGING_DATA.default_session_id;
   populateOptions(initialSession);
+  selectView("static");
 })();

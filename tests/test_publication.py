@@ -7,6 +7,7 @@ import runpy
 import struct
 import urllib.parse
 from copy import deepcopy
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -488,9 +489,9 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
-    assert len(figures) == 7
+    assert len(figures) == 6
     assert manuscript.count(":::{figure} ./images/figures/imported/") == 1
-    assert manuscript.count(":::{figure} ./images/figures/generated/") == 6
+    assert manuscript.count(":::{figure} ./images/figures/generated/") == 5
     assert "./images/figures/generated/figure-01-overview.svg" in manuscript
     assert "./images/figures/generated/figure-01-panel-c-cohorts.svg" not in manuscript
     assert ":label: fig-experimental-design" not in manuscript
@@ -507,60 +508,16 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     assert "see [Figure 1](#fig-graphical-abstract)" in manuscript
     assert "see [Figure 3](#fig-multimodal-pipelines)" in manuscript
     assert "./images/figures/generated/multimodal-hardware.svg" in manuscript
-    assert "./images/figures/generated/figure-06-segmentation-viewers.svg" in manuscript
+    assert "./images/figures/generated/figure-06-segmentation-viewers.svg" not in manuscript
     assert "./images/figures/generated/figure-07-unit-extraction-plan.svg" in manuscript
     assert "./images/figures/generated/figure-08-basic-stimuli-plan.svg" in manuscript
-    assert "./images/figures/generated/figure-11-standard-oddball-plan.svg" in manuscript
+    assert "./images/figures/generated/figure-11-standard-oddball-plan.svg" not in manuscript
     assert "nine native-resolution images" in manuscript
     hardware_start = manuscript.index("## Multimodal recording hardware")
     methods_start = manuscript.index("# Methods")
     hardware_section = manuscript[hardware_start:methods_start]
     assert "Behavior cohorts" not in hardware_section
     assert "cohort-specific order" not in hardware_section
-
-
-def test_importer_preserves_opening_figure_narrative() -> None:
-    importer = runpy.run_path(str(REPO_ROOT / "scripts" / "import_google_doc.py"))
-    render_figure = importer["render_figure"]
-    normalize = importer["normalize_figure_references"]
-
-    figure_1 = render_figure("image12.png")
-    assert "./images/figures/generated/figure-01-overview.svg" in figure_1
-    assert "Distributed predictive-processing hypotheses" in figure_1
-    assert "**B,** To sample these nested scales" in figure_1
-    assert "**C,** Five cohort timelines" in figure_1
-
-    figure_2 = render_figure("image10.png")
-    assert figure_2 == ""
-
-    hardware = render_figure("image8.png")
-    assert "./images/figures/generated/multimodal-hardware.svg" in hardware
-    assert "Multimodal recording hardware" in hardware
-    assert "nine native-resolution images" in hardware
-    assert "cohort-specific order" not in hardware
-    assert "[Figure 2](#fig-interactive-experimental-design)" in importer[
-        "INTERACTIVE_DESIGN_BLOCK"
-    ]
-    assert "[Figure 4](#fig-recording-session-inventory)" in importer[
-        "DATA_EXPLORER_BLOCK"
-    ]
-    assert "[Figure 5](#fig-aligned-neural-signals)" in importer["NEURAL_VIEWER_BLOCK"]
-    assert "Supplementary Figure 3" in importer["NEUROPIXELS_TRAJECTORY_BLOCK"]
-    assert "332 probe" in importer["NEUROPIXELS_TRAJECTORY_BLOCK"]
-    trajectory_text = " ".join(
-        importer["NEUROPIXELS_TRAJECTORY_BLOCK"].split()
-    )
-    assert "trajectories extend laterally toward the L direction marker" in trajectory_text
-
-    source = (
-        "brain fixation and brain histology (see **Figure 2**). "
-        "The screen was positioned 15 cm from the mouse's right eye (see **Figure 2**). "
-        "The rig can insert six Neuropixels probes simultaneously (see **Figure 2**)."
-    )
-    normalized = normalize(source)
-    assert "[Figure 1](#fig-graphical-abstract)" in normalized
-    assert "[Figure 3](#fig-multimodal-pipelines)" in normalized
-    assert "see **Figure 2**" not in normalized
 
 
 def test_bibliography_uses_resolved_myst_citations() -> None:
@@ -643,7 +600,15 @@ def test_methods_are_collapsed_as_one_section() -> None:
     )
     assert methods.rstrip().endswith("::::")
     assert "## Experimental animals" in methods
+    assert "(registered-movie-excerpts)=" in methods
+    assert manuscript.count("### NWB data packaging") == 1
     assert "(data-processing)=\n## Data processing" in methods
+    processing = methods.split("(data-processing)=\n", 1)[1]
+    assert (
+        processing.index("### Neuropixels extracellular electrophysiology")
+        < processing.index("### Neuropixels mismatch-response summaries")
+        < processing.index("### Mesoscope two-photon calcium imaging")
+    )
     assert ":label: fig-multimodal-pipelines" not in methods
     assert "[Figure 3](#fig-multimodal-pipelines)" in methods
     assert "#### Neuropixels Ephys NWB Packaging Pipeline" in methods
@@ -676,25 +641,6 @@ def test_methods_are_collapsed_as_one_section() -> None:
         manuscript[:methods_start],
         re.MULTILINE,
     )
-
-    import_script = runpy.run_path(
-        str(REPO_ROOT / "scripts" / "import_google_doc.py")
-    )
-    wrap_methods_dropdown = import_script["wrap_methods_dropdown"]
-    relocate_figure = import_script["relocate_multimodal_pipeline_figure"]
-    source = "# Background\n\n# Methods\n\n## Procedure\n\nText.\n\n# Data records\n"
-    wrapped = wrap_methods_dropdown(source)
-    assert wrapped.count("::::{dropdown} Show complete Methods") == 1
-    assert wrap_methods_dropdown(wrapped) == wrapped
-
-    figure_source = (
-        "# Background\n\n# Methods\n\n"
-        ":::{figure} figure.png\n:label: fig-multimodal-pipelines\n\nCaption.\n:::\n\n"
-        "## Procedure\n\nText.\n\n# Data records\n"
-    )
-    relocated = relocate_figure(figure_source)
-    assert relocated.index("## Multimodal recording hardware") < relocated.index("# Methods")
-    assert relocate_figure(relocated) == relocated
 
 
 def test_supplementary_studies_table_is_complete() -> None:
@@ -745,8 +691,9 @@ def test_supplementary_studies_table_is_complete() -> None:
 
 def test_supplementary_and_power_figures_are_current() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    prose = " ".join(manuscript.split())
 
-    for number in range(1, 7):
+    for number in range(1, 8):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
     assert manuscript.count(":enumerated: false\n:width: 100%") >= 3
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
@@ -755,7 +702,7 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert manuscript.count(
         "[Supplementary Figure 2](#fig-supp-neuropixels-unit-yield)"
     ) == 2
-    assert "images/figures/generated/supplementary-neuropixels-unit-yield.svg" not in manuscript
+    assert "images/figures/generated/supplementary-neuropixels-unit-yield.svg" in manuscript
     assert "60 sessions from 16 mice" in manuscript
     assert "./interactive/neuropixels-trajectories.html" in manuscript
     assert ":label: fig-supp-neuropixels-recorded-trajectories" in manuscript
@@ -771,16 +718,15 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert manuscript.count("[Supplementary Figure 4](#fig-supp-eye-tracking)") == 2
     assert "./interactive/eye-tracking-viewer.html" in manuscript
     assert ":label: fig-supp-eye-tracking\n:enumerated: false" in manuscript
-    assert "raw eye-camera video (left)" in manuscript
-    assert "same video with the NWB-packaged pupil" in manuscript
-    assert "The optional **Filtered** view" in manuscript
-    assert "isolated runs of one to four samples" in manuscript
+    assert "raw pupil x position, y position, and area" in prose
+    assert "without display-time outlier interpolation" in prose
+    assert "isolated runs of one to four samples" in prose.lower()
     assert "**B,** a dorsal projection" in manuscript
     assert manuscript.count(
-        "[Supplementary Figure 5](#fig-supp-optotagging-heatmaps)"
+        "[Figure 8](#fig-supp-optotagging-heatmaps)"
     ) == 3
     assert "./interactive/optotagging-heatmaps.html" in manuscript
-    assert ":label: fig-supp-optotagging-heatmaps\n:enumerated: false" in manuscript
+    assert ":label: fig-supp-optotagging-heatmaps\n:width: 100%" in manuscript
     assert (
         ":placeholder: ./images/figures/generated/optotagging-heatmaps.svg"
         in manuscript
@@ -792,9 +738,8 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "**B,** Overall optotagged-cell yield" in manuscript
     assert "**C,** Yield by Allen major parent area" in manuscript
     assert "**D,** The 18 structures with the highest mean yield" in manuscript
-    assert "selectors constrain the view to available values" in manuscript
-    assert "gray dots denote individual sessions and teal bars or lines denote means" in manuscript
-    assert "include only sessions sampling that area" in manuscript
+    assert "gray dots denote individual sessions and teal bars or lines denote means" in prose
+    assert "include only sessions sampling that area" in prose
     assert "./interactive/pupil-event-responses.html" in manuscript
     assert ":label: fig-supp-pupil-event-responses\n:enumerated: false" in manuscript
     assert (
@@ -803,15 +748,15 @@ def test_supplementary_and_power_figures_are_current() -> None:
     ) in manuscript
     assert "display-synchronized `start_time`" in manuscript
     assert "row i−2 `stop_time` to row i−1 `start_time`" in manuscript
-    assert "both repeats of standard control C1" in manuscript
-    assert "Duration responses use the following commanded interstimulus interval" in manuscript
-    assert "display-recorded stimulus interval" in manuscript
-    assert "vertically aligned pupil and running panels" in manuscript
+    assert "both repeats of standard control C1" in prose
+    assert "Duration responses use the following commanded interstimulus interval" in prose
+    assert "display-recorded stimulus interval" in prose
+    assert "[Methods](#pupil-running-response-summaries)" in manuscript
     assert "without any temporal filtering" in manuscript
-    assert "Individual traces show means ±1 SEM across valid trials" in manuscript
-    assert "Population trace bands show ±1 SEM across mice" in manuscript
+    assert "Individual traces show means ±1 SEM across valid trials" in prose
+    assert "Population trace bands show ±1 SEM across mice" in prose
     assert "SLAP2 duration pupil responses are marked unavailable" in manuscript
-    assert "Mouse 830846's duration running panel is explicitly unavailable" in manuscript
+    assert "Mouse 830846's duration running panel is explicitly unavailable" in prose
     assert "60 Neuropixels sessions from 16 mice" in manuscript
     assert "86 mesoscope sessions from 10 mice" in manuscript
     assert "./interactive/neuropixels-event-responses.html" in manuscript
@@ -849,9 +794,9 @@ def test_supplementary_and_power_figures_are_current() -> None:
     matrix_areas, _matrix_columns = response_matrix(load_neuropixels_event_responses())
     assert (
         f"same {len(matrix_areas)} frontal, visual, hippocampal, and thalamic areas"
-        in manuscript
+        in prose
     )
-    assert "at least 10 tested units in at least eight of the 16 events" in manuscript
+    assert "at least 10 tested units in at least eight of the 16 events" in prose
     assert "12,968 sorted units" in manuscript
     assert "8,093 passed the manuscript QC thresholds" in manuscript
     # The four sessions come from 830794, not the 830846 the figure first used.
@@ -865,10 +810,16 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "sequence-cohort mouse" not in figure_caption
     assert "Solid teal traces" in figure_caption
     assert "dashed gray traces" in figure_caption
+    assert len(figure_caption.split()) <= 425
+    assert "[Methods](#neuropixels-response-summaries)" in figure_caption
+    assert "(neuropixels-response-summaries)=\n" in manuscript
     # Disclosures the caption must carry, each recording a real limitation.
-    assert "subsequence of that fixed order, not a re-embedding" in manuscript
+    assert "a subsequence of the fixed order rather than re-embedding" in " ".join(
+        (REPO_ROOT / "figure_sources/javascript/neuropixels-event-responses.html")
+        .read_text(encoding="utf-8").split()
+    )
     assert "hatched, not shaded" in manuscript
-    assert "selected on the statistical test rather than on the plotted effect" in manuscript
+    assert "selected on the statistical test rather than on the plotted effect" in prose
     assert "revised upstream in August 2026" in manuscript
     # Responsiveness is defined in prose, not in the caption.
     assert "### Defining responsiveness per mismatch event" in manuscript
@@ -901,11 +852,12 @@ def test_nwb_file_contents_are_in_data_records() -> None:
 
     records_start = manuscript.index("# Data records")
     nwb_contents = manuscript.index("## NWB file contents")
-    validation_start = manuscript.index("# Data validation")
+    raw_data_start = manuscript.index("## Raw data across recording modalities")
     glossary_start = manuscript.index("# Glossary")
-    assert records_start < nwb_contents < validation_start < glossary_start
+    assert records_start < nwb_contents < raw_data_start < glossary_start
+    assert "# Data validation" not in manuscript
 
-    records = manuscript[nwb_contents:validation_start]
+    records = manuscript[nwb_contents:raw_data_start]
     assert "DANDI:001424" in records
     assert "./interactive/nwb-file-contents.html" in records
     assert ":label: nwb-file-contents-viewer" in records
@@ -951,39 +903,58 @@ def test_nwb_file_contents_explorer_uses_pinned_native_snapshots() -> None:
 def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     raw_start = manuscript.index(":label: fig-aligned-neural-signals")
-    segmentation_start = manuscript.index(":label: fig-segmentation-viewers")
+    segmentation_start = manuscript.index("(fig-segmentation-viewers)=")
     segmentation_stop = manuscript.index(":label: fig-unit-extraction-plan")
-    segmentation_captions = manuscript[segmentation_start:segmentation_stop]
+    segmentation_captions = manuscript[raw_start:segmentation_start]
     segmentation_text = " ".join(segmentation_captions.split())
     assert raw_start < segmentation_start < segmentation_stop
     assert ":enumerated: false" not in segmentation_captions
     assert (
-        ":placeholder: ./images/figures/generated/figure-06-segmentation-viewers.svg"
+        ":placeholder: ./images/figures/generated/raw-neural-recordings.svg"
         in segmentation_captions
     )
-    assert "same platform logos as the other multimodal figures" in segmentation_text
-    assert "all six probes" in segmentation_text
-    assert "all eight VISp and VISl planes" in segmentation_text
-    assert "provides DMD1 and DMD2" in segmentation_text
-    assert "every probe or imaging plane" in segmentation_text
-    assert "complete NWB segmentation" in segmentation_text
-    assert "complete source segmentation" in segmentation_text
-    assert "30 s ΔF/F (%)" in segmentation_text
-    assert "30 s, approximately 200 Hz ΔF/F (%) trace" in segmentation_text
-    assert "waveform-spread band" in segmentation_text
-    assert "common-mode correction is enabled by default" in segmentation_text
+    assert manuscript.count(":::{iframe} ./interactive/neural-viewer.html") == 1
+    assert ":::{iframe} ./interactive/segmentation-viewer.html" not in manuscript
+    caption = segmentation_captions.split("\n\n", maxsplit=1)[1].split("\n:::", maxsplit=1)[0]
+    assert len(caption.split()) < 250
+    assert "**(D-F)** Extracted units or sources" in segmentation_text
     assert (
-        "fast-scanning x axis is horizontal for mesoscope and vertical for SLAP2"
+        "**(G-I)** Activity traces from ten activity-bearing units or sources"
         in segmentation_text
     )
+    assert "layer 2/3 plane at 152 µm depth (E), and SLAP2 DMD1 (F)" in segmentation_text
+    assert "DMD1, top; DMD2, bottom" in segmentation_text
+    assert "common-mode-corrected voltage" in segmentation_text
+    assert "sampled evenly across extraction order" in segmentation_text
+    assert "annotated somatic region" in segmentation_text
+    assert "six targeted raster regions" in segmentation_text
+    assert "sampled brain regions indicated" in segmentation_text
+    assert "30 s (H, I;" in segmentation_text
+    for excluded in ("Scale bars:", "Image contrast", "Interactive", "gamma", "pixel-replacement"):
+        assert excluded not in caption
+
+    methods_start = manuscript.index("(recording-display-methods)=")
+    methods_stop = manuscript.index("### NWB data packaging", methods_start)
+    methods = " ".join(manuscript[methods_start:methods_stop].split())
+    assert methods_stop < manuscript.index("# Data records")
+    for detail in (
+        "all 60 frames of each committed raw movie",
+        "complete NWB segmentation",
+        "SLAP2 trace samples are approximately 200 Hz",
+        "common-mode-corrected AP voltage",
+        "user-drawn `soma` ROI",
+        "20 ms and 1000 µm",
+        "not fluorescence intensity or extracted-source segmentation",
+        "without segmentation overlays",
+        "Movie excerpts displayed beneath segmentation masks",
+        "separate elapsed-time windows",
+        "source recordings, not reconstructed from extracted traces",
+    ):
+        assert detail in methods
+    assert "vertical for SLAP2 in F and the interactive views" not in manuscript
     assert "mark its direction" not in segmentation_text
-    assert "twenty activity-bearing filters sampled evenly across filter order" in segmentation_text
-    assert "grayscale average projection" in segmentation_text
-    assert "arrays and masks receive the same publication-level axis transpose" in segmentation_text
-    assert "background controls alter only" in segmentation_text
     assert "activity image" not in segmentation_text.lower()
     assert "QC-passing" not in segmentation_text
-    assert "No tab shows stimulus annotations" in segmentation_text
     assert "first sequence omission" not in segmentation_text
     assert "first motor mismatch" not in segmentation_text
     assert "fig-supp-segmentation-viewers" not in manuscript
@@ -993,22 +964,6 @@ def test_segmentation_viewers_are_captioned_and_importer_preserved() -> None:
         "796630_2025-08-28_14-25-34/) "
         "([DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files))"
     ) in manuscript
-
-    importer = runpy.run_path(str(REPO_ROOT / "scripts" / "import_google_doc.py"))
-    for function_name in (
-        "add_segmentation_viewer_figures",
-        "add_slap2_nwb_contents",
-    ):
-        assert importer[function_name](manuscript) == manuscript
-    assert "DANDI:001424" in importer["SLAP2_RAW_SOURCE"]
-    assert importer["SEGMENTATION_VIEWER_BLOCK"].count(":::{iframe}") == 1
-    assert ":label: fig-segmentation-viewers" in importer["SEGMENTATION_VIEWER_BLOCK"]
-    behavior_and_neural = importer["render_figure"]("image6.png")
-    assert ":label: fig-behavior-tracking" in behavior_and_neural
-    assert ":label: fig-neuropixels-event-responses" in behavior_and_neural
-    assert behavior_and_neural.index(":label: fig-behavior-tracking") < (
-        behavior_and_neural.index(":label: fig-neuropixels-event-responses")
-    )
 
 
 def test_data_explorer_uses_generated_assets_without_manuscript_data() -> None:
@@ -1033,9 +988,11 @@ def test_data_explorer_uses_generated_assets_without_manuscript_data() -> None:
     ("heading", "expected_terms"),
     [
         ("## Multimodal recording hardware", ("Neuropixels", "mesoscope", "SLAP2")),
-        ("# Data records", ("inventories", "NWB", "behavioral")),
+        (
+            "# Data records",
+            ("inventories", "NWB", "behavioral", "oddball", "analysis plan", "provenance"),
+        ),
         ("## Data tables", ("session IDs", "`Pass`", "failed")),
-        ("# Data validation", ("representative", "quality-control", "entire dataset")),
         (
             "## Raw data across recording modalities",
             ("extracellular-voltage", "fluorescence", "sparse"),
@@ -1047,6 +1004,14 @@ def test_data_explorer_uses_generated_assets_without_manuscript_data() -> None:
         (
             "## Neuropixels mismatch responses across predictive contexts",
             ("Panel A", "panel B", "(Q1)", "(Q2)", "*q* values", "exploratory"),
+        ),
+        (
+            "## Cell-type characterization",
+            ("Optotagging", "WaveMAP", "not molecular", "analysis-specific"),
+        ),
+        (
+            "## Behavioral data analysis across modalities",
+            ("All three recording modalities", "eye-ellipse fits", "likely-blink", "noisier"),
         ),
         ("## Limitations", ("passive viewing", "interchangeable", "validated")),
         ("# Conclusion", ("Neuropixels", "mesoscope", "SLAP2", "NWB", "replication")),
@@ -1063,6 +1028,25 @@ def test_manuscript_sections_have_explanatory_prose(
         assert term in introduction
 
 
+def test_cell_type_figures_are_main_figures_before_responses() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    assert (
+        manuscript.index("## Receptive field analysis across modalities")
+        < manuscript.index("## Cell-type characterization")
+        < manuscript.index(":label: fig-supp-optotagging-heatmaps")
+        < manuscript.index(":label: fig-supp-wavemap")
+        < manuscript.index("## Neuropixels mismatch responses across predictive contexts")
+        < manuscript.index("## Behavioral data analysis across modalities")
+        < manuscript.index("## Supplementary figures")
+    )
+    for label in ("fig-supp-optotagging-heatmaps", "fig-supp-wavemap"):
+        assert manuscript.count(f":label: {label}\n") == 1
+        assert f":label: {label}\n:width: 100%" in manuscript
+        assert f":label: {label}\n:enumerated: false" not in manuscript
+    assert "fig-standard-oddball-plan" not in manuscript
+    assert "For sessions with camera acquisition" not in manuscript
+
+
 def test_analysis_plan_is_concise_prose() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     plan = manuscript.split("## Data analysis plan\n", 1)[1].split("# Conclusion\n", 1)[0]
@@ -1077,8 +1061,73 @@ def test_analysis_plan_is_concise_prose() -> None:
     assert "@rule2020stable" in plan
 
 
+def test_all_publication_viewers_default_to_static() -> None:
+    class FigureElements(HTMLParser):
+        def __init__(self) -> None:
+            super().__init__()
+            self.elements: list[dict[str, str | None]] = []
+            self.parents: list[tuple[str, dict[str, str | None]]] = []
+
+        def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+            attributes = dict(attrs)
+            if self.parents:
+                attributes["parent_tag"] = self.parents[-1][0]
+                attributes["parent_class"] = self.parents[-1][1].get("class")
+            if tag in {"button", "section", "div", "header"}:
+                self.elements.append(attributes)
+            if tag not in {"area", "base", "br", "col", "embed", "hr", "img", "input",
+                           "link", "meta", "param", "source", "track", "wbr"}:
+                self.parents.append((tag, attributes))
+
+        def handle_endtag(self, tag: str) -> None:
+            for index in range(len(self.parents) - 1, -1, -1):
+                if self.parents[index][0] == tag:
+                    del self.parents[index:]
+                    break
+
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    paths = re.findall(r"^:::\{iframe\} \./(interactive/[^\n]+)", manuscript, re.MULTILINE)
+    assert len(paths) == 14
+    for relative_path in paths:
+        html = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+        parser = FigureElements()
+        parser.feed(html)
+        toolbar = [item for item in parser.elements if item.get("class") == "figure-toolbar"]
+        assert len(toolbar) == 1 and toolbar[0].get("parent_tag") == "main", relative_path
+        modes = [item for item in parser.elements if item.get("data-view") is not None]
+        assert len(modes) == 2, relative_path
+        assert modes[0]["data-view"] == "static", relative_path
+        assert all(
+            item.get("parent_class") == "figure-mode-switch" for item in modes
+        ), relative_path
+        buttons = [item for item in parser.elements if item.get("data-view") == "static"]
+        assert len(buttons) == 1, relative_path
+        assert (
+            buttons[0].get("aria-pressed") == "true"
+            or buttons[0].get("aria-selected") == "true"
+        ), relative_path
+        static = [item for item in parser.elements
+                  if item.get("id") in {"static-view", "static-panel", "panel-static"}]
+        assert len(static) == 1 and "hidden" not in static[0], relative_path
+        interactive = [item for item in parser.elements
+                       if item.get("id") in {"interactive-view", "playback-view"}]
+        assert len(interactive) == 1 and "hidden" in interactive[0], relative_path
+        legend = [item for item in parser.elements if item.get("id") == "figure-legend"]
+        toggle = [item for item in parser.elements if item.get("id") == "figure-legend-toggle"]
+        assert len(legend) == 1 and "hidden" in legend[0], relative_path
+        assert len(toggle) == 1, relative_path
+        assert toggle[0].get("aria-controls") == "figure-legend", relative_path
+        assert toggle[0].get("aria-expanded") == "false", relative_path
+        assert toggle[0].get("aria-label") == "Figure legend", relative_path
+        assert toggle[0].get("title") == "Figure legend", relative_path
+        assert toggle[0].get("parent_class") == "figure-toolbar", relative_path
+        assert "function syncLegend()" in html and "toggle.focus()" in html, relative_path
+        assert "__EMBED_AUTO_HEIGHT_JS__" not in html, relative_path
+
+
 def test_figure_captions_and_interactive_placement() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    prose = " ".join(manuscript.split())
 
     captioned_figures = re.findall(
         r"^:::\{(?:figure|iframe)\} [^\n]+\n"
@@ -1088,6 +1137,7 @@ def test_figure_captions_and_interactive_placement() -> None:
     )
     assert captioned_figures
     for options, caption in captioned_figures:
+        assert not re.search(r"\*\*(?:Interactive|Static)\*\*|CSV export|checkboxes", caption)
         if ":enumerated: false" not in options:
             assert not re.match(r"(?:\*\*)?(?:Supplementary )?Figure\s+\d", caption)
 
@@ -1099,38 +1149,32 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "eight outlined habituation and training sessions" in manuscript
     assert "a standard control precedes each context" in manuscript
     assert "control and system-identification stimuli" in manuscript
-    assert "vertical selector above\nthe Context block" in manuscript
     assert "Sources: pinned\n[example tables]" in manuscript
     assert "generate_experiment_csv.py" in manuscript
     assert "**D,** Context panels summarize" not in manuscript
     assert "Rows compare Neuropixels electrophysiology" in manuscript
     assert "Columns show each rig geometry" in manuscript
     assert "nine native-resolution images" in manuscript
-    assert re.search(
-        r"searchable, filterable tables sourced from local\s+CSV snapshots",
-        manuscript,
-    )
+    assert "Failed, repeated, and aborted acquisition attempts are retained" in manuscript
     assert "./interactive/neural-viewer.html" in manuscript
     assert ":label: fig-aligned-neural-signals" in manuscript
     assert ":placeholder: ./images/figures/generated/raw-neural-recordings.svg" in manuscript
-    assert "Representative raw-data excerpts from one public session" in manuscript
-    assert "**Static** view arranges all available recordings" in manuscript
-    assert "overlapping raw-image cards" in manuscript
-    assert "**A,** all six Neuropixels probe heatmaps" in manuscript
-    assert "eight mesoscope plane stills" in manuscript
-    assert "two merged SLAP2 plane previews" in manuscript
+    assert "Representative data from one recording session per modality" in manuscript
+    assert "**(A)** Raw voltage heatmaps from six Neuropixels probes" in manuscript
+    assert "**(B)** Raw mesoscope images from eight planes" in manuscript
+    assert "two imaging depths (DMD1, top; DMD2, bottom)" in manuscript
     assert "black-referenced display gain" in manuscript
     assert "1st–99.5th max-channel percentiles" in manuscript
-    assert "400 × 640 lossless WebP frames" in manuscript
-    assert "transpose it for\npublication display" in manuscript
-    assert "fast-scanning x axis vertical" in manuscript
-    assert "single aligned source frame without temporal averaging" in manuscript
-    assert "hue-preserving gamma of 0.55" in manuscript
-    assert "shown to introduce the native acquisition formats" in manuscript
+    assert "640 × 400 lossless grayscale frames" in manuscript
+    assert "fast-scanning x axis horizontal" in manuscript
+    assert "comes from one acquisition cycle; unsampled pixels are black" in manuscript
+    assert "reference or temporally averaged image blended into the raw signal" in manuscript
+    assert "reference-stack maximum projection" in manuscript
+    assert "99.8th percentiles with gamma 0.6" in manuscript
     assert "Event-aligned raw data across recording modalities" not in manuscript
     assert "prediction-violating event" not in manuscript
     assert re.search(r"Microscopy\s+playback uses elapsed time", manuscript)
-    assert "raw AP acquisition stream supplied to spike sorting" in manuscript
+    assert re.search(r"raw AP acquisition stream supplied to spike\s+sorting", manuscript)
     assert "AP samples are not median-corrected" in manuscript
     assert "remain visible as vertical stripes" in manuscript
     assert "ecephys_830846_2026-03-09_10-32-54" in manuscript
@@ -1145,22 +1189,22 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert ":label: fig-recording-session-inventory\n:width: 100%" in manuscript
     assert ":label: fig-recording-session-inventory\n:enumerated: false" not in manuscript
     assert (
-        manuscript.index("# Data validation")
+        manuscript.index("# Data records")
         < manuscript.index("## Raw data across recording modalities")
         < manuscript.index("fig-aligned-neural-signals")
-        < manuscript.index("## Units extraction")
         < manuscript.index("fig-segmentation-viewers")
+        < manuscript.index("## Units extraction")
         < manuscript.index("fig-unit-extraction-plan")
         < manuscript.index("## Receptive field analysis across modalities")
         < manuscript.index("fig-basic-stimuli-plan")
     )
-    assert "[Figure 6](#fig-segmentation-viewers)" in manuscript
+    assert "[Figure 5](#fig-aligned-neural-signals)" in manuscript
     assert ":label: fig-unit-extraction-plan" in manuscript
     assert "2,521 sources have defined classes and 19 are excluded" in manuscript
     assert "averages exclude zero-event source/context pairs" in manuscript
     assert "cross-cohort quality-class differences must not be interpreted" in manuscript
-    assert "[Figure 8](#fig-basic-stimuli-plan) outlines a comparison" in manuscript
-    assert "([Figure 11](#fig-standard-oddball-plan))" in manuscript
+    assert "[Figure 7](#fig-basic-stimuli-plan) outlines a comparison" in manuscript
+    assert "fig-standard-oddball-plan" not in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert ":placeholder: ./images/figures/generated/synchronized-behavior.svg" in manuscript
     assert "Synchronized behavior and running across recording modalities" in manuscript
@@ -1173,20 +1217,21 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "compared on one shared cm/s axis" in manuscript
     assert "each bar is the\nmean across mice" in manuscript
     assert "legend values report included mice" in manuscript
-    assert "and reconstructed stimulus state for the selected modality" in manuscript
+    assert "camera-display processing are described" in manuscript
     assert "paired control-versus-context running" not in manuscript
     assert "8192 counts/revolution, an 8.255 cm disc radius" in manuscript
     assert "1st–99th luminance percentiles" in manuscript
-    assert "maps median luminance to 35%" in manuscript
+    assert "maps median luminance to 35%" in prose
     assert "Event-centered excerpts from real Neuropixels" not in manuscript
     assert "figure-06-behavior-tracking-plan.png" not in manuscript
     assert "continuous raw\nbehavioral videos" in manuscript
-    assert "[Figure 9](#fig-behavior-tracking) show these streams" in manuscript
+    assert "[Figure 11](#fig-behavior-tracking)" in manuscript
     assert "[](#fig-behavior-tracking)" not in manuscript
     assert (
-        manuscript.index(":label: fig-behavior-tracking")
+        manuscript.index(":label: fig-supp-optotagging-heatmaps")
+        < manuscript.index(":label: fig-supp-wavemap")
         < manuscript.index(":label: fig-neuropixels-event-responses")
-        < manuscript.index(":label: fig-standard-oddball-plan")
+        < manuscript.index(":label: fig-behavior-tracking")
     )
     for number, label in (
         (1, "fig-graphical-abstract"),
@@ -1194,22 +1239,18 @@ def test_figure_captions_and_interactive_placement() -> None:
         (3, "fig-multimodal-pipelines"),
         (4, "fig-recording-session-inventory"),
         (5, "fig-aligned-neural-signals"),
-        (6, "fig-segmentation-viewers"),
-        (8, "fig-basic-stimuli-plan"),
-        (9, "fig-behavior-tracking"),
+        (7, "fig-basic-stimuli-plan"),
+        (8, "fig-supp-optotagging-heatmaps"),
+        (9, "fig-supp-wavemap"),
         (10, "fig-neuropixels-event-responses"),
-        (11, "fig-standard-oddball-plan"),
+        (11, "fig-behavior-tracking"),
     ):
         assert f"[Figure {number}](#{label})" in manuscript
     assert re.search(r"\[\]\(#fig-", manuscript) is None
-    assert "NWB running\nspeed and stimulus rows share the sync-file clock" in manuscript
-    assert "reported dropped frames are removed before mapping" in manuscript
+    assert "NWB running speed and stimulus rows share the sync-file clock" in prose
+    assert "reported dropped frames are removed before mapping" in prose
     assert "per-frame Harp timestamps on the acquisition clock" in manuscript
     assert "DeepLabCut" in manuscript
-    assert "SLEAP" in manuscript
-    assert "Lightning Pose" in manuscript
-    assert "facial and\nbody motion energy" in manuscript
-    assert "per-frame Harp timestamps for SLAP2" in manuscript
     assert "- Motion energy of the face?" not in manuscript
 
     figure_1 = manuscript.index(":label: fig-graphical-abstract")
@@ -1248,54 +1289,6 @@ def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:
     assert "@container (max-width: 560px)" in stylesheet
 
 
-def test_docx_text_formatting_artifacts_are_normalized() -> None:
-    normalize_text_export_artifacts = runpy.run_path(
-        str(REPO_ROOT / "scripts" / "import_google_doc.py")
-    )["normalize_text_export_artifacts"]
-    markdown = r"""- Cell extraction ([<u>Suite2p</u>](https://suite2p.org))
-
-> The default configuration used Suite2p's sparse detection mode.
-
-- Packaging used aind-eye-tracking-nwb
-
-> ([<u>repository</u>](https://example.org/repository))
-
-> A genuine quotation remains.
-
-> i\. R(downward, 90° shift) \> R(45° shift),\
-> because this is a bigger change in orientation
->
-> ii\. R(halt) \< R(90°) and R(45°), because the halt involves a smaller change in velocity
-
-Raw \autocite{noauthor_allenneuraldynamicsgiant-matlab_2026} and
-view~\autocite{pnevmatikakis_normcorre_2017} use \textit{activity image} at
-\$1.33\$~pixels. A sentence ends.. Neuropixels node**s** were processed with with care.
-
-Paragraph before figure.\
-
-:::{figure} image.png
-:::
-
--
-"""
-
-    normalized = normalize_text_export_artifacts(markdown)
-
-    assert "<u>" not in normalized
-    assert "\n  The default configuration used Suite2p" in normalized
-    assert "aind-eye-tracking-nwb ([repository](https://example.org/repository))" in normalized
-    assert "\n> A genuine quotation remains." in normalized
-    assert "  1. R(downward, 90° shift) > R(45° shift)" in normalized
-    assert "  2. R(halt) < R(90°) and R(45°)" in normalized
-    assert "\\autocite" not in normalized
-    assert "\\textit" not in normalized
-    assert "[$1.33$" not in normalized
-    assert "$1.33$ pixels" in normalized
-    assert "ends. Neuropixels nodes were processed with care" in normalized
-    assert "figure.\\" not in normalized
-    assert "\n-\n" not in normalized
-
-
 def test_manuscript_has_no_docx_formatting_artifacts() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     forbidden_patterns = {
@@ -1329,7 +1322,9 @@ def test_interactive_figure_has_static_fallback() -> None:
         ":placeholder: ./images/figures/generated/figure-02-context-controls.svg"
         in manuscript
     )
-    assert "The **Interactive** view" in manuscript
+    viewer = (REPO_ROOT / "interactive/experimental-design.html").read_text(encoding="utf-8")
+    assert 'aria-controls="figure-legend"' in viewer
+    assert 'data-view="static" aria-pressed="true"' in viewer
     assert "control and system-identification stimuli" in manuscript
 
 def test_unit_yield_summary_means_are_order_independent() -> None:

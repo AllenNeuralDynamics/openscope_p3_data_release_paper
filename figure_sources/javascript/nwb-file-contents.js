@@ -41,4 +41,5 @@
       });
     });
   });
+  selectView("static");
 })();

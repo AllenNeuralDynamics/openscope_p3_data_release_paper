@@ -173,6 +173,10 @@ tbody tr:nth-child(even) td { background: var(--wash); }
 tbody tr:hover td { background: #ecefee; }
 tbody td:first-child { width: 26%; min-width: 170px; font-weight: 600; }
 .empty-state { margin: 0; padding: 2rem; color: var(--muted); text-align: center; }
+.static-table-shell { overflow-x: auto; border: 1px solid var(--line); }
+.static-table-shell table { min-width: 960px; table-layout: fixed; }
+.static-table-shell th { overflow-wrap: anywhere; }
+.static-table-shell td { overflow-wrap: anywhere; }
 
 @media (max-width: 640px) {
   .viewer { padding: 8px; }
@@ -186,10 +190,140 @@ tbody td:first-child { width: 26%; min-width: 170px; font-weight: 600; }
   tbody td:first-child { min-width: 120px; }
 }
 
+
+.figure-toolbar {
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #d3d8d6;
+  background: #fff;
+}
+
+.figure-mode-switch {
+  justify-self: start;
+  display: inline-grid;
+  grid-template-columns: repeat(2, 88px);
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid #d3d8d6;
+  border-radius: 6px;
+  background: #f4f7f6;
+}
+
+.figure-mode-switch > button {
+  position: static;
+  min-width: 0;
+  width: 88px;
+  min-height: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #68716f;
+  font: 650 14px "Myriad Pro", "Aptos", sans-serif;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.figure-mode-switch > button::after { content: none; }
+.figure-mode-switch > button:hover { color: #293133; background: #e8eeeb; }
+.figure-mode-switch > button[aria-pressed="true"] {
+  color: #293133;
+  background: #fff;
+  box-shadow: 0 1px 3px #29313326;
+}
+.figure-mode-switch > button:focus-visible {
+  outline: 2px solid #167f8c;
+  outline-offset: 1px;
+}
+
+button.legend-toggle {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  flex: 0 0 36px;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #8f9b98;
+  border-radius: 50%;
+  background: #fff;
+  color: #293133;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.figure-toolbar > .legend-toggle { grid-column: 2; justify-self: end; }
+
+button.legend-toggle:hover,
+button.legend-toggle[aria-expanded="true"] {
+  border-color: #167f8c;
+  background: #dceff0;
+}
+
+button.legend-toggle:focus-visible {
+  outline: 3px solid #167f8c;
+  outline-offset: 2px;
+}
+
+.figure-legend {
+  min-width: 0;
+  padding: 14px 22px;
+  border-bottom: 1px solid #d3d8d6;
+  background: #f4f7f6;
+  color: #293133;
+  font-size: var(--figure-type-control, 14px);
+  line-height: 1.5;
+}
+
+.figure-legend h2 {
+  margin: 0 0 8px;
+  font-size: var(--figure-type-section-title, 16px);
+  line-height: 1.3;
+}
+
+.figure-legend p { max-width: 85ch; margin: 0; }
+.figure-legend p + p { margin-top: 8px; }
+.figure-legend[hidden], .legend-toggle[hidden] { display: none !important; }
+
+[data-simple-view] > [hidden] { display: none !important; }
+[data-simple-view] #static-view img { width: 100%; height: auto; display: block; }
+
+@media (max-width: 520px) {
+  .figure-legend { padding: 12px 14px; }
+}
   </style>
 </head>
 <body>
-  <main class="viewer" id="literature-comparison">
+  <main class="viewer" id="literature-comparison" data-simple-view>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" data-view="interactive" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive table legend</h2>
+      <p>Five published visual oddball paradigms are compared by stimulus design, timing,
+        sample size, recording method, statistical test, habituation, and sampling.
+        Parameter comparisons and individual study profiles use the same source table.
+        Differences in response definitions and significance tests limit direct comparisons
+        of responsive-neuron fractions across studies.</p>
+    </section>
+    <div id="interactive-view" hidden>
     <header class="viewer-header">
       <nav class="mode-tabs" id="mode-tabs" aria-label="Comparison mode">
         <button type="button" class="mode-tab active" data-mode="parameter" aria-pressed="true">Compare parameter</button>
@@ -209,6 +343,14 @@ tbody td:first-child { width: 26%; min-width: 170px; font-weight: 600; }
         <tbody id="table-body"></tbody>
       </table>
       <p class="empty-state" id="empty-state" hidden>No matching rows.</p>
+    </section>
+    </div>
+    <section id="static-view" class="static-table-shell" aria-label="Static literature comparison">
+<table aria-label="Published oddball paradigms comparison"><thead><tr><th scope="col">Publication</th><th scope="col">Attinger et al 2017</th><th scope="col">Homann et al 2022</th><th scope="col">Bastos et al 2023</th><th scope="col">Knudstrup et al 2025</th><th scope="col">Westerberg et al 2025</th></tr></thead><tbody><tr><th scope="row">Type of stimulus</th><td>Drifting gratings coupled to movement</td><td>Superimposed Gabor patches in a sequence</td><td>Drifting gratings in a sequence</td><td>Static gratings in a sequence</td><td>Drifting gratings in a sequence</td></tr><tr><th scope="row">Type of oddball</th><td>Drifting gratings decoupled from movement</td><td>Final image in sequence replaced with novel image</td><td>Deviant grating in sequence of repeated gratings</td><td>Second grating in sequence replaced by deviant grating</td><td>Local: Final grating in sequence different from preceding ones
+Global: Final grating in sequence different from established sequence</td></tr><tr><th scope="row">Temporal parameters</th><td>Oddball: 15 sec at random</td><td>Sequence: 4 images, 250 or 300 ms ON
+Oddball: Every 6 seconds</td><td>Sequence: Repeated gratings, drifting at 2 cycles/sec., 500 ms ON, 1 sec OFF
+Oddball: 12.5% of gratings</td><td>Sequence: Repeated gratings, 75 ms to 2 sec ON, 0 or 1.5 sec OFF
+Oddball: Different frequencies and spacings tested</td><td>Sequence: 4 gratings, drifting at 4 cycles/sec., 500ms ON, 500 ms OFF, 4500 ms per sequence</td></tr><tr><th scope="row">Spatial parameters</th><td>Vertical, full screen gratings, 0.04 cycles/deg.</td><td>Each image: 100 superimposed Gabor patches, 10-20 deg. in size with random orientation and phase.</td><td>Full field gratings, 8 grating orientations, 0.08 cycles/deg.</td><td>4 grating orientations, 0.5 cycles/deg.</td><td>Full screen gratings, 0.04 cycles/deg.</td></tr><tr><th scope="row">Species</th><td>Mouse</td><td>Mouse</td><td>Mouse</td><td>Mouse</td><td>Mouse and primate</td></tr><tr><th scope="row">Nb of subjects</th><td>3-6 per group</td><td>5</td><td>4-9 per group</td><td>14</td><td>7-9 per group</td></tr><tr><th scope="row">Session duration</th><td>3x 500s</td><td>10min-1h</td><td>6 min</td><td>10 min</td><td>2h</td></tr><tr><th scope="row">Nb of mismatches</th><td>3x 33</td><td>100 per condition</td><td>10 per condition</td><td>450 standard, 50 deviant</td><td>100 (global)</td></tr><tr><th scope="row">Recording technique</th><td>Two-photon</td><td>Two-photon</td><td>Two-photon</td><td>LFP</td><td>Neuropixels</td></tr><tr><th scope="row">% responsive neurons</th><td>26-40%</td><td>77%</td><td>10% (PYR)</td><td>N/A</td><td>50-62 % (local oddball), 3-9% (global oddball)</td></tr><tr><th scope="row">Test of significance</th><td>Mann-Whitney U test between average in response window vs. randomized window</td><td>Z-score significance test on change in response to novelty</td><td>Paired two-tailed t-test between control and oddball</td><td>Non-parametric test on a bootstrapped distribution</td><td>Cluster-based permutation test. against control</td></tr><tr><th scope="row">Habituation</th><td>6 sessions, 2h/day</td><td>0 sessions</td><td>3 sessions</td><td>0 sessions</td><td>5 sessions</td></tr><tr><th scope="row">Nb of oddball repeats required</th><td>33</td><td>100</td><td>10</td><td>50</td><td>144</td></tr><tr><th scope="row">Oddball rate (0-1)</th><td>0.07</td><td>0.1666666667</td><td>0.125</td><td>0.1</td><td>0.2</td></tr><tr><th scope="row">Time per oddball repeated sequence (s)</th><td>495</td><td>600</td><td>160</td><td>400</td><td>3600</td></tr><tr><th scope="row">Total oddball time (s)</th><td>495</td><td>600</td><td>1440</td><td>400</td><td>3600</td></tr></tbody></table>
     </section>
   </main>
   <script id="literature-data" type="application/json">{"studies":["Attinger et al 2017","Homann et al 2022","Bastos et al 2023","Knudstrup et al 2025","Westerberg et al 2025"],"parameters":["Type of stimulus","Type of oddball","Temporal parameters","Spatial parameters","Species","Nb of subjects","Session duration","Nb of mismatches","Recording technique","% responsive neurons","Test of significance","Habituation","Nb of oddball repeats required","Oddball rate (0-1)","Time per oddball repeated sequence (s)","Total oddball time (s)"],"values":[["Drifting gratings coupled to movement","Superimposed Gabor patches in a sequence","Drifting gratings in a sequence","Static gratings in a sequence","Drifting gratings in a sequence"],["Drifting gratings decoupled from movement","Final image in sequence replaced with novel image","Deviant grating in sequence of repeated gratings","Second grating in sequence replaced by deviant grating","Local: Final grating in sequence different from preceding ones\nGlobal: Final grating in sequence different from established sequence"],["Oddball: 15 sec at random","Sequence: 4 images, 250 or 300 ms ON\nOddball: Every 6 seconds","Sequence: Repeated gratings, drifting at 2 cycles/sec., 500 ms ON, 1 sec OFF\nOddball: 12.5% of gratings","Sequence: Repeated gratings, 75 ms to 2 sec ON, 0 or 1.5 sec OFF\nOddball: Different frequencies and spacings tested","Sequence: 4 gratings, drifting at 4 cycles/sec., 500ms ON, 500 ms OFF, 4500 ms per sequence"],["Vertical, full screen gratings, 0.04 cycles/deg.","Each image: 100 superimposed Gabor patches, 10-20 deg. in size with random orientation and phase.","Full field gratings, 8 grating orientations, 0.08 cycles/deg.","4 grating orientations, 0.5 cycles/deg.","Full screen gratings, 0.04 cycles/deg."],["Mouse","Mouse","Mouse","Mouse","Mouse and primate"],["3-6 per group","5","4-9 per group","14","7-9 per group"],["3x 500s","10min-1h","6 min","10 min","2h"],["3x 33","100 per condition","10 per condition","450 standard, 50 deviant","100 (global)"],["Two-photon","Two-photon","Two-photon","LFP","Neuropixels"],["26-40%","77%","10% (PYR)","N/A","50-62 % (local oddball), 3-9% (global oddball)"],["Mann-Whitney U test between average in response window vs. randomized window","Z-score significance test on change in response to novelty","Paired two-tailed t-test between control and oddball","Non-parametric test on a bootstrapped distribution","Cluster-based permutation test. against control"],["6 sessions, 2h/day","0 sessions","3 sessions","0 sessions","5 sessions"],["33","100","10","50","144"],["0.07","0.1666666667","0.125","0.1","0.2"],["495","600","160","400","3600"],["495","600","1440","400","3600"]]}</script>
@@ -322,6 +464,65 @@ tbody td:first-child { width: 26%; min-width: 170px; font-weight: 600; }
 
   </script>
   <script>
+(() => {
+  "use strict";
+
+  const toggle = document.getElementById("figure-legend-toggle");
+  const legend = document.getElementById("figure-legend");
+  const staticButton = document.querySelector('[data-view="static"]');
+
+  function setLegendOpen(open) {
+    if (!toggle || !legend) return;
+    legend.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+  }
+
+  function syncLegend() {
+    if (!toggle || !staticButton) return;
+    const isStatic = staticButton.getAttribute("aria-pressed") === "true"
+      || staticButton.getAttribute("aria-selected") === "true";
+    toggle.hidden = isStatic;
+    if (isStatic) setLegendOpen(false);
+  }
+
+  if (toggle && legend) {
+    toggle.addEventListener("click", () => setLegendOpen(legend.hidden));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !legend.hidden) {
+        setLegendOpen(false);
+        toggle.focus();
+      }
+    });
+    if (staticButton) {
+      new MutationObserver(syncLegend).observe(staticButton, {
+        attributes: true,
+        attributeFilter: ["aria-pressed", "aria-selected"],
+      });
+    }
+    syncLegend();
+  }
+
+  const simpleViewer = document.querySelector("[data-simple-view]");
+  if (simpleViewer) {
+    const buttons = simpleViewer.querySelectorAll("[data-view]");
+    function selectView(view) {
+      simpleViewer.querySelector("#interactive-view").hidden = view !== "interactive";
+      simpleViewer.querySelector("#static-view").hidden = view !== "static";
+      buttons.forEach((button) => {
+        const active = button.dataset.view === view;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+      syncLegend();
+      window.dispatchEvent(new Event("resize"));
+    }
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => selectView(button.dataset.view));
+    });
+    selectView("static");
+  }
+})();
+
 (() => {
   "use strict";
 

@@ -13,6 +13,7 @@ import shutil
 import tempfile
 import urllib.request
 from contextlib import closing
+from datetime import date
 from pathlib import Path
 from urllib.parse import quote
 
@@ -163,6 +164,15 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--media-dir", type=Path, default=DEFAULT_MEDIA_DIR)
+    parser.add_argument("--slap2-raw-only", action="store_true",
+                        help="Refresh only raw-only SLAP2 clips; preserve existing snapshots.")
+    parser.add_argument("--raw-input", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--movie-output", type=Path,
+                        default=REPO_ROOT / "figure_sources/data/segmentation-movies.json")
+    parser.add_argument("--movie-media-dir", type=Path,
+                        default=REPO_ROOT / "figure_sources/media/segmentation-movies")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Preview the SLAP2-only refresh without downloads or writes.")
     return parser.parse_args()
 
 
@@ -763,6 +773,150 @@ def slap2_overlay_images(
     return images, float(low), float(high)
 
 
+def slap2_raw_images(frames: np.ndarray) -> tuple[list[Image.Image], float, float]:
+    """Scale detector samples alone, leaving unsampled pixels black."""
+    acquired = frames != 0
+    if not np.any(acquired):
+        raise RuntimeError("SLAP2 raw frames contain no detector samples.")
+    low, high = np.percentile(frames[acquired], [1, 99.5])
+    if high <= low:
+        raise RuntimeError("SLAP2 raw detector contrast window is empty.")
+    pixels = np.where(acquired, np.clip((frames - low) / (high - low), 0, 1), 0)
+    images = [Image.fromarray((frame * 255).astype(np.uint8)).convert("RGB")
+              for frame in pixels]
+    return images, float(low), float(high)
+
+
+def extract_slap2_raw_movies(args: argparse.Namespace) -> None:
+    """Refresh four source-pinned raw clips without replacing legacy or registered media."""
+    raw_bytes = args.raw_input.read_bytes()
+    session = next(record for record in json.loads(raw_bytes)["sessions"]
+                   if record["id"] == "slap2")
+    snapshot_bytes = args.movie_output.read_bytes()
+    snapshot = json.loads(snapshot_bytes)
+    filenames = [f"slap2-{option['id']}-raw.webp" for option in session["options"]]
+    if args.dry_run:
+        print(f"Update raw-movie entries only in {args.movie_output}")
+        for filename in filenames:
+            print(f"Write {args.movie_media_dir / filename}")
+        for source in session["sources"]:
+            if source["url"].endswith(".dat"):
+                print(f"Read bytes {source['rangeStart']}:{source['rangeStop']} "
+                      f"from {source['url']}")
+        return
+
+    records = []
+    with tempfile.TemporaryDirectory(prefix="slap2-raw-movies-") as temporary:
+        staging = Path(temporary)
+        for plane in SLAP2_PLANES:
+            options = [option for option in session["options"]
+                       if option["id"].startswith(f"{plane.lower()}-detector-")]
+            data_source = next(source for source in session["sources"]
+                               if source["url"].endswith(f"{plane}-TRIAL000026.dat"))
+            metadata_source = next(source for source in session["sources"]
+                                   if source["url"].endswith(f"{plane}.meta"))
+            remote = remote_metadata(data_source["url"])
+            if any(remote[key] != data_source[key] for key in ("etag", "contentLength")):
+                raise RuntimeError(f"Pinned {plane} raw file changed.")
+            metadata_blob = fetch_bytes(metadata_source["url"])
+            excerpt = fetch_range(data_source["url"], data_source["rangeStart"],
+                                  data_source["rangeStop"])
+            if (
+                hashlib.sha256(metadata_blob).hexdigest() != metadata_source["sha256"]
+                or hashlib.sha256(excerpt).hexdigest() != data_source["rangeSha256"]
+            ):
+                raise RuntimeError(f"Pinned {plane} raw data or metadata checksum changed.")
+            header_blob = fetch_range(data_source["url"], 0, min(1_048_576,
+                                                               data_source["contentLength"]))
+            header = parse_slap2_header(header_blob, data_source["contentLength"])
+            with h5py.File(io.BytesIO(metadata_blob), "r") as metadata:
+                specifications, ids, counts = slap2_line_plan(
+                    excerpt[:header["bytesPerCycle"]], header, metadata
+                )
+                cycle_duration = matlab_scalar(metadata, "linePeriod_s") * header["linesPerCycle"]
+            cycle_count, remainder = divmod(len(excerpt), header["bytesPerCycle"])
+            first_cycle, start_remainder = divmod(
+                data_source["rangeStart"] - header["firstCycleOffsetBytes"],
+                header["bytesPerCycle"],
+            )
+            if remainder or start_remainder or header["numChannels"] != len(options):
+                raise RuntimeError(f"Unexpected {plane} raw cycle geometry.")
+            selected = np.unique(np.rint(np.linspace(0, cycle_count - 1,
+                                                     SLAP2_MOVIE_FRAMES)).astype(int))
+            times = np.round((first_cycle + selected + 0.5) * cycle_duration
+                             - SLAP2_EVENT_OFFSET_SECONDS, 6).tolist()
+            for option in options:
+                if times != option["frameTimes"]:
+                    raise RuntimeError(f"Pinned {option['id']} raw frame times changed.")
+                frames = np.stack([
+                    slap2_sparse_frame(
+                        excerpt[index * header["bytesPerCycle"]:(index + 1)
+                                * header["bytesPerCycle"]],
+                        specifications, ids, counts, option["detectorChannel"] - 1,
+                    ).T
+                    for index in selected
+                ])
+                images, low, high = slap2_raw_images(frames)
+                if (round(low, 6), round(high, 6)) != (
+                    option["contrastLow"], option["contrastHigh"]
+                ):
+                    raise RuntimeError(f"Pinned {option['id']} detector contrast changed.")
+                filename = f"slap2-{option['id']}-raw.webp"
+                sprite = save_sprite_sheet(images, staging / filename, columns=10, lossless=True)
+                records.append({
+                    **sprite,
+                    "assetPath": f"media/segmentation-movies/{filename}",
+                    "id": option["id"],
+                    "sourceId": plane.lower(),
+                    "session": session["session"],
+                    "detectorChannel": option["detectorChannel"],
+                    "measurement": option["measurement"],
+                    "coordinateSystem": "native-acquisition-raster",
+                    "displayTransform": "native-yx",
+                    "fastScanAxis": "horizontal",
+                    "displayWidth": option["nativeWidth"],
+                    "displayHeight": option["nativeHeight"],
+                    "nativeWidth": option["nativeWidth"],
+                    "nativeHeight": option["nativeHeight"],
+                    "micronsPerPixel": option["micronsPerPixel"],
+                    "frameCount": len(images),
+                    "frameTimes": times,
+                    "contrastLow": low,
+                    "contrastHigh": high,
+                    "referenceBackground": False,
+                    "temporalAveragingFrames": 1,
+                    "spatialDownsampleFactor": SLAP2_DOWNSAMPLE_FACTOR,
+                    "spatialReduction": "max",
+                    "cycleIndices": (first_cycle + selected).tolist(),
+                    "decodedFramesSha256": hashlib.sha256(
+                        np.asarray(frames, dtype="<f4").tobytes()
+                    ).hexdigest(),
+                    "rawNeuralSha256": hashlib.sha256(raw_bytes).hexdigest(),
+                    "retrievedDate": date.today().isoformat(),
+                    "sources": [
+                        {**data_source, "headerSha256": hashlib.sha256(header_blob).hexdigest()},
+                        metadata_source,
+                    ],
+                })
+                print(f"Decoded {option['id']}: {len(images)} raw-only frames", flush=True)
+        if args.movie_output.read_bytes() != snapshot_bytes:
+            raise RuntimeError("Movie manifest changed during extraction; no outputs replaced.")
+        backup = Path(tempfile.mkdtemp(prefix="openscope-slap2-raw-backup-"))
+        shutil.copy2(args.movie_output, backup / args.movie_output.name)
+        args.movie_media_dir.mkdir(parents=True, exist_ok=True)
+        for filename in filenames:
+            destination = args.movie_media_dir / filename
+            if destination.exists():
+                shutil.copy2(destination, backup / filename)
+            shutil.copy2(staging / filename, destination)
+        snapshot["slap2RawMovies"] = records
+        args.movie_output.write_text(
+            json.dumps(snapshot, indent=2, ensure_ascii=True, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        print(f"Wrote four raw-only clips; previous manifest/media backed up in {backup}")
+
+
 def slap2_composite_images(
     green_frames: np.ndarray,
     red_frames: np.ndarray,
@@ -1001,6 +1155,11 @@ def extract_slap2(session: dict, media_dir: Path) -> dict:
 
 def main() -> None:
     args = parse_args()
+    if args.slap2_raw_only:
+        extract_slap2_raw_movies(args)
+        return
+    if args.dry_run:
+        raise RuntimeError("--dry-run is supported only with --slap2-raw-only.")
     behavior_bytes = BEHAVIOR_PATH.read_bytes()
     behavior = json.loads(behavior_bytes)
     sessions = {session["id"]: session for session in behavior["sessions"]}

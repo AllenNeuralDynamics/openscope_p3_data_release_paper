@@ -386,10 +386,12 @@ elements.renderStatus.textContent = "";
 elements.renderStatus.hidden = true;
 
 function animate() {
-  controls.update();
-  resizeRenderer();
-  renderer.render(scene, camera);
-  renderOrientationGizmo();
+  if (!elements.interactiveView.hidden) {
+    controls.update();
+    resizeRenderer();
+    renderer.render(scene, camera);
+    renderOrientationGizmo();
+  }
   requestAnimationFrame(animate);
 }
 animate();

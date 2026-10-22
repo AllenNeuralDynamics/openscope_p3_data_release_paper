@@ -37,7 +37,7 @@
     localTime: 0,
     playing: false,
     sessionIndex: 0,
-    view: "interactive",
+    view: "static",
     videoToken: 0,
   };
   const contextColors = {
@@ -431,6 +431,6 @@
 
   elements.timeline.max = protocol.durationSeconds;
   buildModalityTabs();
-  selectView("interactive");
+  selectView("static");
   selectSession(0);
 })();

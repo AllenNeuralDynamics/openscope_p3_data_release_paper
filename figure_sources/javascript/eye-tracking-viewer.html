@@ -11,12 +11,24 @@ __EYE_TRACKING_CSS__
 </head>
 <body>
   <main class="viewer" id="eye-tracking-viewer">
-    <div class="view-switch" role="group" aria-label="Interactive or static view">
-      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
-      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
-    </div>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" class="view-button active" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" class="view-button" data-view="interactive" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
 
-    <div id="interactive-view">
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive figure legend</h2>
+      <p>Eye-camera frames and packaged pupil, corneal-reflection, and eye-ellipse fits share
+        a synchronized time axis. Traces report fit area in camera pixels squared; shaded
+        intervals mark likely blinks. Optional interpolation replaces isolated one-to-four-frame
+        outliers for display only and does not alter the released eye-tracking values.</p>
+    </section>
+
+    <div id="interactive-view" hidden>
       <nav class="modality-tabs" id="modality-selector" aria-label="Recording modality"></nav>
 
     <section class="stream-grid" aria-label="Synchronized eye-tracking streams">
@@ -95,7 +107,7 @@ __EYE_TRACKING_CSS__
     </section>
     </div>
 
-    <section class="static-view" id="static-view" aria-label="Static synchronized eye-tracking overview" hidden>
+    <section class="static-view" id="static-view" aria-label="Static synchronized eye-tracking overview">
       <div class="static-shell">
         <img src="__EYE_TRACKING_STATIC_IMAGE__" alt="Three modality rows with vertically aligned pupil x position, y position, and area traces on a shared time axis; likely blink periods are highlighted.">
       </div>

@@ -10,7 +10,24 @@ __LITERATURE_CSS__
   </style>
 </head>
 <body>
-  <main class="viewer" id="literature-comparison">
+  <main class="viewer" id="literature-comparison" data-simple-view>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" data-view="interactive" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive table legend</h2>
+      <p>Five published visual oddball paradigms are compared by stimulus design, timing,
+        sample size, recording method, statistical test, habituation, and sampling.
+        Parameter comparisons and individual study profiles use the same source table.
+        Differences in response definitions and significance tests limit direct comparisons
+        of responsive-neuron fractions across studies.</p>
+    </section>
+    <div id="interactive-view" hidden>
     <header class="viewer-header">
       <nav class="mode-tabs" id="mode-tabs" aria-label="Comparison mode">
         <button type="button" class="mode-tab active" data-mode="parameter" aria-pressed="true">Compare parameter</button>
@@ -30,6 +47,10 @@ __LITERATURE_CSS__
         <tbody id="table-body"></tbody>
       </table>
       <p class="empty-state" id="empty-state" hidden>No matching rows.</p>
+    </section>
+    </div>
+    <section id="static-view" class="static-table-shell" aria-label="Static literature comparison">
+__LITERATURE_STATIC_TABLE__
     </section>
   </main>
   <script id="literature-data" type="application/json">__LITERATURE_DATA__</script>

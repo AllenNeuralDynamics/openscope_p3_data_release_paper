@@ -2,6 +2,8 @@
 
 ## Manuscript changes
 
+[index.md](index.md) is the sole authoritative manuscript.
+
 We welcome contributions from OpenScope Predictive Processing Community members. Coordinate substantial scientific or structural changes in an issue or discussion before starting so parallel edits do not conflict.
 
 1. Create a focused branch from the latest `main` and edit `index.md` using MyST Markdown.
@@ -10,8 +12,6 @@ We welcome contributions from OpenScope Predictive Processing Community members.
 4. Keep prose, figure, and data-snapshot changes narrowly scoped. Separate unrelated scientific revisions when practical.
 5. Update generated files in the same pull request as their source; never edit generated outputs without updating their owner.
 6. In the pull request, summarize the scientific change, identify source data or references, list regenerated assets, report validation, and request review from the relevant section or data owner.
-
-During the Google Doc cutover, `scripts/import_google_doc.py` is destructive: it replaces `index.md`, imported PNGs, and their manifest. Do not run it over repository-only edits that have not been reconciled with the source document.
 
 ## Authorship metadata
 
@@ -109,7 +109,7 @@ For an interactive figure, keep generated HTML under `interactive/` and provide 
 :title: Short accessible title for the interactive figure
 :placeholder: ./images/figures/generated/example.svg
 
-One caption shared by the interactive and static views.
+Caption describing the static panels, scientific encodings, and sample sizes.
 :::
 ```
 
@@ -118,6 +118,12 @@ Generated HTML belongs in `interactive/` and must be listed through `project.sta
 - Use stable, unique labels and page-relative paths so cross-references survive reordering.
 - Put explanatory science in the manuscript caption, not only in the HTML application.
 - Give interactive controls semantic markup, keyboard access, accessible names, responsive layout, and a useful initial state.
+- Default every viewer to Static in both its HTML and initialization code. Put
+	interactive-specific scientific descriptions behind the question-mark legend
+	control, not in the manuscript caption. Use the shared `figure-legend.js` and
+	`figure-legend.css` assets; the control must close with Escape or Static view.
+	Use one top toolbar with the Static/Interactive switch on the left and a
+	separate circular question-mark button on the right. Analysis tabs belong below it.
 - Generate both outputs deterministically and verify interactive plus static rendering at desktop and mobile sizes.
 - Preview with `myst start`; use `myst build --html` to catch path and static-asset errors.
 
@@ -166,6 +172,55 @@ Use the same architecture for future figures that aggregate units, receptive fie
 ### Derived binary data
 
 Compact display data for an interactive figure may be committed when it is reproducibly derived from versioned source data. Keep primary and analysis-scale data in their external archive.
+
+The combined raw-recording and extraction viewer uses the existing raw excerpts
+plus registered movie clips stored under `figure_sources/media/segmentation-movies/`.
+Their manifest, `figure_sources/data/segmentation-movies.json`, pins the NWB mask
+references, public processed-movie URLs and ETags, frame windows, image transforms,
+and decoded/output checksums. The registered clips provide the background beneath
+the masks; raw-acquisition mode intentionally does not overlay registered masks.
+Refresh these clips separately with:
+
+```bash
+uv run --with h5py --with remfile --with tifffile --with scipy --with pillow==12.3.0 \
+	python scripts/extract_segmentation_viewers.py --movies-only
+```
+
+This mode does not replace the existing raw or segmentation snapshots. Add
+`--movie-source VISp_0` or `--movie-source DMD1` to refresh one source. As with
+other extractors, review any existing clip changes before refreshing. The build
+checks source geometry and checksums, then stages ignored deployment copies.
+The SLAP2 DMD1 somatic-band annotation is taken from the saved `soma` ROI in
+`ANNOTATIONS.mat`, checked against the processing summary mask, and pinned in
+the same manifest; it is not inferred from display brightness.
+
+The SLAP2 raw mode uses separate detector-only clips in the same movie directory,
+under `slap2RawMovies` in the movie manifest. They use the native acquisition
+orientation, single-cycle frames, and black unsampled pixels, without a reference
+background or merged channel. The refresh checks the original raw byte-range
+checksums, metadata, frame times, and detector contrast ranges. Preview it with:
+
+```bash
+uv run --with h5py --with numpy --with remfile --with s3fs --with 'zarr<3' \
+	--with wavpack-numcodecs --with pillow==12.3.0 --with tifffile==2026.7.14 \
+	python scripts/extract_raw_neural_excerpts.py --slap2-raw-only --dry-run
+```
+
+Remove `--dry-run` to refresh only these four clips. The scoped mode backs up the
+previous manifest and any replaced clips, preserving registered movies and the
+legacy raw/static snapshots. Never use the full raw extractor for this refresh.
+
+Figure 5C uses grayscale reference-stack projections with cyan targeted raster
+regions from the acquisition metadata. These are acquisition-band overlays, not
+fluorescence-intensity maps or extracted-source masks. The source and image
+checksums are recorded in `figure_sources/data/slap2-acquisition-bands.json`,
+with compact PNGs under `figure_sources/media/slap2-acquisition-bands/`. Refresh
+only these products, without replacing raw movies or existing stills, using:
+
+```bash
+uv run --with h5py --with numpy --with tifffile \
+	python scripts/extract_raw_neural_static_frames.py --slap2-bands-only
+```
 
 Use a browser-readable format appropriate to the payload. Existing figures use JSON or base64-encoded typed arrays for smaller data and separate gzip-compressed typed arrays for larger data. Include the metadata needed to interpret the payload and retain source and output checksums when the generator already produces them.
 

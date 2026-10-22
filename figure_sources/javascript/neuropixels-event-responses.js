@@ -33,7 +33,7 @@
     scope: "area",
     selectedUnit: null,
     sort: "area",
-    view: "interactive",
+    view: "static",
     zscoreLimit: 3,
     sortedUnits: [],
   };

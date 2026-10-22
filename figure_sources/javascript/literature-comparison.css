@@ -139,6 +139,10 @@ tbody tr:nth-child(even) td { background: var(--wash); }
 tbody tr:hover td { background: #ecefee; }
 tbody td:first-child { width: 26%; min-width: 170px; font-weight: 600; }
 .empty-state { margin: 0; padding: 2rem; color: var(--muted); text-align: center; }
+.static-table-shell { overflow-x: auto; border: 1px solid var(--line); }
+.static-table-shell table { min-width: 960px; table-layout: fixed; }
+.static-table-shell th { overflow-wrap: anywhere; }
+.static-table-shell td { overflow-wrap: anywhere; }
 
 @media (max-width: 640px) {
   .viewer { padding: 8px; }

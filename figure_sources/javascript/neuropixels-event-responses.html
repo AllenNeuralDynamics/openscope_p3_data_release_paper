@@ -11,18 +11,34 @@ __NEUROPIXELS_EVENT_CSS__
   <body>
     <main class="response-viewer">
       <script id="neuropixels-event-data" type="application/json">__NEUROPIXELS_EVENT_DATA__</script>
+      <header class="figure-toolbar">
+        <div class="figure-mode-switch" role="group" aria-label="Figure view">
+          <button type="button" data-view="static" aria-pressed="true">Static</button>
+          <button type="button" data-view="interactive" aria-pressed="false">Interactive</button>
+        </div>
+        <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+          title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+      </header>
       <header class="viewer-header">
         <div>
           <p class="eyebrow">Neuropixels event-response analysis</p>
           <h1>Mismatch-response explorer</h1>
         </div>
-        <div class="view-switch" role="group" aria-label="Figure view">
-          <button type="button" data-view="interactive" aria-pressed="true">Interactive</button>
-          <button type="button" data-view="static" aria-pressed="false">Static</button>
-        </div>
       </header>
 
-      <section id="interactive-view">
+      <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+        <h2 id="figure-legend-title">Interactive figure legend</h2>
+        <p>Unit heatmaps show mismatch and matched-control spike-density functions, their
+          difference, or baseline z-scores. Anatomical, unit-quality, phenotype, and
+          responsiveness selections define the displayed units; row ordering changes their
+          arrangement without changing response values. Filtered Rastermap views retain a
+          subsequence of the fixed order rather than re-embedding the surviving units.
+          Area means and individual-unit
+          traces summarize the same selected event and control windows. Raw spike-density
+          panels share a grayscale limit; z-score limits are symmetric.</p>
+      </section>
+
+      <section id="interactive-view" hidden>
         <nav id="context-tabs" class="context-tabs" aria-label="Predictive-processing context"></nav>
         <div class="interactive-controls">
           <div class="control-grid">
@@ -165,7 +181,7 @@ __NEUROPIXELS_EVENT_CSS__
         </article>
       </section>
 
-      <section id="static-view" class="static-view" hidden>
+      <section id="static-view" class="static-view">
         <img
           src="__NEUROPIXELS_EVENT_STATIC_IMAGE__"
           alt="Neuropixels mismatch-response heatmaps and brain-area-by-event response summary across four sessions from one mouse."

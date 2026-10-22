@@ -43,7 +43,7 @@
     playing: false,
     sessionIndex: 0,
     videoToken: 0,
-    view: "interactive",
+    view: "static",
   };
   const fitOrder = ["pupil", "corneal_reflection", "ellipse"];
   const fitColors = {
@@ -643,4 +643,5 @@
   buildModalityTabs();
   buildFitControls();
   selectSession(0);
+  selectView("static");
 })();

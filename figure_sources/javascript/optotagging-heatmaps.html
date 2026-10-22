@@ -8,21 +8,29 @@
 </head>
 <body>
   <main class="viewer" id="optotagging-viewer">
-    <div class="view-switch" role="group" aria-label="Interactive or static view">
-      <button type="button" class="view-button active" data-view="interactive"
-        aria-pressed="true">Interactive</button>
-      <button type="button" class="view-button" data-view="static"
-        aria-pressed="false">Static</button>
-    </div>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" class="view-button active" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" class="view-button" data-view="interactive" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
 
-    <div id="interactive-view">
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive figure legend</h2>
+      <p>Laser-aligned responses to raised-cosine, 5 Hz, and 40 Hz stimulation are shown for
+        non-noise units from three public Neuropixels sessions near the 50th, 80th, and 95th
+        percentiles of optotagged-cell yield, using 1-ms time bins. Rows are baseline z-scored
+        per unit. Anatomical filtering precedes ordering by firing rate during each condition's
+        exact laser-on intervals; strongest responses appear at the top. All panels share
+        the displayed symmetric color scale.</p>
+    </section>
+
+    <div id="interactive-view" hidden>
       <header>
         <p class="eyebrow">OpenScope P3 Neuropixels</p>
         <h1>Optotagging responses by session</h1>
-        <p class="summary">
-          Select a session to compare raised-cosine, 5 Hz, and 40 Hz laser-aligned
-          responses across all non-noise units.
-        </p>
       </header>
       <section class="controls" aria-label="Heatmap controls">
         <div>
@@ -66,7 +74,7 @@
     </div>
 
     <section class="static-view" id="static-view"
-      aria-label="Static default-session optotagging overview" hidden>
+      aria-label="Static default-session optotagging overview">
       <div class="static-shell">
         <img src="__OPTOTAGGING_STATIC_IMAGE__"
           alt="Four-panel optotagging figure showing a 5 Hz laser-aligned heatmap, overall yield, yield by major parent area, and the top 18 structures.">

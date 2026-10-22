@@ -11,24 +11,35 @@ __NWB_FILE_CONTENTS_CSS__
 </head>
 <body>
   <main class="viewer" id="nwb-file-contents-viewer">
-    <div class="view-switch" role="group" aria-label="Interactive or static view">
-      <button type="button" class="view-button active" data-view="interactive" aria-pressed="true">Interactive</button>
-      <button type="button" class="view-button" data-view="static" aria-pressed="false">Static</button>
-    </div>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" class="view-button active" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" class="view-button" data-view="interactive" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
 
-    <section id="interactive-view" aria-label="Interactive NWB structure explorer">
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive figure legend</h2>
+      <p>Native PyNWB representations of one pinned public file per modality expose nested
+        containers, table columns, dataset shapes, and representative access paths. Shared
+        session, stimulus, locomotion, and eye-tracking fields are complemented by
+        modality-specific neural measurements and processing products.</p>
+    </section>
+
+    <section id="interactive-view" aria-label="Interactive NWB structure explorer" hidden>
       <nav class="modality-tabs" data-tabs="interactive" aria-label="Representative NWB modality">
         <button type="button" class="modality-tab active" data-modality="neuropixels" aria-pressed="true">Neuropixels</button>
         <button type="button" class="modality-tab" data-modality="mesoscope" aria-pressed="false">Mesoscope</button>
         <button type="button" class="modality-tab" data-modality="slap2" aria-pressed="false">SLAP2</button>
       </nav>
-      <p class="view-note">Open a field to inspect nested containers, tables, dataset shapes, and representative PyNWB access paths.</p>
       <div class="panel active" data-view-panel="interactive" data-modality="neuropixels">__NEUROPIXELS_TREE__</div>
       <div class="panel" data-view-panel="interactive" data-modality="mesoscope" hidden>__MESOSCOPE_TREE__</div>
       <div class="panel" data-view-panel="interactive" data-modality="slap2" hidden>__SLAP2_TREE__</div>
     </section>
 
-    <section id="static-view" aria-label="Static NWB question tables" hidden>
+    <section id="static-view" aria-label="Static NWB question tables">
       <div class="panel static-panel">
         <section class="static-section" aria-labelledby="common-fields-heading">
         <h2 id="common-fields-heading">Common fields</h2>
@@ -99,5 +110,6 @@ __NWB_FILE_CONTENTS_CSS__
   <script>
 __NWB_FILE_CONTENTS_JS__
   </script>
+  <script>__EMBED_AUTO_HEIGHT_JS__</script>
 </body>
 </html>

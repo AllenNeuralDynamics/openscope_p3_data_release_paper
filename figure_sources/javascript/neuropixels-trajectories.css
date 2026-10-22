@@ -66,11 +66,7 @@ html.is-embedded .viewer { min-height: 0; }
   font-weight: 650;
 }
 
-.viewer.static-active .toolbar {
-  display: flex;
-}
-
-.viewer.static-active .toolbar > :not(.mode-switch),
+.viewer.static-active .toolbar,
 .viewer.static-active .probe-filter,
 .viewer.static-active .source-strip {
   display: none;

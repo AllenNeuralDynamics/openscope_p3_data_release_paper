@@ -27,7 +27,7 @@ The GitHub Actions workflow runs the same checks and deploys the static site fro
 
 ## Repository map
 
-- `index.md`: canonical MyST manuscript.
+- [index.md](index.md): sole authoritative MyST manuscript.
 - `authors.yml`: generated snapshot of portal-managed contributor, affiliation, CRediT, and section-level authorship metadata.
 - `author_portrait_sources.json`: editable, source-backed links and image dimensions for verified public portraits.
 - `author_avatars.json`: generated portrait URLs and source-page provenance; images remain hosted by their original sources and are not bundled with the publication.
@@ -36,14 +36,12 @@ The GitHub Actions workflow runs the same checks and deploys the static site fro
 - `interactive/`: generated JavaScript/HTML figures copied into the site at stable URLs.
 - `images/figures/`: rendered assets consumed by MyST.
 - `figure_sources/`: editable sources, input data, and provenance manifests.
-- `manuscript_sources/google-doc/`: preserved Google Doc export and import notes.
-- `scripts/import_google_doc.py`: deterministic but destructive Google Doc importer.
 - `scripts/sync_authors.py`: maintainer-only tool that refreshes `authors.yml` from the versioned `p3_data_release` contribution record.
 - `tests/`: publication and figure regression checks.
 
 ## Manuscript source policy
 
-The repository should become the canonical manuscript after the transition is accepted. Until that cutover, importing the Google Doc overwrites `index.md`; reconcile repository-only edits first. See `docs/MIGRATION.md` for unresolved source and editorial work.
+[index.md](index.md) is the sole authoritative manuscript. Make all manuscript edits here through pull requests.
 
 ## Contributing to the manuscript
 
