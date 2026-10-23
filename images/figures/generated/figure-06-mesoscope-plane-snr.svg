@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="476" viewBox="0 0 1200 476" font-family="Myriad Pro, Arial, sans-serif" role="img" aria-label="Per-plane distribution of three ROI signal-to-noise definitions across 8 mesoscope imaging planes">
+<rect width="1200" height="476" fill="#ffffff"/>
+<text x="140.0" y="32.0" font-family="Myriad Pro, Arial, sans-serif" font-size="24" fill="#293133" font-weight="600">ROI signal-to-noise by imaging plane, three definitions</text>
+<text x="140.0" y="56.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#68716f">Session multiplane-ophys_839909_2026-02-20_12-53-27 &#183; 1810 ROIs over 8 simultaneously-acquired planes.</text>
+<text x="140.0" y="76.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#68716f">Planes ordered by depth within area. Dot, median; bar, interquartile range; line, 5th&#8211;95th percentile.</text>
+<text x="126.0" y="146.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#167f8c" text-anchor="end" font-weight="600">VISp_2</text>
+<text x="126.0" y="160.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#8d9693" text-anchor="end">84 ROIs &#183; 64 &#181;m</text>
+<text x="126.0" y="180.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#167f8c" text-anchor="end" font-weight="600">VISp_0</text>
+<text x="126.0" y="194.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#8d9693" text-anchor="end">345 ROIs &#183; 196 &#181;m</text>
+<text x="126.0" y="214.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#167f8c" text-anchor="end" font-weight="600">VISp_1</text>
+<text x="126.0" y="228.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#8d9693" text-anchor="end">230 ROIs &#183; 314 &#181;m</text>
+<text x="126.0" y="248.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#167f8c" text-anchor="end" font-weight="600">VISp_3</text>
+<text x="126.0" y="262.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#8d9693" text-anchor="end">201 ROIs &#183; 400 &#181;m</text>
+<text x="126.0" y="282.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#b16027" text-anchor="end" font-weight="600">VISl_6</text>
+<text x="126.0" y="296.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#8d9693" text-anchor="end">76 ROIs &#183; 62 &#181;m</text>
+<text x="126.0" y="316.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#b16027" text-anchor="end" font-weight="600">VISl_4</text>
+<text x="126.0" y="330.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#8d9693" text-anchor="end">351 ROIs &#183; 200 &#181;m</text>
+<text x="126.0" y="350.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#b16027" text-anchor="end" font-weight="600">VISl_5</text>
+<text x="126.0" y="364.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#8d9693" text-anchor="end">235 ROIs &#183; 300 &#181;m</text>
+<text x="126.0" y="384.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#b16027" text-anchor="end" font-weight="600">VISl_7</text>
+<text x="126.0" y="398.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#8d9693" text-anchor="end">288 ROIs &#183; 400 &#181;m</text>
+<text x="298.0" y="112.0" font-family="Myriad Pro, Arial, sans-serif" font-size="20" fill="#293133" text-anchor="middle" font-weight="600">Events &gt; 4 SD (fraction)</text>
+<line x1="140.0" y1="128" x2="140.0" y2="400" stroke="#e4e8e6" stroke-width="1"/>
+<text x="140.0" y="420.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#68716f" text-anchor="middle">0.020</text>
+<line x1="298.0" y1="128" x2="298.0" y2="400" stroke="#e4e8e6" stroke-width="1"/>
+<text x="298.0" y="420.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#68716f" text-anchor="middle">0.487</text>
+<line x1="456.0" y1="128" x2="456.0" y2="400" stroke="#e4e8e6" stroke-width="1"/>
+<text x="456.0" y="420.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#68716f" text-anchor="middle">0.953</text>
+<line x1="151.0" y1="145.0" x2="393.3" y2="145.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="176.5" y="139.0" width="81.0" height="12" rx="2" fill="#32648c" fill-opacity="0.45" stroke="#32648c" stroke-width="1"/>
+<circle cx="216.1" cy="145.0" r="4.2" fill="#32648c" stroke="#ffffff" stroke-width="1"/>
+<line x1="179.4" y1="179.0" x2="450.2" y2="179.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="239.7" y="173.0" width="150.0" height="12" rx="2" fill="#25a185" fill-opacity="0.45" stroke="#25a185" stroke-width="1"/>
+<circle cx="303.8" cy="179.0" r="4.2" fill="#25a185" stroke="#ffffff" stroke-width="1"/>
+<line x1="145.0" y1="213.0" x2="297.7" y2="213.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="168.6" y="207.0" width="52.3" height="12" rx="2" fill="#384077" fill-opacity="0.45" stroke="#384077" stroke-width="1"/>
+<circle cx="188.1" cy="213.0" r="4.2" fill="#384077" stroke="#ffffff" stroke-width="1"/>
+<line x1="141.5" y1="247.0" x2="297.6" y2="247.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="151.3" y="241.0" width="55.0" height="12" rx="2" fill="#3b3471" fill-opacity="0.45" stroke="#3b3471" stroke-width="1"/>
+<circle cx="179.3" cy="247.0" r="4.2" fill="#3b3471" stroke="#ffffff" stroke-width="1"/>
+<line x1="151.1" y1="281.0" x2="364.5" y2="281.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="169.8" y="275.0" width="73.5" height="12" rx="2" fill="#38447a" fill-opacity="0.45" stroke="#38447a" stroke-width="1"/>
+<circle cx="191.4" cy="281.0" r="4.2" fill="#38447a" stroke="#ffffff" stroke-width="1"/>
+<line x1="173.2" y1="315.0" x2="448.0" y2="315.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="242.8" y="309.0" width="150.1" height="12" rx="2" fill="#34aa7c" fill-opacity="0.45" stroke="#34aa7c" stroke-width="1"/>
+<circle cx="319.0" cy="315.0" r="4.2" fill="#34aa7c" stroke="#ffffff" stroke-width="1"/>
+<line x1="149.9" y1="349.0" x2="293.3" y2="349.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="185.5" y="343.0" width="62.3" height="12" rx="2" fill="#345986" fill-opacity="0.45" stroke="#345986" stroke-width="1"/>
+<circle cx="207.7" cy="349.0" r="4.2" fill="#345986" stroke="#ffffff" stroke-width="1"/>
+<line x1="144.0" y1="383.0" x2="295.7" y2="383.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="157.9" y="377.0" width="60.2" height="12" rx="2" fill="#3a3571" fill-opacity="0.45" stroke="#3a3571" stroke-width="1"/>
+<circle cx="179.9" cy="383.0" r="4.2" fill="#3a3571" stroke="#ffffff" stroke-width="1"/>
+<text x="298.0" y="444.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#68716f" text-anchor="middle">Spearman &#961; vs ROI area = -0.00</text>
+<text x="659.0" y="112.0" font-family="Myriad Pro, Arial, sans-serif" font-size="20" fill="#293133" text-anchor="middle" font-weight="600">Event amplitude SNR</text>
+<line x1="501.0" y1="128" x2="501.0" y2="400" stroke="#e4e8e6" stroke-width="1"/>
+<text x="501.0" y="420.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#68716f" text-anchor="middle">3.3</text>
+<line x1="659.0" y1="128" x2="659.0" y2="400" stroke="#e4e8e6" stroke-width="1"/>
+<text x="659.0" y="420.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#68716f" text-anchor="middle">9.6</text>
+<line x1="817.0" y1="128" x2="817.0" y2="400" stroke="#e4e8e6" stroke-width="1"/>
+<text x="817.0" y="420.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#68716f" text-anchor="middle">15.8</text>
+<line x1="505.1" y1="145.0" x2="700.4" y2="145.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="515.1" y="139.0" width="93.6" height="12" rx="2" fill="#384279" fill-opacity="0.45" stroke="#384279" stroke-width="1"/>
+<circle cx="551.1" cy="145.0" r="4.2" fill="#384279" stroke="#ffffff" stroke-width="1"/>
+<line x1="528.4" y1="179.0" x2="750.8" y2="179.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="582.2" y="173.0" width="96.9" height="12" rx="2" fill="#258b8b" fill-opacity="0.45" stroke="#258b8b" stroke-width="1"/>
+<circle cx="631.1" cy="179.0" r="4.2" fill="#258b8b" stroke="#ffffff" stroke-width="1"/>
+<line x1="514.1" y1="213.0" x2="671.7" y2="213.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="546.3" y="207.0" width="67.0" height="12" rx="2" fill="#32658c" fill-opacity="0.45" stroke="#32658c" stroke-width="1"/>
+<circle cx="577.7" cy="213.0" r="4.2" fill="#32658c" stroke="#ffffff" stroke-width="1"/>
+<line x1="501.9" y1="247.0" x2="645.3" y2="247.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="512.1" y="241.0" width="75.5" height="12" rx="2" fill="#3b3370" fill-opacity="0.45" stroke="#3b3370" stroke-width="1"/>
+<circle cx="539.5" cy="247.0" r="4.2" fill="#3b3370" stroke="#ffffff" stroke-width="1"/>
+<line x1="502.4" y1="281.0" x2="781.9" y2="281.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="510.2" y="275.0" width="109.7" height="12" rx="2" fill="#393a74" fill-opacity="0.45" stroke="#393a74" stroke-width="1"/>
+<circle cx="545.0" cy="281.0" r="4.2" fill="#393a74" stroke="#ffffff" stroke-width="1"/>
+<line x1="531.2" y1="315.0" x2="767.1" y2="315.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="591.7" y="309.0" width="98.8" height="12" rx="2" fill="#23938a" fill-opacity="0.45" stroke="#23938a" stroke-width="1"/>
+<circle cx="643.5" cy="315.0" r="4.2" fill="#23938a" stroke="#ffffff" stroke-width="1"/>
+<line x1="518.7" y1="349.0" x2="744.5" y2="349.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="569.6" y="343.0" width="92.0" height="12" rx="2" fill="#297f8c" fill-opacity="0.45" stroke="#297f8c" stroke-width="1"/>
+<circle cx="613.4" cy="349.0" r="4.2" fill="#297f8c" stroke="#ffffff" stroke-width="1"/>
+<line x1="502.7" y1="383.0" x2="694.4" y2="383.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="512.7" y="377.0" width="82.1" height="12" rx="2" fill="#3a3672" fill-opacity="0.45" stroke="#3a3672" stroke-width="1"/>
+<circle cx="542.0" cy="383.0" r="4.2" fill="#3a3672" stroke="#ffffff" stroke-width="1"/>
+<text x="659.0" y="444.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#68716f" text-anchor="middle">Spearman &#961; vs ROI area = 0.21</text>
+<text x="1020.0" y="112.0" font-family="Myriad Pro, Arial, sans-serif" font-size="20" fill="#293133" text-anchor="middle" font-weight="600">Percentile-range SNR</text>
+<line x1="862.0" y1="128" x2="862.0" y2="400" stroke="#e4e8e6" stroke-width="1"/>
+<text x="862.0" y="420.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#68716f" text-anchor="middle">1.9</text>
+<line x1="1020.0" y1="128" x2="1020.0" y2="400" stroke="#e4e8e6" stroke-width="1"/>
+<text x="1020.0" y="420.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#68716f" text-anchor="middle">5.2</text>
+<line x1="1178.0" y1="128" x2="1178.0" y2="400" stroke="#e4e8e6" stroke-width="1"/>
+<text x="1178.0" y="420.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#68716f" text-anchor="middle">8.6</text>
+<line x1="864.6" y1="145.0" x2="954.8" y2="145.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="868.2" y="139.0" width="26.2" height="12" rx="2" fill="#41125d" fill-opacity="0.45" stroke="#41125d" stroke-width="1"/>
+<circle cx="874.9" cy="145.0" r="4.2" fill="#41125d" stroke="#ffffff" stroke-width="1"/>
+<line x1="869.4" y1="179.0" x2="1075.3" y2="179.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="883.4" y="173.0" width="70.4" height="12" rx="2" fill="#393c75" fill-opacity="0.45" stroke="#393c75" stroke-width="1"/>
+<circle cx="906.9" cy="179.0" r="4.2" fill="#393c75" stroke="#ffffff" stroke-width="1"/>
+<line x1="869.0" y1="213.0" x2="1030.1" y2="213.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="885.2" y="207.0" width="63.6" height="12" rx="2" fill="#384077" fill-opacity="0.45" stroke="#384077" stroke-width="1"/>
+<circle cx="910.0" cy="213.0" r="4.2" fill="#384077" stroke="#ffffff" stroke-width="1"/>
+<line x1="862.3" y1="247.0" x2="955.0" y2="247.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="866.9" y="241.0" width="30.2" height="12" rx="2" fill="#41135e" fill-opacity="0.45" stroke="#41135e" stroke-width="1"/>
+<circle cx="875.9" cy="247.0" r="4.2" fill="#41135e" stroke="#ffffff" stroke-width="1"/>
+<line x1="863.1" y1="281.0" x2="1152.2" y2="281.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="866.7" y="275.0" width="50.2" height="12" rx="2" fill="#41105d" fill-opacity="0.45" stroke="#41105d" stroke-width="1"/>
+<circle cx="873.8" cy="281.0" r="4.2" fill="#41105d" stroke="#ffffff" stroke-width="1"/>
+<line x1="868.7" y1="315.0" x2="1053.2" y2="315.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="882.6" y="309.0" width="72.7" height="12" rx="2" fill="#393f77" fill-opacity="0.45" stroke="#393f77" stroke-width="1"/>
+<circle cx="909.7" cy="315.0" r="4.2" fill="#393f77" stroke="#ffffff" stroke-width="1"/>
+<line x1="874.6" y1="349.0" x2="1099.2" y2="349.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="903.5" y="343.0" width="90.6" height="12" rx="2" fill="#306b8e" fill-opacity="0.45" stroke="#306b8e" stroke-width="1"/>
+<circle cx="945.7" cy="349.0" r="4.2" fill="#306b8e" stroke="#ffffff" stroke-width="1"/>
+<line x1="862.3" y1="383.0" x2="1010.8" y2="383.0" stroke="#b9c0bd" stroke-width="1.3"/>
+<rect x="866.8" y="377.0" width="32.3" height="12" rx="2" fill="#41125e" fill-opacity="0.45" stroke="#41125e" stroke-width="1"/>
+<circle cx="875.2" cy="383.0" r="4.2" fill="#41125e" stroke="#ffffff" stroke-width="1"/>
+<text x="1020.0" y="444.0" font-family="Myriad Pro, Arial, sans-serif" font-size="15" fill="#68716f" text-anchor="middle">Spearman &#961; vs ROI area = 0.26</text>
+<text x="140.0" y="462.0" font-family="Myriad Pro, Arial, sans-serif" font-size="12" fill="#8d9693">Each definition is computed over the full 72-minute recording at 10.70 Hz; event-based definitions use the processing pipeline&#8217;s own event trace.</text>
+</svg>

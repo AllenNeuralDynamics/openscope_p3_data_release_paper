@@ -120,6 +120,20 @@ BASIC_STIMULI_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-05-basic-stimuli-plan.
 UNIT_EXTRACTION_PLAN_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "figure-07-unit-extraction-plan.svg"
 )
+MESOSCOPE_UNIT_EXTRACTION_PANEL_DIR = (
+    REPO_ROOT / "figure_sources" / "media" / "mesoscope-unit-extraction"
+)
+MESOSCOPE_UNIT_EXTRACTION_PROVENANCE_PATH = (
+    DATA_DIR / "mesoscope-unit-extraction.provenance.json"
+)
+MESOSCOPE_UNIT_EXTRACTION_OUTPUT = (
+    REPO_ROOT
+    / "images"
+    / "figures"
+    / "generated"
+    / "figure-06-unit-extraction-mesoscope.svg"
+)
+MESOSCOPE_UNIT_EXTRACTION_PAD = 40
 BASIC_STIMULI_PLAN_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "figure-08-basic-stimuli-plan.svg"
 )
@@ -1034,6 +1048,68 @@ def write_unit_extraction_plan_svg(output: Path = UNIT_EXTRACTION_PLAN_OUTPUT) -
     )
 
     return write_slap2_glutamate_figure(output)
+
+
+def write_unit_extraction_mesoscope_svg(
+    output: Path = MESOSCOPE_UNIT_EXTRACTION_OUTPUT,
+) -> Path:
+    """Wrap the committed mesoscope-column composite in SVG.
+
+    The B, F and J panels and the stacked composite are both produced offline
+    by ``scripts/build_mesoscope_unit_extraction_panels.py`` from the per-ROI
+    cohort table and committed under ``figure_sources/media``. This function
+    deliberately re-encodes no image bytes -- it embeds the committed PNG as
+    it stands -- because Pillow's PNG output depends on the local zlib build,
+    so compositing at build time makes the generated SVG differ between
+    platforms and the repo's "generated figures are current" check fail on
+    one runner while passing on another. Cohort counts for the subtitle are
+    read from the provenance sidecar so the figure and the caption cannot
+    drift apart.
+    """
+    provenance = json.loads(
+        MESOSCOPE_UNIT_EXTRACTION_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    cohort = provenance["cohort"]
+    (composite_name, composite_meta), = provenance["composite"].items()
+    source = MESOSCOPE_UNIT_EXTRACTION_PANEL_DIR / composite_name
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    if digest != composite_meta["sha256"]:
+        raise RuntimeError(
+            f"Composite source {composite_name} does not match its recorded checksum; "
+            "re-run scripts/build_mesoscope_unit_extraction_panels.py or refresh the "
+            "provenance sidecar."
+        )
+    width = int(composite_meta["width"])
+    height = int(composite_meta["height"])
+    image_data = png_data_uri(source, (width, height))
+    pad = MESOSCOPE_UNIT_EXTRACTION_PAD
+
+    subtitle = (
+        "Unit extraction and event-amplitude quality classes \u2014 "
+        f"{cohort['sessions']} of {cohort['qc_pass_total']} QC-Pass mesoscope sessions "
+        f"(of {cohort['released_total']} released), {cohort['mice']} mice, "
+        f"{cohort['rois']:,} ROIs"
+    )
+    title_size = FIGURE_TYPE_SCALE["title"]
+    svg = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
+        '<title id="title">Mesoscope unit extraction and event-amplitude quality '
+        "classes</title>",
+        f"<desc id=\"description\">{escape(subtitle)}</desc>",
+        f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
+        f'<image href="{image_data}" width="{width}" height="{height}"/>',
+        f'<text class="placeholder-title" x="{pad + 8}" y="62" '
+        f'font-family="Source Sans 3, sans-serif" font-size="{title_size}" '
+        'font-weight="600" fill="#111111">Mesoscope</text>',
+        f'<text class="placeholder-subtitle" x="{pad + 8}" y="112" '
+        f'font-family="Source Sans 3, sans-serif" font-size="{FIGURE_TYPE_SCALE["modality"]}" '
+        f'fill="#52514E">{escape(subtitle)}</text>',
+        "</svg>",
+    ]
+    output.parent.mkdir(parents=True, exist_ok=True)
+    write_svg_output(output, svg)
+    return output
 
 
 def write_basic_stimuli_plan_svg(output: Path = BASIC_STIMULI_PLAN_OUTPUT) -> Path:
@@ -6616,6 +6692,10 @@ def write_neuropixels_trajectory_svg(
 
 
 def main() -> None:
+    from .mesoscope_plane_snr_figure import (
+        write_mesoscope_plane_snr_html,
+        write_mesoscope_plane_snr_svg,
+    )
     from .mismatch_adjacency_figure import write_mismatch_adjacency_svg
     from .neural_response_figure import (
         write_neuropixels_event_html,
@@ -6632,6 +6712,7 @@ def main() -> None:
     figure_1_panel_c_path = write_figure_1_panel_c_svg()
     hardware_path = write_hardware_figure_svg()
     unit_extraction_plan_path = write_unit_extraction_plan_svg()
+    unit_extraction_mesoscope_path = write_unit_extraction_mesoscope_svg()
     basic_stimuli_plan_path = write_basic_stimuli_plan_svg()
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
@@ -6649,6 +6730,10 @@ def main() -> None:
     )
     neural_viewer_path = write_neural_viewer_html()
     segmentation_viewer_path = write_segmentation_viewers()
+    mesoscope_plane_snr_svg_path = write_mesoscope_plane_snr_svg()
+    mesoscope_plane_snr_html_path = write_mesoscope_plane_snr_html(
+        static_output=unit_extraction_mesoscope_path
+    )
     unit_yield_html_path = write_unit_yield_html()
     trajectory_html_path = write_neuropixels_trajectory_html()
     optotagging_source_path = write_optotagging_static_source()
@@ -6663,6 +6748,7 @@ def main() -> None:
     print(f"Wrote {figure_1_panel_c_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_plan_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {unit_extraction_mesoscope_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {basic_stimuli_plan_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
@@ -6681,6 +6767,8 @@ def main() -> None:
     print(f"Wrote {NEURAL_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {segmentation_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {SEGMENTATION_VIEWER_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
+    print(f"Wrote {mesoscope_plane_snr_svg_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {mesoscope_plane_snr_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {trajectory_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")

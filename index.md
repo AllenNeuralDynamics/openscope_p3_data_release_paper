@@ -337,7 +337,7 @@ Possible QC failure can come from these cases: white foam buildup on the edge of
 
 #### Optotagging protocol
 
-At the end of every experiment, an optotagging protocol is run during which the cortical surface is stimulated with blue light. In Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)\_EYFP)/wt mice, this protocol allowes us to identify putative Sst+ cortical interneurons by an increase in spiking activity time-locked to laser stimulation (and consequent ChR2 activation). Blue light is delivered by a 473 nm laser (Laser Quantum, model Ciel or Cobolt model 06-MLD). The light source is coupled to a 400 μm diameter fiber optic cable (Thorlabs) or bifurcated fiber bundle (Thorlabs, BFYL4LF01), with the tip(s) positioned such that blue light illuminates the entire cranial window. Two types of stimuli at 3 different light levels are randomly interleaved: a 10 ms pulse, and a 1s raised cosine ramp. For the pulse stimulus, a 0.5 ms ramp is applied at the beginning and end of the pulse. Stimuli are presented at intervals of 1.5 s plus a uniformly distributed delay between 0 and 0.5 s. Representative laser-aligned responses and session-level yield summaries are shown in [Figure 8](#fig-supp-optotagging-heatmaps).
+At the end of every experiment, an optotagging protocol is run during which the cortical surface is stimulated with blue light. In Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)\_EYFP)/wt mice, this protocol allowes us to identify putative Sst+ cortical interneurons by an increase in spiking activity time-locked to laser stimulation (and consequent ChR2 activation). Blue light is delivered by a 473 nm laser (Laser Quantum, model Ciel or Cobolt model 06-MLD). The light source is coupled to a 400 μm diameter fiber optic cable (Thorlabs) or bifurcated fiber bundle (Thorlabs, BFYL4LF01), with the tip(s) positioned such that blue light illuminates the entire cranial window. Two types of stimuli at 3 different light levels are randomly interleaved: a 10 ms pulse, and a 1s raised cosine ramp. For the pulse stimulus, a 0.5 ms ramp is applied at the beginning and end of the pulse. Stimuli are presented at intervals of 1.5 s plus a uniformly distributed delay between 0 and 0.5 s. Representative laser-aligned responses and session-level yield summaries are shown in [Figure 9](#fig-supp-optotagging-heatmaps).
 
 #### Clearing with life canvas
 
@@ -637,7 +637,7 @@ span −2 to 4 s. Standard-oddball trials use the complete recorded preceding
 interstimulus interval as baseline, sequence trials use the preceding sequence
 element, and sensorimotor trials use the preceding 343 ms of visual flow. To
 exclude the manipulated delay, duration trials use the earlier unmanipulated
-interval from row i−2 `stop_time` to row i−1 `start_time`, matching Figure 10.
+interval from row i−2 `stop_time` to row i−1 `start_time`, matching Figure 11.
 Standard-oddball events are matched to the same physical event in both repeats
 of standard control C1, sequence events to sequential control C2, duration events
 to the same delay or omission in jitter control C3, and sensorimotor events to the
@@ -695,7 +695,7 @@ strongest mesoscope session, 843000, retains 35, 34, 35, and 35 trials across th
 four event types. Neuropixels 848387 retains 137 of 140 trials with 33 in its
 weakest event type, and 830794 retains 124 with 29. In contrast, 830846, used in
 the previously released Figure 10, averages 1.12 cm/s with a median of 0.00 and
-retains 2, 4, 4, and 4 trials; Figure 10 therefore uses mouse 830794. Availability
+retains 2, 4, 4, and 4 trials; Figure 11 therefore uses mouse 830794. Availability
 is per event type rather than per session: 832691 falls below the minimum only
 for motor halt, and 830849 falls below it for motor omission and the 45° change
 while clearing motor halt and the 90° change. The matched open-loop control
@@ -1048,6 +1048,58 @@ compares the spatial filters and matched activity traces from representative
 sessions. The preprocessing, segmentation, source-extraction, and curation
 procedures are described under [Data processing](#data-processing) in Methods.
 
+[Figure 6](#fig-mesoscope-unit-extraction) reports mesoscope event-amplitude
+signal quality; [Figure 7](#fig-unit-extraction-plan) presents the separate
+SLAP2 glutamate analysis. Their source counts and quality classes retain their
+modality-specific definitions.
+
+:::{iframe} ./interactive/mesoscope-plane-snr.html
+:label: fig-mesoscope-unit-extraction
+:width: 100%
+:title: Unit extraction and event-amplitude signal quality for mesoscope two-photon imaging.
+:placeholder: ./images/figures/generated/figure-06-unit-extraction-mesoscope.svg
+
+**Mesoscope event-amplitude signal quality.** Panel identifiers B, F, and J
+are retained from the original multimodal plan; the SLAP2 analysis is shown
+separately in [Figure 7](#fig-unit-extraction-plan). **B,** One representative
+session, `multiplane-ophys_839909_2026-02-26`, with all 1,959 segmented ROIs
+outlined on the average projection of each of eight simultaneously acquired
+planes: VISp at 54, 188, 296, 394 µm and VISl at 54, 186, 284, 400 µm,
+coloured by the quality class defined in **F**. Beneath, a 60 s `dF/F` excerpt
+from one ROI with the processing pipeline's own OASIS event onsets, and that
+ROI's footprint on the average projection. **F,** Each detected event is
+assigned an amplitude in standard deviations of that ROI's own non-event
+`dF/F` noise, and each ROI is summarised by the fraction of its events falling
+below 2 SD, between 2 and 4 SD, and above 4 SD. Three ROIs illustrate the
+resulting classes, and the scatter places every ROI of the cohort in that
+feature space. Classes come from a k-means fit (k = 3) on the three
+standardised fractions, ordered by the centroid's > 4 SD fraction. The fit is
+performed **once over the whole cohort** rather than within each session;
+86% of ROIs keep the label a within-session fit would have given them, and
+the per-session label is retained in the released table as
+`amp_threshold_quality_class_session`. Fitting within each session compresses
+the across-session variation shown in **J**, narrowing the per-session High
+SNR share from 6.3–41.2% to a much tighter band. **J,** Class composition is
+nearly identical between the two imaged areas (22% High SNR in VISp against
+21% in VISl) but depends strongly on imaging depth: the High SNR share falls
+from 38% at 151–250 µm to 16% at 251–350 µm and 2.6% below 350 µm
+(38,517 ROIs); the shallowest bin (25,295 ROIs at ≤ 150 µm) sits at 25%,
+below the 151–250 µm peak. Pooling each animal's sessions gives a High SNR
+share between 8% and 34% across the ten mice, and the strip beneath shows
+every session individually so that within-animal spread remains visible.
+Depths are reported in µm rather than named cortical layers because these
+planes are not registered to a layer atlas. The counting unit is the somatic
+ROI, which is not equivalent to the glutamate-release sources in the SLAP2
+figure. The cohort is 81 of the 83 QC-Pass mesoscope sessions of the 91
+released, covering all 10 mice and 175,508 ROIs (51,694 Low SNR, 85,860
+Intermediate, 37,954 High SNR); the two QC-Pass sessions omitted lack a
+resolvable processed-asset path. The interactive comparison contains 1,810
+ROIs across eight planes from a different example session,
+`multiplane-ophys_839909_2026-02-20_12-53-27`, with three candidate
+signal-to-noise definitions and 60 s trace excerpts. It does not contain the
+complete 81-session cohort.
+:::
+
 :::{figure} ./images/figures/generated/figure-07-unit-extraction-plan.svg
 :label: fig-unit-extraction-plan
 :alt: SLAP2 glutamate source footprints and example traces, event-amplitude quality classes, and context-dependent event rates and class composition across 20 sessions from 8 mice.
@@ -1104,25 +1156,32 @@ panel without network access.
 
 ### Mesoscope two photon imaging
 
-GROUP 1
+Event extraction quality is reported in [Figure 6](#fig-mesoscope-unit-extraction) over
+81 of the 83 QC-Pass mesoscope sessions of the 91 released, covering all
+10 mice and 175,508 segmented ROIs. Events are the processing
+pipeline's own OASIS series rather than a re-detection, and each event is measured
+as an amplitude in standard deviations of its ROI's non-event `dF/F` noise. Summarising
+every ROI by the fraction of its events below 2 SD, between 2 and 4 SD, and above 4 SD
+separates ROIs whose detected activity is unambiguous against their own noise floor
+from those whose is not, and a three-way k-means fit over the whole cohort turns that
+description into Low SNR, Intermediate and High SNR classes.
 
-- Motion correction across planes in one session and many sessions.
+Quality is governed far more by imaging depth than by imaged area. The two areas are
+nearly indistinguishable (22% High SNR in VISp against 21%
+in VISl), whereas the High SNR share falls from 38% at 151–250 µm to
+16% at 251–350 µm and 2.6% below 350 µm. The deepest plane of each
+area therefore contributes many more ROIs whose events sit close to their noise floor,
+which is a consideration when pooling ROIs across planes in downstream analyses.
+Per-session composition varies appreciably within as well as between animals
+(6.3–41.2% High SNR across sessions), so session identity is
+worth retaining as a grouping factor.
 
-GROUP 2
-
-- ROI extraction quality
-
-- DFF signal quality (stability of baseline, calcium kernel)
-
-GROUP 2.2
-
-- Event extraction quality (firing rate, the SNR of events, calcium kernel …)
-
-GROUP3
-
-- Cell matching across sessions 2P,Cell stability across sessions.
-
-- TOOLS ACROSS
+Three further quality questions remain in preparation: motion correction across planes
+within and across sessions, baseline and calcium-kernel stability in the `dF/F` series,
+and cell matching across sessions. The signal-to-noise definition used here was selected
+by comparing three candidates on a single session; that comparison, and a rotatable
+depth view of ROI positions, are available in the interactive view of
+[Figure 6](#fig-mesoscope-unit-extraction).
 
 ### SLAP imaging
 
@@ -1140,7 +1199,7 @@ Bleaching and remaining cross-session stability analyses are still in progress.
 
 ## Receptive field analysis across modalities
 
-[Figure 7](#fig-basic-stimuli-plan) outlines a comparison of receptive-field
+[Figure 8](#fig-basic-stimuli-plan) outlines a comparison of receptive-field
 measurements and basic stimulus responses across recording modalities.
 
 :::{figure} ./images/figures/generated/figure-08-basic-stimuli-plan.svg
@@ -1156,14 +1215,14 @@ Draft plan for basic stimulus characterization across recording modalities.
 Optotagging and extracellular waveform structure provide complementary ways to
 characterize the Neuropixels populations. In the SST-targeted recordings,
 laser-evoked firing identifies putative optotagged units;
-[Figure 8](#fig-supp-optotagging-heatmaps) shows their responses and yield across
+[Figure 9](#fig-supp-optotagging-heatmaps) shows their responses and yield across
 sessions and anatomical areas. This functional identification is distinct from
 spike-sorting quality control and does not by itself describe a unit's response
 to a visual mismatch.
 
 WaveMAP groups waveforms independently within six anatomical groups and places
 putative fast-spiking/PV-like and optotagged SST populations within that waveform
-space ([Figure 9](#fig-supp-wavemap)). Waveform communities are not molecular
+space ([Figure 10](#fig-supp-wavemap)). Waveform communities are not molecular
 cell identities, and community labels are not shared across regions. Together,
 these characterizations provide context for the cell-type comparisons in the
 following mismatch-response analysis. The figures retain their stated
@@ -1225,7 +1284,7 @@ response and all three stimulation protocols for the full response. Among the
 FS criterion, 225 the SST criterion, and 35 both. These labels are not confirmed
 transcriptomic identities. This overlay characterizes waveform space rather
 than repeating the optotagging validation and yield analysis in
-[Figure 8](#fig-supp-optotagging-heatmaps), which uses different
+[Figure 9](#fig-supp-optotagging-heatmaps), which uses different
 selection/tagging criteria. **D,** Session-normalized within-region class
 composition (D1) and log2 enrichment relative to the saved regional baseline
 (D2). Each contributing session is weighted equally within a context; missing
@@ -1242,7 +1301,7 @@ the publication build.
 
 ## Neuropixels mismatch responses across predictive contexts
 
-[Figure 10](#fig-neuropixels-event-responses) illustrates how the released
+[Figure 11](#fig-neuropixels-event-responses) illustrates how the released
 Neuropixels recordings can be used to identify candidate mismatch-responsive
 units. Four public sessions from mouse 830794 provide one example of each
 predictive context. Panel A summarizes responsive fractions and
@@ -1393,7 +1452,7 @@ accompanying text.
 
 All three recording modalities include continuous raw
 behavioral videos together with synchronized running-wheel signals and
-stimulus-presentation intervals. [Figure 11](#fig-behavior-tracking) presents
+stimulus-presentation intervals. [Figure 12](#fig-behavior-tracking) presents
 the available body or behavior, face, eye, and nose camera views for the
 Neuropixels, mesoscope, and SLAP2 examples, alongside their running profiles
 and stimulus state. The common timing information makes these records a
