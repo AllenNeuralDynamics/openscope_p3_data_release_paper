@@ -12,10 +12,14 @@ function selectView(mode) {
             } else {
                 interactiveView.removeAttribute('hidden');
                 staticView.setAttribute('hidden', '');
+                if (rawData.length > 0) renderAll();
                 setTimeout(() => {
                     window.dispatchEvent(new Event('resize'));
-                    const p = document.querySelector('.tab-content.active .plot-area');
-                    if (p && typeof Plotly !== 'undefined') Plotly.Plots.resize(p);
+                    if (typeof Plotly !== 'undefined') {
+                        document.querySelectorAll('.tab-content.active .plot-area').forEach(p => {
+                            if (p && p.data) Plotly.Plots.resize(p);
+                        });
+                    }
                 }, 60);
             }
         }
@@ -45,14 +49,46 @@ function selectView(mode) {
 
         // Data Fetching
         let rawData = [], boundaryData = [], csdData = [], spectralData = [];
-        
-        fetch('media/ecephys-qc-dashboard/ecephys-qc-dashboard.json')
-            .then(response => {
-                if (!response.ok) throw new Error("HTTP " + response.status);
-                return response.json();
-            })
+
+        function unpackUnits(unitsPayload) {
+            if (!unitsPayload) return [];
+            if (Array.isArray(unitsPayload)) return unitsPayload;
+            const keys = Object.keys(unitsPayload);
+            if (keys.length === 0) return [];
+            const n = unitsPayload[keys[0]].length;
+            const out = new Array(n);
+            for (let i = 0; i < n; i++) {
+                const row = {};
+                for (let k = 0; k < keys.length; k++) {
+                    const key = keys[k];
+                    row[key] = unitsPayload[key][i];
+                }
+                out[i] = row;
+            }
+            return out;
+        }
+
+        async function fetchDashboardPayload(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            const buffer = await response.arrayBuffer();
+            const bytes = new Uint8Array(buffer);
+            let jsonText;
+            if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+                if (typeof DecompressionStream === "undefined") {
+                    throw new Error("Browser does not support DecompressionStream('gzip').");
+                }
+                const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream("gzip"));
+                jsonText = await new Response(stream).text();
+            } else {
+                jsonText = new TextDecoder("utf-8").decode(bytes);
+            }
+            return JSON.parse(jsonText);
+        }
+
+        fetchDashboardPayload('media/ecephys-qc-dashboard/ecephys-qc-dashboard.json.gz')
             .then(data => {
-                rawData = data.units || [];
+                rawData = unpackUnits(data.units);
                 boundaryData = data.boundaries || [];
                 csdData = data.csd || [];
                 spectralData = data.psd || [];
@@ -65,7 +101,7 @@ function selectView(mode) {
             })
             .catch(error => {
                 console.error("Error loading data:", error);
-                document.getElementById('loading-spinner').innerHTML = "<b>Error: Could not load data payload.</b><br><br>The data payload is hosted externally due to size limits. To test locally, ensure <code>ecephys-qc-dashboard.json</code> is in the <code>media/ecephys-qc-dashboard/</code> folder and you are running a local web server.";
+                document.getElementById('loading-spinner').innerHTML = "<b>Error: Could not load data payload.</b><br><br>Ensure <code>ecephys-qc-dashboard.json.gz</code> is staged in <code>media/ecephys-qc-dashboard/</code> and served over HTTP.";
                 document.getElementById('loading-spinner').style.color = "#d1495b";
             });
 
@@ -1034,7 +1070,10 @@ function selectView(mode) {
             renderAll();
             setTimeout(() => {
                 window.dispatchEvent(new Event('resize'));
-                const p = document.querySelector('.tab-content.active .plot-area');
-                if (p && typeof Plotly !== 'undefined') Plotly.Plots.resize(p);
+                if (typeof Plotly !== 'undefined') {
+                    document.querySelectorAll('.tab-content.active .plot-area').forEach(p => {
+                        if (p && p.data) Plotly.Plots.resize(p);
+                    });
+                }
             }, 60);
         };

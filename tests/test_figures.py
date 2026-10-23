@@ -3507,3 +3507,64 @@ def test_animal_record_provenance() -> None:
     assert provenance["vendored_sha256"] == hashlib.sha256(
         ANIMAL_RECORDS_PATH.read_bytes()
     ).hexdigest()
+
+
+def test_ecephys_qc_dashboard_snapshot_and_outputs(tmp_path: Path) -> None:
+    from openscope_p3_publication.ecephys_qc_figure import (
+        DATA_JSON_PATH,
+        OUT_HTML_PATH,
+        OUT_SVG_PATH,
+        PROVENANCE_JSON_PATH,
+        write_ecephys_qc_html,
+        write_ecephys_qc_svg,
+    )
+
+    assert DATA_JSON_PATH.exists()
+    assert PROVENANCE_JSON_PATH.exists()
+    assert DATA_JSON_PATH.stat().st_size < 35 * 1024 * 1024
+
+    provenance = json.loads(PROVENANCE_JSON_PATH.read_text(encoding="utf-8"))
+    assert provenance["snapshot"] == "ecephys-qc-dashboard.json.gz"
+    assert (
+        provenance["snapshot_sha256"]
+        == hashlib.sha256(DATA_JSON_PATH.read_bytes()).hexdigest()
+    )
+
+    synthetic_gz = tmp_path / "synthetic.json.gz"
+    import gzip
+
+    synthetic_payload = {
+        "units": {
+            "mouse_id": ["820454", "820454"],
+            "session_stage": ["First", "Last"],
+            "isi_violations_ratio": [0.001, 0.002],
+            "presence_ratio": [0.99, 0.98],
+            "amplitude_cutoff": [0.01, 0.02],
+            "snr": [8.5, 6.2],
+            "drift_ptp": [12.0, 18.0],
+            "depth_from_cortex_um": [150.0, 450.0],
+            "area": ["VISp2/3", "VISp5"],
+        },
+        "boundaries": [],
+        "csd": [],
+        "psd": [],
+    }
+    with gzip.open(synthetic_gz, "wt", encoding="utf-8") as gz_file:
+        json.dump(synthetic_payload, gz_file)
+
+    svg_1 = tmp_path / "out1.svg"
+    svg_2 = tmp_path / "out2.svg"
+    write_ecephys_qc_svg(svg_1, synthetic_gz)
+    write_ecephys_qc_svg(svg_2, synthetic_gz)
+    assert svg_1.read_bytes() == svg_2.read_bytes()
+    svg_text = svg_1.read_text(encoding="utf-8")
+    assert "Neuropixels Unit Quality Control and Stability" in svg_text
+    assert "<dc:date>" not in svg_text
+
+    html_out = tmp_path / "dashboard.html"
+    write_ecephys_qc_html(html_out, synthetic_gz)
+    html_text = html_out.read_text(encoding="utf-8")
+    assert "ecephys-qc-dashboard.json.gz" in html_text
+    assert "DecompressionStream" in html_text
+    assert OUT_SVG_PATH.exists()
+    assert OUT_HTML_PATH.exists()

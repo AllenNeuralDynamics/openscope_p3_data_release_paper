@@ -1,5 +1,7 @@
 {
   "description": "OpenScope Ecephys QC Dashboard Data",
+  "snapshot": "ecephys-qc-dashboard.json.gz",
+  "snapshot_sha256": "4dee86f0b33b9100dad8c1e49776046c17e3854d345846f699501f79152b4898",
   "timestamp_utc": "2026-10-10T22:39:18.742346+00:00",
   "dandiset": "001637",
   "version": "draft",

@@ -10,21 +10,69 @@ import re
 from collections import defaultdict
 from datetime import UTC, datetime
 
-import h5py
 import numpy as np
 import pandas as pd
-import remfile
-from dandi.dandiapi import DandiAPIClient
-from pynwb import NWBHDF5IO
-from scipy.ndimage import gaussian_filter1d
-from scipy.signal import welch
+
+try:
+    import h5py
+    import remfile
+    from dandi.dandiapi import DandiAPIClient
+    from pynwb import NWBHDF5IO
+    from scipy.ndimage import gaussian_filter1d
+    from scipy.signal import welch
+except ImportError:
+    h5py = None
+    remfile = None
+    DandiAPIClient = None
+    NWBHDF5IO = None
+    gaussian_filter1d = None
+    welch = None
 
 # ==========================================
 # CONFIGURATION & CONSTANTS
 # ==========================================
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "figure_sources", "data")
-OUTPUT_JSON = os.path.join(DATA_DIR, "ecephys-qc-dashboard.json")
+OUTPUT_JSON = os.path.join(DATA_DIR, "ecephys-qc-dashboard.json.gz")
 PROV_JSON = os.path.join(DATA_DIR, "ecephys-qc-dashboard.provenance.json")
+
+UNIT_META_COLS = [
+    "session_key",
+    "mouse_id",
+    "cohort",
+    "context",
+    "session_stage",
+    "probe",
+    "area",
+    "major_division",
+    "region_group",
+    "area_family",
+    "subarea",
+    "layer",
+    "layer_or_compartment",
+    "anatomy_class",
+]
+
+UNIT_METRIC_ROUND_SPECS = {
+    "amplitude_cutoff": 5,
+    "isi_violations_ratio": 5,
+    "presence_ratio": 4,
+    "snr": 3,
+    "firing_rate": 3,
+    "isolation_distance": 2,
+    "d_prime": 3,
+    "silhouette": 4,
+    "l_ratio": 5,
+    "amplitude": 2,
+    "half_width": 5,
+    "peak_to_valley": 5,
+    "repolarization_slope": 2,
+    "drift_ptp": 3,
+    "drift_std": 3,
+    "amplitude_cv_median": 4,
+    "depth_from_cortex_um": 2,
+    "depth_from_l1_l23_um": 2,
+    "estimated_y": 2,
+}
 
 VALID_PROBES = ["ProbeA", "ProbeB", "ProbeC", "ProbeD", "ProbeE", "ProbeF"]
 NON_ANATOMICAL_LABELS = {
@@ -621,6 +669,16 @@ def _stream_probe_anatomy_metadata(nwb):
                             "boundary_label": label,
                             "from_area": prev.get("area"),
                             "to_area": curr.get("area"),
+                            "from_major_division": prev.get("major_division"),
+                            "to_major_division": curr.get("major_division"),
+                            "from_region_group": prev.get("region_group"),
+                            "to_region_group": curr.get("region_group"),
+                            "from_area_family": prev.get("area_family"),
+                            "to_area_family": curr.get("area_family"),
+                            "from_subarea": prev.get("subarea"),
+                            "to_subarea": curr.get("subarea"),
+                            "from_compartment": prev.get("compartment"),
+                            "to_compartment": curr.get("compartment"),
                             "from_region_family": prev.get("region_family"),
                             "to_region_family": curr.get("region_family"),
                             "from_subregion": prev.get("subregion"),
@@ -1432,7 +1490,6 @@ def _spectral_resample_and_summarize(depths, freqs, psd_depth_by_freq):
             "f0": float(f0),
             "f1": float(f1),
             "values": np.round(rel, 4).tolist(),
-            "values_relative": np.round(rel, 4).tolist(),
             "values_absolute_db": np.round(abs_db, 4).tolist(),
         }
 
@@ -1467,7 +1524,7 @@ def _spectral_downsample_depth(depths, psd_db, band_profiles):
     out_bands = {}
     for name, spec in band_profiles.items():
         out_spec = {k: v for k, v in spec.items() if not k.startswith("values")}
-        for value_key in ("values", "values_relative", "values_absolute_db"):
+        for value_key in ("values", "values_absolute_db"):
             if value_key in spec:
                 vals = np.asarray(spec[value_key], dtype=float)
                 out_spec[value_key] = np.round(vals[idx], 4).tolist()
@@ -1580,6 +1637,176 @@ def build_static_spectral_payload(manifest, csd_records, align_units, l1_refs, c
     return all_records
 
 
+def _compact_fr_series(ts):
+    if ts is None:
+        return None
+    out = []
+    for v in ts:
+        if v is None:
+            out.append(None)
+        else:
+            rv = round(float(v), 1)
+            out.append(0 if rv == 0 else rv)
+    return out
+
+
+def compact_dashboard_payload(raw_payload):
+    raw_units = raw_payload.get("units", [])
+    if isinstance(raw_units, dict):
+        keys = list(raw_units.keys())
+        n_units = len(raw_units[keys[0]]) if keys else 0
+        raw_units = [{k: raw_units[k][i] for k in keys} for i in range(n_units)]
+
+    parsed_cache = {}
+
+    def get_parsed(area):
+        if area not in parsed_cache:
+            parsed_cache[area] = _parse_ccf_hierarchy(area)
+        return parsed_cache[area]
+
+    col_keys = UNIT_META_COLS + list(UNIT_METRIC_ROUND_SPECS.keys()) + ["fr_time_series"]
+    col_units = {k: [] for k in col_keys}
+    hierarchy_override_cols = {
+        "major_division",
+        "region_group",
+        "area_family",
+        "subarea",
+        "layer",
+        "layer_or_compartment",
+        "anatomy_class",
+    }
+
+    for u in raw_units:
+        area = _clean_area_label(u.get("area") or u.get("ccf_acronym"))
+        parsed = get_parsed(area)
+        for k in UNIT_META_COLS:
+            if k == "area":
+                col_units[k].append(area)
+            elif k in hierarchy_override_cols:
+                col_units[k].append(parsed.get(k))
+            else:
+                col_units[k].append(sanitize_for_json(u.get(k)))
+        for k, ndigits in UNIT_METRIC_ROUND_SPECS.items():
+            val = sanitize_for_json(u.get(k))
+            col_units[k].append(round(float(val), ndigits) if val is not None else None)
+        col_units["fr_time_series"].append(_compact_fr_series(u.get("fr_time_series")))
+
+    boundaries = []
+    for b in sanitize_for_json(raw_payload.get("boundaries", [])):
+        b_copy = dict(b)
+        p_from = get_parsed(b_copy.get("from_area"))
+        p_to = get_parsed(b_copy.get("to_area"))
+        b_copy.update(
+            {
+                "from_major_division": p_from.get("major_division"),
+                "to_major_division": p_to.get("major_division"),
+                "from_region_group": p_from.get("region_group"),
+                "to_region_group": p_to.get("region_group"),
+                "from_area_family": p_from.get("area_family"),
+                "to_area_family": p_to.get("area_family"),
+                "from_subarea": p_from.get("subarea"),
+                "to_subarea": p_to.get("subarea"),
+                "from_compartment": p_from.get("compartment"),
+                "to_compartment": p_to.get("compartment"),
+                "from_region_family": p_from.get("region_family"),
+                "to_region_family": p_to.get("region_family"),
+                "from_subregion": p_from.get("subregion"),
+                "to_subregion": p_to.get("subregion"),
+                "from_layer": p_from.get("layer"),
+                "to_layer": p_to.get("layer"),
+            }
+        )
+        if b_copy.get("boundary_type") == "region":
+            b_copy["boundary_label"] = (
+                f"{p_from.get('hierarchy_label')} / {p_to.get('hierarchy_label')}"
+            )
+        boundaries.append(b_copy)
+
+    def refresh_spans(records):
+        out_recs = []
+        for rec in sanitize_for_json(records):
+            rec_copy = dict(rec)
+            if "anatomy_spans" in rec_copy and isinstance(rec_copy["anatomy_spans"], list):
+                new_spans = []
+                for sp in rec_copy["anatomy_spans"]:
+                    sp_copy = dict(sp)
+                    lab = _clean_area_label(sp_copy.get("label"))
+                    if lab is not None:
+                        p_sp = get_parsed(lab)
+                        sp_copy["region_group"] = p_sp.get("region_group")
+                        sp_copy["major_division"] = p_sp.get("major_division")
+                        sp_copy["anatomy_class"] = p_sp.get("anatomy_class")
+                    new_spans.append(sp_copy)
+                rec_copy["anatomy_spans"] = new_spans
+            if "band_profiles" in rec_copy and isinstance(rec_copy["band_profiles"], dict):
+                new_bp = {}
+                for bname, bspec in rec_copy["band_profiles"].items():
+                    bspec_copy = dict(bspec)
+                    bspec_copy.pop("values_relative", None)
+                    new_bp[bname] = bspec_copy
+                rec_copy["band_profiles"] = new_bp
+            out_recs.append(rec_copy)
+        return out_recs
+
+    return {
+        "units": col_units,
+        "boundaries": boundaries,
+        "csd": refresh_spans(raw_payload.get("csd", [])),
+        "psd": refresh_spans(raw_payload.get("psd", [])),
+    }
+
+
+def write_compressed_dashboard_snapshot(payload, output_path, prov_path, manifest=None):
+    compact = compact_dashboard_payload(payload)
+    json_bytes = json.dumps(
+        compact, ensure_ascii=False, allow_nan=False, separators=(",", ":")
+    ).encode("utf-8")
+    with open(output_path, "wb") as raw_f:
+        with gzip.GzipFile(fileobj=raw_f, mode="wb", compresslevel=6, mtime=0) as gz_f:
+            gz_f.write(json_bytes)
+
+    with open(output_path, "rb") as raw_f:
+        snapshot_sha256 = hashlib.sha256(raw_f.read()).hexdigest()
+
+    existing_prov = {}
+    if os.path.exists(prov_path):
+        try:
+            with open(prov_path, encoding="utf-8") as f:
+                existing_prov = json.load(f)
+        except Exception:
+            existing_prov = {}
+
+    if manifest is not None:
+        source_assets = [
+            {
+                "session_key": s["session_key"],
+                "asset_id": s["asset_id"],
+                "path": s["path"],
+                "modified": s["date_modified"],
+            }
+            for s in manifest
+        ]
+        timestamp_utc = datetime.now(UTC).isoformat()
+    else:
+        source_assets = existing_prov.get("source_assets", [])
+        timestamp_utc = existing_prov.get("timestamp_utc", datetime.now(UTC).isoformat())
+
+    prov_payload = {
+        "description": "OpenScope Ecephys QC Dashboard Data",
+        "snapshot": os.path.basename(output_path),
+        "snapshot_sha256": snapshot_sha256,
+        "timestamp_utc": timestamp_utc,
+        "dandiset": "001637",
+        "version": "draft",
+        "source_assets": source_assets,
+    }
+    with open(prov_path, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(prov_payload, f, indent=2)
+        f.write("\n")
+
+    return snapshot_sha256
+
+
 # ==========================================
 # MAIN EXECUTION
 # ==========================================
@@ -1588,9 +1815,25 @@ if __name__ == "__main__":
     parser.add_argument(
         "--cache-dir", type=str, default=".cache", help="Directory for intermediate caching"
     )
+    parser.add_argument(
+        "--from-json",
+        type=str,
+        default=None,
+        help="Compact and compress an existing uncompressed JSON snapshot without streaming DANDI",
+    )
     args = parser.parse_args()
-    os.makedirs(args.cache_dir, exist_ok=True)
     os.makedirs(DATA_DIR, exist_ok=True)
+
+    if args.from_json:
+        print(f"Loading existing snapshot from {args.from_json}...")
+        with open(args.from_json, encoding="utf-8") as f:
+            existing_payload = json.load(f)
+        print(f"Compacting and compressing snapshot to {OUTPUT_JSON}...")
+        sha256 = write_compressed_dashboard_snapshot(existing_payload, OUTPUT_JSON, PROV_JSON)
+        print(f"Saved {OUTPUT_JSON} (SHA256: {sha256})")
+        raise SystemExit(0)
+
+    os.makedirs(args.cache_dir, exist_ok=True)
 
     print("Fetching manifest...")
     manifest = []
@@ -1728,35 +1971,15 @@ if __name__ == "__main__":
         standard_manifest, csd_records, align_units, l1_refs, args.cache_dir
     )
 
-    # Save to JSON
-    print(f"\nSanitizing and saving payload to {OUTPUT_JSON}...")
+    # Save to compressed JSON
+    print(f"\nSanitizing and saving compressed payload to {OUTPUT_JSON}...")
     final_payload = {
-        "units": sanitize_for_json(master_df.to_dict(orient="records")),
-        "boundaries": sanitize_for_json(ccf_boundary_df.to_dict(orient="records")),
-        "csd": sanitize_for_json(csd_records),
-        "psd": sanitize_for_json(psd_records),
+        "units": master_df.to_dict(orient="records"),
+        "boundaries": ccf_boundary_df.to_dict(orient="records"),
+        "csd": csd_records,
+        "psd": psd_records,
     }
-
-    with open(OUTPUT_JSON, "w", encoding="utf-8", newline="\n") as f:
-        json.dump(final_payload, f, separators=(",", ":"))
-
-    print(f"Saving provenance to {PROV_JSON}...")
-    prov_payload = {
-        "description": "OpenScope Ecephys QC Dashboard Data",
-        "timestamp_utc": datetime.now(UTC).isoformat(),
-        "dandiset": "001637",
-        "version": "draft",
-        "source_assets": [
-            {
-                "session_key": s["session_key"],
-                "asset_id": s["asset_id"],
-                "path": s["path"],
-                "modified": s["date_modified"],
-            }
-            for s in manifest
-        ],
-    }
-    with open(PROV_JSON, "w", encoding="utf-8", newline="\n") as f:
-        json.dump(prov_payload, f, indent=2)
-
-    print("Data extraction complete!")
+    sha256 = write_compressed_dashboard_snapshot(
+        final_payload, OUTPUT_JSON, PROV_JSON, manifest=manifest
+    )
+    print(f"Data extraction complete! SHA256: {sha256}")

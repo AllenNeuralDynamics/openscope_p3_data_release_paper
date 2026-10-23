@@ -25,5 +25,4 @@ interactive/media/wavemap/
 .wavemap_work/
 
 .cache/
-figure_sources/data/ecephys-qc-dashboard.json
-interactive/media/ecephys-qc-dashboard/ecephys-qc-dashboard.json
+interactive/media/ecephys-qc-dashboard/ecephys-qc-dashboard.json*
