@@ -47,6 +47,10 @@ def extract_units(output_dir: Path, workers: int) -> tuple[Path, Path]:
                 print(f"Skipped: {reason}", flush=True)
                 continue
             frames.append(frame)
+    if skipped:
+        raise RuntimeError(
+            f"{len(skipped)} of {len(assets)} sessions were skipped; nothing was written."
+        )
     if not frames:
         raise RuntimeError("No sessions produced unit rows; nothing was written.")
     return write_unit_table(
