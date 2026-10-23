@@ -1,3 +1,4 @@
+import base64
 import csv
 import datetime as dt
 import hashlib
@@ -489,11 +490,9 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
-    # The mesoscope unit-extraction figure is an iframe, not a static figure
-    # directive, so it is counted by the interactive-viewer tests instead.
-    assert len(figures) == 5
+    assert len(figures) == 6
     assert manuscript.count(":::{figure} ./images/figures/imported/") == 1
-    assert manuscript.count(":::{figure} ./images/figures/generated/") == 4
+    assert manuscript.count(":::{figure} ./images/figures/generated/") == 5
     assert "./images/figures/generated/figure-01-overview.svg" in manuscript
     assert "./images/figures/generated/figure-01-panel-c-cohorts.svg" not in manuscript
     assert ":label: fig-experimental-design" not in manuscript
@@ -512,6 +511,7 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     assert "./images/figures/generated/multimodal-hardware.svg" in manuscript
     assert "./images/figures/generated/figure-06-segmentation-viewers.svg" not in manuscript
     assert "./images/figures/generated/figure-06-unit-extraction-mesoscope.svg" in manuscript
+    assert "./images/figures/generated/figure-07-unit-extraction-plan.svg" in manuscript
     assert "./images/figures/generated/figure-08-basic-stimuli-plan.svg" in manuscript
     assert "./images/figures/generated/figure-11-standard-oddball-plan.svg" not in manuscript
     assert "nine native-resolution images" in manuscript
@@ -520,6 +520,47 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     hardware_section = manuscript[hardware_start:methods_start]
     assert "Behavior cohorts" not in hardware_section
     assert "cohort-specific order" not in hardware_section
+
+
+def test_mesoscope_and_slap2_quality_figures_remain_separate() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    blocks = re.findall(
+        r"^:::\{(?:figure|iframe)\} [^\n]+\n.*?^:::\s*$",
+        manuscript,
+        re.MULTILINE | re.DOTALL,
+    )
+    mesoscope = next(
+        block for block in blocks if ":label: fig-mesoscope-unit-extraction\n" in block
+    )
+    slap2 = next(block for block in blocks if ":label: fig-unit-extraction-plan\n" in block)
+
+    assert manuscript.count(":label: fig-mesoscope-unit-extraction\n") == 1
+    assert manuscript.count(":label: fig-unit-extraction-plan\n") == 1
+    assert ":::{iframe} ./interactive/mesoscope-plane-snr.html" in mesoscope
+    assert (
+        ":placeholder: ./images/figures/generated/figure-06-unit-extraction-mesoscope.svg"
+        in mesoscope
+    )
+    assert ":::{figure} ./images/figures/generated/figure-07-unit-extraction-plan.svg" in slap2
+    assert "columns are in preparation" not in mesoscope
+    assert "complete 81-session cohort" in mesoscope
+    assert "multiplane-ophys_839909_2026-02-20_12-53-27" in mesoscope
+    assert "2,540 sources" in slap2
+    for label in ("B", "F", "J"):
+        assert f"**{label},**" in mesoscope
+    for label in ("C", "G", "K"):
+        assert f"**{label},**" in slap2
+    assert manuscript.index(mesoscope) < manuscript.index(slap2)
+    assert not re.search(r"^(?:<{7}|={7}|>{7})", manuscript, re.MULTILINE)
+
+
+def test_mesoscope_static_view_matches_its_manuscript_placeholder() -> None:
+    svg = (
+        REPO_ROOT / "images/figures/generated/figure-06-unit-extraction-mesoscope.svg"
+    ).read_text(encoding="utf-8")
+    html = (REPO_ROOT / "interactive/mesoscope-plane-snr.html").read_text(encoding="utf-8")
+    encoded = base64.b64encode(svg.encode("utf-8")).decode("ascii")
+    assert f'data:image/svg+xml;base64,{encoded}' in html
 
 
 def test_bibliography_uses_resolved_myst_citations() -> None:
@@ -725,7 +766,7 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "isolated runs of one to four samples" in prose.lower()
     assert "**B,** a dorsal projection" in manuscript
     assert manuscript.count(
-        "[Figure 8](#fig-supp-optotagging-heatmaps)"
+        "[Figure 9](#fig-supp-optotagging-heatmaps)"
     ) == 3
     assert "./interactive/optotagging-heatmaps.html" in manuscript
     assert ":label: fig-supp-optotagging-heatmaps\n:width: 100%" in manuscript
@@ -734,7 +775,7 @@ def test_supplementary_and_power_figures_are_current() -> None:
         in manuscript
     )
     assert "all 60 source sessions" in manuscript
-    assert "exact laser-on windows" in manuscript
+    assert "mean baseline z score inside the exact laser pulses" in manuscript
     assert "**A,** the 5 Hz response" in manuscript
     assert "five teal marks denote the exact 10 ms laser pulses" in manuscript
     assert "**B,** Overall optotagged-cell yield" in manuscript
@@ -1202,7 +1243,10 @@ def test_figure_captions_and_interactive_placement() -> None:
     )
     assert "[Figure 5](#fig-aligned-neural-signals)" in manuscript
     assert ":label: fig-unit-extraction-plan" in manuscript
-    assert "[Figure 7](#fig-basic-stimuli-plan) outlines a comparison" in manuscript
+    assert "2,521 sources have defined classes and 19 are excluded" in manuscript
+    assert "averages exclude zero-event source/context pairs" in manuscript
+    assert "cross-cohort quality-class differences must not be interpreted" in manuscript
+    assert "[Figure 8](#fig-basic-stimuli-plan) outlines a comparison" in manuscript
     assert "fig-standard-oddball-plan" not in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert ":placeholder: ./images/figures/generated/synchronized-behavior.svg" in manuscript
@@ -1224,7 +1268,7 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "Event-centered excerpts from real Neuropixels" not in manuscript
     assert "figure-06-behavior-tracking-plan.png" not in manuscript
     assert "continuous raw\nbehavioral videos" in manuscript
-    assert "[Figure 11](#fig-behavior-tracking)" in manuscript
+    assert "[Figure 12](#fig-behavior-tracking)" in manuscript
     assert "[](#fig-behavior-tracking)" not in manuscript
     assert (
         manuscript.index(":label: fig-supp-optotagging-heatmaps")
@@ -1238,11 +1282,13 @@ def test_figure_captions_and_interactive_placement() -> None:
         (3, "fig-multimodal-pipelines"),
         (4, "fig-recording-session-inventory"),
         (5, "fig-aligned-neural-signals"),
-        (7, "fig-basic-stimuli-plan"),
-        (8, "fig-supp-optotagging-heatmaps"),
-        (9, "fig-supp-wavemap"),
-        (10, "fig-neuropixels-event-responses"),
-        (11, "fig-behavior-tracking"),
+        (6, "fig-mesoscope-unit-extraction"),
+        (7, "fig-unit-extraction-plan"),
+        (8, "fig-basic-stimuli-plan"),
+        (9, "fig-supp-optotagging-heatmaps"),
+        (10, "fig-supp-wavemap"),
+        (11, "fig-neuropixels-event-responses"),
+        (12, "fig-behavior-tracking"),
     ):
         assert f"[Figure {number}](#{label})" in manuscript
     assert re.search(r"\[\]\(#fig-", manuscript) is None

@@ -20,10 +20,10 @@
     <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
       <h2 id="figure-legend-title">Interactive figure legend</h2>
       <p>Laser-aligned responses to raised-cosine, 5 Hz, and 40 Hz stimulation are shown for
-        non-noise units from three public Neuropixels sessions near the 50th, 80th, and 95th
-        percentiles of optotagged-cell yield, using 1-ms time bins. Rows are baseline z-scored
-        per unit. Anatomical filtering precedes ordering by firing rate during each condition's
-        exact laser-on intervals; strongest responses appear at the top. All panels share
+        non-noise units from three public Neuropixels example sessions spanning low to high
+        optotagged-cell yield, using 1-ms time bins. Rows are baseline z-scored
+        per unit. Anatomical filtering precedes ordering by each unit's mean baseline z score
+        inside the condition's exact laser pulses; the most strongly activated units appear at the top. All panels share
         the displayed symmetric color scale.</p>
     </section>
 
@@ -45,8 +45,8 @@
         </div>
         <div>
           <label for="color-limit">Symmetric color limit: ±<output
-            id="color-limit-value" for="color-limit">3</output> z</label>
-          <input id="color-limit" type="range" min="0.5" max="8" step="0.5" value="3">
+            id="color-limit-value" for="color-limit">2</output> z</label>
+          <input id="color-limit" type="range" min="0.5" max="8" step="0.5" value="2">
         </div>
       </section>
       <section class="session-summary" aria-live="polite">
@@ -56,14 +56,14 @@
       <figure id="numeric-figure" hidden>
         <div id="heatmap-panels" class="heatmap-panels"></div>
         <div class="color-key" aria-label="Shared coolwarm color scale">
-          <span id="color-min">−3</span><span class="color-gradient"></span>
+          <span id="color-min">−2</span><span class="color-gradient"></span>
           <span>0</span><span class="color-gradient warm"></span>
-          <span id="color-max">+3</span>
+          <span id="color-max">+2</span>
         </div>
         <figcaption>
           Rows are baseline z-scored per unit. Parent filtering is applied before each
-          condition is ordered by firing rate during its exact laser-on intervals;
-          strongest responses appear at the top. All panels share the displayed scale.
+          condition is ordered by mean baseline z score inside its exact laser pulses;
+          the most strongly activated units appear at the top. All panels share the displayed scale.
         </figcaption>
       </figure>
       <figure id="fallback-figure" hidden>

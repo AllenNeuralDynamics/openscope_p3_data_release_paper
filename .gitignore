@@ -1,6 +1,9 @@
 # MyST build outputs
 _build/
 
+# SLAP2 PNG previews; SVGs are the canonical publication assets
+images/figures/generated/figure7_panel*.png
+
 # Generated deployment copies of canonical figure data
 interactive/media/data-explorer/
 interactive/media/eye-tracking-viewer/

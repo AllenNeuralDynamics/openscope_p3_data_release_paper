@@ -16,6 +16,45 @@ Maintainers can refresh and commit all three publication tables by manually runn
 
 `neuropixels-unit-yield.csv` contains one row for each unit-bearing session NWB in the July 30, 2026 snapshot of draft Dandiset 001637. It records total units, units passing all three manuscript QC thresholds, and the available `Probe*` electrode groups. The DANDI asset-manifest checksum, thresholds, skipped schema-only NWBs, and vendored checksum are recorded in `neuropixels-unit-yield.provenance.json`. Regenerate it with `uv run --with h5py --with numpy --with remfile python scripts/extract_neuropixels_unit_yield.py`.
 
+## Neuropixels unit table
+
+`neuropixels-units.parquet` lists every sorted unit in all 60 session NWBs of
+[DANDI:001637](https://dandiarchive.org/dandiset/001637/draft/files) (draft,
+retrieved October 16, 2026): 195,447 units, including units the sorter labelled
+`noise`. Each row is one `(session_id, unit_id)` pair, where `unit_id` is the NWB
+`unit_name` and joins with `optotagging-results.parquet`.
+
+Columns:
+
+- Identity: `session_id`, `asset_id`, `subject_id`, `unit_id`, `nwb_unit_index`
+  (row in the NWB `units` table), and `probe`.
+- Quality: `decoder_label` (`sua`, `mua`, or `noise`) and `default_qc` (the NWB
+  flag). No QC rule is applied; filter on the metrics below as needed.
+- Anatomy, coarse to fine: `brain_division` (Allen major division such as
+  `Isocortex`, `HPF`, or `TH`; `Other` for fiber tracts, ventricles, and `void`),
+  `brain_area` (layers and hyphenated subdivisions collapsed to their parent,
+  for example `VISp2/3` → `VISp` and `DG-mo` → `DG`), and `brain_structure` (the
+  NWB electrode `location` of the unit's peak channel). `brain_area` and
+  `brain_division` are null when the structure is not in the Allen ontology.
+- `ccf_ap_um`, `ccf_dv_um`, `ccf_ml_um`: CCF coordinates of the peak channel.
+- Metrics copied from the NWB `units` table: `num_spikes`, `firing_rate`,
+  `amplitude_cutoff`, `isi_violations_ratio`, `presence_ratio`, `snr`,
+  `amplitude_median`, `d_prime`, `isolation_distance`, `l_ratio`, `nn_hit_rate`,
+  `drift_ptp`, `peak_to_valley`, `half_width`, `depth`, and `decoder_probability`.
+
+`neuropixels-units.provenance.json` records the DANDI asset manifest (IDs,
+paths, digests), QC thresholds, column descriptions, counts, and the parquet
+checksum. Unit IDs are tied to these exact uploads: a re-uploaded NWB gets a new
+DANDI asset ID, and the table must then be re-extracted. Refresh both files with:
+
+```bash
+uv run --with dandi --with h5py --with iblatlas --with remfile --with scipy \
+  --with pyarrow python scripts/extract_neuropixels_units.py
+```
+
+The extractor writes only if every session succeeds. The implementation is in
+[`src/openscope_p3_publication/units.py`](../../src/openscope_p3_publication/units.py).
+
 ## Optotagging results
 
 `optotagging-results.parquet` is the per-unit statistical output of the
@@ -53,8 +92,10 @@ individual laser-pulse onset:
 | 40 Hz pulse train | 6 ms | `[-0.011, -0.001)` s | `[0.002, 0.012)` s |
 
 The 40 Hz statistical post window intentionally remains 10 ms to reproduce the
-reference analysis, although the physical laser pulse and the heatmap-ordering
-window are 6 ms. The Parquet file contains summary metrics only; the 1 ms PSTHs
+reference analysis, although the physical laser pulse is 6 ms. Heatmap rows are
+ordered by each unit's mean baseline z score inside the condition's exact laser
+pulses. The Parquet file contains summary
+metrics only; the 1 ms PSTHs
 used by the viewer are not stored in it.
 
 The implementation is in
@@ -76,8 +117,15 @@ session error stops the extraction before existing results are replaced. The
 provenance document records the DANDI version and asset inventory, output
 checksum, condition parameters, excluded sessions, and failed sessions.
 
-The committed table is a historical snapshot retrieved on August 4, 2026. The
-DANDI draft can change, so a new extraction is a deliberate refresh rather than
+The committed table is a snapshot retrieved on October 9, 2026. It replaces an
+August 4, 2026 snapshot. Since then, the session NWBs in the DANDI draft were
+re-uploaded, so the `asset_id` values in this table and its provenance differ
+from those in the earlier snapshot. Both snapshots analyze the same 60 sessions.
+The August inventory also listed two duplicate non-`_ecephys` NWBs for mouse
+848387 (May 4 and May 7, 2026). Those were excluded for lacking interval tables
+and have since been removed from DANDI. The new extraction therefore lists 60
+assets with no exclusions and contains 133,357 non-noise units, compared with
+133,556 in the earlier snapshot. The DANDI draft can change, so a new extraction is a deliberate refresh rather than
 a guarantee of byte-identical reconstruction. Review the new inventory and
 results before copying both generated files into `figure_sources/data/` together.
 
@@ -110,6 +158,14 @@ remain in the table even though they are not part of this classification rule.
 Providing results for every stimulation condition allows users to define a
 stricter criterion, such as requiring consistent responses across conditions,
 or to apply an alternative classification appropriate for their analysis.
+
+`optotagging-static-summary.json` holds the per-session, per-major-parent-area, and
+per-structure yield of putative optotagged cells plotted in panels B-D of the
+optotagging figure. It is computed from `optotagging-results.parquet` with the rule above
+by `scripts/build_optotagging_yield_summary.py`, and records the source checksums. Brain
+areas come from `brain_division` and `brain_area` in `neuropixels-units.parquet`, joined by
+session and unit. Regenerate with
+`uv run --with pyarrow --with scipy python scripts/build_optotagging_yield_summary.py`.
 
 `neuropixels-trajectories.json` contains all 332 CCF-localized probe insertions from 57 of the 60 Neuropixels session NWBs in the source inventory, together with each insertion's contiguous CCF area profile and a 100-micrometer whole-brain surface derived from the Allen CCF 2017 25-micrometer annotation volume. Three sessions without electrode `x`, `y`, and `z` coordinates are retained as explicit exclusions in `neuropixels-trajectories.provenance.json`. The provenance record also pins the DANDI inventory, Allen annotation volume, structure graph, and vendored checksums. Regenerate both files with `uv run --with h5py --with numpy --with pynrrd --with remfile --with scikit-image python scripts/extract_neuropixels_trajectories.py`. When only the shared A-F display palette changes, update colors and the vendored checksum without re-fetching NWBs by adding `--refresh-palette-only`.
 
