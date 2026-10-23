@@ -732,7 +732,7 @@ def test_supplementary_and_power_figures_are_current() -> None:
         in manuscript
     )
     assert "all 60 source sessions" in manuscript
-    assert "exact laser-on windows" in manuscript
+    assert "mean baseline z score inside the exact laser pulses" in manuscript
     assert "**A,** the 5 Hz response" in manuscript
     assert "five teal marks denote the exact 10 ms laser pulses" in manuscript
     assert "**B,** Overall optotagged-cell yield" in manuscript

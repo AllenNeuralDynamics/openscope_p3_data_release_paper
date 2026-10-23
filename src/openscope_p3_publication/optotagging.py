@@ -81,7 +81,7 @@ CONDITIONS = (
         pulse_frequency_hz=40.0,
         pulse_width_seconds=0.006,
         # Preserve the reference notebook's 10 ms response window even though
-        # heatmap ordering uses only the exact 6 ms laser pulse.
+        # the physical laser pulse is 6 ms.
         count_window_seconds=0.010,
         post_delay_seconds=0.002,
     ),
@@ -346,17 +346,36 @@ def mean_firing_rate_during_pulses(
     return float(np.mean(pulse_counts / pulse_width_seconds))
 
 
+def laser_on_mask(
+    time_seconds: np.ndarray,
+    condition: ConditionConfig,
+    pulses_per_presentation: int,
+) -> np.ndarray:
+    """Mark PSTH bins whose centers fall inside a presentation's laser pulses."""
+
+    mask = np.zeros(len(time_seconds), dtype=bool)
+    for onset in np.arange(max(1, pulses_per_presentation)) / condition.pulse_frequency_hz:
+        mask |= (time_seconds >= onset) & (
+            time_seconds < onset + condition.pulse_width_seconds
+        )
+    return mask
+
+
 def heatmap_response_scores(
     analysis: SessionAnalysis,
     condition: ConditionConfig,
 ) -> tuple[np.ndarray, str]:
-    """Return the validated condition-specific score used to order heatmap rows."""
+    """Return each unit's mean baseline z score inside the exact laser pulses."""
 
-    pulse_width_ms = condition.pulse_width_seconds * 1_000
-    return (
-        analysis.pulse_firing_rates[condition.table_name],
-        f"mean firing during {pulse_width_ms:g} ms pulses",
-    )
+    name = condition.table_name
+    trials = analysis.trial_counts[name]
+    pulses_per_presentation = round(analysis.pulse_counts[name] / trials) if trials else 1
+    mask = laser_on_mask(analysis.time_seconds, condition, pulses_per_presentation)
+    zscored = baseline_zscore(analysis.psths[name], analysis.time_seconds)
+    label = "mean baseline z during laser pulses"
+    if not mask.any():
+        return np.full(len(zscored), np.nan), label
+    return zscored[:, mask].mean(axis=1), label
 
 
 def strongest_first_indices(response_scores: np.ndarray) -> np.ndarray:
@@ -699,6 +718,106 @@ def analyze_asset(
         remote_file.close()
 
 
+TAGGING_CONDITION = "5 hz pulse train_presentations"
+TAGGING_P_VALUE_THRESHOLD = 0.05
+TAGGING_MODULATION_INDEX_THRESHOLD = 0.1
+
+
+def tagged_unit_mask(results: pd.DataFrame) -> pd.Series:
+    """Return the publication tagging rule: 5 Hz train p < 0.05 and MI > 0.1."""
+
+    return results[f"{TAGGING_CONDITION}__p_value"].lt(TAGGING_P_VALUE_THRESHOLD) & results[
+        f"{TAGGING_CONDITION}__modulation_index"
+    ].gt(TAGGING_MODULATION_INDEX_THRESHOLD)
+
+
+def _yield_records(
+    tagged_by_session: pd.DataFrame,
+    sampled_by_session: pd.DataFrame,
+    *,
+    sessions: list[str],
+) -> list[dict[str, Any]]:
+    records = []
+    for label in sampled_by_session.columns:
+        sampled = [session for session in sessions if sampled_by_session.at[session, label] > 0]
+        counts = [int(tagged_by_session.at[session, label]) for session in sampled]
+        records.append(
+            {
+                "label": str(label),
+                "counts": counts,
+                "mean": round(float(np.mean(counts)), 6),
+                "sampled_session_count": len(counts),
+            }
+        )
+    return sorted(records, key=lambda record: (-record["mean"], record["label"]))
+
+
+def optotagging_yield_summary(
+    results: pd.DataFrame,
+    unit_table: pd.DataFrame,
+) -> dict[str, Any]:
+    """Count tagged units per session overall, per Allen major division, and per area.
+
+    Areas come from the committed Neuropixels unit table (``brain_division`` and
+    ``brain_area``). A session contributes to an area only if it recorded at least one
+    unit there. Units without an Allen area (e.g. sessions lacking histology) count toward
+    the overall yield but are excluded from the regional breakdowns.
+    """
+
+    keys = ["session_id", "unit_id"]
+    merged = results[keys].astype(str).assign(tagged=tagged_unit_mask(results).to_numpy())
+    areas = unit_table[[*keys, "brain_division", "brain_area"]].astype(
+        {"session_id": str, "unit_id": str, "brain_division": object, "brain_area": object}
+    )
+    merged = merged.merge(areas, on=keys, how="left", validate="one_to_one", indicator=True)
+    missing = int(merged["_merge"].ne("both").sum())
+    if missing:
+        raise ValueError(f"{missing} optotagging units are missing from the unit table.")
+
+    sessions = sorted(merged["session_id"].unique())
+    overall_counts = [
+        int(count) for count in merged.groupby("session_id")["tagged"].sum().reindex(sessions)
+    ]
+    registered = merged["brain_area"].notna()
+    unregistered_sessions = sorted(
+        set(sessions) - set(merged.loc[registered, "session_id"].unique())
+    )
+    unregistered_units = int((~registered).sum())
+    merged = merged.loc[registered].copy()
+    regional_sessions = [s for s in sessions if s not in unregistered_sessions]
+
+    def tables(column: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+        sampled = pd.crosstab(merged["session_id"], merged[column]).reindex(
+            regional_sessions, fill_value=0
+        )
+        tagged = (
+            merged.loc[merged["tagged"]]
+            .pipe(lambda frame: pd.crosstab(frame["session_id"], frame[column]))
+            .reindex(index=regional_sessions, columns=sampled.columns, fill_value=0)
+        )
+        return tagged, sampled
+
+    return {
+        "version": 3,
+        "rule": {
+            "condition": TAGGING_CONDITION,
+            "p_value_lt": TAGGING_P_VALUE_THRESHOLD,
+            "modulation_index_gt": TAGGING_MODULATION_INDEX_THRESHOLD,
+        },
+        "source_session_count": len(sessions),
+        "sessions": sessions,
+        "overall": {
+            "label": "All areas",
+            "counts": overall_counts,
+            "mean": round(float(np.mean(overall_counts)), 6),
+            "sampled_session_count": len(overall_counts),
+        },
+        "unregistered": {"sessions": unregistered_sessions, "unit_count": unregistered_units},
+        "major_parent": _yield_records(*tables("brain_division"), sessions=regional_sessions),
+        "structures": _yield_records(*tables("brain_area"), sessions=regional_sessions),
+    }
+
+
 def render_session_heatmaps(
     analysis: SessionAnalysis,
     *,
@@ -733,8 +852,8 @@ def render_session_heatmaps(
             aspect="auto",
             interpolation="nearest",
             cmap="coolwarm",
-            vmin=-3,
-            vmax=3,
+            vmin=-2,
+            vmax=2,
             extent=(
                 analysis.time_seconds[0],
                 analysis.time_seconds[-1],
@@ -847,7 +966,7 @@ def write_results(
         ["session_id", "unit_id"],
         kind="stable",
     ).reset_index(drop=True)
-    ordered_metrics.to_parquet(parquet_path, index=False)
+    ordered_metrics.to_parquet(parquet_path, index=False, compression="zstd")
     asset_manifest = [
         {
             key: asset.get(key)

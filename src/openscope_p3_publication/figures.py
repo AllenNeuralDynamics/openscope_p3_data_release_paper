@@ -271,9 +271,7 @@ OPTOTAGGING_STATIC_SUMMARY_PATH = DATA_DIR / "optotagging-static-summary.json"
 OPTOTAGGING_HEATMAP_SOURCE_DIR = (
     REPO_ROOT / "figure_sources" / "media" / "optotagging"
 )
-OPTOTAGGING_STATIC_LEGACY_SOURCE = (
-    OPTOTAGGING_HEATMAP_SOURCE_DIR / "optotagging-static-legacy.svg"
-)
+OPTOTAGGING_RESULTS_PATH = DATA_DIR / "optotagging-results.parquet"
 OPTOTAGGING_STATIC_SOURCE = (
     OPTOTAGGING_HEATMAP_SOURCE_DIR / "optotagging-static-composite.svg"
 )
@@ -1731,13 +1729,13 @@ def write_optotagging_heatmap_html(
 def load_optotagging_static_summary(
     summary_path: Path = OPTOTAGGING_STATIC_SUMMARY_PATH,
 ) -> dict:
-    """Load and validate yield distributions extracted from the legacy static SVG."""
+    """Load and validate per-session optotagging yields computed from the results table."""
 
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     source_path = REPO_ROOT / summary.get("source", "")
     source_session_count = summary.get("source_session_count")
     if (
-        summary.get("version") != 1
+        summary.get("version") != 3
         or not isinstance(source_session_count, int)
         or source_session_count <= 0
         or not source_path.is_file()
@@ -1773,7 +1771,7 @@ def load_optotagging_static_summary(
     overall = summary.get("overall")
     major_parent = summary.get("major_parent", [])
     structures = summary.get("structures", [])
-    if not isinstance(overall, dict) or len(major_parent) != 10 or len(structures) != 48:
+    if not isinstance(overall, dict) or not major_parent or not structures:
         raise RuntimeError("Optotagging static-summary dimensions changed.")
     validate_records([overall], expected_count=source_session_count)
     validate_records(major_parent)
@@ -1781,7 +1779,7 @@ def load_optotagging_static_summary(
     return summary
 
 
-def optotagging_heatmap_color(value: float | None, limit: float = 3.0) -> tuple[int, int, int]:
+def optotagging_heatmap_color(value: float | None, limit: float = 2.0) -> tuple[int, int, int]:
     if value is None or not math.isfinite(value):
         return (230, 230, 230)
     fraction = max(-1.0, min(1.0, value / limit))
@@ -1853,6 +1851,17 @@ def append_optotagging_panel_heading(
         )
 
 
+def nice_tick_step(maximum: float, target_ticks: int = 6) -> int:
+    """Return a 1/2/5 x 10^k integer tick step giving roughly ``target_ticks`` ticks."""
+
+    raw = max(1.0, maximum / target_ticks)
+    magnitude = 10 ** math.floor(math.log10(raw))
+    for multiplier in (1, 2, 5, 10):
+        if multiplier * magnitude >= raw:
+            return int(multiplier * magnitude)
+    return int(10 * magnitude)
+
+
 def append_optotagging_yield_panel(
     svg: list[str],
     records: list[dict],
@@ -1863,7 +1872,6 @@ def append_optotagging_yield_panel(
     y: float,
     width: float,
     height: float,
-    tick_step: int,
     label_width: float,
     bar_height: float = 12,
     point_radius: float = 2.1,
@@ -1875,6 +1883,7 @@ def append_optotagging_yield_panel(
     plot_top = y + 70
     plot_bottom = y + height - 54
     maximum = max(max(record["counts"]) for record in records)
+    tick_step = nice_tick_step(maximum)
     axis_max = max(tick_step, math.ceil(maximum / tick_step) * tick_step)
     plot_width = plot_right - plot_left
     row_height = (plot_bottom - plot_top) / len(records)
@@ -1987,7 +1996,8 @@ def write_optotagging_static_source(
     svg.append(
         f'<image href="data:image/png;base64,{heatmap_uri}" x="{plot_left}" '
         f'y="{plot_top}" width="{plot_width}" height="{plot_height}" '
-        'preserveAspectRatio="none"/>'
+        'preserveAspectRatio="none" image-rendering="pixelated" '
+        'style="image-rendering:pixelated"/>'
     )
     time_start, time_end = metadata["time_seconds"]
 
@@ -2045,11 +2055,11 @@ def write_optotagging_static_source(
             'Time from laser onset (s)</text>',
             '<rect x="92" y="438" width="245" height="12" fill="url(#optotagging-z)"/>',
             f'<text x="92" y="466" text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
-            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">-3</text>',
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">-2</text>',
             f'<text x="214.5" y="466" text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
             f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">0</text>',
             f'<text x="337" y="466" text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
-            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">+3</text>',
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">+2</text>',
             f'<text x="353" y="449" font-family="{FIGURE_SANS_FONT}" font-size="13" '
             'fill="#303536">Baseline z score</text>',
         ]
@@ -2065,8 +2075,9 @@ def write_optotagging_static_source(
     overall = summary["overall"]
     overall_left, overall_right = 820, 1145
     overall_top, overall_bottom = 126, 390
-    overall_max = max(20, math.ceil(max(overall["counts"]) / 20) * 20)
-    for tick in range(0, overall_max + 1, 20):
+    overall_step = nice_tick_step(max(overall["counts"]))
+    overall_max = max(overall_step, math.ceil(max(overall["counts"]) / overall_step) * overall_step)
+    for tick in range(0, overall_max + 1, overall_step):
         tick_x = overall_left + tick / overall_max * (overall_right - overall_left)
         svg.extend(
             [
@@ -2114,7 +2125,6 @@ def write_optotagging_static_source(
         y=500,
         width=545,
         height=430,
-        tick_step=10,
         label_width=112,
     )
     top_structures = sorted(
@@ -2130,7 +2140,6 @@ def write_optotagging_static_source(
         y=500,
         width=545,
         height=430,
-        tick_step=5,
         label_width=104,
         bar_height=8,
         point_radius=1.7,

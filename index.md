@@ -1178,15 +1178,18 @@ not be equated across analyses.
 
 Optotagging responses and putative optotagged-cell yield across Neuropixels sessions.
 **A,** the 5 Hz response from `ecephys_830851_2026-03-19_10-49-11`;
-five teal marks denote the exact 10 ms laser pulses. Rows are ordered from strongest
-to weakest firing rate during the exact laser-on windows; blue-to-red color denotes
+five teal marks denote the exact 10 ms laser pulses. Rows are ordered from highest
+to lowest mean baseline z score inside the exact laser pulses (units with a silent baseline last); blue-to-red color denotes
 negative-to-positive baseline z score. **B,** Overall optotagged-cell yield across
-all 60 source sessions. **C,** Yield by Allen major parent area.
-**D,** The 18 structures with the highest mean yield; all 48 structure distributions
-remain in the source snapshot. In B-D, gray dots denote individual sessions and
+all 60 source sessions; a unit counts as putatively optotagged when its 5 Hz
+pulse-train response has *p* < 0.05 and modulation index > 0.1.
+**C,** Yield by Allen major parent area. **D,** The 18 structures with the highest mean yield; all 104
+structure distributions remain in the source snapshot. In B-D, gray dots denote individual sessions and
 teal bars or lines denote means. Area-level means include only sessions sampling
 that area, with the contributing session count shown as *n*. Data come from the
-public draft of [Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files).
+public draft of [Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files),
+retrieved October 9, 2026. Asset IDs differ from earlier snapshots because the session NWBs were
+re-uploaded to DANDI; the same 60 sessions are analyzed.
 :::
 
 :::{iframe} ./interactive/wavemap-supplement.html
