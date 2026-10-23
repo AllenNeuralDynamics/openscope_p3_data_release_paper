@@ -130,6 +130,7 @@ figure modules load committed inputs and produce publication artifacts. The comm
 | [pupil_figure.py](../src/openscope_p3_publication/pupil_figure.py) | Loads and validates the pupil-response intermediate, derives display summaries, and renders static/interactive panels. |
 | [sensorimotor_running.py](../src/openscope_p3_publication/sensorimotor_running.py) | Analysis of locomotion and mismatch timing within sensorimotor sessions. |
 | [sensorimotor_running_figure.py](../src/openscope_p3_publication/sensorimotor_running_figure.py) | Generates the sensorimotor-running static figure and HTML viewer. |
+| [units.py](../src/openscope_p3_publication/units.py) | Builds the all-session Neuropixels unit table: NWB unit metrics, peak-channel CCF location, and brain division/area/structure. |
 | [wavemap_figure.py](../src/openscope_p3_publication/wavemap_figure.py) | Orchestrates WaveMAP publication generation and supporting deployment assets from the committed snapshot. |
 | [wavemap_publication_figures.py](../src/openscope_p3_publication/wavemap_publication_figures.py) | Builds the publication-ready WaveMAP static panels and composite outputs. |
 
@@ -150,9 +151,10 @@ the contribution instructions before refreshing anything.
 | [extract_neuropixels_event_responses.py](../scripts/extract_neuropixels_event_responses.py) | Computes per-unit mismatch/control response summaries and compressed spike-density atlases from public NWBs. |
 | [extract_neuropixels_trajectories.py](../scripts/extract_neuropixels_trajectories.py) | Extracts localized probe trajectories, anatomical profiles, and a compact CCF brain surface. |
 | [extract_neuropixels_unit_yield.py](../scripts/extract_neuropixels_unit_yield.py) | Counts total and quality-filtered units per session and records source inventory/provenance. |
+| [extract_neuropixels_units.py](../scripts/extract_neuropixels_units.py) | Streams all Neuropixels session NWBs and writes the per-unit table with brain areas, plus provenance. |
 | [extract_optotagging_heatmaps.py](../scripts/extract_optotagging_heatmaps.py) | Produces optotagging heatmap data and session atlases from public NWBs. |
 | [extract_optotagging_results.py](../scripts/extract_optotagging_results.py) | Computes per-unit optotagging statistics and writes Parquet results plus provenance. Its default output is an external staging directory. |
-| [extract_optotagging_static_summary.py](../scripts/extract_optotagging_static_summary.py) | Recovers the plotted yield-summary values from the preserved legacy optotagging SVG. |
+| [build_optotagging_yield_summary.py](../scripts/build_optotagging_yield_summary.py) | Computes per-session and per-area optotagged-unit yield from the committed results Parquet and the Neuropixels unit table. |
 | [extract_pupil_event_responses.py](../scripts/extract_pupil_event_responses.py) | Computes event-aligned pupil and running summaries with quality control and source provenance. |
 | [extract_raw_neural_excerpts.py](../scripts/extract_raw_neural_excerpts.py) | Extracts compact raw electrophysiology/imaging views; also has a scoped detector-only SLAP2 clip refresh. |
 | [extract_raw_neural_static_frames.py](../scripts/extract_raw_neural_static_frames.py) | Produces deterministic microscopy stills; also supports the scoped SLAP2 acquisition-band products. |
@@ -178,6 +180,7 @@ the contribution instructions before refreshing anything.
 | [test_pupil_responses.py](../tests/test_pupil_responses.py) | Pupil/running event-response calculations and associated figure inputs. |
 | [test_sensorimotor_running.py](../tests/test_sensorimotor_running.py) | Sensorimotor-running analysis. |
 | [test_sensorimotor_running_figure.py](../tests/test_sensorimotor_running_figure.py) | Sensorimotor-running snapshot and rendered outputs. |
+| [test_units.py](../tests/test_units.py) | Committed Neuropixels unit table matches its provenance (checksum, sessions, unique units). |
 | [test_site_assets.py](../tests/test_site_assets.py) | Correct staging of canonical Neuropixels response media, including stale-copy removal. |
 | [test_wavemap_figures.py](../tests/test_wavemap_figures.py) | WaveMAP source integrity, publication outputs, and figure contracts. |
 
@@ -204,9 +207,10 @@ Some JSON payloads keep their provenance internally rather than in a separate fi
 | [neuropixels-mismatch-responsiveness.csv](../figure_sources/data/neuropixels-mismatch-responsiveness.csv) | Tabular Neuropixels mismatch-responsiveness results. |
 | [neuropixels-trajectories.json](../figure_sources/data/neuropixels-trajectories.json), [neuropixels-trajectories.provenance.json](../figure_sources/data/neuropixels-trajectories.provenance.json) | Probe trajectories, area profiles, compact CCF surface, and source/exclusion records. |
 | [neuropixels-unit-yield.csv](../figure_sources/data/neuropixels-unit-yield.csv), [neuropixels-unit-yield.provenance.json](../figure_sources/data/neuropixels-unit-yield.provenance.json) | Per-session total/QC-passing unit counts and archive/threshold provenance. |
+| [neuropixels-units.parquet](../figure_sources/data/neuropixels-units.parquet), [neuropixels-units.provenance.json](../figure_sources/data/neuropixels-units.provenance.json) | Every sorted unit in all 60 Neuropixels sessions with metrics, CCF location, and brain division/area/structure, plus DANDI asset provenance. |
 | [optotagging-heatmaps.json](../figure_sources/data/optotagging-heatmaps.json), [optotagging-heatmaps.provenance.json](../figure_sources/data/optotagging-heatmaps.provenance.json) | Optotagging viewer metadata and atlas/source provenance. |
 | [optotagging-results.parquet](../figure_sources/data/optotagging-results.parquet), [optotagging-results.provenance.json](../figure_sources/data/optotagging-results.provenance.json) | Historical per-unit optotagging statistics and their source/analysis provenance, not the viewer's full PSTH arrays. |
-| [optotagging-static-summary.json](../figure_sources/data/optotagging-static-summary.json) | Numeric yield-summary values recovered from the legacy static plot. |
+| [optotagging-static-summary.json](../figure_sources/data/optotagging-static-summary.json) | Per-session and per-area optotagged-unit yield computed by `build_optotagging_yield_summary.py` (5 Hz pulse train, p < 0.05 and modulation index > 0.1). |
 | [other-oddball-studies.csv](../figure_sources/data/other-oddball-studies.csv), [other-oddball-studies.provenance.json](../figure_sources/data/other-oddball-studies.provenance.json) | Literature-comparison table and source worksheet provenance. |
 | [pupil-event-responses.json](../figure_sources/data/pupil-event-responses.json), [pupil-event-responses.provenance.json](../figure_sources/data/pupil-event-responses.provenance.json) | Peri-event pupil/running summaries, coverage, quality-control outcomes, and provenance. |
 | [raw-neural-excerpts.json](../figure_sources/data/raw-neural-excerpts.json) | Compact raw electrophysiology/imaging excerpt metadata and scientific payloads with source records. |
@@ -476,7 +480,6 @@ optotagging manifests.
 | [ecephys_832691_2026-03-24_10-04-30.atlas.json](../figure_sources/media/optotagging/ecephys_832691_2026-03-24_10-04-30.atlas.json), [ecephys_832691_2026-03-24_10-04-30.atlas.png](../figure_sources/media/optotagging/ecephys_832691_2026-03-24_10-04-30.atlas.png) | Atlas data and image for the named mouse/session. |
 | [ecephys_848390_2026-05-06_09-54-56.atlas.json](../figure_sources/media/optotagging/ecephys_848390_2026-05-06_09-54-56.atlas.json), [ecephys_848390_2026-05-06_09-54-56.atlas.png](../figure_sources/media/optotagging/ecephys_848390_2026-05-06_09-54-56.atlas.png) | Atlas data and image for the named mouse/session. |
 | [optotagging-static-composite.svg](../figure_sources/media/optotagging/optotagging-static-composite.svg) | Generated composite used in the static optotagging publication output. Although located under source media, it is builder-owned. |
-| [optotagging-static-legacy.svg](../figure_sources/media/optotagging/optotagging-static-legacy.svg) | Preserved legacy plot from which the numeric static-summary values are recovered. |
 
 ### `figure_sources/media/platform-logos/`
 

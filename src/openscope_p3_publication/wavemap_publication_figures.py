@@ -3,7 +3,6 @@ from __future__ import annotations
 import base64
 import re
 import zlib
-from io import BytesIO
 from pathlib import Path
 
 import matplotlib as mpl
@@ -13,8 +12,8 @@ import pandas as pd
 from matplotlib.backends.backend_pdf import PdfFile, PdfPages, Verbatim
 from matplotlib.colors import TwoSlopeNorm
 from PIL import Image
-from PIL.PngImagePlugin import PngStream, putchunk
 
+from openscope_p3_publication.image_encoding import canonical_png as _canonical_png
 from openscope_p3_publication.wavemap_figure import (
     REPO_ROOT,
     load_wavemap_snapshot,
@@ -91,31 +90,6 @@ def _clean_umap(ax):
 
     for spine in ax.spines.values():
         spine.set_visible(False)
-
-
-def _canonical_png(data: bytes) -> bytes:
-    """Normalize lossless compression without changing PNG scanlines or metadata."""
-    source = BytesIO(data)
-    signature = source.read(8)
-    if signature != b"\x89PNG\r\n\x1a\n":
-        raise ValueError("Expected a PNG image.")
-    output = BytesIO()
-    output.write(signature)
-    chunks = PngStream(source)
-    compressed = bytearray()
-    while True:
-        chunk_type, _position, length = chunks.read()
-        payload = source.read(length)
-        chunks.crc(chunk_type, payload)
-        if chunk_type == b"IDAT":
-            compressed.extend(payload)
-        else:
-            if compressed:
-                putchunk(output, b"IDAT", zlib.compress(zlib.decompress(compressed)))
-                compressed.clear()
-            putchunk(output, chunk_type, payload)
-        if chunk_type == b"IEND":
-            return output.getvalue()
 
 
 class _CanonicalPdfFile(PdfFile):

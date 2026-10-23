@@ -41,7 +41,7 @@ from openscope_p3_publication.figures import (
     OPTOTAGGING_HEATMAP_DATA_PATH,
     OPTOTAGGING_HEATMAP_PROVENANCE_PATH,
     OPTOTAGGING_HEATMAP_SOURCE_DIR,
-    OPTOTAGGING_STATIC_LEGACY_SOURCE,
+    OPTOTAGGING_RESULTS_PATH,
     OPTOTAGGING_STATIC_SOURCE,
     OPTOTAGGING_STATIC_SUMMARY_PATH,
     REPO_ROOT,
@@ -109,7 +109,6 @@ from openscope_p3_publication.figures import (
     write_segmentation_viewers,
     write_session_inventory_svg,
     write_svg_output,
-    write_unit_extraction_plan_svg,
     write_unit_yield_html,
     write_unit_yield_svg,
 )
@@ -131,6 +130,7 @@ try:
         compute_response_metrics,
         expand_pulse_times,
         heatmap_response_scores,
+        laser_on_mask,
         mean_firing_rate_during_pulses,
         order_heatmap_rows,
         quantize_zscores,
@@ -467,32 +467,35 @@ def test_optotagging_mean_firing_rate_during_exact_laser_pulses() -> None:
 
 
 @requires_optotagging_analysis_deps
-def test_optotagging_heatmap_ordering_uses_exact_laser_rate() -> None:
+def test_optotagging_heatmap_ordering_uses_in_pulse_baseline_z() -> None:
+    time_seconds = np.array([-0.0025, -0.0015, -0.0005, 0.0005, 0.0015, 0.2005, 0.2015])
+    psths = np.array(
+        [
+            [0.0, 2.0, 0.0, 9.0, 1.0, 9.0, 1.0],
+            [0.0, 2.0, 0.0, 1.0, 9.0, 1.0, 9.0],
+            [1.0, 1.0, 1.0, 9.0, 9.0, 9.0, 9.0],
+        ]
+    )
     analysis = type(
         "Analysis",
         (),
         {
-            "metrics": pd.DataFrame(
-                {"raised_cosine_presentations__modulation_index": [0.2, 0.8]}
-            ),
-            "pulse_firing_rates": {
-                "raised_cosine_presentations": np.array([7.0, 3.0]),
-                "5 hz pulse train_presentations": np.array([40.0, 10.0]),
-                "40 hz pulse train_presentations": np.array([5.0, 25.0]),
-            },
+            "psths": {CONDITIONS[1].table_name: psths},
+            "time_seconds": time_seconds,
+            "trial_counts": {CONDITIONS[1].table_name: 2},
+            "pulse_counts": {CONDITIONS[1].table_name: 4},
         },
     )()
 
-    raised_scores, raised_label = heatmap_response_scores(analysis, CONDITIONS[0])
-    five_hz_scores, five_hz_label = heatmap_response_scores(analysis, CONDITIONS[1])
-    forty_hz_scores, forty_hz_label = heatmap_response_scores(analysis, CONDITIONS[2])
+    scores, label = heatmap_response_scores(analysis, CONDITIONS[1])
 
-    assert raised_scores.tolist() == [7.0, 3.0]
-    assert raised_label == "mean firing during 1000 ms pulses"
-    assert five_hz_scores.tolist() == [40.0, 10.0]
-    assert five_hz_label == "mean firing during 10 ms pulses"
-    assert forty_hz_scores.tolist() == [5.0, 25.0]
-    assert forty_hz_label == "mean firing during 6 ms pulses"
+    assert label == "mean baseline z during laser pulses"
+    assert scores[0] == pytest.approx(scores[1])
+    assert np.isnan(scores[2])
+    assert laser_on_mask(time_seconds, CONDITIONS[1], 2).tolist() == [
+        False, False, False, True, True, True, True,
+    ]
+    assert strongest_first_indices(scores).tolist() == [0, 1, 2]
 
 
 @requires_optotagging_analysis_deps
@@ -603,7 +606,7 @@ def test_optotagging_numeric_atlas_retains_rows_and_laser_orders() -> None:
     assert metadata["parent_codes"] == [1, 0, 1]
     assert metadata["strongest_first_unit_indices"][
         "raised_cosine_presentations"
-    ] == [1, 0, 2]
+    ] == [0, 1, 2]
     assert metadata["time_bin_count"] == 10
     assert metadata["quantization"]["dtype"] == "int8"
     assert metadata["quantization"]["scale"] == pytest.approx(127 / 8)
@@ -627,6 +630,7 @@ def test_optotagging_validate_nwb_reports_missing_conditions() -> None:
 
 @requires_optotagging_analysis_deps
 def test_optotagging_write_results_round_trips_parquet(tmp_path: Path) -> None:
+    pytest.importorskip("pyarrow")
     metric_columns = {
         "asset_id": ["asset-1"],
         "asset_path": ["sub-1/session.nwb"],
@@ -669,16 +673,16 @@ def test_optotagging_results_snapshot_is_source_backed() -> None:
 
     assert hashlib.sha256(data_path.read_bytes()).hexdigest() == provenance["output_sha256"]
     assert provenance["output_path"] == data_path.relative_to(REPO_ROOT).as_posix()
-    assert provenance["rows"] == 133556
+    assert provenance["rows"] == 133357
     assert provenance["sessions"] == 60
     assert provenance["dandiset_id"] == "001637"
     assert provenance["dandiset_version"] == "draft"
-    assert provenance["retrieved_date"] == "2026-08-04"
+    assert provenance["retrieved_date"] == "2026-10-09"
     assert provenance["unit_filter"] == "decoder_label != 'noise'"
     assert provenance["failed_sessions"] == []
-    assert len(provenance["asset_manifest"]) == 62
-    assert len({asset["asset_id"] for asset in provenance["asset_manifest"]}) == 62
-    assert len(provenance["skipped_sessions"]) == 2
+    assert len(provenance["asset_manifest"]) == 60
+    assert len({asset["asset_id"] for asset in provenance["asset_manifest"]}) == 60
+    assert len(provenance["skipped_sessions"]) == 0
 
     readme = (REPO_ROOT / "figure_sources/data/README.md").read_text(encoding="utf-8")
     assert "optotagging_analysis.py" not in readme
@@ -836,22 +840,14 @@ def test_optotagging_snapshot_is_source_backed(tmp_path: Path) -> None:
     )
     assert len(payload["sessions"]) == 3
     assert payload["selection"] == {
-        "strategy": "nearest_all_session_optotagged_cell_yield_percentiles",
+        "strategy": "fixed_example_sessions",
         "source_session_count": 60,
-        "sessions": {
-            "ecephys_830851_2026-03-19_10-49-11": {
-                "optotagged_cell_count": 39,
-                "target_yield_percentile": 0.5,
-            },
-            "ecephys_832691_2026-03-24_10-04-30": {
-                "optotagged_cell_count": 84,
-                "target_yield_percentile": 0.95,
-            },
-            "ecephys_848390_2026-05-06_09-54-56": {
-                "optotagged_cell_count": 68,
-                "target_yield_percentile": 0.8,
-            },
-        },
+        "sessions": [
+            "ecephys_830851_2026-03-19_10-49-11",
+            "ecephys_832691_2026-03-24_10-04-30",
+            "ecephys_848390_2026-05-06_09-54-56",
+        ],
+        "yield_summary": "figure_sources/data/optotagging-static-summary.json",
     }
     assert provenance["failed_assets"] == []
     assert provenance["skipped_assets"] == []
@@ -882,29 +878,37 @@ def test_optotagging_snapshot_is_source_backed(tmp_path: Path) -> None:
         for path in (REPO_ROOT / "interactive" / "media" / "optotagging").iterdir()
     } == {"optotagging-heatmaps.svg"}
     summary = load_optotagging_static_summary()
-    assert summary["source"] == OPTOTAGGING_STATIC_LEGACY_SOURCE.relative_to(
-        REPO_ROOT
-    ).as_posix()
+    assert summary["source"] == OPTOTAGGING_RESULTS_PATH.relative_to(REPO_ROOT).as_posix()
     assert summary["source_sha256"] == hashlib.sha256(
-        OPTOTAGGING_STATIC_LEGACY_SOURCE.read_bytes()
+        OPTOTAGGING_RESULTS_PATH.read_bytes()
     ).hexdigest()
+    assert summary["version"] == 3
+    assert summary["rule"] == {
+        "condition": "5 hz pulse train_presentations",
+        "p_value_lt": 0.05,
+        "modulation_index_gt": 0.1,
+    }
     assert summary["source_session_count"] == 60
     assert summary["overall"]["sampled_session_count"] == 60
-    assert summary["overall"]["mean"] == pytest.approx(46.316667)
-    assert len(summary["major_parent"]) == 10
-    assert len(summary["structures"]) == 48
-    assert [record["sampled_session_count"] for record in summary["major_parent"]] == [
-        58,
-        58,
-        60,
-        58,
-        54,
-        28,
-        12,
-        6,
-        4,
-        23,
+    assert summary["overall"]["mean"] == pytest.approx(100.116667)
+    assert summary["unregistered"]["sessions"] == []
+    regional_sessions = 60 - len(summary["unregistered"]["sessions"])
+    assert all(
+        record["sampled_session_count"] <= regional_sessions
+        for record in summary["major_parent"] + summary["structures"]
+    )
+    assert [record["label"] for record in summary["major_parent"][:2]] == ["Isocortex", "HPF"]
+    assert [
+        (pick["session_id"], pick["tagged_units"], pick["rank"], pick["percentile"])
+        for pick in summary["representative_sessions"]
+    ] == [
+        ("ecephys_830851_2026-03-19_10-49-11", 85, 20, 35.0),
+        ("ecephys_848390_2026-05-06_09-54-56", 135, 49, 83.3),
+        ("ecephys_832691_2026-03-24_10-04-30", 137, 52, 86.7),
     ]
+    assert set(payload["selection"]["sessions"]) == {
+        pick["session_id"] for pick in summary["representative_sessions"]
+    }
     assert OPTOTAGGING_STATIC_SUMMARY_PATH.is_file()
     static_svg = OPTOTAGGING_STATIC_SOURCE.read_text(encoding="utf-8")
     assert 'width="1200" height="960"' in static_svg
@@ -1022,7 +1026,7 @@ def test_optotagging_outputs_are_deterministic_and_accessible(tmp_path: Path) ->
     assert 'id="session-search"' not in html
     assert "<datalist" not in html
     assert 'type="search"' not in html
-    assert 'type="range" min="0.5" max="8" step="0.5" value="3"' in html
+    assert 'type="range" min="0.5" max="8" step="0.5" value="2"' in html
     assert 'data-view="interactive"' in html
     assert 'data-view="static"' in html
     assert 'id="interactive-view"' in html
@@ -2064,13 +2068,6 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
 
 def test_placeholder_plans_mask_obsolete_figure_numbers(tmp_path: Path) -> None:
     cases = (
-        (
-            write_unit_extraction_plan_svg,
-            "figure-07-unit-extraction-plan.svg",
-            "Unit extraction → signal and noise amplitude",
-            "Figure 4",
-            2,
-        ),
         (
             write_basic_stimuli_plan_svg,
             "figure-08-basic-stimuli-plan.svg",

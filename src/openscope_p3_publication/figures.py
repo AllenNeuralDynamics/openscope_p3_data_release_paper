@@ -120,6 +120,20 @@ BASIC_STIMULI_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-05-basic-stimuli-plan.
 UNIT_EXTRACTION_PLAN_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "figure-07-unit-extraction-plan.svg"
 )
+MESOSCOPE_UNIT_EXTRACTION_PANEL_DIR = (
+    REPO_ROOT / "figure_sources" / "media" / "mesoscope-unit-extraction"
+)
+MESOSCOPE_UNIT_EXTRACTION_PROVENANCE_PATH = (
+    DATA_DIR / "mesoscope-unit-extraction.provenance.json"
+)
+MESOSCOPE_UNIT_EXTRACTION_OUTPUT = (
+    REPO_ROOT
+    / "images"
+    / "figures"
+    / "generated"
+    / "figure-06-unit-extraction-mesoscope.svg"
+)
+MESOSCOPE_UNIT_EXTRACTION_PAD = 40
 BASIC_STIMULI_PLAN_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "figure-08-basic-stimuli-plan.svg"
 )
@@ -271,9 +285,7 @@ OPTOTAGGING_STATIC_SUMMARY_PATH = DATA_DIR / "optotagging-static-summary.json"
 OPTOTAGGING_HEATMAP_SOURCE_DIR = (
     REPO_ROOT / "figure_sources" / "media" / "optotagging"
 )
-OPTOTAGGING_STATIC_LEGACY_SOURCE = (
-    OPTOTAGGING_HEATMAP_SOURCE_DIR / "optotagging-static-legacy.svg"
-)
+OPTOTAGGING_RESULTS_PATH = DATA_DIR / "optotagging-results.parquet"
 OPTOTAGGING_STATIC_SOURCE = (
     OPTOTAGGING_HEATMAP_SOURCE_DIR / "optotagging-static-composite.svg"
 )
@@ -1031,18 +1043,73 @@ def write_placeholder_plan_svg(
 
 
 def write_unit_extraction_plan_svg(output: Path = UNIT_EXTRACTION_PLAN_OUTPUT) -> Path:
-    return write_placeholder_plan_svg(
-        UNIT_EXTRACTION_PLAN_SOURCE,
-        output,
-        title_lines=(
-            "Unit extraction → signal and noise amplitude",
-            "Distributions across areas, sessions, and modalities",
-        ),
-        mask_height=140,
-        first_baseline=52,
-        font_size=FIGURE_TYPE_SCALE["title"],
-        line_gap=60,
+    from openscope_p3_publication.slap2_glutamate_figure7_panels import (
+        write_slap2_glutamate_figure,
     )
+
+    return write_slap2_glutamate_figure(output)
+
+
+def write_unit_extraction_mesoscope_svg(
+    output: Path = MESOSCOPE_UNIT_EXTRACTION_OUTPUT,
+) -> Path:
+    """Wrap the committed mesoscope-column composite in SVG.
+
+    The B, F and J panels and the stacked composite are both produced offline
+    by ``scripts/build_mesoscope_unit_extraction_panels.py`` from the per-ROI
+    cohort table and committed under ``figure_sources/media``. This function
+    deliberately re-encodes no image bytes -- it embeds the committed PNG as
+    it stands -- because Pillow's PNG output depends on the local zlib build,
+    so compositing at build time makes the generated SVG differ between
+    platforms and the repo's "generated figures are current" check fail on
+    one runner while passing on another. Cohort counts for the subtitle are
+    read from the provenance sidecar so the figure and the caption cannot
+    drift apart.
+    """
+    provenance = json.loads(
+        MESOSCOPE_UNIT_EXTRACTION_PROVENANCE_PATH.read_text(encoding="utf-8")
+    )
+    cohort = provenance["cohort"]
+    (composite_name, composite_meta), = provenance["composite"].items()
+    source = MESOSCOPE_UNIT_EXTRACTION_PANEL_DIR / composite_name
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    if digest != composite_meta["sha256"]:
+        raise RuntimeError(
+            f"Composite source {composite_name} does not match its recorded checksum; "
+            "re-run scripts/build_mesoscope_unit_extraction_panels.py or refresh the "
+            "provenance sidecar."
+        )
+    width = int(composite_meta["width"])
+    height = int(composite_meta["height"])
+    image_data = png_data_uri(source, (width, height))
+    pad = MESOSCOPE_UNIT_EXTRACTION_PAD
+
+    subtitle = (
+        "Unit extraction and event-amplitude quality classes \u2014 "
+        f"{cohort['sessions']} of {cohort['qc_pass_total']} QC-Pass mesoscope sessions "
+        f"(of {cohort['released_total']} released), {cohort['mice']} mice, "
+        f"{cohort['rois']:,} ROIs"
+    )
+    title_size = FIGURE_TYPE_SCALE["title"]
+    svg = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
+        '<title id="title">Mesoscope unit extraction and event-amplitude quality '
+        "classes</title>",
+        f"<desc id=\"description\">{escape(subtitle)}</desc>",
+        f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
+        f'<image href="{image_data}" width="{width}" height="{height}"/>',
+        f'<text class="placeholder-title" x="{pad + 8}" y="62" '
+        f'font-family="Source Sans 3, sans-serif" font-size="{title_size}" '
+        'font-weight="600" fill="#111111">Mesoscope</text>',
+        f'<text class="placeholder-subtitle" x="{pad + 8}" y="112" '
+        f'font-family="Source Sans 3, sans-serif" font-size="{FIGURE_TYPE_SCALE["modality"]}" '
+        f'fill="#52514E">{escape(subtitle)}</text>',
+        "</svg>",
+    ]
+    output.parent.mkdir(parents=True, exist_ok=True)
+    write_svg_output(output, svg)
+    return output
 
 
 def write_basic_stimuli_plan_svg(output: Path = BASIC_STIMULI_PLAN_OUTPUT) -> Path:
@@ -1738,13 +1805,13 @@ def write_optotagging_heatmap_html(
 def load_optotagging_static_summary(
     summary_path: Path = OPTOTAGGING_STATIC_SUMMARY_PATH,
 ) -> dict:
-    """Load and validate yield distributions extracted from the legacy static SVG."""
+    """Load and validate per-session optotagging yields computed from the results table."""
 
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
     source_path = REPO_ROOT / summary.get("source", "")
     source_session_count = summary.get("source_session_count")
     if (
-        summary.get("version") != 1
+        summary.get("version") != 3
         or not isinstance(source_session_count, int)
         or source_session_count <= 0
         or not source_path.is_file()
@@ -1780,7 +1847,7 @@ def load_optotagging_static_summary(
     overall = summary.get("overall")
     major_parent = summary.get("major_parent", [])
     structures = summary.get("structures", [])
-    if not isinstance(overall, dict) or len(major_parent) != 10 or len(structures) != 48:
+    if not isinstance(overall, dict) or not major_parent or not structures:
         raise RuntimeError("Optotagging static-summary dimensions changed.")
     validate_records([overall], expected_count=source_session_count)
     validate_records(major_parent)
@@ -1788,7 +1855,7 @@ def load_optotagging_static_summary(
     return summary
 
 
-def optotagging_heatmap_color(value: float | None, limit: float = 3.0) -> tuple[int, int, int]:
+def optotagging_heatmap_color(value: float | None, limit: float = 2.0) -> tuple[int, int, int]:
     if value is None or not math.isfinite(value):
         return (230, 230, 230)
     fraction = max(-1.0, min(1.0, value / limit))
@@ -1860,6 +1927,17 @@ def append_optotagging_panel_heading(
         )
 
 
+def nice_tick_step(maximum: float, target_ticks: int = 6) -> int:
+    """Return a 1/2/5 x 10^k integer tick step giving roughly ``target_ticks`` ticks."""
+
+    raw = max(1.0, maximum / target_ticks)
+    magnitude = 10 ** math.floor(math.log10(raw))
+    for multiplier in (1, 2, 5, 10):
+        if multiplier * magnitude >= raw:
+            return int(multiplier * magnitude)
+    return int(10 * magnitude)
+
+
 def append_optotagging_yield_panel(
     svg: list[str],
     records: list[dict],
@@ -1870,7 +1948,6 @@ def append_optotagging_yield_panel(
     y: float,
     width: float,
     height: float,
-    tick_step: int,
     label_width: float,
     bar_height: float = 12,
     point_radius: float = 2.1,
@@ -1882,6 +1959,7 @@ def append_optotagging_yield_panel(
     plot_top = y + 70
     plot_bottom = y + height - 54
     maximum = max(max(record["counts"]) for record in records)
+    tick_step = nice_tick_step(maximum)
     axis_max = max(tick_step, math.ceil(maximum / tick_step) * tick_step)
     plot_width = plot_right - plot_left
     row_height = (plot_bottom - plot_top) / len(records)
@@ -1994,7 +2072,8 @@ def write_optotagging_static_source(
     svg.append(
         f'<image href="data:image/png;base64,{heatmap_uri}" x="{plot_left}" '
         f'y="{plot_top}" width="{plot_width}" height="{plot_height}" '
-        'preserveAspectRatio="none"/>'
+        'preserveAspectRatio="none" image-rendering="pixelated" '
+        'style="image-rendering:pixelated"/>'
     )
     time_start, time_end = metadata["time_seconds"]
 
@@ -2052,11 +2131,11 @@ def write_optotagging_static_source(
             'Time from laser onset (s)</text>',
             '<rect x="92" y="438" width="245" height="12" fill="url(#optotagging-z)"/>',
             f'<text x="92" y="466" text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
-            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">-3</text>',
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">-2</text>',
             f'<text x="214.5" y="466" text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
             f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">0</text>',
             f'<text x="337" y="466" text-anchor="middle" font-family="{FIGURE_MONO_FONT}" '
-            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">+3</text>',
+            f'font-size="{FIGURE_TYPE_SMALL}" fill="#68706E">+2</text>',
             f'<text x="353" y="449" font-family="{FIGURE_SANS_FONT}" font-size="13" '
             'fill="#303536">Baseline z score</text>',
         ]
@@ -2072,8 +2151,9 @@ def write_optotagging_static_source(
     overall = summary["overall"]
     overall_left, overall_right = 820, 1145
     overall_top, overall_bottom = 126, 390
-    overall_max = max(20, math.ceil(max(overall["counts"]) / 20) * 20)
-    for tick in range(0, overall_max + 1, 20):
+    overall_step = nice_tick_step(max(overall["counts"]))
+    overall_max = max(overall_step, math.ceil(max(overall["counts"]) / overall_step) * overall_step)
+    for tick in range(0, overall_max + 1, overall_step):
         tick_x = overall_left + tick / overall_max * (overall_right - overall_left)
         svg.extend(
             [
@@ -2121,7 +2201,6 @@ def write_optotagging_static_source(
         y=500,
         width=545,
         height=430,
-        tick_step=10,
         label_width=112,
     )
     top_structures = sorted(
@@ -2137,7 +2216,6 @@ def write_optotagging_static_source(
         y=500,
         width=545,
         height=430,
-        tick_step=5,
         label_width=104,
         bar_height=8,
         point_radius=1.7,
@@ -6615,6 +6693,10 @@ def write_neuropixels_trajectory_svg(
 
 def main() -> None:
     from .ecephys_qc_figure import write_ecephys_qc_html, write_ecephys_qc_svg
+    from .mesoscope_plane_snr_figure import (
+        write_mesoscope_plane_snr_html,
+        write_mesoscope_plane_snr_svg,
+    )
     from .mismatch_adjacency_figure import write_mismatch_adjacency_svg
     from .neural_response_figure import (
         write_neuropixels_event_html,
@@ -6631,6 +6713,7 @@ def main() -> None:
     figure_1_panel_c_path = write_figure_1_panel_c_svg()
     hardware_path = write_hardware_figure_svg()
     unit_extraction_plan_path = write_unit_extraction_plan_svg()
+    unit_extraction_mesoscope_path = write_unit_extraction_mesoscope_svg()
     basic_stimuli_plan_path = write_basic_stimuli_plan_svg()
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
@@ -6648,6 +6731,10 @@ def main() -> None:
     )
     neural_viewer_path = write_neural_viewer_html()
     segmentation_viewer_path = write_segmentation_viewers()
+    mesoscope_plane_snr_svg_path = write_mesoscope_plane_snr_svg()
+    mesoscope_plane_snr_html_path = write_mesoscope_plane_snr_html(
+        static_output=unit_extraction_mesoscope_path
+    )
     unit_yield_html_path = write_unit_yield_html()
     trajectory_html_path = write_neuropixels_trajectory_html()
     optotagging_source_path = write_optotagging_static_source()
@@ -6664,6 +6751,7 @@ def main() -> None:
     print(f"Wrote {figure_1_panel_c_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_plan_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {unit_extraction_mesoscope_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {basic_stimuli_plan_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
@@ -6682,6 +6770,8 @@ def main() -> None:
     print(f"Wrote {NEURAL_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {segmentation_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {SEGMENTATION_VIEWER_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
+    print(f"Wrote {mesoscope_plane_snr_svg_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {mesoscope_plane_snr_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {trajectory_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT.relative_to(REPO_ROOT)}")

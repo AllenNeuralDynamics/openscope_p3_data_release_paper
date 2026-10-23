@@ -44,8 +44,19 @@ jobs:
         run: uv run build-publication-figures
 
       - name: Check generated figures are current
+        id: generated-figures
         timeout-minutes: 2
         run: git --no-pager diff --exit-code --name-only -- interactive images/figures/generated figure_sources/media/optotagging/optotagging-static-composite.svg
+
+      - name: Preserve SLAP2 drift diagnostics
+        if: failure() && steps.generated-figures.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: slap2-windows-drift
+          retention-days: 3
+          path: |
+            images/figures/generated/figure7_panel*
+            images/figures/generated/figure-07-unit-extraction-plan.svg
 
   build:
     runs-on: ubuntu-latest
@@ -88,6 +99,16 @@ jobs:
             images/figures/generated/*wavemap*
             interactive/*wavemap*
 
+      - name: Preserve SLAP2 drift diagnostics
+        if: failure() && steps.generated-figures.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: slap2-linux-drift
+          retention-days: 3
+          path: |
+            images/figures/generated/figure7_panel*
+            images/figures/generated/figure-07-unit-extraction-plan.svg
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -120,6 +141,7 @@ jobs:
           test -f _build/html/interactive/neuropixels-event-responses.html
           test -f _build/html/interactive/media/neuropixels-event-responses/standard-sdf-mean.u16.gz
           test -f _build/html/interactive/segmentation-viewer.html
+          test -f _build/html/interactive/mesoscope-plane-snr.html
           test -f _build/html/interactive/optotagging-heatmaps.html
           test -f _build/html/interactive/wavemap-supplement.html
           test -f _build/html/interactive/wavemap-area-explorer.html
