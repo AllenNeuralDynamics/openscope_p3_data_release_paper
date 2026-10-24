@@ -3507,6 +3507,8 @@ def test_animal_record_provenance() -> None:
 
 
 def test_ecephys_qc_dashboard_snapshot_and_outputs(tmp_path: Path) -> None:
+    import matplotlib as mpl
+
     from openscope_p3_publication.ecephys_qc_figure import (
         DATA_JSON_PATH,
         OUT_HTML_PATH,
@@ -3552,7 +3554,10 @@ def test_ecephys_qc_dashboard_snapshot_and_outputs(tmp_path: Path) -> None:
     svg_1 = tmp_path / "out1.svg"
     svg_2 = tmp_path / "out2.svg"
     write_ecephys_qc_svg(svg_1, synthetic_gz)
-    write_ecephys_qc_svg(svg_2, synthetic_gz)
+    with mpl.rc_context({"xtick.major.width": 0.6, "ytick.major.width": 0.6}):
+        write_ecephys_qc_svg(svg_2, synthetic_gz)
+        assert mpl.rcParams["xtick.major.width"] == 0.6
+        assert mpl.rcParams["ytick.major.width"] == 0.6
     assert svg_1.read_bytes() == svg_2.read_bytes()
     svg_text = svg_1.read_text(encoding="utf-8")
     assert "Neuropixels Unit Quality Control and Stability" in svg_text

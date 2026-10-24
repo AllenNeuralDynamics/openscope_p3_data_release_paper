@@ -143,7 +143,9 @@ def write_ecephys_qc_svg(output: Path = OUT_SVG_PATH, data_path: Path = DATA_JSO
         & (df["area"] != "void")
     ].copy()
 
-    with mpl.rc_context(_SVG_RC_PARAMS):
+    with mpl.rc_context():
+        mpl.rcdefaults()
+        mpl.rcParams.update(_SVG_RC_PARAMS)
         fig, axs = plt.subplots(2, 2, figsize=(10, 8.5))
         fig.subplots_adjust(
             wspace=0.25, hspace=0.35, top=0.92, bottom=0.08, left=0.08, right=0.95
