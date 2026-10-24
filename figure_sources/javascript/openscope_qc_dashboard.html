@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenScope Ecephys Exploratory Dashboard</title>
+    <script src="./vendor/plotly.min.js"></script>
+    <style>
+        __QC_DASHBOARD_CSS__
+    </style>
+</head>
+<body>
+    <main class="viewer">
+        <header class="figure-toolbar">
+            <div class="figure-mode-switch" role="group" aria-label="Figure view">
+                <button type="button" data-view="static" aria-pressed="true" onclick="selectView('static')">Static</button>
+                <button type="button" data-view="interactive" aria-pressed="false" onclick="selectView('interactive')">Interactive</button>
+            </div>
+            <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+                title="Figure legend" aria-expanded="false" aria-controls="figure-legend" onclick="syncLegend()">?</button>
+        </header>
+
+        <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+            <h2 id="figure-legend-title">Interactive figure legend</h2>
+            <p>Use the sidebar to dynamically filter the 192k Neuropixels units by anatomical areas, QC thresholds, and mice. The tabs allow exploration of SNR depth profiles, session-level stability time-series, custom scatter plots, and stimulus-triggered LFP/CSD overlays.</p>
+        </section>
+
+        <div id="static-view">
+            <img src="media/ecephys-qc-dashboard/openscope_qc_dashboard_static.svg" alt="Static SVG Fallback" style="width: 100%;">
+        </div>
+
+        <div id="interactive-view" hidden>
+            <div class="header">
+                <div>
+                    <h1>OpenScope Ecephys Exploratory Dashboard</h1>
+                    <p class="subtitle">Interactive QC filtering and visualization across ~192k units</p>
+                </div>
+            </div>
+
+            <div class="layout-grid" id="main-ui" style="display: none;">
+                <div class="sidebar">
+                    <button id="reset-filters-btn" class="add-rule-btn" style="border-color: #d1495b; color: #d1495b; margin-top: 0; margin-bottom: 15px; background: #fff;" onclick="resetAllFilters()">↺ Reset All Filters & Options</button>
+                    <div class="qc-panel">
+                        <h3>Custom QC Filter Builder</h3>
+                        <div id="qc-rules-container"></div>
+                        <button class="add-rule-btn" onclick="addRule()">+ Add Metric Filter</button>
+                        <div class="qc-row-void"><input type="checkbox" id="qc-void" checked onchange="renderAll()"><label for="qc-void">Exclude 'void' (noise/unlabeled areas)</label></div>
+                    </div>
+                    <div class="control-group"><label>Filter Cohort</label><select id="global-cohort" onchange="updateCascadingFilters()"><option value="All">All Cohorts</option><option value="Motor">Motor Cohort</option><option value="Sequence">Sequence Cohort</option></select></div>
+                    <div class="control-group" id="context-group"><label>Filter Context</label><select id="global-context" onchange="updateCascadingFilters()"><option value="All">All Contexts</option><option value="STANDARD">Standard Oddball</option><option value="SENSORYMOTOR">Sensorimotor Mismatch</option><option value="SEQUENCE">Sequence Mismatch</option><option value="DURATION">Duration Mismatch</option></select></div>
+                    <div class="control-group"><label>Filter Mouse</label><select id="global-mouse" onchange="renderAll()"><option value="All">All Mice</option></select></div>
+                    <div class="control-group"><label>Filter Probe</label><select id="global-probe" onchange="renderAll()"><option value="All">All Probes</option><option value="ProbeA">Probe A (MOp, MOs, ACA, Hippo)</option><option value="ProbeB">Probe B (VISa, Hippo)</option><option value="ProbeC">Probe C (VISp, Hippo, LGd)</option><option value="ProbeD">Probe D (VISl, Hippo)</option><option value="ProbeE">Probe E (MOp, CP)</option><option value="ProbeF">Probe F (MOs, ACA, PL, ILA)</option></select></div>
+                    <hr>
+                    <div class="control-group"><label>Major Division</label><select id="global-division" onchange="updateCascadingFilters()"><option value="All">All Major Divisions</option></select></div>
+                    <div class="control-group"><label>Region Group</label><select id="global-group" onchange="updateCascadingFilters()"><option value="All">All Region Groups</option></select></div>
+                    <div class="control-group"><label>Area</label><select id="global-family" onchange="updateCascadingFilters()"><option value="All">All Areas</option></select></div>
+                    <div class="control-group"><label>Subarea / Subfield</label><select id="global-subregion" onchange="updateCascadingFilters()"><option value="All">All Subareas / Subfields</option></select></div>
+                    <div class="control-group"><label>Layer / Compartment</label><select id="global-layer" onchange="updateCascadingFilters()"><option value="All">All Layers / Compartments</option></select></div>
+                    <div class="control-group"><label>Exact Allen CCF Acronym (optional)</label><select id="global-area" onchange="renderAll()"><option value="All">All Exact CCF Acronyms</option></select></div>
+                    <hr>
+                    <div class="control-group"><label>Anatomy Overlay (Heatmaps)</label><select id="boundary-overlay" onchange="renderAll()"><option value="area_layers" selected>Area + layers</option><option value="area_only">Area only</option><option value="off">Off</option></select></div>
+                    <div class="control-group"><label>Depth Alignment</label><select id="depth-alignment" onchange="renderAll()"><option value="cortex_entry" selected>Cortical entry (0 = Surface)</option><option value="l1_l23">L1 ↔ L2/3 (0 = L1/L2/3 Boundary)</option></select></div>
+                    <div class="control-group"><label>Heatmap Color Scale</label><select id="color-scale-mode" onchange="renderAll()"><option value="shared" selected>Shared across contexts</option><option value="autoscale">Autoscale each context</option></select></div>
+                    <div class="control-group" id="y-axis-group">
+                        <label>Target Metric (Y-Axis / Color)</label>
+                        <select id="target-metric" onchange="renderAll()">
+                            <optgroup label="Isolation & Contamination"><option value="isi_violations_ratio">ISI Violations Ratio</option><option value="presence_ratio">Presence Ratio</option><option value="isolation_distance">Isolation Distance</option><option value="d_prime">D-Prime</option><option value="silhouette">Silhouette Score</option><option value="l_ratio">L-Ratio</option></optgroup>
+                            <optgroup label="Signal Quality & Stability"><option value="snr" selected>Signal-to-Noise Ratio (SNR)</option><option value="amplitude_cutoff">Amplitude Cutoff</option><option value="amplitude_cv_median">Amplitude CV Median</option><option value="drift_ptp">Drift Peak-to-Peak (µm)</option><option value="drift_std">Drift Std Dev (µm)</option></optgroup>
+                            <optgroup label="Waveform Anatomy"><option value="amplitude">Spike Amplitude (µV)</option><option value="half_width">Half Width</option><option value="peak_to_valley">Peak-to-Valley Time</option><option value="repolarization_slope">Repolarization Slope</option></optgroup>
+                            <optgroup label="Spatial & Activity"><option value="depth_from_cortex_um">Depth from Cortical Entry (µm)</option><option value="depth_from_l1_l23_um">Depth from L1/L2/3 (µm)</option><option value="estimated_y">Estimated Y (Probe Depth µm)</option><option value="firing_rate">Overall Firing Rate (Hz)</option></optgroup>
+                        </select>
+                    </div>
+                    <div class="control-group" id="x-axis-group" style="display:none;">
+                        <label>X-Axis (Custom Explorer Only)</label>
+                        <select id="custom-x" onchange="renderAll()">
+                            <optgroup label="Isolation & Contamination"><option value="isi_violations_ratio">ISI Violations Ratio</option><option value="presence_ratio">Presence Ratio</option></optgroup>
+                            <optgroup label="Signal Quality & Stability"><option value="snr">Signal-to-Noise Ratio (SNR)</option><option value="drift_ptp">Drift Peak-to-Peak (µm)</option></optgroup>
+                            <optgroup label="Spatial & Activity"><option value="depth_from_cortex_um" selected>Depth from Cortical Entry (µm)</option><option value="depth_from_l1_l23_um">Depth from L1/L2/3 (µm)</option><option value="firing_rate">Overall Firing Rate (Hz)</option></optgroup>
+                        </select>
+                    </div>
+                    <div id="log-toggles-container" style="display:none; margin-bottom: 15px; padding-left: 10px; border-left: 3px solid var(--accent); background-color: var(--box-bg); padding-top: 5px; padding-bottom: 5px;">
+                        <div class="log-toggle-row"><label><input type="checkbox" id="log-x-axis" onchange="renderAll()"> Log Scale X</label><label id="log-y-axis-container" style="display:none; margin-left: 10px;"><input type="checkbox" id="log-y-axis" onchange="renderAll()"> Log Scale Y</label></div>
+                    </div>
+                </div>
+
+                <div class="main-content">
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab(event, 'tab-yield')">Unit Yield</button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tab-ecdf')">Degradation (ECDFs)</button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tab-depth')">Depth Profile</button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tab-layers')">Layer Profile</button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tab-timeseries')">Session Time-Series</button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tab-custom')">Custom Explorer</button>
+                        <button class="tab-btn" onclick="switchTab(event, 'tab-csd')">LFP / CSD</button>
+                    </div>
+                    <div id="tab-yield" class="tab-content active"><div id="plot-yield" class="plot-area"></div></div>
+                    <div id="tab-ecdf" class="tab-content"><div id="plot-ecdf" class="plot-area"></div></div>
+                    <div id="tab-depth" class="tab-content"><div id="plot-depth" class="plot-area"></div></div>
+                    <div id="tab-layers" class="tab-content"><div id="plot-layers" class="plot-area"></div></div>
+                    <div id="tab-timeseries" class="tab-content"><div id="plot-timeseries" class="plot-area"></div></div>
+                    <div id="tab-custom" class="tab-content"><div id="plot-custom" class="plot-area"></div></div>
+                    <div id="tab-csd" class="tab-content">
+                        <div class="csd-overlay-note"><b>Overlay key:</b> <b>CSD colour:</b> blue = sink (negative), almost-white grey = zero, red = source (positive).</div>
+                        <div class="csd-control-grid">
+                            <div class="control-group"><label>Session</label><select id="csd-session"></select></div>
+                            <div class="control-group"><label>Probe</label><select id="csd-probe"></select></div>
+                            <div class="control-group"><label>Stimulus table</label><select id="csd-stim"></select></div>
+                            <div class="control-group"><label>Condition</label><select id="csd-condition"></select></div>
+                            <div class="control-group"><label>Depth alignment</label><select id="csd-align"><option value="probe">Probe top = 0</option><option value="cortex">Cortical entry = 0</option><option value="l1">L1 ↔ L2/3 = 0</option></select></div>
+                            <div class="control-group"><label>View</label><select id="csd-view"><option value="full">Full probe</option><option value="visual">Visual cortex zoom</option><option value="hipp">Hippocampus zoom</option></select></div>
+                            <div class="control-group"><label>Spectral band overlay (Heatmap)</label><select id="csd-band"></select></div>
+                            <div class="control-group"><label>Band power metric</label><select id="csd-band-metric"><option value="relative" selected>Relative (% of 1–200 Hz)</option><option value="absolute">Absolute (dB mV²)</option></select></div>
+                        </div>
+                        <div id="csd-status" class="csd-status"></div>
+                        <div class="csd-panel-title">Stimulus-triggered LFP</div><div id="plot-static-lfp" class="plot-area csd-plot"></div>
+                        <div class="csd-panel-title">CSD / spatial second derivative</div><div id="plot-static-csd" class="plot-area csd-plot"></div>
+                        <div class="csd-panel-title">Session-sampled LFP spectrum</div><div id="spectral-status" class="csd-status"></div><div id="plot-static-psd" class="plot-area csd-spectrum-plot"></div>
+                        <div class="csd-panel-title">Selected band power by depth</div>
+                        <div style="position: relative;">
+                            <div id="plot-static-band" class="plot-area csd-band-plot"></div>
+                            <div id="csd-band-checkboxes" style="position: absolute; right: 5px; top: 35px; width: 210px; background: rgba(255,255,255,0.95); border: 1px solid var(--line); border-radius: 4px; padding: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-height: 440px; overflow-y: auto; z-index: 10;">
+                                <div style="font-weight: bold; margin-bottom: 10px; font-size: 0.9rem; color: var(--accent);">Compare Bands</div>
+                                <div id="band-checkbox-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stats" id="unit-count">Total Units Displayed: 0</div>
+                </div>
+            </div>
+            
+            <div id="loading-spinner" class="loading-box">
+                Fetching ~192,000 unit records. This may take a moment...<br>
+                <span style="font-size: 0.9rem; color: #888;">(To view this locally, run a local web server: <code>python -m http.server --directory interactive</code>)</span>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        __QC_DASHBOARD_JS__
+        __EMBED_AUTO_HEIGHT_JS__
+    </script>
+</body>
+</html>

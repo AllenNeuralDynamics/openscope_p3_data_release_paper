@@ -766,7 +766,7 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "isolated runs of one to four samples" in prose.lower()
     assert "**B,** a dorsal projection" in manuscript
     assert manuscript.count(
-        "[Figure 9](#fig-supp-optotagging-heatmaps)"
+        "[Figure 10](#fig-supp-optotagging-heatmaps)"
     ) == 3
     assert "./interactive/optotagging-heatmaps.html" in manuscript
     assert ":label: fig-supp-optotagging-heatmaps\n:width: 100%" in manuscript
@@ -1130,7 +1130,7 @@ def test_all_publication_viewers_default_to_static() -> None:
 
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     paths = re.findall(r"^:::\{iframe\} \./(interactive/[^\n]+)", manuscript, re.MULTILINE)
-    assert len(paths) == 15
+    assert len(paths) == 16
     for relative_path in paths:
         html = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
         parser = FigureElements()
@@ -1246,7 +1246,7 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "2,521 sources have defined classes and 19 are excluded" in manuscript
     assert "averages exclude zero-event source/context pairs" in manuscript
     assert "cross-cohort quality-class differences must not be interpreted" in manuscript
-    assert "[Figure 8](#fig-basic-stimuli-plan) outlines a comparison" in manuscript
+    assert "[Figure 9](#fig-basic-stimuli-plan) outlines a comparison" in manuscript
     assert "fig-standard-oddball-plan" not in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert ":placeholder: ./images/figures/generated/synchronized-behavior.svg" in manuscript
@@ -1268,7 +1268,7 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "Event-centered excerpts from real Neuropixels" not in manuscript
     assert "figure-06-behavior-tracking-plan.png" not in manuscript
     assert "continuous raw\nbehavioral videos" in manuscript
-    assert "[Figure 12](#fig-behavior-tracking)" in manuscript
+    assert "[Figure 13](#fig-behavior-tracking)" in manuscript
     assert "[](#fig-behavior-tracking)" not in manuscript
     assert (
         manuscript.index(":label: fig-supp-optotagging-heatmaps")
@@ -1284,11 +1284,12 @@ def test_figure_captions_and_interactive_placement() -> None:
         (5, "fig-aligned-neural-signals"),
         (6, "fig-mesoscope-unit-extraction"),
         (7, "fig-unit-extraction-plan"),
-        (8, "fig-basic-stimuli-plan"),
-        (9, "fig-supp-optotagging-heatmaps"),
-        (10, "fig-supp-wavemap"),
-        (11, "fig-neuropixels-event-responses"),
-        (12, "fig-behavior-tracking"),
+        (8, "fig-ecephys-qc-dashboard"),
+        (9, "fig-basic-stimuli-plan"),
+        (10, "fig-supp-optotagging-heatmaps"),
+        (11, "fig-supp-wavemap"),
+        (12, "fig-neuropixels-event-responses"),
+        (13, "fig-behavior-tracking"),
     ):
         assert f"[Figure {number}](#{label})" in manuscript
     assert re.search(r"\[\]\(#fig-", manuscript) is None
@@ -1303,6 +1304,26 @@ def test_figure_captions_and_interactive_placement() -> None:
     explanation = manuscript.index("**Four predictive contexts**")
     viewer = manuscript.index(":label: fig-interactive-experimental-design")
     assert figure_1 < cohort_link < explanation < viewer
+
+
+def test_main_figure_links_match_directive_order() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    blocks = re.findall(
+        r"^:::\{(?:figure|iframe)\} [^\n]+\n(.*?)^:::\s*$",
+        manuscript,
+        re.MULTILINE | re.DOTALL,
+    )
+    labels = []
+    for block in blocks:
+        options, _, caption = block.partition("\n\n")
+        label = re.search(r"^:label: (\S+)$", options, re.MULTILINE)
+        if label and caption.strip() and ":enumerated: false" not in options:
+            labels.append(label.group(1))
+    assert len(labels) == len(set(labels))
+    numbers = {label: index for index, label in enumerate(labels, start=1)}
+    assert numbers["fig-ecephys-qc-dashboard"] == 8
+    for number, label in re.findall(r"\[Figure (\d+)[A-Z]?\]\(#([^)]+)\)", manuscript):
+        assert numbers[label] == int(number), (label, number, numbers[label])
 
 
 def test_custom_layout_widens_article_and_hides_duplicate_sidebar() -> None:

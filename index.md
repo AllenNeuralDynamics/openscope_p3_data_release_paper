@@ -337,7 +337,7 @@ Possible QC failure can come from these cases: white foam buildup on the edge of
 
 #### Optotagging protocol
 
-At the end of every experiment, an optotagging protocol is run during which the cortical surface is stimulated with blue light. In Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)\_EYFP)/wt mice, this protocol allowes us to identify putative Sst+ cortical interneurons by an increase in spiking activity time-locked to laser stimulation (and consequent ChR2 activation). Blue light is delivered by a 473 nm laser (Laser Quantum, model Ciel or Cobolt model 06-MLD). The light source is coupled to a 400 μm diameter fiber optic cable (Thorlabs) or bifurcated fiber bundle (Thorlabs, BFYL4LF01), with the tip(s) positioned such that blue light illuminates the entire cranial window. Two types of stimuli at 3 different light levels are randomly interleaved: a 10 ms pulse, and a 1s raised cosine ramp. For the pulse stimulus, a 0.5 ms ramp is applied at the beginning and end of the pulse. Stimuli are presented at intervals of 1.5 s plus a uniformly distributed delay between 0 and 0.5 s. Representative laser-aligned responses and session-level yield summaries are shown in [Figure 9](#fig-supp-optotagging-heatmaps).
+At the end of every experiment, an optotagging protocol is run during which the cortical surface is stimulated with blue light. In Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)\_EYFP)/wt mice, this protocol allowes us to identify putative Sst+ cortical interneurons by an increase in spiking activity time-locked to laser stimulation (and consequent ChR2 activation). Blue light is delivered by a 473 nm laser (Laser Quantum, model Ciel or Cobolt model 06-MLD). The light source is coupled to a 400 μm diameter fiber optic cable (Thorlabs) or bifurcated fiber bundle (Thorlabs, BFYL4LF01), with the tip(s) positioned such that blue light illuminates the entire cranial window. Two types of stimuli at 3 different light levels are randomly interleaved: a 10 ms pulse, and a 1s raised cosine ramp. For the pulse stimulus, a 0.5 ms ramp is applied at the beginning and end of the pulse. Stimuli are presented at intervals of 1.5 s plus a uniformly distributed delay between 0 and 0.5 s. Representative laser-aligned responses and session-level yield summaries are shown in [Figure 10](#fig-supp-optotagging-heatmaps).
 
 #### Clearing with life canvas
 
@@ -637,7 +637,7 @@ span −2 to 4 s. Standard-oddball trials use the complete recorded preceding
 interstimulus interval as baseline, sequence trials use the preceding sequence
 element, and sensorimotor trials use the preceding 343 ms of visual flow. To
 exclude the manipulated delay, duration trials use the earlier unmanipulated
-interval from row i−2 `stop_time` to row i−1 `start_time`, matching Figure 11.
+interval from row i−2 `stop_time` to row i−1 `start_time`, matching Figure 12.
 Standard-oddball events are matched to the same physical event in both repeats
 of standard control C1, sequence events to sequential control C2, duration events
 to the same delay or omission in jitter control C3, and sensorimotor events to the
@@ -695,7 +695,7 @@ strongest mesoscope session, 843000, retains 35, 34, 35, and 35 trials across th
 four event types. Neuropixels 848387 retains 137 of 140 trials with 33 in its
 weakest event type, and 830794 retains 124 with 29. In contrast, 830846, used in
 the previously released Figure 10, averages 1.12 cm/s with a median of 0.00 and
-retains 2, 4, 4, and 4 trials; Figure 11 therefore uses mouse 830794. Availability
+retains 2, 4, 4, and 4 trials; Figure 12 therefore uses mouse 830794. Availability
 is per event type rather than per session: 832691 falls below the minimum only
 for motor halt, and 830849 falls below it for motor omission and the 45° change
 while clearing motor halt and the 90° change. The matched open-loop control
@@ -1146,13 +1146,16 @@ panel without network access.
 
 ### Neuropixels recordings
 
-- signal-to-noise
+To support repeated targeting while avoiding blood vessels, each probe's entry point was shifted slightly from its position on the previous day. Across 60 unit-bearing sessions from 16 mice, mean QC-passing unit yield per recorded probe declined from 100% of the day-1 baseline to 80.9% on day 4 ([Supplementary Figure 2](#fig-supp-neuropixels-unit-yield)). Unit-quality metrics and physical-drift summaries are shown in [Figure 8](#fig-ecephys-qc-dashboard).
 
-- Stability across one session
+:::{iframe} ./interactive/openscope_qc_dashboard.html
+:label: fig-ecephys-qc-dashboard
+:width: 100%
+:title: Neuropixels Unit Quality Control and Stability
+:placeholder: ./images/figures/generated/openscope_qc_dashboard_static.svg
 
-- Quality control
-
-- To support repeated targeting while avoiding blood vessels, each probe's entry point was shifted slightly from its position on the previous day. Across 60 unit-bearing sessions from 16 mice, mean QC-passing unit yield per recorded probe declined from 100% of the day-1 baseline to 80.9% on day 4 ([Supplementary Figure 2](#fig-supp-neuropixels-unit-yield)).
+Neuropixels unit quality control and signal stability across recording days. Analysis of 192,273 units from 59 CCF-aligned sessions across 16 mice. Displayed distributions include units passing standard quality-control thresholds: inter-spike interval (ISI) violations ratio < 0.01, presence ratio > 0.90, amplitude cutoff < 0.10, SNR ≥ 3.0, and localized cortical depth, excluding unlabeled ('void') channels. **A,** Empirical cumulative distribution functions (ECDFs) of unit SNR comparing initial (first session, blue) and final (last session, orange) recordings. Bold lines denote pooled populations; faint lines show individual mice. **B,** ECDF of refractory-period ISI violation ratios, evaluating single-unit contamination and isolation stability across session stages. **C,** Physical recording stability quantified by peak-to-peak waveform drift (µm). **D,** Spatial profile of unit SNR as a function of depth from cortical entry across individual mice (50 µm depth bins; 0 = brain surface). Figures are regenerated offline from the committed snapshot and provenance derived from [Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files).
+:::
 
 ### Mesoscope two photon imaging
 
@@ -1199,7 +1202,7 @@ Bleaching and remaining cross-session stability analyses are still in progress.
 
 ## Receptive field analysis across modalities
 
-[Figure 8](#fig-basic-stimuli-plan) outlines a comparison of receptive-field
+[Figure 9](#fig-basic-stimuli-plan) outlines a comparison of receptive-field
 measurements and basic stimulus responses across recording modalities.
 
 :::{figure} ./images/figures/generated/figure-08-basic-stimuli-plan.svg
@@ -1215,14 +1218,14 @@ Draft plan for basic stimulus characterization across recording modalities.
 Optotagging and extracellular waveform structure provide complementary ways to
 characterize the Neuropixels populations. In the SST-targeted recordings,
 laser-evoked firing identifies putative optotagged units;
-[Figure 9](#fig-supp-optotagging-heatmaps) shows their responses and yield across
+[Figure 10](#fig-supp-optotagging-heatmaps) shows their responses and yield across
 sessions and anatomical areas. This functional identification is distinct from
 spike-sorting quality control and does not by itself describe a unit's response
 to a visual mismatch.
 
 WaveMAP groups waveforms independently within six anatomical groups and places
 putative fast-spiking/PV-like and optotagged SST populations within that waveform
-space ([Figure 10](#fig-supp-wavemap)). Waveform communities are not molecular
+space ([Figure 11](#fig-supp-wavemap)). Waveform communities are not molecular
 cell identities, and community labels are not shared across regions. Together,
 these characterizations provide context for the cell-type comparisons in the
 following mismatch-response analysis. The figures retain their stated
@@ -1284,7 +1287,7 @@ response and all three stimulation protocols for the full response. Among the
 FS criterion, 225 the SST criterion, and 35 both. These labels are not confirmed
 transcriptomic identities. This overlay characterizes waveform space rather
 than repeating the optotagging validation and yield analysis in
-[Figure 9](#fig-supp-optotagging-heatmaps), which uses different
+[Figure 10](#fig-supp-optotagging-heatmaps), which uses different
 selection/tagging criteria. **D,** Session-normalized within-region class
 composition (D1) and log2 enrichment relative to the saved regional baseline
 (D2). Each contributing session is weighted equally within a context; missing
@@ -1301,7 +1304,7 @@ the publication build.
 
 ## Neuropixels mismatch responses across predictive contexts
 
-[Figure 11](#fig-neuropixels-event-responses) illustrates how the released
+[Figure 12](#fig-neuropixels-event-responses) illustrates how the released
 Neuropixels recordings can be used to identify candidate mismatch-responsive
 units. Four public sessions from mouse 830794 provide one example of each
 predictive context. Panel A summarizes responsive fractions and
@@ -1452,7 +1455,7 @@ accompanying text.
 
 All three recording modalities include continuous raw
 behavioral videos together with synchronized running-wheel signals and
-stimulus-presentation intervals. [Figure 12](#fig-behavior-tracking) presents
+stimulus-presentation intervals. [Figure 13](#fig-behavior-tracking) presents
 the available body or behavior, face, eye, and nose camera views for the
 Neuropixels, mesoscope, and SLAP2 examples, alongside their running profiles
 and stimulus state. The common timing information makes these records a

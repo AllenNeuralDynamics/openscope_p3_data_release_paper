@@ -6692,6 +6692,7 @@ def write_neuropixels_trajectory_svg(
 
 
 def main() -> None:
+    from .ecephys_qc_figure import write_ecephys_qc_html, write_ecephys_qc_svg
     from .mesoscope_plane_snr_figure import (
         write_mesoscope_plane_snr_html,
         write_mesoscope_plane_snr_svg,
@@ -6744,6 +6745,8 @@ def main() -> None:
     sensorimotor_running_svg_path = write_sensorimotor_running_svg()
     sensorimotor_running_html_path = write_sensorimotor_running_html()
     wavemap_paths = build_wavemap_publication()
+    qc_svg_path = write_ecephys_qc_svg()
+    qc_html_path = write_ecephys_qc_html()
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {figure_1_panel_c_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
@@ -6781,6 +6784,8 @@ def main() -> None:
     print(f"Wrote {sensorimotor_running_html_path.relative_to(REPO_ROOT)}")
     for path in wavemap_paths:
         print(f"Wrote {path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {qc_svg_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {qc_html_path.relative_to(REPO_ROOT)}")
 
 
 if __name__ == "__main__":

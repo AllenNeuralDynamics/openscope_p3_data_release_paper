@@ -3504,3 +3504,102 @@ def test_animal_record_provenance() -> None:
     assert provenance["vendored_sha256"] == hashlib.sha256(
         ANIMAL_RECORDS_PATH.read_bytes()
     ).hexdigest()
+
+
+def test_ecephys_qc_svg_image_ids_are_platform_independent() -> None:
+    import base64
+    import io
+    import xml.etree.ElementTree as ET
+
+    from PIL import Image
+
+    from openscope_p3_publication.ecephys_qc_figure import _canonicalize_svg_embedded_pngs
+
+    outputs = []
+    for compression, image_id in ((1, "image-windows"), (9, "image-linux")):
+        buffer = io.BytesIO()
+        Image.new("RGBA", (3, 3), (20, 30, 40, 255)).save(
+            buffer, format="PNG", compress_level=compression
+        )
+        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" '
+            'xmlns:xlink="http://www.w3.org/1999/xlink">'
+            f'<image id="{image_id}" xlink:href="data:image/png;base64,{encoded}"/>'
+            f'<use xlink:href="#{image_id}"/><path d="M 0 0 L 1 1"/>'
+            '</svg>'
+        )
+        outputs.append(_canonicalize_svg_embedded_pngs(svg))
+
+    assert outputs[0] == outputs[1]
+    root = ET.fromstring(outputs[0])
+    image = root.find("{http://www.w3.org/2000/svg}image")
+    reference = root.find("{http://www.w3.org/2000/svg}use")
+    assert reference.get("{http://www.w3.org/1999/xlink}href") == f"#{image.get('id')}"
+    assert root.find("{http://www.w3.org/2000/svg}path").get("d") == "M 0 0 L 1 1"
+
+
+def test_ecephys_qc_dashboard_snapshot_and_outputs(tmp_path: Path) -> None:
+    import matplotlib as mpl
+
+    from openscope_p3_publication.ecephys_qc_figure import (
+        DATA_JSON_PATH,
+        OUT_HTML_PATH,
+        OUT_SVG_PATH,
+        PROVENANCE_JSON_PATH,
+        write_ecephys_qc_html,
+        write_ecephys_qc_svg,
+    )
+
+    assert DATA_JSON_PATH.exists()
+    assert PROVENANCE_JSON_PATH.exists()
+    assert DATA_JSON_PATH.stat().st_size < 35 * 1024 * 1024
+
+    provenance = json.loads(PROVENANCE_JSON_PATH.read_text(encoding="utf-8"))
+    assert provenance["snapshot"] == "ecephys-qc-dashboard.json.gz"
+    assert (
+        provenance["snapshot_sha256"]
+        == hashlib.sha256(DATA_JSON_PATH.read_bytes()).hexdigest()
+    )
+
+    synthetic_gz = tmp_path / "synthetic.json.gz"
+    import gzip
+
+    synthetic_payload = {
+        "units": {
+            "mouse_id": ["820454", "820454"],
+            "session_stage": ["First", "Last"],
+            "isi_violations_ratio": [0.001, 0.002],
+            "presence_ratio": [0.99, 0.98],
+            "amplitude_cutoff": [0.01, 0.02],
+            "snr": [8.5, 6.2],
+            "drift_ptp": [12.0, 18.0],
+            "depth_from_cortex_um": [150.0, 450.0],
+            "area": ["VISp2/3", "VISp5"],
+        },
+        "boundaries": [],
+        "csd": [],
+        "psd": [],
+    }
+    with gzip.open(synthetic_gz, "wt", encoding="utf-8") as gz_file:
+        json.dump(synthetic_payload, gz_file)
+
+    svg_1 = tmp_path / "out1.svg"
+    svg_2 = tmp_path / "out2.svg"
+    write_ecephys_qc_svg(svg_1, synthetic_gz)
+    with mpl.rc_context({"xtick.major.width": 0.6, "ytick.major.width": 0.6}):
+        write_ecephys_qc_svg(svg_2, synthetic_gz)
+        assert mpl.rcParams["xtick.major.width"] == 0.6
+        assert mpl.rcParams["ytick.major.width"] == 0.6
+    assert svg_1.read_bytes() == svg_2.read_bytes()
+    svg_text = svg_1.read_text(encoding="utf-8")
+    assert "Neuropixels Unit Quality Control and Stability" in svg_text
+    assert "<dc:date>" not in svg_text
+
+    html_out = tmp_path / "dashboard.html"
+    write_ecephys_qc_html(html_out, synthetic_gz)
+    html_text = html_out.read_text(encoding="utf-8")
+    assert "ecephys-qc-dashboard.json.gz" in html_text
+    assert "DecompressionStream" in html_text
+    assert OUT_SVG_PATH.exists()
+    assert OUT_HTML_PATH.exists()

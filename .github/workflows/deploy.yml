@@ -109,6 +109,14 @@ jobs:
             images/figures/generated/figure7_panel*
             images/figures/generated/figure-07-unit-extraction-plan.svg
 
+      - name: Preserve Neuropixels QC drift diagnostics
+        if: failure() && steps.generated-figures.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ecephys-qc-linux-drift
+          retention-days: 3
+          path: images/figures/generated/openscope_qc_dashboard_static.svg
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
