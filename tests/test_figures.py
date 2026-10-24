@@ -3506,6 +3506,39 @@ def test_animal_record_provenance() -> None:
     ).hexdigest()
 
 
+def test_ecephys_qc_svg_image_ids_are_platform_independent() -> None:
+    import base64
+    import io
+    import xml.etree.ElementTree as ET
+
+    from PIL import Image
+
+    from openscope_p3_publication.ecephys_qc_figure import _canonicalize_svg_embedded_pngs
+
+    outputs = []
+    for compression, image_id in ((1, "image-windows"), (9, "image-linux")):
+        buffer = io.BytesIO()
+        Image.new("RGBA", (3, 3), (20, 30, 40, 255)).save(
+            buffer, format="PNG", compress_level=compression
+        )
+        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" '
+            'xmlns:xlink="http://www.w3.org/1999/xlink">'
+            f'<image id="{image_id}" xlink:href="data:image/png;base64,{encoded}"/>'
+            f'<use xlink:href="#{image_id}"/><path d="M 0 0 L 1 1"/>'
+            '</svg>'
+        )
+        outputs.append(_canonicalize_svg_embedded_pngs(svg))
+
+    assert outputs[0] == outputs[1]
+    root = ET.fromstring(outputs[0])
+    image = root.find("{http://www.w3.org/2000/svg}image")
+    reference = root.find("{http://www.w3.org/2000/svg}use")
+    assert reference.get("{http://www.w3.org/1999/xlink}href") == f"#{image.get('id')}"
+    assert root.find("{http://www.w3.org/2000/svg}path").get("d") == "M 0 0 L 1 1"
+
+
 def test_ecephys_qc_dashboard_snapshot_and_outputs(tmp_path: Path) -> None:
     import matplotlib as mpl
 

@@ -8,6 +8,7 @@ import json
 import re
 import shutil
 import struct
+import xml.etree.ElementTree as ET
 import zlib
 from pathlib import Path
 
@@ -94,7 +95,30 @@ def _canonicalize_svg_embedded_pngs(svg_text: str) -> str:
         wrapped = "\n".join(b64_str[i : i + 76] for i in range(0, len(b64_str), 76))
         return f"data:image/png;base64,{wrapped}\n"
 
-    return _EMBEDDED_PNG_RE.sub(_replace, svg_text)
+    root = ET.fromstring(_EMBEDDED_PNG_RE.sub(_replace, svg_text))
+    svg_namespace = "http://www.w3.org/2000/svg"
+    link_namespace = "http://www.w3.org/1999/xlink"
+    replacements = {}
+    for index, image in enumerate(root.iter(f"{{{svg_namespace}}}image")):
+        href = image.get(f"{{{link_namespace}}}href", image.get("href", ""))
+        original_id = image.get("id")
+        if original_id and href.startswith("data:image/png;base64,"):
+            png_bytes = base64.b64decode(href.partition(",")[2])
+            digest = hashlib.sha256(png_bytes).hexdigest()[:12]
+            image_id = f"image-{index}-{digest}"
+            image.set("id", image_id)
+            replacements[original_id] = image_id
+    for element in root.iter():
+        for attribute, value in list(element.attrib.items()):
+            for original_id, image_id in replacements.items():
+                if value == f"#{original_id}":
+                    value = f"#{image_id}"
+                value = value.replace(f"url(#{original_id})", f"url(#{image_id})")
+            element.set(attribute, value)
+    ET.register_namespace("", svg_namespace)
+    ET.register_namespace("xlink", link_namespace)
+    serialized = ET.tostring(root, encoding="unicode")
+    return "\n".join(line.rstrip() for line in serialized.splitlines()) + "\n"
 
 
 def load_ecephys_qc_data(
