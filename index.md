@@ -793,7 +793,7 @@ The release comprises modality-specific recording-session inventories and NWB fi
 
 ## Data tables
 
-[Figure 4](#fig-recording-session-inventory) summarizes animal and session coverage for Neuropixels, mesoscope, and SLAP2. This  inventory retains failed, repeated, and aborted entries to document acquisition coverage. \[Here should  go statistics of data acquired across each modality\].
+[Figure 4](#fig-recording-session-inventory) summarizes animal and session coverage for Neuropixels, mesoscope, and SLAP2. This  inventory retains failed, repeated, and aborted entries to document the data acquisition process. \[Here should  go statistics of data acquired across each modality\].
 
 :::{iframe} ./interactive/data-explorer.html
 :label: fig-recording-session-inventory
