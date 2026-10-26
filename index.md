@@ -866,20 +866,7 @@ Failed, repeated, and aborted acquisition attempts are retained.
 :::
 ## NWB file contents
 
-All data from this project are packaged as Neurodata
-Without Borders (NWB) files and deposited on the DANDI Archive. Neuropixels
-electrophysiology sessions are available at
-[DANDI:001637](https://dandiarchive.org/dandiset/001637), mesoscope two-photon
-imaging sessions at [DANDI:001768](https://dandiarchive.org/dandiset/001768),
-and SLAP2 dendritic-imaging sessions at
-[DANDI:001424](https://dandiarchive.org/dandiset/001424). NWB files can be
-streamed directly from DANDI without downloading the complete asset; see the
-[data access code example](#data-access-code-example) below. The
-[OpenScope Databook](https://alleninstitute.github.io/openscope_databook)
-provides companion analysis notebooks for selecting sessions and working with
-the electrophysiology, imaging, and behavioral objects introduced here. The
-**Interactive** view presents the native collapsible PyNWB structure of one
-pinned public file per modality. The **Static** view maps scientific questions
+All datasets from this project are packaged as Neurodata Without Borders (NWB) files [@rubel2022nwb] and deposited on the DANDI Archive . Neuropixels electrophysiology sessions are available at [DANDI:001637](https://dandiarchive.org/dandiset/001637), mesoscope two-photon imaging sessions at [DANDI:001768](https://dandiarchive.org/dandiset/001768), and SLAP2 dendritic-imaging sessions at [DANDI:001424](https://dandiarchive.org/dandiset/001424). NWB files can be streamed directly from DANDI without downloading the complete asset; see the [data access code example](#data-access-code-example) below. The [OpenScope Databook](https://alleninstitute.github.io/openscope_databook) provides companion analysis notebooks for selecting sessions and working with the electrophysiology, imaging, and behavioral objects introduced here. The **Interactive** view presents the native collapsible PyNWB structure of one pinned public file per modality. The **Static** view maps scientific questions
 to corresponding NWB objects and PyNWB entry points. Object names can differ
 slightly among sessions; the paths shown here reflect representative files in
 these Dandisets.
