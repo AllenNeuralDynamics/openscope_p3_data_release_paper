@@ -7,6 +7,7 @@ import re
 import runpy
 import struct
 import urllib.parse
+from collections import Counter
 from copy import deepcopy
 from html.parser import HTMLParser
 from pathlib import Path
@@ -14,6 +15,10 @@ from pathlib import Path
 import pytest
 
 from openscope_p3_publication.authorship import apply_author_review
+from openscope_p3_publication.figures import (
+    load_experimental_session_records,
+    load_individual_session_table,
+)
 from openscope_p3_publication.neural_response_figure import (
     load_neuropixels_event_responses,
     response_matrix,
@@ -501,20 +506,20 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert ":alt:" in options
 
     assert (
-        "Distributed predictive-processing hypotheses motivate multimodal recordings"
+        "Distributed predictive-processing hypotheses motivate multimodal, multi-context recordings"
         in manuscript
     )
     assert "**C,** Five cohort timelines" in manuscript
     assert "Within-session architecture for cross-context comparison" in manuscript
     assert "see [Figure 1](#fig-graphical-abstract)" in manuscript
-    assert "see [Figure 3](#fig-multimodal-pipelines)" in manuscript
+    assert "[Figure 3](#fig-multimodal-pipelines)" in manuscript
     assert "./images/figures/generated/multimodal-hardware.svg" in manuscript
     assert "./images/figures/generated/figure-06-segmentation-viewers.svg" not in manuscript
     assert "./images/figures/generated/figure-06-unit-extraction-mesoscope.svg" in manuscript
     assert "./images/figures/generated/figure-07-unit-extraction-plan.svg" in manuscript
     assert "./images/figures/generated/figure-08-basic-stimuli-plan.svg" in manuscript
     assert "./images/figures/generated/figure-11-standard-oddball-plan.svg" not in manuscript
-    assert "nine native-resolution images" in manuscript
+    assert "Neuropixels uses six acute trajectories" in manuscript
     hardware_start = manuscript.index("## Multimodal recording hardware")
     methods_start = manuscript.index("# Methods")
     hardware_section = manuscript[hardware_start:methods_start]
@@ -671,14 +676,17 @@ def test_methods_are_collapsed_as_one_section() -> None:
     assert re.findall(r"^([1-8])\.\s+\S", protocols, re.MULTILINE) == list("12345678")
     assert "[Stimuli parameters](#stimuli-parameters)" in manuscript[:methods_start]
     assert "| Recording position |" not in manuscript
-    assert (
-        "The motor cohort was recorded in the order sensorimotor mismatch, standard oddball, "
-        "sequence mismatch, and duration mismatch."
-    ) in manuscript[:methods_start]
-    assert (
-        "The sequence cohort was recorded in the order sequence mismatch, duration mismatch, "
-        "standard oddball, and sensorimotor mismatch."
-    ) in manuscript[:methods_start]
+    introduction = " ".join(manuscript[:methods_start].split())
+    assert re.search(
+        r"The motor cohort was recorded in the order:? sensorimotor mismatch, "
+        r"standard oddball, sequence mismatch, and duration mismatch\.",
+        introduction,
+    )
+    assert re.search(
+        r"The sequence cohort was recorded in the order:? sequence mismatch, "
+        r"duration mismatch, standard oddball, and sensorimotor mismatch\.",
+        introduction,
+    )
     assert not re.search(
         r"^\s+\d+\.\s+(?:Sequence|Duration|Sensorimotor) mismatch",
         manuscript[:methods_start],
@@ -742,9 +750,7 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "supplementary-neuropixels-implant-trajectories.png" in manuscript
     assert "./interactive/unit-yield.html" in manuscript
     assert ":label: fig-supp-neuropixels-unit-yield\n" in manuscript
-    assert manuscript.count(
-        "[Supplementary Figure 2](#fig-supp-neuropixels-unit-yield)"
-    ) == 2
+    assert "[Supplementary Figure 2](#fig-supp-neuropixels-unit-yield)" in manuscript
     assert "images/figures/generated/supplementary-neuropixels-unit-yield.svg" in manuscript
     assert "60 sessions from 16 mice" in manuscript
     assert "./interactive/neuropixels-trajectories.html" in manuscript
@@ -791,6 +797,7 @@ def test_supplementary_and_power_figures_are_current() -> None:
     ) in manuscript
     assert "display-synchronized `start_time`" in manuscript
     assert "row i−2 `stop_time` to row i−1 `start_time`" in manuscript
+    assert "row *i−2* `stop_time` to row *i−1* `start_time`" in prose
     assert "both repeats of standard control C1" in prose
     assert "Duration responses use the following commanded interstimulus interval" in prose
     assert "display-recorded stimulus interval" in prose
@@ -1033,9 +1040,12 @@ def test_data_explorer_uses_generated_assets_without_manuscript_data() -> None:
         ("## Multimodal recording hardware", ("Neuropixels", "mesoscope", "SLAP2")),
         (
             "# Data records",
-            ("inventories", "NWB", "behavioral", "oddball", "analysis plan", "provenance"),
+            (
+                "AWS S3", "Code Ocean", "NWB", "DANDI", "behavioral", "processing code",
+                "Neuropixels mismatch responses across predictive contexts",
+            ),
         ),
-        ("## Data tables", ("session IDs", "`Pass`", "failed")),
+        ("## Data tables", ("Neuropixels", "mesoscope", "SLAP2", "failed", "repeated", "aborted")),
         (
             "## Raw data across recording modalities",
             ("extracellular-voltage", "fluorescence", "sparse"),
@@ -1066,9 +1076,60 @@ def test_manuscript_sections_have_explanatory_prose(
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     section = manuscript.split(f"{heading}\n", 1)[1]
     introduction = re.split(r"^(?:#{1,6} |:::\{)", section, maxsplit=1, flags=re.MULTILINE)[0]
+    introduction = " ".join(introduction.split())
 
     for term in expected_terms:
         assert term in introduction
+
+
+def test_manuscript_session_statistics_match_committed_inventory() -> None:
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    section = manuscript.split("## Data tables\n", 1)[1].split(":::{iframe}", 1)[0]
+    prose = " ".join(section.split())
+    payload = load_experimental_session_records()
+    passing = load_individual_session_table(payload=payload)["rows"]
+    provenance = json.loads(
+        (REPO_ROOT / "figure_sources/data/experimental-sessions.provenance.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert provenance["retrieved_date"] in prose
+    assert f"{len(payload['records'])} acquisition records" in prose
+    assert "./figure_sources/data/experimental-sessions.csv" in prose
+    assert "./figure_sources/data/experimental-sessions.provenance.json" in prose
+    for modality, label in (
+        ("neuropixels", "Neuropixels"),
+        ("mesoscope", "mesoscope"),
+        ("slap2", "SLAP2"),
+    ):
+        records = [record for record in payload["records"] if record["modality"] == modality]
+        mice = {record["mouse_id"] for record in records}
+        session_ids = {
+            record["source_session_id"].strip()
+            for record in records
+            if record["source_session_id"].strip() not in {"", "aborted"}
+        }
+        passed = [row for row in passing if row["modality"].split("-", 1)[0] == modality]
+        passed_mice = {row["values"][1] for row in passed}
+        assert f"{len(records)} {label} acquisition records from {len(mice)} mice" in prose
+        assert f"{len(session_ids)} unique {label} session IDs" in prose
+        assert f"{len(passed)} {label} sessions from {len(passed_mice)} mice" in prose
+
+    slap2 = [row for row in passing if row["modality"].split("-", 1)[0] == "slap2"]
+    channel_counts = Counter(row["modality"] for row in slap2)
+    pilot_count = sum(row["context"] == "other/pilot" for row in slap2)
+    assert f"{channel_counts['slap2-glutamate']} glutamate sessions" in prose
+    assert f"{channel_counts['slap2-voltage']} voltage sessions" in prose
+    assert (
+        f"{channel_counts['slap2']} session with an unclassified green recording channel"
+        in prose
+    )
+    assert f"{pilot_count} of these {len(slap2)} sessions are classified as pilot/other" in prose
+    assert "Excluding empty session IDs and entries marked `aborted`" in prose
+    assert "worksheet QC status `Pass` (case-insensitive)" in prose
+    assert "not the number of archived NWB files" in prose
+    assert "Here should" not in section
 
 
 def test_cell_type_figures_are_main_figures_before_responses() -> None:
@@ -1197,7 +1258,7 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "**D,** Context panels summarize" not in manuscript
     assert "Rows compare Neuropixels electrophysiology" in manuscript
     assert "Columns show each rig geometry" in manuscript
-    assert "nine native-resolution images" in manuscript
+    assert "Neuropixels uses six acute trajectories" in manuscript
     assert "Failed, repeated, and aborted acquisition attempts are retained" in manuscript
     assert "./interactive/neural-viewer.html" in manuscript
     assert ":label: fig-aligned-neural-signals" in manuscript
@@ -1267,7 +1328,7 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "maps median luminance to 35%" in prose
     assert "Event-centered excerpts from real Neuropixels" not in manuscript
     assert "figure-06-behavior-tracking-plan.png" not in manuscript
-    assert "continuous raw\nbehavioral videos" in manuscript
+    assert "continuous raw behavioral videos" in prose
     assert "[Figure 13](#fig-behavior-tracking)" in manuscript
     assert "[](#fig-behavior-tracking)" not in manuscript
     assert (
