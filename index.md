@@ -789,9 +789,7 @@ Completed SLAP2 NWB files were deposited in [DANDI:001424](https://dandiarchive.
 
 # Data records
 
-The release comprises modality-specific recording-session inventories and NWB files containing neural, stimulus, and behavioral data. The inventories describe the animals and experimental sessions, while the NWB records organize the associated measurements for analysis. Together, they connect cohort and recording-context metadata with the archived data described below.
-
-Following the inventories and NWB structure, we trace the data from raw recordings to extracted units and optical sources, receptive-field and cell-type characterization, and the selection of candidate units responsive to oddball events. Synchronized behavioral and eye-tracking records provide context for these neural measurements. The analysis plan then outlines how the derived products can address questions about predictive processing. Quality control and source provenance accompany each stage.
+The release comprises modality-specific recording-session inventories and NWB files containing neural, stimulus, and behavioral data. Below, we first introduce the total number of sessions recorded and their respective training context. Then, we progress through the NWB files, introduce the available raw data and the processed assets. Using, those assets, we share an analysis, for each recording modality, of data quality. We end on some analysis of one sensory context across all modalities as well as an analysis of behavior variability across those.
 
 ## Data tables
 
