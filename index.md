@@ -75,29 +75,11 @@ and public NWB intervals for
 [mesoscope](https://dandiarchive.org/dandiset/001768/draft/files).
 :::
 
-The mismatch repeat count and session length were informed by the five
-published visual oddball paradigms compared in
-[Supplementary Table 1](#table-supplementary-oddball-studies). Those studies
-reported 10--144 required oddball repeats and total session durations ranging
-from 6 min to 2 h. We therefore set each 26-min context block to 1.35 mismatch
-events per minute for each of four deviant types (5.4/min combined), targeting
-approximately 35 repeats per deviant type and 140 mismatch events per context
-block. This placed per-deviant sampling within the published range while
-keeping the complete shared block sequence to approximately 71 min and applying
-the same event rate across all four predictive contexts.
+The mismatch repeat count and session length were informed by the five published visual oddball paradigms compared in [Supplementary Table 1](#table-supplementary-oddball-studies). Those studies reported 10--144 required oddball repeats and total session durations ranging from 6 min to 2 h. We therefore set each 26-min context block to 1.35 mismatch events per minute for each of four deviant types (5.4/min combined), targeting approximately 35 repeats per deviant type and 140 mismatch events per context block. This placed per-deviant sampling within the published range while keeping the complete shared block sequence to approximately 71 min and applying the same event rate across all four predictive contexts.
 
 ## Multimodal recording hardware
 
-The three recording platforms sampled complementary spatial scales during the
-shared visual-stimulation paradigm ([Figure 3](#fig-multimodal-pipelines)).
-Six acute Neuropixels probes targeted distributed cortical and subcortical
-structures, while mesoscope two-photon calcium imaging sampled eight chronic
-imaging planes across VISp and VISlm. SLAP2 imaging targeted proximal and apical
-dendritic compartments of layer II/III pyramidal neurons in VISp. Recordings
-were collected in separate animals with modality-specific implants; the shared
-stimulus protocol, rather than simultaneous acquisition, provides the basis
-for comparisons across platforms. Acquisition and targeting procedures are
-described under [Neuronal recording modalities](#neuronal-recording-modalities).
+The three recording platforms sampled complementary spatial scales during the shared visual-stimulation paradigm ([Figure 3](#fig-multimodal-pipelines)). Six acute Neuropixels probes targeted distributed cortical and subcortical structures, while mesoscope two-photon calcium imaging sampled eight chronic imaging planes across VISp and VISlm. SLAP2 imaging targeted proximal and apical dendritic compartments of layer II/III pyramidal neurons in VISp. Recordings were collected in separate animals with modality-specific implants; the shared stimulus protocol, rather than simultaneous acquisition, provides the basis for comparisons across platforms. Acquisition and targeting procedures are described under [Neuronal recording modalities](#neuronal-recording-modalities).
 
 :::{figure} ./images/figures/generated/multimodal-hardware.svg
 :label: fig-multimodal-pipelines
@@ -809,19 +791,9 @@ Completed SLAP2 NWB files were deposited in [DANDI:001424](https://dandiarchive.
 
 # Data records
 
-The release comprises modality-specific recording-session inventories and NWB
-files containing neural, stimulus, and behavioral data. The inventories
-describe the animals and experimental sessions, while the NWB records organize
-the associated measurements for analysis. Together, they connect cohort and
-recording-context metadata with the archived data described below.
+The release comprises modality-specific recording-session inventories and NWB files containing neural, stimulus, and behavioral data. The inventories describe the animals and experimental sessions, while the NWB records organize the associated measurements for analysis. Together, they connect cohort and recording-context metadata with the archived data described below.
 
-Following the inventories and NWB structure, we trace the data from raw
-recordings to extracted units and optical sources, receptive-field and cell-type
-characterization, and the selection of candidate units responsive to oddball
-events. Synchronized behavioral and eye-tracking records provide context for
-these neural measurements. The analysis plan then outlines how the derived
-products can address questions about predictive processing. Quality control and
-source provenance accompany each stage.
+Following the inventories and NWB structure, we trace the data from raw recordings to extracted units and optical sources, receptive-field and cell-type characterization, and the selection of candidate units responsive to oddball events. Synchronized behavioral and eye-tracking records provide context for these neural measurements. The analysis plan then outlines how the derived products can address questions about predictive processing. Quality control and source provenance accompany each stage.
 
 ## Data tables
 
@@ -997,18 +969,9 @@ associated with neuropil-corrected fluorescence and $\Delta F/F$ traces, from
 which OASIS deconvolution estimates spike-related events rather than directly
 measuring action potentials.
 
-For SLAP2 glutamate imaging, SILo localizes spatially sparse glutamate-release
-sources along dendrites, refines their spatial profiles, and extracts their
-fluorescence time courses. Multiple extracted sources can belong to the same
-neuron, so source counts are not neuron counts. [Figure 5](#fig-aligned-neural-signals)
-compares the spatial filters and matched activity traces from representative
-sessions. The preprocessing, segmentation, source-extraction, and curation
-procedures are described under [Data processing](#data-processing) in Methods.
+For SLAP2 glutamate imaging, SILo localizes spatially sparse glutamate-release sources along dendrites, refines their spatial profiles, and extracts their fluorescence time courses. Multiple extracted sources can belong to the same neuron, so source counts are not neuron counts. [Figure 5](#fig-aligned-neural-signals) compares the spatial filters and matched activity traces from representative sessions. The preprocessing, segmentation, source-extraction, and curation procedures are described under [Data processing](#data-processing) in Methods.
 
-[Figure 6](#fig-mesoscope-unit-extraction) reports mesoscope event-amplitude
-signal quality; [Figure 7](#fig-unit-extraction-plan) presents the separate
-SLAP2 glutamate analysis. Their source counts and quality classes retain their
-modality-specific definitions.
+[Figure 6](#fig-mesoscope-unit-extraction) reports mesoscope event-amplitude signal quality; [Figure 7](#fig-unit-extraction-plan) presents the separate SLAP2 glutamate analysis. Their source counts and quality classes retain their modality-specific definitions.
 
 :::{iframe} ./interactive/mesoscope-plane-snr.html
 :label: fig-mesoscope-unit-extraction
