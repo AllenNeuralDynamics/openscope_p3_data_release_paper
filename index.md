@@ -866,7 +866,7 @@ Failed, repeated, and aborted acquisition attempts are retained.
 :::
 ## NWB file contents
 
-All datasets from this project are packaged as Neurodata Without Borders (NWB) files [@rubel2022nwb] and deposited on the DANDI Archive . Neuropixels electrophysiology sessions are available at [DANDI:001637](https://dandiarchive.org/dandiset/001637), mesoscope two-photon imaging sessions at [DANDI:001768](https://dandiarchive.org/dandiset/001768), and SLAP2 dendritic-imaging sessions at [DANDI:001424](https://dandiarchive.org/dandiset/001424). NWB files can be streamed directly from DANDI without downloading the complete asset; see the [data access code example](#data-access-code-example) below. The [OpenScope Databook](https://alleninstitute.github.io/openscope_databook) provides companion analysis notebooks for selecting sessions and working with the electrophysiology, imaging, and behavioral objects introduced here. The **Interactive** view presents the native collapsible PyNWB structure of one pinned public file per modality. The **Static** view maps scientific questions
+All datasets from this project are packaged as Neurodata Without Borders (NWB) files [@rubel2022nwb] and deposited on the DANDI Archive. Each modality is associated with a single DANDI set. Neuropixels electrophysiology sessions are available at [DANDI:001637](https://dandiarchive.org/dandiset/001637), mesoscope two-photon imaging sessions at [DANDI:001768](https://dandiarchive.org/dandiset/001768), and SLAP2 dendritic-imaging sessions at [DANDI:001424](https://dandiarchive.org/dandiset/001424). NWB files can be streamed directly from DANDI without downloading the complete asset; see the [data access code example](#data-access-code-example) below. The [OpenScope Databook](https://alleninstitute.github.io/openscope_databook) provides companion analysis notebooks for selecting sessions and working with the electrophysiology, imaging, and behavioral objects introduced here. The **Interactive** view presents the native collapsible PyNWB structure of one pinned public file per modality. The **Static** view maps scientific questions
 to corresponding NWB objects and PyNWB entry points. Object names can differ
 slightly among sessions; the paths shown here reflect representative files in
 these Dandisets.
@@ -965,14 +965,7 @@ each DMD imaging path.
 
 ## Raw data across recording modalities
 
-The modalities produce different native data structures: multichannel
-extracellular-voltage time series for Neuropixels, fluorescence image frames
-for mesoscope, and sparse dendritic detector samples for SLAP2.
-[Figure 5](#fig-aligned-neural-signals) presents source-backed excerpts from one
-public session per modality, showing the recording geometry and native signals
-that underlie the unit and source extraction described next. Optical contrast
-is scaled independently for display, so brightness should not be interpreted
-as a quantitative comparison across modalities.
+The modalities produce different native data structures: multichannel extracellular-voltage time series for Neuropixels, fluorescence image frames for mesoscope, and sparse dendritic detector samples for SLAP2. [Figure 5](#fig-aligned-neural-signals) presents source-backed excerpts from one public session per modality, showing the recording geometry and native signals that underlie the unit and source extraction described next. Optical contrast is scaled independently for display, so brightness should not be interpreted as a quantitative comparison across modalities.
 
 :::{iframe} ./interactive/neural-viewer.html
 :label: fig-aligned-neural-signals
@@ -1137,51 +1130,21 @@ Neuropixels unit quality control and signal stability across recording days. Ana
 
 ### Mesoscope two photon imaging
 
-Event extraction quality is reported in [Figure 6](#fig-mesoscope-unit-extraction) over
-81 of the 83 QC-Pass mesoscope sessions of the 91 released, covering all
-10 mice and 175,508 segmented ROIs. Events are the processing
-pipeline's own OASIS series rather than a re-detection, and each event is measured
-as an amplitude in standard deviations of its ROI's non-event `dF/F` noise. Summarising
-every ROI by the fraction of its events below 2 SD, between 2 and 4 SD, and above 4 SD
-separates ROIs whose detected activity is unambiguous against their own noise floor
-from those whose is not, and a three-way k-means fit over the whole cohort turns that
-description into Low SNR, Intermediate and High SNR classes.
+Event extraction quality is reported in [Figure 6](#fig-mesoscope-unit-extraction) over 81 of the 83 QC-Pass mesoscope sessions of the 91 released, covering all 10 mice and 175,508 segmented ROIs. Events are the processing pipeline's own OASIS series rather than a re-detection, and each event is measured as an amplitude in standard deviations of its ROI's non-event `dF/F` noise. Summarising every ROI by the fraction of its events below 2 SD, between 2 and 4 SD, and above 4 SD separates ROIs whose detected activity is unambiguous against their own noise floor from those whose is not, and a three-way k-means fit over the whole cohort turns that description into Low SNR, Intermediate and High SNR classes.
 
-Quality is governed far more by imaging depth than by imaged area. The two areas are
-nearly indistinguishable (22% High SNR in VISp against 21%
-in VISl), whereas the High SNR share falls from 38% at 151–250 µm to
-16% at 251–350 µm and 2.6% below 350 µm. The deepest plane of each
-area therefore contributes many more ROIs whose events sit close to their noise floor,
-which is a consideration when pooling ROIs across planes in downstream analyses.
-Per-session composition varies appreciably within as well as between animals
-(6.3–41.2% High SNR across sessions), so session identity is
-worth retaining as a grouping factor.
+Quality is governed far more by imaging depth than by imaged area. The two areas are nearly indistinguishable (22% High SNR in VISp against 21% in VISl), whereas the High SNR share falls from 38% at 151–250 µm to 16% at 251–350 µm and 2.6% below 350 µm. The deepest plane of each area therefore contributes many more ROIs whose events sit close to their noise floor, which is a consideration when pooling ROIs across planes in downstream analyses. Per-session composition varies appreciably within as well as between animals (6.3–41.2% High SNR across sessions), so  session identity is worth retaining as a grouping factor.
 
-Three further quality questions remain in preparation: motion correction across planes
-within and across sessions, baseline and calcium-kernel stability in the `dF/F` series,
-and cell matching across sessions. The signal-to-noise definition used here was selected
-by comparing three candidates on a single session; that comparison, and a rotatable
-depth view of ROI positions, are available in the interactive view of
-[Figure 6](#fig-mesoscope-unit-extraction).
+Three further quality questions remain in preparation: motion correction across planes within and across sessions, baseline and calcium-kernel stability in the `dF/F` series, and cell matching across sessions. The signal-to-noise definition used here was selected by comparing three candidates on a single session; that comparison, and a rotatable depth view of ROI positions, are available in the interactive view of [Figure 6](#fig-mesoscope-unit-extraction).
 
 ### SLAP imaging
 
-The event-based glutamate QC analysis in [Figure 7](#fig-unit-extraction-plan)
-characterizes 2,540 extracted sources across 20 sessions from 8 mice. It separates
-event detection from amplitude measurement and retains both within-session and
-archive-wide quality labels in the released tables. The displayed classes use
-the archive-wide fit; 2,521 sources have defined classes and 19 are excluded.
-These ordinal signal-quality labels describe the recorded traces, not cell
-identities or a common preparation-quality scale across the two processing
-cohorts. Context rates are conditional on the event-bearing records retained in
-the source tables, as defined in the caption.
+The event-based glutamate QC analysis in [Figure 7](#fig-unit-extraction-plan) characterizes 2,540 extracted sources across 20 sessions from 8 mice. It separates event detection from amplitude measurement and retains both within-session and archive-wide quality labels in the released tables. The displayed classes use the archive-wide fit; 2,521 sources have defined classes and 19 are excluded. These ordinal signal-quality labels describe the recorded traces, not cell identities or a common preparation-quality scale across the two processing cohorts. Context rates are conditional on the event-bearing records retained in the source tables, as defined in the caption.
 
 Bleaching and remaining cross-session stability analyses are still in progress.
 
 ## Receptive field analysis across modalities
 
-[Figure 9](#fig-basic-stimuli-plan) outlines a comparison of receptive-field
-measurements and basic stimulus responses across recording modalities.
+[Figure 9](#fig-basic-stimuli-plan) outlines a comparison of receptive-field measurements and basic stimulus responses across recording modalities.
 
 :::{figure} ./images/figures/generated/figure-08-basic-stimuli-plan.svg
 :label: fig-basic-stimuli-plan
