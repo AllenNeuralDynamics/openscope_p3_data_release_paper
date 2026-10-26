@@ -839,16 +839,7 @@ source provenance accompany each stage.
 
 ## Data tables
 
-[Figure 4](#fig-recording-session-inventory) summarizes animal and session
-coverage from the recording worksheets for Neuropixels, mesoscope, and SLAP2.
-Animal metadata identify the cohort and recording modality; session entries
-provide session IDs, recording context, quality-control status, and data-access
-links. SLAP2 records distinguish glutamate and voltage recordings where channel
-metadata are available. The static inventory retains failed, repeated, and
-aborted entries to document acquisition coverage, whereas the interactive
-Sessions table includes only records with a valid session ID and QC status
-`Pass`. Acquisition attempts and pass-QC sessions therefore represent distinct
-populations in this summary.
+[Figure 4](#fig-recording-session-inventory) summarizes animal and session coverage from the recording worksheets for Neuropixels, mesoscope, and SLAP2. Animal metadata identify the cohort and recording modality; session entries provide session IDs, recording context, quality-control status, and data-access links. SLAP2 records distinguish glutamate and voltage recordings where channel metadata are available. The static inventory retains failed, repeated, and aborted entries to document acquisition coverage, whereas the interactive Sessions table includes only records with a valid session ID and QC status `Pass`. Acquisition attempts and pass-QC sessions therefore represent distinct populations in this summary.
 
 :::{iframe} ./interactive/data-explorer.html
 :label: fig-recording-session-inventory
