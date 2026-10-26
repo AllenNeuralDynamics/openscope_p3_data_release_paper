@@ -77,14 +77,14 @@ The mismatch repeat count and session length were informed by the five published
 
 ## Multimodal recording hardware
 
-The three recording platforms sampled complementary spatial scales during the shared visual-stimulation paradigm ([Figure 3](#fig-multimodal-pipelines)). Six acute Neuropixels probes targeted distributed cortical and subcortical structures, while mesoscope two-photon calcium imaging sampled eight chronic imaging planes across VISp and VISlm. SLAP2 imaging targeted proximal and apical dendritic compartments of layer II/III pyramidal neurons in VISp. Recordings were collected in separate animals with modality-specific implants; the shared stimulus protocol, rather than simultaneous acquisition, provides the basis for comparisons across platforms. Acquisition and targeting procedures are described under [Neuronal recording modalities](#neuronal-recording-modalities).
+The three recording platforms sampled complementary spatial scales during the shared visual-stimulation paradigm ([Figure 3](#fig-multimodal-pipelines)). Six acute Neuropixels probes targeted distributed cortical and subcortical structures, while mesoscope two-photon calcium imaging sampled eight chronic imaging planes across VISp and VISlm. SLAP2 imaging targeted proximal and apical dendritic compartments of layer II/III pyramidal neurons in VISp. Recordings were collected in separate animals with modality-specific implants; the shared stimulus protocol, rather than simultaneous acquisition, provides the basis for comparisons across platforms. Acquisition and targeting procedures are described in the Methods section under [Neuronal recording modalities](#neuronal-recording-modalities).
 
 :::{figure} ./images/figures/generated/multimodal-hardware.svg
 :label: fig-multimodal-pipelines
 :alt: Neuropixels, mesoscope, and SLAP2 rig geometry, mouse platforms, and brain-targeting strategies.
 :width: 100%
 
-Multimodal recording hardware. Rows compare Neuropixels electrophysiology, mesoscope two-photon calcium imaging, and SLAP2 dendritic imaging. Columns show each rig geometry, the corresponding head-fixed mouse platform, and the brain-targeting strategy. Neuropixels uses six acute trajectories spanning cortical and subcortical structures; mesoscope uses eight chronic imaging planes across VISp and VISlm; and SLAP2 samples proximal and apical dendritic compartments in a layer II/III pyramidal neuron. The figure is reconstructed from nine native-resolution images extracted directly from the editable PowerPoint source.
+Multimodal recording hardware. Rows compare Neuropixels electrophysiology, mesoscope two-photon calcium imaging, and SLAP2 dendritic imaging. Columns show each rig geometry, the corresponding head-fixed mouse platform, and the brain-targeting strategy. Neuropixels uses six acute trajectories spanning cortical and subcortical structures; mesoscope uses eight chronic imaging planes across VISp and VISlm; and SLAP2 samples proximal and apical dendritic compartments in a layer II/III pyramidal neuron. 
 :::
 
 # Methods
