@@ -923,7 +923,7 @@ each DMD imaging path.
 
 ## Raw data across recording modalities
 
-The modalities produce different native data structures: multichannel extracellular-voltage time series for Neuropixels, fluorescence image frames for mesoscope, and sparse dendritic detector samples for SLAP2. [Figure 5](#fig-aligned-neural-signals) presents source-backed excerpts from one public session per modality, showing the recording geometry and native signals that underlie the unit and source extraction described next. Optical contrast is scaled independently for display, so brightness should not be interpreted as a quantitative comparison across modalities.
+The modalities produce different native data structures: multichannel extracellular-voltage time series for Neuropixels, fluorescence image frames for mesoscope, and sparse dendritic detector samples for SLAP2. [Figure 5](#fig-aligned-neural-signals) presents source-backed excerpts from one public session per modality, showing the recording geometry and native signals that underlie the unit and source extraction described next. Optical contrast is scaled independently for *display*, so brightness should not be interpreted as a quantitative comparison across modalities.
 
 :::{iframe} ./interactive/neural-viewer.html
 :label: fig-aligned-neural-signals
