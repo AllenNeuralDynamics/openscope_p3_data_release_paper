@@ -1092,16 +1092,25 @@ The event-based glutamate QC analysis in [Figure 7](#fig-unit-extraction-plan) c
 Bleaching and remaining cross-session stability analyses are still in progress.
 
 ## Receptive field analysis across modalities
+The stimulus design enables receptive field (RF) mapping with local Gabor patches and Zebra noise in Neuropixels, mesoscope and SLAP2 recordings. Both stimuli gave well-localized RFs in all three modalities. However, for some units only the Zebra or Gabor stimulus detected a significant RF ([Fig. 9A,B](#fig-RF-mapping)). When both stimuli revealed a receptive field, the receptive field location was typically consistent between the two approaches.
 
-[Figure 9](#fig-basic-stimuli-plan) outlines a comparison of receptive-field measurements and basic stimulus responses across recording modalities.
+Interestingly, the higher visual area LM was biased towards the Gabor stimulus. While in V1 almost the same number of units showed significant RFs for Gabors compared to Zebra (68% versus 67% for Neuropixels, and 42% versus 48% for mesoscope example sessions), in LM more units showed significant responses for Gabors (62% versuss 42% for Neuropixels, and 52% versus 31% for mesoscope) ([Fig. 9B](#fig-RF-mapping)). In contrast, for SLAP2, significant RFs were found mainly with Zebra noise (47% of apical ROIs and 41% of basal ROIs showed significant RFs with Zebra noise), while almost no ROIs responded significantly to the Gabor patches (<5% for apical, and none for basal). A possible explanation could be the higher stochasticity of synaptic release compared to action potential emission, which requires a higher number of trials for Gabor stimuli to detect significant receptive fields. 
 
-:::{figure} ./images/figures/generated/figure-08-basic-stimuli-plan.svg
-:label: fig-basic-stimuli-plan
-:alt: Draft panel plan for basic stimulus responses across recording modalities.
+In line with previous work [@siegle2021survey], the analysis of RFs further revealed interesting differences between visual areas ([Fig. 9C](#fig-RF-mapping)). Units in V1 tend to have smaller RFs compared to units in LM, as well as a higher peak z-score for Gabors, and higher correlation with a Gabor filter in the Zebra analysis, consistent with a more reliable response to low-level visual features in V1. Moreover, both stimuli yielded similar spatial positions of RFs on the screen for both, Neuropixels and mesoscope, respectively. For SLAP2, the Zebra analysis further demonstrated that both, apical and basal synapses respond to a localized region in image space. 
+Overall, the Gabor and Zebra stimuli allow to characterize complementary aspects of RF properties, which can be integrated into the analysis of visual predictive processing.
+
+<!-- [Figure 9](#fig-basic-stimuli-plan) outlines a comparison of receptive-field measurements and basic stimulus responses across recording modalities.-->
+
+:::{figure} ./images/figures/generated/figure-09-RF-mapping.png
+:label: fig-RF-mapping
+:alt: **Local Gabor patches and Zebra noise stimulus blocks enable receptive field characterization across recording modalities.**
+**A)** Representative receptive field (RF) maps from the three modalities and three example units each (columns), shown for the local Gabor-patch stimulus (top row; z-scored response) and the Zebra-noise stimulus (bottom row; Pearson correlation). Frame color gives the unit's significance class, as in B: green, significant RF for both stimuli; red, Gabor only; blue, Zebra only (Benjamini-Hochberg-corrected q ≤ 0.05). Ellipses mark the one-σ contour of a 2D Gaussian fitted to maps that passed the significance test. Example units are from V1 layer 2/3 (Neuropixels), V1 plane at 150 µm depth (mesoscope) and synaptic glutamate traces from a V1 layer 2/3 pyramidal cell (SLAP2). The SLAP2 example session contained no Gabor-only unit (empty panel).
+**B)** Fraction of units significant for the Gabor stimulus (red), the Zebra stimulus (blue), both (green), or neither (grey) (counts in parentheses) for one example session. Neuropixels and mesoscope are split by area (V1 vs LM). SLAP2 is split by dendritic compartment (DMD1, apical; DMD2, basal).
+**C)** Properties of significant RFs by stimulus (rows) and modality (columns). Left: Gaussian-fit RF centers. Middle: RF area (one-σ area of fitted Gaussian). Right: peak response strength (|z| for Gabors; max |correlation| for Zebra). Boxes show median (with bootstrapp 95% CI) and interquartile range (IQR), whiskers extend to the most extreme data points within 1.5 × IQR of the box edge, and points beyond them indicate outliers. Brackets give two-sided permutation tests on the difference of medians (10,000 permutations; n.s., p > 0.05; * p < 0.05; ** p < 0.01; *** p < 0.001; not corrected for multiple comparisons). The number of units with significant RF per stimulus and group is indicated as n. Data are from example sessions ```ses-ecephys-830794-2026-01-26-12-02-05``` (Neuropixels), ```ses-multiplane-ophys-832700-2026-01-24-12-06-12``` (Mesoscope) and ```ses-829704-2025-12-18-10-57-36_image+ophys``` (SLAP2 glutamate).
 :width: 100%
 
-Draft plan for basic stimulus characterization across recording modalities.
-:::
+<!--Draft plan for basic stimulus characterization across recording modalities.
+:::-->
 
 ## Cell-type characterization
 
