@@ -116,7 +116,6 @@ HARDWARE_STATIC_OUTPUT = (
 )
 IMPORTED_FIGURE_DIR = REPO_ROOT / "images" / "figures" / "imported"
 UNIT_EXTRACTION_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-04-unit-extraction-plan.png"
-BASIC_STIMULI_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-05-basic-stimuli-plan.png"
 UNIT_EXTRACTION_PLAN_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "figure-07-unit-extraction-plan.svg"
 )
@@ -134,9 +133,6 @@ MESOSCOPE_UNIT_EXTRACTION_OUTPUT = (
     / "figure-06-unit-extraction-mesoscope.svg"
 )
 MESOSCOPE_UNIT_EXTRACTION_PAD = 40
-BASIC_STIMULI_PLAN_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-08-basic-stimuli-plan.svg"
-)
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
 BEHAVIOR_EXCERPTS_PATH = DATA_DIR / "behavior-excerpts.json"
@@ -1005,43 +1001,6 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
     return output
 
 
-def write_placeholder_plan_svg(
-    source: Path,
-    output: Path,
-    *,
-    title_lines: tuple[str, ...],
-    mask_height: int,
-    first_baseline: int,
-    font_size: int,
-    line_gap: int,
-) -> Path:
-    image_data = png_data_uri(source, (2048, 1024))
-    svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="1024" '
-        'viewBox="0 0 2048 1024" role="img" aria-labelledby="title description">',
-        f'<title id="title">{escape(" ".join(title_lines))}</title>',
-        '<desc id="description">Draft analysis-panel plan retained as a work-in-progress '
-        'placeholder; its obsolete embedded figure number is masked so manuscript numbering '
-        'is supplied only by MyST.</desc>',
-        '<rect width="2048" height="1024" fill="#FFFFFF"/>',
-        f'<image href="{image_data}" width="2048" height="1024"/>',
-        f'<rect class="stale-title-mask" x="0" y="0" width="2048" '
-        f'height="{mask_height}" fill="#FFFFFF"/>',
-    ]
-    for line_index, line in enumerate(title_lines):
-        svg.append(
-            f'<text class="placeholder-title" x="64" '
-            f'y="{first_baseline + line_index * line_gap}" '
-            'font-family="Source Sans 3, sans-serif" '
-            f'font-size="{font_size}" font-weight="600" fill="#111111">'
-            f'{escape(line)}</text>'
-        )
-    svg.append("</svg>")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    write_svg_output(output, svg)
-    return output
-
-
 def write_unit_extraction_plan_svg(output: Path = UNIT_EXTRACTION_PLAN_OUTPUT) -> Path:
     from openscope_p3_publication.slap2_glutamate_figure7_panels import (
         write_slap2_glutamate_figure,
@@ -1110,21 +1069,6 @@ def write_unit_extraction_mesoscope_svg(
     output.parent.mkdir(parents=True, exist_ok=True)
     write_svg_output(output, svg)
     return output
-
-
-def write_basic_stimuli_plan_svg(output: Path = BASIC_STIMULI_PLAN_OUTPUT) -> Path:
-    return write_placeholder_plan_svg(
-        BASIC_STIMULI_PLAN_SOURCE,
-        output,
-        title_lines=(
-            "Basic stimuli → unit/system identification → distributions across areas and "
-            "modalities",
-        ),
-        mask_height=94,
-        first_baseline=62,
-        font_size=FIGURE_TYPE_SCALE["title"],
-        line_gap=44,
-    )
 
 
 @dataclass(frozen=True)
@@ -6703,6 +6647,7 @@ def main() -> None:
         write_neuropixels_event_svg,
     )
     from .pupil_figure import write_pupil_event_html, write_pupil_event_svg
+    from .receptive_field_figure import write_receptive_fields_svg
     from .sensorimotor_running_figure import (
         write_sensorimotor_running_html,
         write_sensorimotor_running_svg,
@@ -6714,7 +6659,7 @@ def main() -> None:
     hardware_path = write_hardware_figure_svg()
     unit_extraction_plan_path = write_unit_extraction_plan_svg()
     unit_extraction_mesoscope_path = write_unit_extraction_mesoscope_svg()
-    basic_stimuli_plan_path = write_basic_stimuli_plan_svg()
+    receptive_fields_path = write_receptive_fields_svg()
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
     nwb_file_contents_path = write_nwb_file_contents_html()
@@ -6752,7 +6697,7 @@ def main() -> None:
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_plan_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_mesoscope_path.relative_to(REPO_ROOT)}")
-    print(f"Wrote {basic_stimuli_plan_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {receptive_fields_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")

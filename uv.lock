@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -978,6 +978,7 @@ name = "openscope-p3-publication"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "h5py" },
     { name = "ipython" },
     { name = "matplotlib" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -1005,6 +1006,7 @@ nwb-view = [
 
 [package.metadata]
 requires-dist = [
+    { name = "h5py", specifier = ">=3.10,<4" },
     { name = "ipython", specifier = ">=8,<10" },
     { name = "matplotlib", specifier = ">=3.9,<4" },
     { name = "numpy", specifier = ">=2,<3" },

@@ -589,7 +589,7 @@ in different output formats.
 | [figure-06-segmentation-viewers.svg](../images/figures/generated/figure-06-segmentation-viewers.svg) | Combined static segmentation/extraction figure. |
 | [figure-06-slap2-source-filters.svg](../images/figures/generated/figure-06-slap2-source-filters.svg) | SLAP2 source-mask/extraction static panels. |
 | [figure-07-unit-extraction-plan.svg](../images/figures/generated/figure-07-unit-extraction-plan.svg) | Wrapper around preserved unit-extraction-plan artwork with obsolete embedded numbering masked. |
-| [figure-08-basic-stimuli-plan.svg](../images/figures/generated/figure-08-basic-stimuli-plan.svg) | Equivalent wrapper for preserved basic-stimulus analysis-plan artwork. |
+| [receptive-fields.svg](../images/figures/generated/receptive-fields.svg) | Receptive fields mapped with local Gabor patches and the Zebra noise movie, for the receptive-field section. |
 | [figure-10-neuropixels-event-responses.svg](../images/figures/generated/figure-10-neuropixels-event-responses.svg) | Static counterpart to the Neuropixels mismatch-response explorer. |
 | [multimodal-hardware.svg](../images/figures/generated/multimodal-hardware.svg) | Hardware composition generated from the extracted PowerPoint images and placements. |
 | [optotagging-heatmaps.svg](../images/figures/generated/optotagging-heatmaps.svg) | Static optotagging heatmaps and yield summary. |
@@ -619,7 +619,7 @@ or historical content. Their filenames are not a reliable guide to current figur
 | [figure-02-experimental-design.png](../images/figures/imported/figure-02-experimental-design.png) | Experimental-design artwork. |
 | [figure-03-multimodal-pipelines.png](../images/figures/imported/figure-03-multimodal-pipelines.png) | Multimodal acquisition/processing pipeline artwork. |
 | [figure-04-unit-extraction-plan.png](../images/figures/imported/figure-04-unit-extraction-plan.png) | Unit-extraction analysis plan. |
-| [figure-05-basic-stimuli-plan.png](../images/figures/imported/figure-05-basic-stimuli-plan.png) | Basic-stimulus analysis plan. |
+| [figure-05-basic-stimuli-plan.png](../images/figures/imported/figure-05-basic-stimuli-plan.png) | Basic-stimulus analysis plan, retained as source only; replaced by receptive-fields.svg. |
 | [figure-06-behavior-tracking-plan.png](../images/figures/imported/figure-06-behavior-tracking-plan.png) | Behavior-tracking analysis plan. |
 | [figure-07-standard-oddball-plan.png](../images/figures/imported/figure-07-standard-oddball-plan.png) | Standard-oddball analysis plan. |
 | [mesoscope-laser-power-table.png](../images/figures/imported/mesoscope-laser-power-table.png) | Original laser-power lookup-table image; accessible values also exist as CSV. |
