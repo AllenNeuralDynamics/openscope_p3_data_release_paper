@@ -517,7 +517,8 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     assert "./images/figures/generated/figure-06-segmentation-viewers.svg" not in manuscript
     assert "./images/figures/generated/figure-06-unit-extraction-mesoscope.svg" in manuscript
     assert "./images/figures/generated/figure-07-unit-extraction-plan.svg" in manuscript
-    assert "./images/figures/generated/figure-08-basic-stimuli-plan.svg" in manuscript
+    assert "./images/figures/generated/receptive-fields.svg" in manuscript
+    assert "./images/figures/generated/figure-08-basic-stimuli-plan.svg" not in manuscript
     assert "./images/figures/generated/figure-11-standard-oddball-plan.svg" not in manuscript
     assert "Neuropixels uses six acute trajectories" in manuscript
     hardware_start = manuscript.index("## Multimodal recording hardware")

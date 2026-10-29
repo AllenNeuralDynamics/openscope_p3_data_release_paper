@@ -1095,7 +1095,7 @@ Bleaching and remaining cross-session stability analyses are still in progress.
 
 [Figure 9](#fig-basic-stimuli-plan) outlines a comparison of receptive-field measurements and basic stimulus responses across recording modalities.
 
-:::{figure} ./images/figures/generated/figure-08-basic-stimuli-plan.svg
+:::{figure} ./images/figures/generated/receptive-fields.svg
 :label: fig-basic-stimuli-plan
 :alt: Draft panel plan for basic stimulus responses across recording modalities.
 :width: 100%

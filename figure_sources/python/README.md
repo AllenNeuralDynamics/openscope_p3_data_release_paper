@@ -12,7 +12,8 @@ The experimental-design generator writes:
 - `images/figures/generated/figure-01-panel-c-cohorts.svg`: context allocation across Neuropixels, mesoscope, and SLAP2 cohorts, embedded as Figure 1C.
 - `images/figures/generated/figure-02-context-controls.svg`: static session timeline and detailed control architecture.
 - `images/figures/generated/multimodal-hardware.svg`: Figure 3 rig, mouse-platform, and targeting composition built from nine checksum-verified PowerPoint PNG sources.
-- [figure-07-unit-extraction-plan.svg](../../images/figures/generated/figure-07-unit-extraction-plan.svg) and [figure-08-basic-stimuli-plan.svg](../../images/figures/generated/figure-08-basic-stimuli-plan.svg): wrappers around the two draft analysis-plan PNGs still used in the manuscript, with obsolete embedded figure numbers masked.
+- [figure-07-unit-extraction-plan.svg](../../images/figures/generated/figure-07-unit-extraction-plan.svg): wrapper around the draft analysis-plan PNG still used in the manuscript, with its obsolete embedded figure number masked.
+- [receptive-fields.svg](../../images/figures/generated/receptive-fields.svg): receptive-field maps, significance overlap and Gaussian-fit summaries for the receptive-field section, drawn by `receptive_field_figure.py` from the committed `figure_sources/data/receptive-fields/receptive-fields.h5`.
 - `interactive/experimental-design.html`: self-contained JavaScript stimulus viewer for the MyST site.
 
 Its structured inputs are `figure_sources/data/experimental-design-sessions.csv` and `figure_sources/data/experimental-design-blocks.csv`.

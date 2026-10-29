@@ -26,6 +26,8 @@ interactive/media/wavemap/
 *.egg-info/
 # Local WaveMAP extraction cache and checkpoints
 .wavemap_work/
+# Local receptive-field pipeline inputs (Zebra movie, waven filter libraries)
+.receptive_fields_work/
 
 .cache/
 interactive/media/ecephys-qc-dashboard/ecephys-qc-dashboard.json*

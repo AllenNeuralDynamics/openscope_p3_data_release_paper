@@ -84,7 +84,6 @@ from openscope_p3_publication.figures import (
     session_table_modality,
     text_sha256_matches,
     total_duration_minutes,
-    write_basic_stimuli_plan_svg,
     write_behavior_static_svg,
     write_behavior_viewer_html,
     write_context_controls_svg,
@@ -2064,26 +2063,6 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert svg.count('paint-order="stroke"') == 4
     for asset_id in assets:
         assert f'data-asset="{asset_id}"' in svg
-
-
-def test_placeholder_plans_mask_obsolete_figure_numbers(tmp_path: Path) -> None:
-    cases = (
-        (
-            write_basic_stimuli_plan_svg,
-            "figure-08-basic-stimuli-plan.svg",
-            "Basic stimuli → unit/system identification",
-            "Figure 5",
-            1,
-        ),
-    )
-    for writer, filename, expected_title, obsolete_title, title_lines in cases:
-        svg = writer(tmp_path / filename).read_text(encoding="utf-8")
-        assert 'width="2048" height="1024"' in svg
-        assert svg.count("data:image/png;base64,") == 1
-        assert svg.count('class="stale-title-mask"') == 1
-        assert svg.count('class="placeholder-title"') == title_lines
-        assert expected_title in svg
-        assert obsolete_title not in svg
 
 
 def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
