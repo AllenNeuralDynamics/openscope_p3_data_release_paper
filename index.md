@@ -17,14 +17,27 @@ The displayed author list and author order are provisional and will be finalized
 
 The OpenScope Community Project consist of team-based open science on a large international scale. Every step of the scientific process is performed in a maximally transparent and inclusive fashion. Anyone around the globe can join and contribute to the project at any point in time. Contributions are preserved, kept public, and freely accesible. The initial project centers on predictive processing, a popular theory in systems neuroscience which assumes brain responses to mostly reflect deviations from expectation. As a first step, researchers performed a collaborative literature review, distilled open questions, and designed experimental paradigms to close the most pressing knowledge gaps. These suggestions then guided data collection at the Allen Institute. Here we release and characterize the resulting data. In order to test for deviations from expectation, "oddball" paradigms were chosen, where repeated patterns of sensory stimulation are violated on purpose. The dataset comprises neuronal measures of mostly neocortical activity during four different kinds of oddball stimuli, including a change in visual feature, sequence, temporal structure, or sensori-motor context. The data also comprises several control conditions as well as standardized procedures to characterize visual responses, such as receptive fields and tuning properties. The data covers three distinct spatial scales. (1) SLAP2 single glutamate vesicle imaging yielded synapse-level resolution of single neuron inputs to primary visual cortex. (2) Linear multielectrode arrays (Neuropixels) across six cortical areas as well as some subcortical structures resulted in single cell spiking measurements as well as extracellular voltages (local field potentials and current source density) with laminar resolution. And (3) two-photon calcium imaging (mesoscope) of primary visual cortex and a neighboring visual area provided access to inter-areal population responses and connectivity. Optogenetic phototagging further enhanced the data by providing insight into specific neuronal (inhibitory) cell types. We elaborate the specifics of the methodology, summarize key statistics, and provide several key analyses to assess data quality. Initial findings on oddball responses are also provided.
 
+(fig-interactive-experimental-design)=
 # Background & Rationale
 
-:::{figure} ./images/figures/generated/figure-01-overview.svg
+:::{iframe} ./interactive/experimental-design.html
 :label: fig-graphical-abstract
-:alt: Predictive-processing computations across spatial scales, the multimodal experimental workflow, and context allocation across recording cohorts.
+:title: Predictive-processing framework, cohorts, and shared stimulus architecture
+:placeholder: ./images/figures/generated/figure-01-overview.svg
 :width: 100%
 
 Distributed predictive-processing hypotheses motivate multimodal, multi-context recordings. **A,** A visual sequence establishes an expectation (blue), whereas an unexpected oddball produces a prediction-error signal (red). Predictions and errors may be expressed through reciprocal brain-wide pathways, within local cortical populations, and across the dendritic and somatic compartments of individual neurons. **B,** To sample these nested scales within one standardized project, animals progressed from surgery through intrinsic-signal-imaging mapping and habituation before recording with mesoscope two-photon imaging, Neuropixels electrophysiology, or SLAP2 dendritic imaging. **C,** Five cohort timelines show eight outlined habituation and training sessions followed by filled neural recording sessions. Neuropixels and mesoscope sampled both motor- and sequence-habituated cohorts. Neuropixels sampled every context once, whereas mesoscope repeated each context twice; SLAP2 sampled the motor-habituated cohort only.
+**D,** Within-session architecture for cross-context comparison: a standard control precedes each context
+block and is repeated immediately afterward, followed by shared randomized,
+duration, open-loop, receptive-field, and zebra-movie blocks. **E,** The
+four contexts and the control and system-identification stimuli used to measure
+context-induced changes in response properties. Sources: pinned
+[example tables](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/tree/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples),
+[generator](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generate_experiment_csv.py),
+[Bonsai workflow](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generic_oddball.bonsai),
+and public NWB intervals for
+[electrophysiology](https://dandiarchive.org/dandiset/001637/draft/files) and
+[mesoscope](https://dandiarchive.org/dandiset/001768/draft/files).
 :::
 
 ## The challenge of predictive processing research
@@ -35,7 +48,7 @@ Recently, a group of more than 60 experts in the field collectively reviewed the
 
 ## Experimental design
 
-The dataset described in this manuscript was seeded through this community review [@aizenbud2026neural] and was designed to fill these gaps by creating a bridge across both  methods and stimuli. Our dataset combines Neuropixels recordings (providing single-unit resolution across many brain regions simultaneously), mesoscope two-photon imaging (providing cell-type-specific calcium signals across two visual areas in the mouse visual cortex), and SLAP2 imaging (providing subcellular dendritic recording in in the center of VISp). This multi-modal approach allows researchers to address questions about predictive processing at scales ranging from subcellular compartments to brain-wide networks. Each of these methodological modalities were performed *in vivo* using the same standardized experimental paradigm and stimuli (**[Figure 1](#fig-graphical-abstract)**). Our experimental design presents four distinct types of prediction violations (standard oddball, sensorimotor mismatch, temporal sequence mismatch, and duration mismatch) enabling direct comparison of mismatched responses across animals (**[Figure 2](#fig-interactive-experimental-design)**). Together, those multi-modal datasets allow testing of two overarching alternative hypotheses: **(H0)** that different types of prediction errors involve fundamentally distinct neural mechanisms with specialized circuits for each type, or **(H1)** that a common computational principle underlies all mismatch responses, with apparent differences reflecting implementation variations.
+The dataset described in this manuscript was seeded through this community review [@aizenbud2026neural] and was designed to fill these gaps by creating a bridge across both  methods and stimuli. Our dataset combines Neuropixels recordings (providing single-unit resolution across many brain regions simultaneously), mesoscope two-photon imaging (providing cell-type-specific calcium signals across two visual areas in the mouse visual cortex), and SLAP2 imaging (providing subcellular dendritic recording in in the center of VISp). This multi-modal approach allows researchers to address questions about predictive processing at scales ranging from subcellular compartments to brain-wide networks. Each of these methodological modalities were performed *in vivo* using the same standardized experimental paradigm and stimuli (**[Figure 1](#fig-graphical-abstract)**). Our experimental design presents four distinct types of prediction violations (standard oddball, sensorimotor mismatch, temporal sequence mismatch, and duration mismatch) enabling direct comparison of mismatched responses across animals (**[Figure 1](#fig-interactive-experimental-design)**). Together, those multi-modal datasets allow testing of two overarching alternative hypotheses: **(H0)** that different types of prediction errors involve fundamentally distinct neural mechanisms with specialized circuits for each type, or **(H1)** that a common computational principle underlies all mismatch responses, with apparent differences reflecting implementation variations.
 
 ### Two cohorts design
 
@@ -51,41 +64,13 @@ Each cohort were underwent neuronal recording in a specific session order. In bo
 
 The four contexts tested violations of expected visual features (standard oddball), locomotion-linked visual feedback (sensorimotor mismatch), stimulus order (sequence mismatch), and stimulus timing (duration mismatch). Each context was embedded in a common session structure with matched control blocks and shared natural-movie and receptive-field stimuli. Trial tables were pseudo-randomized, while block order was held constant.
 
-The shared within-session architecture and context-specific stimulus selection are summarized in [Figure 2](#fig-interactive-experimental-design). Full session protocols and control-block parameters are described under [Stimuli parameters](#stimuli-parameters) in Methods.
-
-:::{iframe} ./interactive/experimental-design.html
-:label: fig-interactive-experimental-design
-:width: 100%
-:title: Predictive-processing stimulus viewer
-:placeholder: ./images/figures/generated/figure-02-context-controls.svg
-
-Within-session architecture for cross-context comparison.
-**A** shows the common session sequence: a standard control precedes each context
-block and is repeated immediately afterward, followed by shared randomized,
-duration, open-loop, receptive-field, and zebra-movie blocks. **B** details the
-four contexts and the control and system-identification stimuli used to measure
-context-induced changes in response properties. Sources: pinned
-[example tables](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/tree/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples),
-[generator](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generate_experiment_csv.py),
-[Bonsai workflow](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/generic_oddball.bonsai),
-and public NWB intervals for
-[electrophysiology](https://dandiarchive.org/dandiset/001637/draft/files) and
-[mesoscope](https://dandiarchive.org/dandiset/001768/draft/files).
-:::
+The shared within-session architecture and context-specific stimulus selection are summarized in [Figure 1](#fig-interactive-experimental-design). Full session protocols and control-block parameters are described under [Stimuli parameters](#stimuli-parameters) in Methods.
 
 The mismatch repeat count and session length were informed by the five published visual oddball paradigms compared in [Supplementary Table 1](#table-supplementary-oddball-studies). Those studies reported 10--144 required oddball repeats and total session durations ranging from 6 min to 2 h. We therefore set each 26-min context block to 1.35 mismatch events per minute for each of four deviant types (5.4/min combined), targeting approximately 35 repeats per deviant type and 140 mismatch events per context block. This placed per-deviant sampling within the published range while keeping the complete shared block sequence to approximately 71 min and applying the same event rate across all four predictive contexts.
 
 ## Multimodal recording hardware
 
-The three recording platforms sampled complementary spatial scales during the shared visual-stimulation paradigm ([Figure 3](#fig-multimodal-pipelines)). Six acute Neuropixels probes targeted distributed cortical and subcortical structures, while mesoscope two-photon calcium imaging sampled eight chronic imaging planes across VISp and VISlm. SLAP2 imaging targeted proximal and apical dendritic compartments of layer II/III pyramidal neurons in VISp. Recordings were collected in separate animals with modality-specific implants; the shared stimulus protocol, rather than simultaneous acquisition, provides the basis for comparisons across platforms. Acquisition and targeting procedures are described in the Methods section under [Neuronal recording modalities](#neuronal-recording-modalities).
-
-:::{figure} ./images/figures/generated/multimodal-hardware.svg
-:label: fig-multimodal-pipelines
-:alt: Neuropixels, mesoscope, and SLAP2 rig geometry, mouse platforms, and brain-targeting strategies.
-:width: 100%
-
-Multimodal recording hardware. Rows compare Neuropixels electrophysiology, mesoscope two-photon calcium imaging, and SLAP2 dendritic imaging. Columns show each rig geometry, the corresponding head-fixed mouse platform, and the brain-targeting strategy. Neuropixels uses six acute trajectories spanning cortical and subcortical structures; mesoscope uses eight chronic imaging planes across VISp and VISlm; and SLAP2 samples proximal and apical dendritic compartments in a layer II/III pyramidal neuron.
-:::
+The three recording platforms sampled complementary spatial scales during the shared visual-stimulation paradigm ([Figure 3](#fig-aligned-neural-signals)). Six acute Neuropixels probes targeted distributed cortical and subcortical structures, while mesoscope two-photon calcium imaging sampled eight chronic imaging planes across VISp and VISlm. SLAP2 imaging targeted proximal and apical dendritic compartments of layer II/III pyramidal neurons in VISp. Recordings were collected in separate animals with modality-specific implants; the shared stimulus protocol, rather than simultaneous acquisition, provides the basis for comparisons across platforms. Rig geometry and mouse platforms are shown in [Supplementary Figure 2](#fig-multimodal-pipelines). Acquisition and targeting procedures are described in the Methods section under [Neuronal recording modalities](#neuronal-recording-modalities).
 
 # Methods
 
@@ -188,7 +173,6 @@ All visual stimuli were generated using BonVision [@lopes2021bonvision], an open
 
 For each session, a stimulus table (CSV file) was generated programmatically by a Python script (generate_experiment_csv.py) using a session-specific random seed derived from the session UUID and timestamp, ensuring unique trial sequences across sessions while maintaining reproducibility. This CSV table specified all trial parameters (orientation, spatial frequency, temporal frequency, contrast, duration, delay, position, phase, trial type, and block membership) and was read by the Bonsai workflow (generic_oddball.bonsai) to drive stimulus presentation in sequence.
 
-:::{note} Stimulus table and presentation sources
 Pinned generated example tables are available for
 [standard oddball](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples/visual_mismatch_example.csv),
 [sensorimotor mismatch](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/blob/0365ae32f0f0473320ed202b7c5d2bce6cf5df6b/code/stimulus-control/src/Mindscope/examples/sensorimotor_mismatch_example.csv),
@@ -201,7 +185,6 @@ in the public [electrophysiology](https://dandiarchive.org/dandiset/001637/draft
 and [mesoscope](https://dandiarchive.org/dandiset/001768/draft/files) Dandisets.
 The example CSVs define the protocol and schema; they are not a replay of a
 particular recorded session.
-:::
 
 In the sensorimotor mismatch context, the phase of the drifting grating was coupled to the angular position of the running disc via a rotary encoder. The wheel-to-visual coupling was computed as: phase (radians) = 2π × R × θ / tan(1/f × π/180), where R is the wheel radius-to-screen ratio (0.36), θ is the wheel angle in degrees, and f is the spatial frequency (0.04 cpd). This coupling was calibrated so that the resulting visual flow approximated the optic flow a freely moving mouse would experience during forward locomotion.
 
@@ -257,7 +240,17 @@ Prior to the first recording, mice were habituated to the Neuropixels rigs every
 
 #### Implant design for recordings
 
-The implant was designed as stated in the surgery section and was described previously [@bennett2024shield]. Briefly, we created a CAD file with holes strategically placed above the areas of interest for our study (see [Supplementary Figure 1](#fig-supp-neuropixels-implant-trajectories)). Some hole coordinates have been previously validated to allow targeting of areas such as the center of VISp, and other hole coordinates were derived from publications, such as VISa [@lyamzin2019parietal]. Hole positions were adjusted using Pinpoint [@birman2023pinpoint]. Note that the placement of the implant on the brain can vary slightly due to mouse-to-mouse variability and surgical precision. The coordinates of holes were referenced from bregma; their diameters and intended target areas are represented in [Supplementary Figure 1](#fig-supp-neuropixels-implant-trajectories).
+The implant was designed as stated in the surgery section and was described previously [@bennett2024shield]. Briefly, we created a CAD file with holes strategically placed above the areas of interest for our study (see [Supplementary Figure 1](#fig-supp-neuropixels-implant-trajectories)). Some hole coordinates have been previously validated to allow targeting of areas such as the center of VISp, and other hole coordinates were derived from publications, such as VISa [@lyamzin2019parietal]. Hole positions were adjusted using Pinpoint [@birman2023pinpoint]. Note that the placement of the implant on the brain can vary slightly due to mouse-to-mouse variability and surgical precision. Planned hole coordinates and diameters are transcribed below from the [source implant slide](./figure_sources/google-slides/slide-15-neuropixels-implant.png). AP and ML coordinates are relative to bregma; D1 and D2 retain the source's two diameter labels. Planned trajectories and implant-hole geometry are shown alongside the recorded trajectories in [Supplementary Figure 1](#fig-supp-neuropixels-implant-trajectories).
+
+(neuropixels-implant-coordinates)=
+| Probe port | AP (mm) | ML (mm) | D1 (mm) | D2 (mm) |
+| --- | ---: | ---: | ---: | ---: |
+| A | -0.1 | 0.8 | 0.75 | 0.75 |
+| B | -2.0 | 2.0 | 1.0 | 1.0 |
+| C | -3.7 | 2.3 | 0.75 | 0.75 |
+| D | -3.9 | 4.2 | 1.2 | 0.75 |
+| E | 1.5 | 2.6 | 0.75 | 0.75 |
+| F | 2.7 | 1.5 | 0.75 | 0.75 |
 
 #### SORTA-Clear plug removal and agarose application
 
@@ -279,7 +272,7 @@ All neural recordings were carried out with Neuropixels 1.0 probes [@jun2017neur
 
 #### Neuropixels probe insertion
 
-Our custom experimental rig can insert up to six Neuropixels probes simultaneously (see [Figure 3](#fig-multimodal-pipelines)). Each probe is mounted on a separate 3-axis micromanipulator with a 15 mm travel range (New Scale Technologies, Victor, NY). Probes are driven to their target holes and lowered to the surface of the brain while the experimentalist monitores a camera feed to avoid vasculature and watches real-time signals on the OpenEphys GUI to identify activity indicative of the brain surface. If the probe need adjustment when attempting to insert (e.g. to avoid vessels), the probe are completely retracted out of the silicon oil to prevent probe bending. Once all probes reach the brain surface, each probe is zeroed and set to insert 3100 μm deep at 200 μm/min and then retracted 100 μm to their final depths to reduce tissue compression and subsequent electrode zdrift relative to the brain. Once all probes reach their final depth, the probes are allowed to settle for ∼30 minutes, and a photo documentation of the inserted probes is captured. Sometimes a probe can not be inserted into its assigned hole, failures are generally due to dura regrowth. Overall, we achieved a penetration success of 5.8 probes per session.
+Our custom experimental rig can insert up to six Neuropixels probes simultaneously (see [Supplementary Figure 2](#fig-multimodal-pipelines)). Each probe is mounted on a separate 3-axis micromanipulator with a 15 mm travel range (New Scale Technologies, Victor, NY). Probes are driven to their target holes and lowered to the surface of the brain while the experimentalist monitores a camera feed to avoid vasculature and watches real-time signals on the OpenEphys GUI to identify activity indicative of the brain surface. If the probe need adjustment when attempting to insert (e.g. to avoid vessels), the probe are completely retracted out of the silicon oil to prevent probe bending. Once all probes reach the brain surface, each probe is zeroed and set to insert 3100 μm deep at 200 μm/min and then retracted 100 μm to their final depths to reduce tissue compression and subsequent electrode zdrift relative to the brain. Once all probes reach their final depth, the probes are allowed to settle for ∼30 minutes, and a photo documentation of the inserted probes is captured. Sometimes a probe can not be inserted into its assigned hole, failures are generally due to dura regrowth. Overall, we achieved a penetration success of 5.8 probes per session.
 
 #### Data acquisition and synchronization.
 
@@ -303,7 +296,7 @@ Possible QC failure can come from these cases: white foam buildup on the edge of
 
 #### Optotagging protocol
 
-At the end of every experiment, an optotagging protocol is run during which the cortical surface is stimulated with blue light. In Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)\_EYFP)/wt mice, this protocol allowes us to identify putative Sst+ cortical interneurons by an increase in spiking activity time-locked to laser stimulation (and consequent ChR2 activation). Blue light is delivered by a 473 nm laser (Laser Quantum, model Ciel or Cobolt model 06-MLD). The light source is coupled to a 400 μm diameter fiber optic cable (Thorlabs) or bifurcated fiber bundle (Thorlabs, BFYL4LF01), with the tip(s) positioned such that blue light illuminates the entire cranial window. Two types of stimuli at 3 different light levels are randomly interleaved: a 10 ms pulse, and a 1s raised cosine ramp. For the pulse stimulus, a 0.5 ms ramp is applied at the beginning and end of the pulse. Stimuli are presented at intervals of 1.5 s plus a uniformly distributed delay between 0 and 0.5 s. Representative laser-aligned responses and session-level yield summaries are shown in [Figure 10](#fig-supp-optotagging-heatmaps).
+At the end of every experiment, an optotagging protocol is run during which the cortical surface is stimulated with blue light. In Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)\_EYFP)/wt mice, this protocol allowes us to identify putative Sst+ cortical interneurons by an increase in spiking activity time-locked to laser stimulation (and consequent ChR2 activation). Blue light is delivered by a 473 nm laser (Laser Quantum, model Ciel or Cobolt model 06-MLD). The light source is coupled to a 400 μm diameter fiber optic cable (Thorlabs) or bifurcated fiber bundle (Thorlabs, BFYL4LF01), with the tip(s) positioned such that blue light illuminates the entire cranial window. Two types of stimuli at 3 different light levels are randomly interleaved: a 10 ms pulse, and a 1s raised cosine ramp. For the pulse stimulus, a 0.5 ms ramp is applied at the beginning and end of the pulse. Stimuli are presented at intervals of 1.5 s plus a uniformly distributed delay between 0 and 0.5 s. Representative laser-aligned responses and session-level yield summaries are shown in [Figure 8](#fig-supp-optotagging-heatmaps).
 
 #### Clearing with life canvas
 
@@ -682,7 +675,7 @@ corneal-reflection, and eye-perimeter fits, together with likely-blink flags.
 Neuropixels and mesoscope eye-camera frames are aligned to these outputs using
 camera-exposure edges from the session sync files. SLAP2 uses packaged camera-frame
 indices and aligned Harp timestamps. The synchronized source videos and fits are
-illustrated across modalities in [Supplementary Figure 4](#fig-supp-eye-tracking).
+available with the released data for each modality.
 
 The interactive visualization also provides an optional display-time cleanup for
 isolated fit artifacts; this does not alter the released NWB values. For each fit
@@ -795,7 +788,7 @@ This data release manuscript is intended to provide a documented foundation for 
 
 ## Data tables
 
-[Figure 4](#fig-recording-session-inventory) summarizes animal and session coverage for Neuropixels, mesoscope, and SLAP2. The [committed acquisition worksheet](./figure_sources/data/experimental-sessions.csv), retrieved on 2026-08-28 ([provenance](./figure_sources/data/experimental-sessions.provenance.json)), contains 198 acquisition records: 64 Neuropixels acquisition records from 16 mice, 91 mesoscope acquisition records from 10 mice, and 43 SLAP2 acquisition records from 13 mice. This inventory retains failed, repeated, and aborted entries to document the data acquisition process.
+[Figure 2](#fig-recording-session-inventory) summarizes animal and session coverage for Neuropixels, mesoscope, and SLAP2. The [committed acquisition worksheet](./figure_sources/data/experimental-sessions.csv), retrieved on 2026-08-28 ([provenance](./figure_sources/data/experimental-sessions.provenance.json)), contains 198 acquisition records: 64 Neuropixels acquisition records from 16 mice, 91 mesoscope acquisition records from 10 mice, and 43 SLAP2 acquisition records from 13 mice. This inventory retains failed, repeated, and aborted entries to document the data acquisition process.
 
 Excluding empty session IDs and entries marked `aborted` yields 61 unique Neuropixels session IDs, 91 unique mesoscope session IDs, and 40 unique SLAP2 session IDs. The interactive Sessions table further selects records with worksheet QC status `Pass` (case-insensitive), yielding 58 Neuropixels sessions from 16 mice, 83 mesoscope sessions from 10 mice, and 34 SLAP2 sessions from 11 mice. The QC-passing SLAP2 set contains 24 glutamate sessions, 9 voltage sessions, and 1 session with an unclassified green recording channel; 12 of these 34 sessions are classified as pilot/other rather than one of the four predictive contexts. These counts describe the committed worksheet snapshot and its session-level QC selection, not the number of archived NWB files or the unit- and analysis-specific inclusion sets reported below.
 
@@ -824,7 +817,7 @@ Failed, repeated, and aborted acquisition attempts are retained.
 :::
 ## NWB file contents
 
-All datasets from this project are packaged as Neurodata Without Borders (NWB) files [@rubel2022nwb] and deposited on the DANDI Archive. Each modality is associated with a single DANDI set. Neuropixels electrophysiology sessions are available at [DANDI:001637](https://dandiarchive.org/dandiset/001637), mesoscope two-photon imaging sessions at [DANDI:001768](https://dandiarchive.org/dandiset/001768), and SLAP2 dendritic-imaging sessions at [DANDI:001424](https://dandiarchive.org/dandiset/001424). NWB files can be streamed directly from DANDI without downloading the complete asset; see the [data access code example](#data-access-code-example) below. The [OpenScope Databook](https://alleninstitute.github.io/openscope_databook) provides companion analysis notebooks for selecting sessions and working with the electrophysiology, imaging, and behavioral objects introduced here. The **Interactive** view presents the native collapsible PyNWB structure of one pinned public file per modality. The **Static** view maps scientific questions
+All datasets from this project are packaged as Neurodata Without Borders (NWB) files [@rubel2022nwb] and deposited on the DANDI Archive. Each modality is associated with a single DANDI set. Neuropixels electrophysiology sessions are available at [DANDI:001637](https://dandiarchive.org/dandiset/001637), mesoscope two-photon imaging sessions at [DANDI:001768](https://dandiarchive.org/dandiset/001768), and SLAP2 dendritic-imaging sessions at [DANDI:001424](https://dandiarchive.org/dandiset/001424). NWB files can be streamed directly from DANDI without downloading the complete asset; see [Accessing the data and code](#data-access) below. The [OpenScope Databook](https://alleninstitute.github.io/openscope_databook) provides companion analysis notebooks for selecting sessions and working with the electrophysiology, imaging, and behavioral objects introduced here. The **Interactive** view presents the native collapsible PyNWB structure of one pinned public file per modality. The **Static** view maps scientific questions
 to corresponding NWB objects and PyNWB entry points. Object names can differ
 slightly among sessions; the paths shown here reflect representative files in
 these Dandisets.
@@ -923,7 +916,7 @@ each DMD imaging path.
 
 ## Raw data across recording modalities
 
-The modalities produce different native data structures: multichannel extracellular-voltage time series for Neuropixels, fluorescence image frames for mesoscope, and sparse dendritic detector samples for SLAP2. [Figure 5](#fig-aligned-neural-signals) presents source-backed excerpts from one public session per modality, showing the recording geometry and native signals that underlie the unit and source extraction described next. Optical contrast is scaled independently for *display*, so brightness should not be interpreted as a quantitative comparison across modalities.
+The modalities produce different native data structures: multichannel extracellular-voltage time series for Neuropixels, fluorescence image frames for mesoscope, and sparse dendritic detector samples for SLAP2. [Figure 3](#fig-aligned-neural-signals) presents source-backed excerpts from one public session per modality, showing the recording geometry and native signals that underlie the unit and source extraction described next. Optical contrast is scaled independently for *display*, so brightness should not be interpreted as a quantitative comparison across modalities.
 
 :::{iframe} ./interactive/neural-viewer.html
 :label: fig-aligned-neural-signals
@@ -931,25 +924,33 @@ The modalities produce different native data structures: multichannel extracellu
 :title: Raw recordings and extracted neural signals
 :placeholder: ./images/figures/generated/raw-neural-recordings.svg
 
-**Neural recordings and extracted activity across modalities.**
+**Brain targeting, neural recordings, and extracted activity across modalities.**
 Representative data from one recording session per modality.
 
-**(A)** Raw voltage heatmaps from six Neuropixels probes, with sampled brain
-regions indicated. **(B)** Raw mesoscope images from eight planes in primary
-(VISp) and lateral (VISl) visual cortex. **(C)** SLAP2 reference-stack maximum
+**(A-C)** Targeting strategies. Neuropixels uses six acute trajectories across
+cortical and subcortical structures (A); mesoscope samples eight planes across
+VISp and VISlm (B); SLAP2 samples proximal and apical dendritic compartments
+of a layer II/III pyramidal neuron (C). Dotted connectors link sampling scales,
+not simultaneous recordings. Matching labels and outlines link probes/planes
+to D-F.
+
+**(D)** Raw voltage heatmaps from six Neuropixels probes, with sampled brain
+regions indicated. **(E)** Raw mesoscope images from eight planes in primary
+(VISp) and lateral (VISl) visual cortex. **(F)** SLAP2 reference-stack maximum
 projections from two imaging depths (DMD1, top; DMD2, bottom). Cyan marks the
 six targeted raster regions in each field.
 
-**(D-F)** Extracted units or sources from Neuropixels probe A (D), the VISp
-layer 2/3 plane at 152 µm depth (E), and SLAP2 DMD1 (F). Sorted spikes are
-overlaid on common-mode-corrected voltage (D); segmentation masks are shown
-over registered reference images (E, F). The dashed outline in F marks the
+**(G-I)** Extracted units or sources from Neuropixels probe A (G), the VISp
+layer 2/3 plane at 152 µm depth (H), and SLAP2 DMD1 (I). Sorted spikes are
+overlaid on common-mode-corrected voltage (G); segmentation masks are shown
+over registered reference images (H, I). The dashed outline in I marks the
 annotated somatic region.
 
-**(G-I)** Activity traces from ten activity-bearing units or sources per
-modality, sampled evenly across extraction order. Colors correspond to D-F.
-Traces show firing rates over 12 s (G; spikes/s) or fluorescence changes over
-30 s (H, I; $\Delta F/F$, %). Traces are vertically offset, with shared amplitude
+**(J-L)** Activity traces from ten activity-bearing units or sources per modality. Neuropixels and SLAP2
+are sampled evenly across extraction order. Mesoscope examples favor positive-transient
+contrast over first-difference noise; samples are unaltered. Colors correspond to G-I.
+Traces show firing rates over 12 s (J; spikes/s) or fluorescence changes over
+30 s (K, L; $\Delta F/F$, %). Traces are vertically offset, with shared amplitude
 scales within each modality. Source counts are not equivalent neuron counts
 across modalities.
 :::
@@ -969,9 +970,9 @@ associated with neuropil-corrected fluorescence and $\Delta F/F$ traces, from
 which OASIS deconvolution estimates spike-related events rather than directly
 measuring action potentials.
 
-For SLAP2 glutamate imaging, SILo localizes spatially sparse glutamate-release sources along dendrites, refines their spatial profiles, and extracts their fluorescence time courses. Multiple extracted sources can belong to the same neuron, so source counts are not neuron counts. [Figure 5](#fig-aligned-neural-signals) compares the spatial filters and matched activity traces from representative sessions. The preprocessing, segmentation, source-extraction, and curation procedures are described under [Data processing](#data-processing) in Methods.
+For SLAP2 glutamate imaging, SILo localizes spatially sparse glutamate-release sources along dendrites, refines their spatial profiles, and extracts their fluorescence time courses. Multiple extracted sources can belong to the same neuron, so source counts are not neuron counts. [Figure 3](#fig-aligned-neural-signals) compares the spatial filters and matched activity traces from representative sessions. The preprocessing, segmentation, source-extraction, and curation procedures are described under [Data processing](#data-processing) in Methods.
 
-[Figure 6](#fig-mesoscope-unit-extraction) reports mesoscope event-amplitude signal quality; [Figure 7](#fig-unit-extraction-plan) presents the separate SLAP2 glutamate analysis. Their source counts and quality classes retain their modality-specific definitions.
+[Figure 4](#fig-mesoscope-unit-extraction) reports mesoscope event-amplitude signal quality; [Figure 5](#fig-unit-extraction-plan) presents the separate SLAP2 glutamate analysis. Their source counts and quality classes retain their modality-specific definitions.
 
 :::{iframe} ./interactive/mesoscope-plane-snr.html
 :label: fig-mesoscope-unit-extraction
@@ -979,34 +980,63 @@ For SLAP2 glutamate imaging, SILo localizes spatially sparse glutamate-release s
 :title: Unit extraction and event-amplitude signal quality for mesoscope two-photon imaging.
 :placeholder: ./images/figures/generated/figure-06-unit-extraction-mesoscope.svg
 
-**Mesoscope event-amplitude signal quality.** Panel identifiers B, F, and J
-are retained from the original multimodal plan; the SLAP2 analysis is shown
-separately in [Figure 7](#fig-unit-extraction-plan). **B,** One representative
-session, `multiplane-ophys_839909_2026-02-26`, with all 1,959 segmented ROIs
-outlined on the average projection of each of eight simultaneously acquired
-planes: VISp at 54, 188, 296, 394 µm and VISl at 54, 186, 284, 400 µm,
-coloured by the quality class defined in **F**. Beneath, a 60 s `dF/F` excerpt
-from one ROI with the processing pipeline's own OASIS event onsets, and that
-ROI's footprint on the average projection. **F,** Each detected event is
+**Mesoscope event-amplitude signal quality.** Panels progress left to right
+and top to bottom; the separate SLAP2 analysis is in
+[Figure 5](#fig-unit-extraction-plan).
+**A,** Example ROI 84 from VISp_1 at 296 µm in
+`multiplane-ophys_839909_2026-02-26`: a 60 s `dF/F` excerpt starting one
+quarter of the way into the recording, with its individual footprint on the
+average projection at right (**B,** orange outline). Orange triangles mark
+onsets of positive runs in the saved, quantized OASIS series, not new detections;
+one onset is labeled directly. They are indicative excerpt marks, not the
+pipeline's full-recording event count (3,954 events for this ROI).
+This display example was selected by visual review for a sparser excerpt and
+a clearer, more isolated somatic profile; it is not a cohort activity estimate.
+The zero-centered gray band is plus/minus three saved non-event baseline-noise
+SD, a noise reference rather than a detection threshold. OASIS event amplitudes
+are not raw calcium-transient peak amplitudes; no raw-peak measurement arrow
+is substituted for them.
+**C–E,** Three representative ROIs from this same FOV show their full-recording
+event-amplitude fractions: High SNR ROI 103 (C; 2,314 events), Intermediate
+ROI 81 (D; 1,992 events), and Low SNR ROI 272 (E; 3,952 events).
+Examples are selected nearest their class's cohort-wide centroid among ROIs
+in the displayed FOV. These are event fractions, not amplitude histograms.
+Only the below-2 and above-4 SD fractions used by the scatter axes are
+displayed, each divided by all events, without renormalizing after omitting
+the middle-range bar. The displayed percentages therefore need not sum to 100.
+Each detected event is
 assigned an amplitude in standard deviations of that ROI's own non-event
 `dF/F` noise, and each ROI is summarised by the fraction of its events falling
 below 2 SD, between 2 and 4 SD, and above 4 SD. Three ROIs illustrate the
-resulting classes, and the scatter places every ROI of the cohort in that
-feature space. Classes come from a k-means fit (k = 3) on the three
+resulting classes. **F,** One average-projection FOV, VISp_1 at 296 µm,
+with all 277 somatic ROIs transparently filled by archived class:
+181 Low SNR (gold), 85 Intermediate (blue), and 11 High SNR (green).
+White, dark-edged rings and ROI IDs identify the three fraction examples,
+not the trace ROI. This is one plane from one session, not a spatial pool.
+**G,** The scatter places all 175,508 cohort ROIs in that feature space;
+the same three rings and ROI IDs identify the examples. Only the dense point
+cloud is rasterized at fixed display resolution; axes and text remain editable.
+Classes come from a k-means fit (k = 3) on the three
 standardised fractions, ordered by the centroid's > 4 SD fraction. The fit is
 performed **once over the whole cohort** rather than within each session;
 86% of ROIs keep the label a within-session fit would have given them, and
 the per-session label is retained in the released table as
 `amp_threshold_quality_class_session`. Fitting within each session compresses
-the across-session variation shown in **J**, narrowing the per-session High
-SNR share from 6.3–41.2% to a much tighter band. **J,** Class composition is
+the across-session variation shown in **I**, narrowing the per-session High
+SNR share from 6.3–41.2% to a much tighter band. **H,** Class composition
+across both cortical areas, four depth bins, and ten mice is shown on one
+shared vertical 0–100% stacked-bar axis. Each bar uses the original
+ROI-weighted denominator for its group; the area, depth, and mouse summaries
+reuse the same cohort and are not disjoint samples. Class composition is
 nearly identical between the two imaged areas (22% High SNR in VISp against
 21% in VISl) but depends strongly on imaging depth: the High SNR share falls
 from 38% at 151–250 µm to 16% at 251–350 µm and 2.6% below 350 µm
 (38,517 ROIs); the shallowest bin (25,295 ROIs at ≤ 150 µm) sits at 25%,
 below the 151–250 µm peak. Pooling each animal's sessions gives a High SNR
-share between 8% and 34% across the ten mice, and the strip beneath shows
-every session individually so that within-animal spread remains visible.
+share between 8% and 34% across the ten mice.
+**I,** Black dots show all 81 sessions individually, grouped by the labeled
+mouse IDs, so within-animal spread remains visible; each black segment is
+that mouse's median session-level High SNR fraction.
 Depths are reported in µm rather than named cortical layers because these
 planes are not registered to a layer atlas. The counting unit is the somatic
 ROI, which is not equivalent to the glutamate-release sources in the SLAP2
@@ -1022,41 +1052,61 @@ complete 81-session cohort.
 
 :::{figure} ./images/figures/generated/figure-07-unit-extraction-plan.svg
 :label: fig-unit-extraction-plan
-:alt: SLAP2 glutamate source footprints and example traces, event-amplitude quality classes, and context-dependent event rates and class composition across 20 sessions from 8 mice.
+:alt: One SLAP2 raw trace with detected events, an amplitude arrow, a noise-reference band and an individual footprint; three class histograms above one DMD2 dendritic map beside a grid-free full-archive scatter; shared-axis class compositions.
 :width: 100%
 
-**SLAP2 glutamate signal-quality analysis.** Panel identifiers C, G, and K are
-retained from the original multimodal Figure 7 plan. **C,** Activity projections
-of proximal (DMD1; 120 sources) and apical (DMD2; 59 sources) dendrites in the
-example session `sub-794237_ses-20250508T145040`. Source outlines are colored by
-archive-wide quality class; dashed boxes identify sampled image regions. The
-grayscale range is set independently for each displayed crop from its 2nd to
-99.5th intensity percentiles. The
-orange circle marks DMD1 source 9, whose footprint and 20 s of dimensionless
-ΔF/F beginning 900 s into the recording are shown below, with detected events.
-**G,** Detection on a matched-filtered trace and amplitude measurement on the raw
-trace, amplitude distributions for representative sources from each class, and
-the archive-wide event-amplitude feature space. An exponential kernel with a
-20 ms decay constant is used for detection at 3 noise SD. Raw event amplitudes
-are the local peak minus the preceding baseline, expressed in raw-trace noise
-SD; the bins are <2, 2 to <4, and ≥4 SD. One standardized k-means fit (k = 3,
-seed 0) across all sessions assigns ordinal Low SNR, Intermediate, and High SNR
-labels by the highest-amplitude fraction. The snapshot contains 2,540 sources
-from 20 sessions and 8 mice: 665 Low SNR, 1,026 Intermediate, 830 High SNR,
-and 19 without an assigned class because noise or event-amplitude features are
-undefined. Orange rings identify the representative sources. **K,** Mean ± SEM
-detected-event rates across retained source/context records, followed by class
-composition within each dendritic compartment and recording session, grouped
-by mouse. Rates use each source's valid recorded seconds; records with fewer
-than 5 s and classes with fewer than 10 sources within a cohort are not plotted.
-Named contexts with fewer than 100 retained records are also omitted.
-The imported context table contains event-bearing pairs only, so these rate
-averages exclude zero-event source/context pairs. Contexts in the 12
-glutamate-only sessions are inferred from orientation statistics; the 8
-glutamate-plus-calcium sessions use named interval tables. The latter cohort
-contains non-negative, denoised ΔF/F and therefore a different noise scale:
-cross-cohort quality-class differences must not be interpreted as differences
-in preparation quality. Source data are from
+**SLAP2 glutamate signal-quality analysis.** Panels progress left to right and
+top to bottom. **A,** DMD1 source 9 from
+`sub-794237_ses-20250508T145040`: its raw ΔF/F trace over the 900-920 s interval,
+with its individual footprint on the native mean image at right (**B**). Orange triangles
+mark detections from an exponential matched filter with a 20 ms decay
+constant and a 3 SD detection level; orange text identifies one detection directly.
+Sampling is approximately 200 Hz. The gray band is the full-recording raw median
+plus/minus three raw-noise SD: a noise reference, **not** the detection threshold,
+which applies to the filtered trace and its own noise scale.
+The single black arrow spans the largest measurable event amplitude in the
+displayed window, from its preceding local baseline to its raw peak. The baseline
+is the median 20-60 ms before detection; the peak search spans 40 ms after
+the detection. The plotted arrow is in ΔF/F; event-amplitude statistics divide
+that difference by raw-trace noise SD.
+**C–E,** Histograms show full-recording event amplitudes for DMD2 sources
+1 (High SNR; C), 21 (Intermediate; D), and 26 (Low SNR; E), selected near their
+example-session class medians. Gray bands and percentages highlight only
+amplitudes below 2 and at least 4 raw-noise SD, matching the scatter axes.
+Both percentages use all finite event amplitudes without renormalizing;
+the unshaded middle-range events remain in the complete histograms.
+Displayed histogram tails are clipped to the plotted range.
+**F,** The apical DMD2 map shows transparent filled ROIs
+on its native example-session mean image. It contains 59 sources:
+33 Low SNR (gold), 24 Intermediate (blue), and 2 High SNR (green).
+White rings and source IDs identify the three histogram
+examples. This map is from this session only, not a spatial pool across
+recordings. Both DMDs remain in the archive scatter and class-composition summaries.
+**G,** The scatter at right shows all 2,521 classified sources across
+20 sessions and 8 mice in the below-2 versus at-least-4-SD event-fraction plane;
+Matching white rings with dark edging and source IDs identify the same three
+histogram examples as in the map. Classes retain the original
+archive-wide k-means fit to the three event-amplitude fractions, ordered by
+their at-least-4-SD fraction, without refitting. These are full-recording
+statistics, not classifications of the short displayed excerpts.
+**H,** Three-class proportions on one shared vertical 0-100% stacked-bar axis.
+The first four bars pool classified sources within each DMD/cohort combination;
+the remaining 20 bars show individual sessions, grouped by cohort and mouse
+and ordered by acquisition date. Dates label individual bars; brackets underneath
+group their dates by mouse, with mouse IDs on a separate labeled row.
+The four compartment/cohort denominators are
+882 and 862 sources (Glu only, DMD1 and DMD2), and 364 and 413 sources
+(Glu + Ca, DMD1 and DMD2). Tick labels give DMDs or session dates;
+mouse identifiers appear above session groups. Each stack
+sums to 100%. The compartment pools and session bars reuse the same sources
+and are not independent samples. Stimulus-context event-rate plots are omitted.
+The archive contains 2,540 sources: 665 Low SNR, 1,026 Intermediate, 830 High SNR,
+and 19 sources excluded for undefined noise or event-amplitude features.
+Percentage denominators exclude those 19 sources. Sources are not neuron counts.
+Glu only denotes the 12 glutamate-only sessions; Glu + Ca denotes the 8
+glutamate-plus-calcium sessions. The latter contain non-negative, denoised ΔF/F
+and therefore a different noise scale: cross-cohort class differences
+must not be interpreted as differences in preparation quality. Source data are from
 [DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files), with the
 analysis and original results contributed in
 [community PR #171](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/pull/171).
@@ -1066,7 +1116,8 @@ panel without network access.
 
 ### Neuropixels recordings
 
-To support repeated targeting while avoiding blood vessels, each probe's entry point was shifted slightly from its position on the previous day. Across 60 unit-bearing sessions from 16 mice, mean QC-passing unit yield per recorded probe declined from 100% of the day-1 baseline to 80.9% on day 4 ([Supplementary Figure 2](#fig-supp-neuropixels-unit-yield)). Unit-quality metrics and physical-drift summaries are shown in [Figure 8](#fig-ecephys-qc-dashboard).
+(fig-supp-neuropixels-unit-yield)=
+To support repeated targeting while avoiding blood vessels, each probe's entry point was shifted slightly from its position on the previous day. Across 60 unit-bearing sessions from 16 mice, mean QC-passing unit yield per recorded probe declined from 100% of the day-1 baseline to 80.9% on day 4 ([Figure 6D](#fig-ecephys-qc-dashboard)). Unit-quality metrics and unit-location drift summaries are shown alongside this yield summary in [Figure 6](#fig-ecephys-qc-dashboard).
 
 :::{iframe} ./interactive/openscope_qc_dashboard.html
 :label: fig-ecephys-qc-dashboard
@@ -1074,114 +1125,188 @@ To support repeated targeting while avoiding blood vessels, each probe's entry p
 :title: Neuropixels Unit Quality Control and Stability
 :placeholder: ./images/figures/generated/openscope_qc_dashboard_static.svg
 
-Neuropixels unit quality control and signal stability across recording days. Analysis of 192,273 units from 59 CCF-aligned sessions across 16 mice. Displayed distributions include units passing standard quality-control thresholds: inter-spike interval (ISI) violations ratio < 0.01, presence ratio > 0.90, amplitude cutoff < 0.10, SNR ≥ 3.0, and localized cortical depth, excluding unlabeled ('void') channels. **A,** Empirical cumulative distribution functions (ECDFs) of unit SNR comparing initial (first session, blue) and final (last session, orange) recordings. Bold lines denote pooled populations; faint lines show individual mice. **B,** ECDF of refractory-period ISI violation ratios, evaluating single-unit contamination and isolation stability across session stages. **C,** Physical recording stability quantified by peak-to-peak waveform drift (µm). **D,** Spatial profile of unit SNR as a function of depth from cortical entry across individual mice (50 µm depth bins; 0 = brain surface). Figures are regenerated offline from the committed snapshot and provenance derived from [Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files).
+Neuropixels unit quality control and signal stability across recording days.
+**A,** A 200 ms raw AP-voltage excerpt from the peak electrode of sorted unit 201
+(mouse 830846, session `ecephys_830846_2026-03-09_10-32-54`, Probe A, AP192,
+ACAv5). All 6,000 native 30 kHz samples are shown without filtering, smoothing,
+or interpolation, using the recorded ADC-to-µV conversion; the excerpt begins
+at 88.673061 s on the synchronized acquisition clock and contains ten assigned
+spikes. This deliberately spike-rich example is the first post-60-s window
+with six assigned spikes spanning less than 180 ms, starting 10 ms before
+the first spike; it is not a representative firing-rate estimate. Blue triangles mark
+spikes assigned to this unit in the NWB file. Electrode voltage also contains
+background and contributions from other units; it is not an isolated unit's
+membrane potential. Below, recorded voltage zooms contrast a 2.77 ms ISI from
+unit 201 with a genuine 0.67 ms ISI from unit 60 (Probe A, AP83; acquisition
+time 1443.734306 s), respectively above and below the saved pipeline's 1.5 ms
+threshold. The latter cluster passes SNR, presence-ratio and amplitude-cutoff
+gates but fails the ISI-ratio gate (ratio 0.0247);
+a refractory violation is evidence of possible contamination, not proof of
+a specific sorting error. The SNR explanation shows one recorded event in a
+20 ms AP192 excerpt centered on the second assigned spike of the top trace,
+cropped from the committed 500 ms recording with all 600 native samples
+retained. It replays the saved analyzer's phase shift, 300 Hz high-pass filter,
+channel selection and global median reference. The arrow illustrates
+zero-baseline-to-trough amplitude on this individual event; the released SNR
+instead uses the mean waveform's baseline-to-negative-trough height
+(199.84 µV), divided by the saved same-channel background noise level
+(14.92 µV), giving SNR 13.40. The light-gray shaded band is plus/minus
+one saved same-channel noise level, not the full noise excursion range or
+an estimate fitted to this 20 ms excerpt. Noise was estimated as the mean of MAD-based noise
+levels from twenty random 500 ms chunks (10 s total), not just the displayed
+excerpt; the original random chunk positions were not saved. These
+preprocessing-matched quantities must not be confused with noise estimated
+from the unfiltered raw-voltage excerpt.
+All examples are measured, not schematic. Amplitude cutoff and presence ratio
+remain inclusion criteria, but are not illustrated in A.
+The [voltage snapshot](./figure_sources/data/ecephys-unit-trace.json) and
+[extraction provenance](./figure_sources/data/ecephys-unit-trace.provenance.json)
+identify the source units, electrodes, raw AP chunks, sample intervals, sorting
+run, analyzer version, and measurement parameters.
+The electrode is the channel with the largest negative trough in the unit's
+recorded mean waveform, matched to the raw AP store by channel name.
+Population analyses (B, C, F, G) include 192,273 units from 59 CCF-aligned sessions
+across 16 mice. Displayed distributions retain units passing ISI-violations
+ratio <0.01, presence ratio >0.90, amplitude cutoff <0.10, SNR >=3.0, and
+localized cortical depth, excluding unlabeled ('void') channels.
+**B,** Empirical cumulative distribution functions (ECDFs) of unit SNR,
+comparing initial (first session, blue) and final (last session, orange)
+recordings. Bold lines denote pooled populations; faint lines show individual
+mice. **C,** ECDF of refractory-period ISI-violation ratios.
+**D,** Recording-day unit yield across 60 unit-bearing sessions from 16 mice.
+Light-gray lines connect each mouse's sessions, the bold black line shows the daily mean,
+and *n* is the number of sessions on each day. Units in this panel pass
+ISI-violations ratio <0.5, presence ratio >0.8, and amplitude cutoff <0.1;
+these broader gates differ from B, C, F and G. QC-passing units are divided by the
+recorded probe count and normalized to each mouse's day-1 value. Mean yield
+declines from 100% on day 1 to 80.9% on day 4. The yield snapshot is from the
+public draft of Dandiset 001637 retrieved July 30, 2026.
+**E,** Measured unit-location drift for unit 201, reconstructing its saved
+`drift_ptp` (31.09 µm): median vertical spike location in each complete 60 s
+bin with at least 100 spikes, plotted relative to the unit's full-session
+median location. Black solid segments join adjacent valid bins; bins with
+fewer spikes remain gaps rather than being interpolated, and the partial trailing
+minute is excluded; the arrow spans the maximum minus minimum valid-bin
+median. Spike locations use the saved SpikeInterface 0.103.0 grid-convolution
+method. Sorting used Kilosort 4 with motion correction enabled, but this
+postprocessing per-unit location metric is not Kilosort's global
+motion-correction estimate.
+**F,** ECDF of peak-to-peak unit-location drift (µm), with populations and
+line encodings as in B.
+**G,** Unit SNR by depth from cortical entry across mice
+(50 µm depth bins; 0 = brain surface), rendered as unsmoothed vector cells.
+Panels B, C, and D share a row, with E, F, and G below in left-to-right order.
+Measured panels regenerate offline from
+the committed snapshot and provenance derived from
+[Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files).
 :::
 
 ### Mesoscope two photon imaging
 
-Event extraction quality is reported in [Figure 6](#fig-mesoscope-unit-extraction) over 81 of the 83 QC-Pass mesoscope sessions of the 91 released, covering all 10 mice and 175,508 segmented ROIs. Events are the processing pipeline's own OASIS series rather than a re-detection, and each event is measured as an amplitude in standard deviations of its ROI's non-event `dF/F` noise. Summarising every ROI by the fraction of its events below 2 SD, between 2 and 4 SD, and above 4 SD separates ROIs whose detected activity is unambiguous against their own noise floor from those whose is not, and a three-way k-means fit over the whole cohort turns that description into Low SNR, Intermediate and High SNR classes.
+Event extraction quality is reported in [Figure 4](#fig-mesoscope-unit-extraction) over 81 of the 83 QC-Pass mesoscope sessions of the 91 released, covering all 10 mice and 175,508 segmented ROIs. Events are the processing pipeline's own OASIS series rather than a re-detection, and each event is measured as an amplitude in standard deviations of its ROI's non-event `dF/F` noise. Summarising every ROI by the fraction of its events below 2 SD, between 2 and 4 SD, and above 4 SD separates ROIs whose detected activity is unambiguous against their own noise floor from those whose is not, and a three-way k-means fit over the whole cohort turns that description into Low SNR, Intermediate and High SNR classes.
 
 Quality is governed far more by imaging depth than by imaged area. The two areas are nearly indistinguishable (22% High SNR in VISp against 21% in VISl), whereas the High SNR share falls from 38% at 151–250 µm to 16% at 251–350 µm and 2.6% below 350 µm. The deepest plane of each area therefore contributes many more ROIs whose events sit close to their noise floor, which is a consideration when pooling ROIs across planes in downstream analyses. Per-session composition varies appreciably within as well as between animals (6.3–41.2% High SNR across sessions), so  session identity is worth retaining as a grouping factor.
 
-Three further quality questions remain in preparation: motion correction across planes within and across sessions, baseline and calcium-kernel stability in the `dF/F` series, and cell matching across sessions. The signal-to-noise definition used here was selected by comparing three candidates on a single session; that comparison, and a rotatable depth view of ROI positions, are available in the interactive view of [Figure 6](#fig-mesoscope-unit-extraction).
+Three further quality questions remain in preparation: motion correction across planes within and across sessions, baseline and calcium-kernel stability in the `dF/F` series, and cell matching across sessions. The signal-to-noise definition used here was selected by comparing three candidates on a single session; that comparison, and a rotatable depth view of ROI positions, are available in the interactive view of [Figure 4](#fig-mesoscope-unit-extraction).
 
 ### SLAP imaging
 
-The event-based glutamate QC analysis in [Figure 7](#fig-unit-extraction-plan) characterizes 2,540 extracted sources across 20 sessions from 8 mice. It separates event detection from amplitude measurement and retains both within-session and archive-wide quality labels in the released tables. The displayed classes use the archive-wide fit; 2,521 sources have defined classes and 19 are excluded. These ordinal signal-quality labels describe the recorded traces, not cell identities or a common preparation-quality scale across the two processing cohorts. Context rates are conditional on the event-bearing records retained in the source tables, as defined in the caption.
+The event-based glutamate QC analysis in [Figure 5](#fig-unit-extraction-plan) characterizes 2,540 extracted sources across 20 sessions from 8 mice. It separates event detection from amplitude measurement and retains both within-session and archive-wide quality labels in the released tables. The figure preserves the original three archive-wide classes without refitting: 665 Low SNR, 1,026 Intermediate, and 830 High SNR sources; 19 sources are excluded. One example raw trace and its individual footprint link detected events to a measured amplitude and a raw-noise reference band. Three event-amplitude histograms and both example-session dendritic maps illustrate the classes, and the archive-wide feature space shows their full-recording event fractions. A shared percentage axis compares class composition across compartment/cohort pools and individual sessions. These signal-quality classes describe the recorded traces, not cell identities or a common preparation-quality scale across the two processing cohorts.
 
 Bleaching and remaining cross-session stability analyses are still in progress.
 
 ## Receptive field analysis across modalities
 
-[Figure 9](#fig-basic-stimuli-plan) outlines a comparison of receptive-field measurements and basic stimulus responses across recording modalities.
+[Figure 7](#fig-basic-stimuli-plan) outlines a comparison of receptive-field measurements and basic stimulus responses across recording modalities.
 
-:::{figure} ./images/figures/generated/figure-08-basic-stimuli-plan.svg
+:::{figure} ./images/figures/generated/receptive-fields.svg
 :label: fig-basic-stimuli-plan
-:alt: Draft panel plan for basic stimulus responses across recording modalities.
+:alt: Three aligned modality columns showing Gabor and Zebra receptive-field maps, significance-overlap pie charts, and Gaussian-fit centre, area, and strength summaries for Neuropixels, mesoscope, and SLAP2 glutamate recordings.
 :width: 100%
 
-Draft plan for basic stimulus characterization across recording modalities.
+**Receptive-field mapping with local Gabor patches and Zebra noise across modalities (tentative caption).**
+Each column shows one session from Neuropixels, mesoscope calcium imaging, or
+SLAP2 glutamate imaging, not the full released cohort. Maps use spikes for
+Neuropixels, OASIS events for mesoscope, and green-channel OASIS events (Gabor)
+or fluorescence changes, ΔF/F (Zebra), for SLAP2.
+**A,** Example map pairs selected for significance with both stimuli, Gabor
+only, or Zebra only; colored frames match the categories in B. Gabor responses
+(top) are z scores and Zebra maps (bottom) are correlations, with a separate
+symmetric color scale shared across modalities for each stimulus. Outlined
+ellipses and white-centred markers show the one-sigma Gaussian fits and their
+centres for significant maps. Significance is defined by Benjamini–Hochberg
+q ≤ 0.05; n.s., not significant. No eligible Gabor-only example was available
+for SLAP2. Neuropixels examples are from V1 layer 2/3, mesoscope examples from
+the V1 plane VISp_0, and SLAP2 examples from the pooled sources.
+**B,** Fractions of spike-sorted units, calcium ROIs, or glutamate sources
+passing neither test (gray), Zebra only (blue), Gabor only (red), or both
+(green). Included populations are Neuropixels V1/LM
+(n = 240/151), mesoscope V1/LM (n = 1,270/1,106), and SLAP2 DMD1 apical/DMD2 basal
+(n = 49/74). Percentages are rounded; labels below 6% are omitted. Untested
+stimuli count as not significant.
+**C,** Centres, one-sigma ellipse areas (deg²), and peak absolute response
+strengths (Gabor |z|; Zebra |r|) of successfully fitted significant maps.
+Spatial points represent individual fits; blue denotes V1 or DMD1 and red
+denotes LM or DMD2. Fit sample sizes are shown beside the spatial plots.
+Boxes span the interquartile range with median lines; whiskers extend to the
+most extreme values within 1.5 interquartile ranges, and points beyond the
+whiskers are outliers. Single fits are shown as points. Black error bars show
+bootstrap 95% confidence intervals of medians (2,000 resamples). Brackets
+report two-sided permutation tests of median differences (10,000 permutations,
+unadjusted p values): *p* ≤ 0.05 (\*), *p* < 0.01 (\*\*), *p* < 0.001 (\*\*\*), and
+n.s., *p* > 0.05. RF-area axes for paired comparisons are capped at 2,000 deg²;
+statistics include all retained fits, including values above the displayed
+range. Gabor-significant units with failed fits or centres beyond ±40° in
+either coordinate are excluded from B and C; C omits other failed fits.
+Data, exclusions, session identities, and analysis parameters are recorded in
+the [committed source snapshot and provenance](https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper/tree/main/figure_sources/data/receptive-fields).
 :::
 
 ## Cell-type characterization
 
-Optotagging and extracellular waveform structure provide complementary ways to characterize the Neuropixels populations. In the SST-targeted recordings, laser-evoked firing identifies putative optotagged units; [Figure 10](#fig-supp-optotagging-heatmaps) shows their responses and yield across sessions and anatomical areas. This functional identification is distinct from spike-sorting quality control and does not by itself describe a unit's response to a visual mismatch.
+(fig-supp-optotagging-heatmaps)=
+Optotagging and extracellular waveform structure provide complementary ways to characterize the Neuropixels populations. In the SST-targeted recordings, laser-evoked firing identifies putative optotagged units. [Figure 8](#fig-supp-wavemap) compares regional waveform maps and visual-cortex phenotypes; the optotagging response, overall yield, and anatomical yield serve as controls in [Supplementary Figure 5](#fig-supp-optotagging-anatomy). This functional identification is distinct from spike-sorting quality control and does not by itself describe a unit's response to a visual mismatch.
 
-WaveMAP groups waveforms independently within six anatomical groups and places putative fast-spiking/PV-like and optotagged SST populations within that waveform space ([Figure 11](#fig-supp-wavemap)). Waveform communities are not molecular cell identities, and community labels are not shared across regions. Together, these characterizations provide context for the cell-type comparisons in the following mismatch-response analysis. The figures retain their stated analysis-specific quality and tagging criteria, so their class counts should not be equated across analyses.
-
-:::{iframe} ./interactive/optotagging-heatmaps.html
-:label: fig-supp-optotagging-heatmaps
-:width: 100%
-:title: Optotagging responses and putative optotagged-cell yield
-:placeholder: ./images/figures/generated/optotagging-heatmaps.svg
-
-Optotagging responses and putative optotagged-cell yield across Neuropixels sessions.
-**A,** the 5 Hz response from `ecephys_830851_2026-03-19_10-49-11`;
-five teal marks denote the exact 10 ms laser pulses. Rows are ordered from highest
-to lowest mean baseline z score inside the exact laser pulses (units with a silent baseline last); blue-to-red color denotes
-negative-to-positive baseline z score. **B,** Overall optotagged-cell yield across
-all 60 source sessions; a unit counts as putatively optotagged when its 5 Hz
-pulse-train response has *p* < 0.05 and modulation index > 0.1.
-**C,** Yield by Allen major parent area. **D,** The 18 structures with the highest mean yield; all 104
-structure distributions remain in the source snapshot. In B-D, gray dots denote individual sessions and
-teal bars or lines denote means. Area-level means include only sessions sampling
-that area, with the contributing session count shown as *n*. Data come from the
-public draft of [Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files),
-retrieved October 9, 2026. Asset IDs differ from earlier snapshots because the session NWBs were
-re-uploaded to DANDI; the same 60 sessions are analyzed.
-:::
+WaveMAP groups waveforms independently within six anatomical groups and places putative fast-spiking/PV-like and optotagged SST populations within that waveform space. [Figure 8](#fig-supp-wavemap) combines visual-cortex detail with all six regional embeddings; [Supplementary Figure 3](#fig-supp-wavemap-regions) retains the complete regional waveforms, and [Supplementary Figure 4](#fig-supp-wavemap-composition) shows class composition and enrichment. Waveform communities are not molecular cell identities, and community labels are not shared across regions. Together, these characterizations provide context for the cell-type comparisons in the following mismatch-response analysis. The figures retain their stated analysis-specific quality and tagging criteria, so their class counts should not be equated across analyses.
 
 :::{iframe} ./interactive/wavemap-supplement.html
 :label: fig-supp-wavemap
 :width: 100%
-:title: WaveMAP characterization of Neuropixels waveform populations
-:placeholder: ./images/figures/generated/supplementary-wavemap.svg
+:title: Regional waveform maps and visual-cortex waveform phenotypes
+:placeholder: ./images/figures/generated/cell-type-characterization.svg
 
-WaveMAP characterization of extracellular waveform
-populations. The committed analysis snapshot contains 22,878 QC-selected units
-from 59 sessions and 16 mice; 15,155 units enter the six displayed anatomical
-groups: motor cortex (MO), prefrontal cortex (PFC), visual cortex (VIS), striatum
-(STR), hippocampus (HPC), and thalamus (THAL). The session from mouse 832691 on
-2026-03-25 is excluded from this analysis and is marked as failing QC because of
-mouse stress in the session inventory. Inclusion uses ISI-violations ratio
-<0.01, presence ratio >0.9, amplitude cutoff <0.1, SNR >=3, and the common
-210-sample waveform length. These analysis-specific gates differ from the
-broader unit-yield and mismatch-response summaries elsewhere in the manuscript.
-**A,** Independently fitted regional UMAP embeddings and local waveform
-communities; colors identify communities within a region and are retained in
-**B**. Distances and class numbers are not identities shared between regions.
-**B,** Mean baseline-subtracted, maximum-absolute-amplitude-normalized waveforms
-for those communities. The horizontal axis is waveform sample index because
-the snapshot's per-unit waveform sampling-rate metadata are unavailable; its
-unverified 30 kHz fallback is not used to claim measured temporal calibration.
-**C,** Operationally defined populations mapped onto the same embeddings:
-putative FS/PV-like units have a source waveform duration <0.40 ms and firing
-rate >=10 Hz; putative optotagged SST units pass the contributed short-latency
-and full-stimulus one-sided paired tests, with within-session Benjamini-Hochberg
-q<0.05 for both. The tagging analysis uses 5 Hz and 40 Hz trains for the early
-response and all three stimulation protocols for the full response. Among the
-15,155 displayed units, all have an available tagging result; 1,134 satisfy the
-FS criterion, 225 the SST criterion, and 35 both. These labels are not confirmed
-transcriptomic identities. This overlay characterizes waveform space rather
-than repeating the optotagging validation and yield analysis in
-[Figure 10](#fig-supp-optotagging-heatmaps), which uses different
-selection/tagging criteria. **D,** Session-normalized within-region class
-composition (D1) and log2 enrichment relative to the saved regional baseline
-(D2). Each contributing session is weighted equally within a context; missing
-classes are assigned zero within an observed session-region block. Shared color
-scales are 0-20% and -1 to +1 log2 enrichment. These panels describe sampling
-composition, not changes in the identities of longitudinally tracked neurons
-or evidence of context-dependent cell-type conversion.
-Figures are regenerated offline from
-the checksummed snapshot and provenance derived from
-[Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files);
-embeddings, communities, and scientific summary values are not recomputed by
-the publication build.
+Regional waveform maps and visual-cortex waveform phenotypes.
+**A,** Enlarged visual-cortex community mean waveforms,
+baseline-subtracted and maximum-absolute-amplitude-normalized. The horizontal
+axis is waveform sample index because per-unit sampling-rate metadata are
+unavailable; the unverified 30 kHz fallback is not used as temporal calibration.
+**B,** Saved regional embeddings for motor cortex (MO), prefrontal cortex (PFC),
+visual cortex (VIS), striatum (STR), hippocampus (HPC), and thalamus (THAL),
+covering 15,155 units across the six groups. Colors identify local communities;
+embeddings are independently fitted, so distances and class numbers are not
+identities shared between regions. The VIS map includes 1,894 units across
+12 local waveform communities.
+**C-E,** The same VIS coordinates with operational FS/PV-like, optotagged SST,
+and SST-and-FS overlap highlighted, respectively: 148 units meet the FS criterion,
+30 meet the SST criterion, and 10 meet both. The first two sets include the
+overlap and are not mutually exclusive. FS/PV-like units have source waveform
+duration <0.40 ms and firing rate >=10 Hz; SST units pass the contributed
+short-latency and full-stimulus one-sided paired tests with within-session
+Benjamini-Hochberg q<0.05 for both. This tagging analysis uses 5 Hz and 40 Hz
+trains for the early response and all three protocols for the full response,
+and differs from the yield criterion in Supplementary Figure 5B-D. These labels are not confirmed
+transcriptomic identities. WaveMAP selection uses ISI-violations ratio <0.01,
+presence ratio >0.9, amplitude cutoff <0.1, SNR >=3, and 210-sample waveforms;
+its snapshot contains 22,878 QC-selected units from 59 sessions and 16 mice.
+The excluded session, mouse 832691 on 2026-03-25, failed inventory QC because
+of mouse stress. Regional comparisons and analysis-specific gates are detailed
+in [Supplementary Figure 3](#fig-supp-wavemap-regions); embeddings and
+classifications are not recomputed by the publication build.
 :::
 
 ## Neuropixels mismatch responses across predictive contexts
 
-[Figure 12](#fig-neuropixels-event-responses) illustrates how the released
+[Figure 9](#fig-neuropixels-event-responses) illustrates how the released
 Neuropixels recordings can be used to identify candidate mismatch-responsive
 units. Four public sessions from mouse 830794 provide one example of each
 predictive context. Panel A summarizes responsive fractions and
@@ -1193,9 +1318,11 @@ same neurons followed across contexts.
 
 Selection for further analysis starts with spike-sorting quality control and valid, sufficiently sampled trials, followed by two complementary comparisons: the mismatch against the preceding expected stimulus or ongoing optic flow (Q1), and against the same physical event in its matched control block (Q2). Response magnitude, sign, and time course then help characterize the selected units. The current uncorrected screen is exploratory; quantitative claims should use the released multiple-comparison-corrected *q* values and retain the context-specific qualifications below. Responsiveness alone does not establish a neuron's role in predictive computation.
 
-Mismatch events are not always preceded by the standard context they violate. [Supplementary Figure 6](#fig-supp-mismatch-adjacency) quantifies how often one mismatch immediately follows another in each context block, and whether the two were the same deviant, so analyses can exclude those events where the comparison requires an established standard context.
+Mismatch events are not always preceded by the standard context they violate.
+Analyses that require an established standard context should exclude consecutive
+mismatches, as discussed in [Limitations](#limitations).
 
-Sensorimotor mismatches additionally require the animal to be running, because the decoupled optic flow is generated by locomotion. [Supplementary Figure 7](#fig-supp-sensorimotor-running) reports locomotion and the number of analysable mismatch trials for every Neuropixels and mesoscope session containing a sensorimotor block.
+Sensorimotor mismatches additionally require the animal to be running, because the decoupled optic flow is generated by locomotion. Trial-level running-speed and minimum-trial inclusion rules are described in [Methods](#sensorimotor-running-inclusion).
 
 ### Defining responsiveness per mismatch event
 
@@ -1250,9 +1377,15 @@ accompanying text.
 
 ## Behavioral data analysis across modalities
 
-All three recording modalities include continuous raw behavioral videos together with synchronized running-wheel signals and stimulus-presentation intervals. [Figure 13](#fig-behavior-tracking) presents the available body or behavior, face, eye, and nose camera views for the Neuropixels, mesoscope, and SLAP2 examples, alongside their running profiles and stimulus state. The common timing information makes these records a behavioral context for the neural measurements, rather than a separate acquisition stream without alignment.
+All three recording modalities include continuous raw behavioral videos together with synchronized running-wheel signals and stimulus-presentation intervals. [Figure 10](#fig-behavior-tracking) presents the available body or behavior, face, eye, and nose camera views for the Neuropixels, mesoscope, and SLAP2 examples, alongside their running profiles and stimulus state. The common timing information makes these records a behavioral context for the neural measurements, rather than a separate acquisition stream without alignment.
 
-Eye tracking is shown separately in [Supplementary Figure 4](#fig-supp-eye-tracking), which pairs raw eye-camera videos with the NWB-packaged pupil, corneal-reflection, and eye-ellipse fits. The accompanying traces show fitted areas and likely-blink intervals; they also make modality-specific tracking limitations visible, including the noisier SLAP2 example. [Supplementary Figure 5](#fig-supp-pupil-event-responses) extends this view to event-aligned pupil-area and running-speed responses across contexts. These released measurements and the underlying synchronized videos support analyses of behavioral state alongside neural mismatch responses.
+The released eye-camera videos, NWB-packaged pupil, corneal-reflection, and
+eye-ellipse fits, and likely-blink flags support analyses of behavioral state
+alongside neural mismatch responses. The representative SLAP2 eye fits are noisier
+than those from the other modalities, motivating modality-specific quality control.
+Alignment, quality control, and event-response
+definitions are described in [Methods](#pupil-running-response-summaries);
+the publication repository retains the corresponding extraction and analysis code.
 
 :::{iframe} ./interactive/behavior-viewer.html
 :label: fig-behavior-tracking
@@ -1261,15 +1394,19 @@ Eye tracking is shown separately in [Supplementary Figure 4](#fig-supp-eye-track
 :placeholder: ./images/figures/generated/synchronized-behavior.svg
 
 Synchronized behavior and running across recording modalities. **A–C,** Camera
-views and complete-session running profiles from representative Neuropixels
-(**A**), mesoscope (**B**), and SLAP2 (**C**) sessions. Each row pairs all
-available camera views with the running profile from the same mouse and source
+views from representative Neuropixels (**A**), mesoscope (**B**), and SLAP2
+(**C**) sessions, arranged as modality columns with available views in 2×2 grids.
+Cells without a committed camera example are left blank. **D–F,** Complete-session running profiles
+beneath the corresponding modality columns. Each column pairs its camera views
+with the running profile from the same mouse and source
 session. Neuropixels and mesoscope stills retain the common 8-second synchronized
 excerpt selection; the SLAP2 stills are sampled at 600 seconds from the
 full-session profile source. Five-second profile means share one time axis and
-are shown over measured standard, context, standard-repeat, sequence, jitter,
-open-loop, natural-movie, and receptive-field block boundaries using the Figure
-2 block colors. **D,** Mean forward running speed in each protocol block for
+are shown on unshaded axes with dashed separators at measured block boundaries.
+Labels match Figure 1D: C1 is the standard control before and after the context;
+Context is the assigned mismatch block; C2, C3, and C4 are the sequential,
+jitter, and open-loop controls; Movie and RF denote natural-movie and
+receptive-field mapping blocks. **G,** Mean running speed in each protocol block for
 Neuropixels, mesoscope, and SLAP2, compared on one shared cm/s axis. Each point is
 one mouse after averaging its available complete sessions, and each bar is the
 mean across mice for its modality; legend values report included mice.
@@ -1279,51 +1416,93 @@ in [Methods](#recording-display-methods).
 
 # Usage Notes
 
-(data-access-code-example)=
-## Data access code example
+(data-access)=
+## Accessing the data and code
 
-The following Python example streams an HDF5 NWB file directly from DANDI using HTTP range requests, without first downloading the complete file. Install the required packages with `python -m pip install dandi h5py pynwb remfile`. Set `DANDISET_ID` to `001637` for Neuropixels data or `001768` for mesoscope data; for reproducible analyses, replace `draft` and the automatically selected asset with a published version and explicit asset path.
+### Finding and opening recordings
 
-```{code-cell} python
-:tags: [skip-execution]
+Start with the [session inventory](#fig-recording-session-inventory) to select a
+recording modality, mouse, session, and predictive-processing context. The public
+DANDI collections are [001637 for Neuropixels](https://dandiarchive.org/dandiset/001637),
+[001768 for mesoscope](https://dandiarchive.org/dandiset/001768), and
+[001424 for SLAP2](https://dandiarchive.org/dandiset/001424). Each collection can be
+browsed by asset path through the archive website. NWB files can be downloaded
+for local analysis or opened remotely using the DANDI Python API, PyNWB, and an
+HTTP-range-capable reader. Streaming avoids downloading the complete file in
+advance; requesting large arrays still transfers the corresponding data.
+Some raw movies, behavioral videos, and encoder files reside in public project
+S3 storage rather than inside an NWB file. Use the source URLs and alignment
+metadata recorded in the accompanying provenance manifests for these assets.
 
-import h5py
-import remfile
-from dandi.dandiapi import DandiAPIClient
-from pynwb import NWBHDF5IO
+For reproducible reuse, record the Dandiset version, asset ID and path, source
+URL, retrieval date, and checksum, together with the software revision and
+analysis parameters. Prefer a published version where available; if using a
+draft collection, retain the exact asset identifiers and checksums rather than
+assuming its contents will remain unchanged. The publication's figure-source
+manifests provide the pinned inputs used for its own analyses.
 
-DANDISET_ID = "001637"  # Use "001768" for mesoscope data.
-DANDISET_VERSION = "draft"
-
-with DandiAPIClient() as client:
-    dandiset = client.get_dandiset(DANDISET_ID, version_id=DANDISET_VERSION)
-    asset = next(
-        asset for asset in dandiset.get_assets() if asset.path.endswith(".nwb")
-    )
-    download_url = asset.get_content_url(follow_redirects=1, strip_query=True)
-
-remote_file = remfile.File(download_url)
-h5_file = h5py.File(remote_file, mode="r")
-with NWBHDF5IO(file=h5_file, mode="r", load_namespaces=True) as io:
-    nwbfile = io.read()
-    table_name = next(iter(nwbfile.intervals))
-    intervals = nwbfile.intervals[table_name].to_dataframe()
-
-    print(f"Streaming: {asset.path}")
-    print(f"Session: {nwbfile.session_id}")
-    print(f"Intervals table: {table_name}")
-    print(intervals.head())
-
-remote_file.close()
-```
+### Analysis notebooks and publication code
 
 The [OpenScope Databook](https://alleninstitute.github.io/openscope_databook/)
-provides additional notebooks for downloading files, selecting sessions, and
-working with electrophysiology, imaging, and behavioral data.
+provides worked tutorials for
+[downloading](https://alleninstitute.github.io/openscope_databook/download-nwb),
+[streaming](https://alleninstitute.github.io/openscope_databook/stream-nwb), and
+reading NWB files, as well as examples for unit quality, stimulus-aligned
+responses, optical signals, and behavior. Its P3 chapters cover
+[Neuropixels](https://alleninstitute.github.io/openscope_databook/predictive-processing-ephys)
+and [mesoscope](https://alleninstitute.github.io/openscope_databook/predictive-processing-ophys)
+recordings. Notebook sources and environment instructions are available in the
+[Databook repository](https://github.com/AllenInstitute/openscope_databook).
 
+This publication's
+[repository](https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper)
+contains the P3-specific extraction scripts, reusable analysis and figure code,
+tests, and the manuscript. Cloud extractors in `scripts/` produce compact,
+checksummed intermediates under `figure_sources/data/` and `figure_sources/media/`;
+renderers in `src/openscope_p3_publication/` use those committed inputs to regenerate
+the static and interactive figures offline. These display and summary snapshots
+do not replace the full recordings in DANDI or S3. Follow the repository's
+[README](https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper/blob/main/README.md)
+and [contribution guide](https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper/blob/main/CONTRIBUTING.md)
+for environment setup, source tracing, deliberate data refreshes, and validation.
+
+### Repository workflow skills
+
+For AI-assisted reuse, the repository includes three versioned workflow skills:
+[prompting conventions](https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper/blob/main/.claude/skills/prompting-conventions/SKILL.md)
+for defining a bounded task and its verification,
+[shell safety](https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper/blob/main/.claude/skills/bash-safety/SKILL.md)
+for avoiding unintended data loss, and
+[skill authoring](https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper/blob/main/.claude/skills/authoring-skills/SKILL.md)
+for adding reusable project guidance. Read these with the repository instructions
+before asking an assistant to modify an analysis or regenerate assets. They
+guide the workflow; modality-specific methods, scientific inclusion criteria,
+and source-backed provenance still govern the analysis, and generated results
+require scientific review.
+
+(limitations)=
 ## Limitations
 
 Experiments were conducted during passive viewing rather than an explicit mismatch-reporting task, limiting direct links between neural activity and perception. The modalities sample different cellular populations and measure different biological signals in separate animals; their response amplitudes and time courses are not directly interchangeable. Neuropixels units are not matched across acute recording sessions, and longitudinal imaging analyses require validated cell or source matching. The four-session Neuropixels example illustrates an analysis workflow in one mouse, not a population-wide estimate; generalization requires replication across animals and control of multiple comparisons.
+
+Consecutive mismatches can interrupt the standard context needed to interpret
+surprise. The committed [stimulus-schedule analysis](./figure_sources/data/mismatch-adjacency.json)
+and [source provenance](./figure_sources/data/mismatch-adjacency.provenance.json),
+derived from all 60 Neuropixels sessions in
+[Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files),
+identify 13, 20, and 13 adjacent events among 140 mismatches in the standard-oddball,
+sequence, and duration schedules, respectively. Adjacency means a deviant in the
+preceding presentation for standard oddball and duration, or a substitution in
+the preceding five-row sequence for sequence; counts are evaluated within blocks.
+In the continuous sensorimotor context, 19 of 140 events occur less than the
+intended 2 s after another mismatch, including 7 below 1 s and 2 below 0.5 s;
+the shortest onset-to-onset interval is 0.450 s, leaving only 0.100 s between
+the preceding 350 ms mismatch's offset and the next onset. Each context's
+schedule was verified identical across its source sessions, so these counts
+describe shared schedules rather than independent event sequences across mice.
+Analyses requiring an established expectation should exclude these events or
+explicitly account for recent mismatch history, rather than treating every
+mismatch as an equivalent isolated violation.
 
 ## Data analysis plan
 
@@ -1347,132 +1526,127 @@ The OpenScope Predictive Processing Community Project brings four mismatch conte
 
 Together, these resources support tests of whether mismatch responses share computational principles across contexts and how those responses depend on stimulus history, behavioral state, and circuit location. The example analyses provide routes to selecting and characterizing candidate units, but do not by themselves establish which signals implement prediction or prediction-error computations. Such conclusions require matched controls, corrected statistical inference, and replication across animals while respecting modality-specific sampling and measurement limits. The release provides a common basis for these tests and for further community-developed analyses of predictive processing.
 
+(fig-supp-neuropixels-recorded-trajectories)=
 ## Supplementary figures
 
-:::{figure} ./images/figures/imported/supplementary-neuropixels-implant-trajectories.png
-:label: fig-supp-neuropixels-implant-trajectories
-:alt: Four-panel Neuropixels implant figure showing six planned probe trajectories, atlas structures along each trajectory, stereotaxic coordinates, and implant-hole geometry.
-:enumerated: false
-:width: 100%
-
-**Supplementary Figure 1.** Neuropixels implant geometry and planned probe trajectories. **A,** Six trajectories (A-F) through the Allen Mouse Brain Common Coordinate Framework. **B,** Atlas structures intersected by each trajectory. **C,** Anteroposterior and mediolateral coordinates relative to bregma with implant-hole diameters D1 and D2. **D,** Top view of the implant with labeled probe-access holes.
-:::
-
-:::{iframe} ./interactive/unit-yield.html
-:label: fig-supp-neuropixels-unit-yield
-:enumerated: false
-:width: 100%
-:title: Supplementary Figure 2. Neuropixels unit yield across recording days.
-:placeholder: ./images/figures/generated/supplementary-neuropixels-unit-yield.svg
-
-**Supplementary Figure 2.** Neuropixels unit yield across recording days. Individual lines show 60 sessions from 16 mice; the bold line shows the daily mean, and *n* is the number of sessions represented on each day. Units passed all three quality-control thresholds (ISI-violations ratio < 0.5, presence ratio > 0.8, and amplitude cutoff < 0.1). QC-passing units were divided by the number of recorded probes and normalized to each mouse's day-1 value. Mean yield declined from 100% on day 1 to 80.9% on day 4. Values were derived from the public draft of Dandiset 001637 retrieved July 30, 2026.
-:::
-
 :::{iframe} ./interactive/neuropixels-trajectories.html
-:label: fig-supp-neuropixels-recorded-trajectories
+:label: fig-supp-neuropixels-implant-trajectories
+:title: Planned implant geometry and recorded Neuropixels trajectories
+:placeholder: ./images/figures/generated/supplementary-neuropixels-implant-trajectories.svg
 :enumerated: false
 :width: 100%
-:title: Supplementary Figure 3. Recorded Neuropixels trajectories in the Allen CCF.
-:placeholder: ./images/figures/generated/supplementary-neuropixels-trajectories.svg
 
-**Supplementary Figure 3.** Recorded Neuropixels trajectories in the Allen Mouse
-Brain Common Coordinate Framework (CCF) 2017. Line color denotes the nominal probe
-port (A-F). **A,** an oblique projection shows the trajectories across the
-depth-shaded whole-brain surface; **B,** a dorsal projection shows their
-anteroposterior and mediolateral distribution. Both panels use a semi-transparent
-brain surface, anatomical direction markers, and calibrated 2 mm scale bars;
-the trajectories extend laterally toward the L direction marker, matching the
+**Supplementary Figure 1.** Planned implant geometry and recorded Neuropixels
+trajectories. **A,** Six planned trajectories (A-F) through the Allen Mouse Brain
+Common Coordinate Framework (CCF). **B,** Enlarged atlas structures intersected
+by each planned trajectory across the full figure height. Probe letters retain
+their source colors to match A; the structure table below is grayscale. **C,** Top view of
+the implant with labeled probe-access holes. AP/ML coordinates relative to bregma
+and hole diameters D1/D2 are given in [Methods](#neuropixels-implant-coordinates).
+**D,** An oblique projection of recorded trajectories across the depth-shaded
+CCF whole-brain surface, shown as a single recorded-brain view with rostral-left
+oblique orientation selected for comparison with A. Line color in D denotes
+the nominal probe port (A-F); anatomical direction markers and a calibrated
+2 mm scale bar are retained. Trajectories extend laterally toward the L direction marker, matching the
 stereotaxic mediolateral convention. Electrode coordinates and area annotations
-come from Dandiset 001637; the brain surface is a 100-micrometer mesh derived from the Allen CCF 2017
-25-micrometer annotation volume. In total, 332 probe trajectories from 57 sessions and 16 mice
-had finite CCF coordinates. Three of the 60 source sessions are excluded because
-their NWB electrode tables lack `x`, `y`, and `z` coordinates.
+come from Dandiset 001637; the semi-transparent brain surface is a 100-micrometer
+mesh derived from the Allen CCF 2017 25-micrometer annotation volume. In total,
+332 probe trajectories from 57 sessions and 16 mice had finite CCF coordinates.
+Three of the 60 source sessions are excluded because their NWB electrode tables
+lack `x`, `y`, and `z` coordinates.
 :::
 
-:::{iframe} ./interactive/eye-tracking-viewer.html
-:label: fig-supp-eye-tracking
+:::{figure} ./images/figures/generated/supplementary-recording-hardware.svg
+:label: fig-multimodal-pipelines
+:alt: Three recording-modality rows showing rig geometry and head-fixed mouse platforms from the original hardware PowerPoint.
 :enumerated: false
 :width: 100%
-:title: Supplementary Figure 4. Synchronized eye tracking across recording modalities.
-:placeholder: ./images/figures/generated/synchronized-eye-tracking.svg
 
-**Supplementary Figure 4.** Synchronized eye tracking in selected Neuropixels
-(mouse 834687), mesoscope (mouse 839909), and SLAP2 (mouse 828409) sessions.
-Rows show raw pupil x position, y position, and area on a common time axis.
-The 16-second excerpts were selected to show a likely blink and a sustained
-change in pupil area; gray bands denote likely-blink samples. SLAP2 eye tracking
-is noisier than the other examples, consistent with illumination and whisker
-interference in the eye-camera view. Neuropixels and mesoscope videos are aligned
-using eye-camera exposure edges from the session sync files; SLAP2 uses packaged
-camera-frame indices and aligned Harp timestamps. All fit values and blink flags
-are from the corresponding public NWBs and are shown without display-time
-outlier interpolation.
+**Supplementary Figure 2.** Multimodal recording hardware. Rows compare Neuropixels electrophysiology, mesoscope two-photon calcium imaging, and SLAP2 dendritic imaging. Columns show each rig geometry and the corresponding head-fixed mouse platform. The six source images are extracted from the editable hardware PowerPoint; targeting diagrams are shown with their matching neural data in [Figure 3](#fig-aligned-neural-signals).
 :::
 
-:::{iframe} ./interactive/pupil-event-responses.html
-:label: fig-supp-pupil-event-responses
+:::{figure} ./images/figures/generated/supplementary-wavemap-regions.svg
+:label: fig-supp-wavemap-regions
 :enumerated: false
+:alt: Six regional WaveMAP embeddings paired with their matching colored community mean waveforms.
 :width: 100%
-:title: Supplementary Figure 5. Peri-event pupil-area and running-speed responses across recording modalities and predictive-processing contexts.
-:placeholder: ./images/figures/generated/supplementary-pupil-event-responses.svg
 
-**Supplementary Figure 5.** Peri-event pupil-area and running-speed responses
-across recording modalities, training cohorts, predictive-processing contexts,
-and mismatch events. **A–B,** Population mean event-minus-control pupil and
-running traces, aligned to display-synchronized stimulus onset and spanning
-−2 to 4 s. Pupil responses are percent changes from each trial's median baseline;
-running responses are changes in forward speed (cm/s) from the mean baseline.
-The 45° and 90° orientation events are pooled for this summary. Shading denotes
-±1 SEM across mice. **C–D,** Colored points show mouse effects, open circles show
-means, and vertical bars show 95% mouse-bootstrap intervals. Trials are averaged
-within session and repeated sessions within mouse; mice are the population
-sampling unit. The source snapshot includes 60 Neuropixels sessions from 16 mice,
-86 mesoscope sessions from 10 mice, and 8 SLAP2 sessions from 3 mice.
-SLAP2 duration pupil responses are marked unavailable because each event or control
-retained fewer than three valid trials or less than 10% of presented trials after
-pupil quality control; running remains independently displayed where coverage is
-sufficient. Baseline definitions, control matching, signal processing, and exclusions
-are described in [Methods](#pupil-running-response-summaries). Data come from
-Dandisets [001637](https://dandiarchive.org/dandiset/001637/draft/files),
-[001768](https://dandiarchive.org/dandiset/001768/draft/files), and
-[001424](https://dandiarchive.org/dandiset/001424/draft/files).
+**Supplementary Figure 3.** Regional waveform communities and mean waveforms.
+**A-F,** Saved embeddings paired with matching community mean waveforms for motor
+cortex (MO), prefrontal cortex (PFC), visual cortex (VIS), striatum (STR),
+hippocampus (HPC), and thalamus (THAL), respectively. Each pair uses a compact
+horizontal layout with its community legend to the right. Colors identify local
+communities within a region and match between its embedding and waveform plot;
+class numbers, colors, and embedding distances are not identities shared between
+regions. Waveforms are baseline-subtracted and maximum-absolute-amplitude-normalized;
+the horizontal axis is waveform sample index, not an inferred time calibration.
+The six groups contain 15,155 displayed units from the 22,878-unit, 59-session,
+16-mouse snapshot. Selection thresholds are defined in [Figure 8](#fig-supp-wavemap).
+Regional FS/SST overlays and the different optotagging-yield criterion are shown
+in [Supplementary Figure 5](#fig-supp-optotagging-anatomy). The excluded
+mouse-832691 session (2026-03-25) failed inventory QC because of mouse stress.
+Plots are regenerated offline from the checksummed Dandiset 001637 snapshot and
+provenance; embeddings, communities, and scientific values are not refitted.
 :::
 
-:::{figure} ./images/figures/generated/supplementary-mismatch-adjacency.svg
-:label: fig-supp-mismatch-adjacency
+:::{figure} ./images/figures/generated/supplementary-wavemap-composition.svg
+:label: fig-supp-wavemap-composition
 :enumerated: false
-:alt: Three panels showing, per predictive-processing context, the realised schedule of mismatch events along the block timeline, the binned interval to the previous mismatch, and the percentage of mismatch events that immediately follow another mismatch split by whether the preceding event was the same deviant type.
+:alt: Session-normalized waveform-community composition and log2 enrichment by predictive context in six anatomical groups.
 :width: 100%
 
-**Supplementary Figure 6.** Consecutive mismatch events across the four Neuropixels predictive-processing context blocks. A mismatch event that immediately follows another mismatch is not preceded by the standard context it violates, so its surprise is not comparable to that of an isolated mismatch. Adjacency is defined from each block's structure: standard-oddball and duration blocks present one stimulus per stimulus-table row, so a deviant is adjacent when the preceding row is also a deviant; the sequence block presents five rows per sequence (four gratings then a grey inter-sequence interval) with the substitution always at the third element, so a substitution is adjacent when the previous sequence, five rows earlier, also substituted; the sensorimotor block embeds 350 ms mismatch events in a continuous 30 Hz phase-update stream, so adjacency is measured in elapsed time against the protocol's intended 2 s minimum separation. Adjacency is evaluated only within a block. **A,** Each tick is one mismatch event positioned by its onset within the block; tall coloured ticks mark events preceded by another mismatch and short grey ticks mark isolated events. **B,** Interval to the previous mismatch event, binned in each context's natural unit; highlighted bars are the intervals short enough to count as adjacent and sum to the counts in **C**. **C,** Percentage of mismatch events preceded by another mismatch, split by whether that preceding event was the same deviant type. Standard-oddball retains 13 of 140 adjacent events of which 1 repeats the deviant type, sequence 20 of 140 with 4 repeats, duration 13 of 140 with 6 repeats, and sensorimotor 19 of 140 with 4 repeats. Duration is the most affected because deviant delays repeat most often, and sensorimotor departs from its documented design: 19 pairs fall below the intended 2 s minimum, 7 below 1 s, and 2 below 0.5 s, with a floor of 0.450 s between onsets and 0.100 s between one event's offset and the next event's onset. Each context block uses one pre-generated stimulus schedule, verified identical across sessions by hashing the trial-type order, orientation, and delay columns, so these counts apply to every session and the extraction fails rather than averaging if a future release randomises the schedules. Values were measured from the stimulus interval tables of all 60 Neuropixels sessions in the public draft of [Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files): 15 standard-oddball, 15 sequence, 14 duration, and 16 sensorimotor blocks.
+**Supplementary Figure 4.** Waveform-community composition across predictive
+contexts, with A and B arranged side by side. **A,** Session-normalized within-region class composition; the shared
+scale is 0-20% of units per class. **B,** Log2 enrichment relative to the saved
+regional baseline, with a shared scale from -1 to +1. Rows identify local
+waveform communities and columns identify the four predictive contexts. Each
+contributing session is weighted equally within a context; missing classes are
+assigned zero within an observed session-region block. Region names, selected
+population, quality gates, and source provenance match
+[Supplementary Figure 3](#fig-supp-wavemap-regions). These panels describe sampling
+composition, not changes in identities of longitudinally tracked neurons or
+evidence of context-dependent cell-type conversion. Saved summary values are
+not recomputed by the publication build.
 :::
 
-
-:::{iframe} ./interactive/sensorimotor-running.html
-:label: fig-supp-sensorimotor-running
+:::{iframe} ./interactive/optotagging-heatmaps.html
+:label: fig-supp-optotagging-anatomy
 :enumerated: false
-:title: Supplementary Figure 7. Locomotion during the sensorimotor mismatch block.
-:placeholder: ./images/figures/generated/supplementary-sensorimotor-running.svg
 :width: 100%
+:title: Optotagging controls, anatomical yield, and regional waveform phenotype overlays
+:placeholder: ./images/figures/generated/supplementary-cell-type-validation.svg
 
-**Supplementary Figure 7.** Locomotion during the sensorimotor mismatch block
-across 39 Neuropixels and mesoscope sessions: 16 Neuropixels sessions from 16 mice
-and 23 mesoscope sessions from 10 mice. Sessions are grouped by modality and
-ordered by block mean forward speed. **A,** Block mean forward speed, with the
-5 cm/s gate marked. **B,** Qualifying trials of 140 mismatch events at each
-reported threshold; darker cells indicate more qualifying trials. **C,** Qualifying
-trials for each of four mismatch event types, of 35 presentations each, colored by
-whether the type reaches the pre-registered eight-trial minimum. A trial qualifies
-only when mean forward speed reaches the threshold in both the 343 ms pre-event
-baseline and mismatch windows. Twenty-three of 39 sessions have a median speed
-of 0.00 cm/s. At 5 cm/s, 11 of 39 sessions meet the minimum in all four event types:
-2 Neuropixels and 9 mesoscope sessions. Availability is assessed per event type;
-the matched open-loop control contains only 8 trials per type in every session.
-SLAP2 is excluded from this NWB-based analysis because its running measurements
-are packaged separately as Harp encoder files. Running processing, session-level
-coverage, and inclusion criteria are described in [Methods](#sensorimotor-running-inclusion).
-Values come from Dandisets [001637](https://dandiarchive.org/dandiset/001637/draft/files)
-and [001768](https://dandiarchive.org/dandiset/001768/draft/files).
+**Supplementary Figure 5.** Optotagging controls, anatomical yield, and regional
+waveform phenotypes. **A,** The 5 Hz response from `ecephys_830851_2026-03-19_10-49-11`;
+five teal marks denote the exact 10 ms laser pulses. Rows are ordered from highest
+to lowest mean baseline z score inside the exact laser pulses, with units having
+a silent baseline last; blue-to-red color denotes negative-to-positive baseline
+z score. **B,** Overall optotagged-cell yield across all 60 source sessions.
+Gray dots denote individual sessions and the teal line denotes the mean.
+**C,** Yield by Allen major parent area. **D,** The 18 structures with the
+highest mean yield, arranged as ranks 1-9 and 10-18 on one shared scale;
+all 104 structure distributions remain in the source snapshot.
+Gray dots denote individual sessions and teal bars or lines denote
+means. Area-level means include only sessions sampling that area, with the
+contributing session count shown as *n*. A unit counts as putatively optotagged
+when its 5 Hz pulse-train response has *p* < 0.05 and modulation index > 0.1,
+matching B rather than the separate WaveMAP tagging
+criterion. Data come from the public draft of
+[Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files), retrieved
+October 9, 2026. The same 60 source sessions are analyzed despite NWB re-uploading
+and changed asset IDs. **E,** Operational FS/PV-like, optotagged SST, and SST-and-FS overlap on the saved
+embeddings for motor cortex, prefrontal cortex, visual cortex, striatum,
+hippocampus, and thalamus. All 15,155 displayed units have tagging results;
+1,134 meet the FS criterion, 225 the SST criterion, and 35 both. These sets
+overlap and are not confirmed transcriptomic identities. FS/PV-like units have
+source waveform duration <0.40 ms and firing rate >=10 Hz; SST units pass
+short-latency and full-stimulus one-sided paired tests, with within-session
+Benjamini-Hochberg q<0.05 for both. This criterion uses 5 Hz and 40 Hz trains for
+the early response and all three protocols for the full response, and differs
+from B-D. WaveMAP selection uses ISI-violations ratio <0.01, presence ratio >0.9,
+amplitude cutoff <0.1, SNR >=3, and 210-sample waveforms. Community identities
+and embedding distances are not shared across regions. The selected population
+and mouse-stress session exclusion match the regional waveform supplement.
 :::
 
 # Supplementary Text 1: Published oddball paradigms and sampling ranges

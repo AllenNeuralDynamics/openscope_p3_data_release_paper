@@ -35,6 +35,10 @@ input {
   padding: 16px;
 }
 
+.viewer:has([data-view="static"][aria-pressed="true"]) {
+  max-width: 1800px;
+}
+
 .view-switch {
   width: max-content;
   display: grid;
@@ -63,7 +67,7 @@ input {
 .view-button:focus-visible { outline: 3px solid rgba(8, 124, 112, 0.22); outline-offset: -3px; }
 
 .static-panel {
-  max-width: 760px;
+  max-width: none;
   margin-inline: auto;
 }
 

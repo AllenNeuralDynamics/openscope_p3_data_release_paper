@@ -2,6 +2,22 @@
 
 Small structured inputs used by publication figures and tables live here.
 
+`mesoscope-unit-extraction-roi-metrics.csv.gz` preserves all 175,508 archived ROI
+classifications from 81 sessions and 10 mice. The paired
+`mesoscope-unit-extraction-example-session.json` preserves eight FOVs, native
+projections, ROI masks, and quantized 60 s excerpts. The current editable
+Figure 4 displays only VISp_1 at 296 µm; it does not subset the cohort analyses.
+`mesoscope-unit-extraction.provenance.json` records both input checksums,
+source assets, exclusions, and the original raster snapshots. The renderer is
+`src/openscope_p3_publication/mesoscope_unit_extraction.py`; normal figure builds
+work offline and do not refit classes or download primary data. Class-fraction
+bars use the saved full-recording below-2 and above-4 SD fractions with their
+original all-event denominators, not histograms invented from the short
+excerpts. The middle fraction is retained in the data and archived
+classification but omitted from the display. Trace/footprint ROI 84 was selected
+by visual review for a sparser excerpt and a clearer soma in the same FOV;
+the legacy raster renderer still selects ROI 154.
+
 `mesoscope-laser-power.csv` transcribes the lookup values embedded in the Google Doc image exported as `images/figures/imported/mesoscope-laser-power-table.png`. The PNG remains as source provenance; Methods links to a MyST hover preview of the accessible table without reserving permanent page space.
 
 `experimental-animals.csv` is a snapshot of the linked public mouse worksheet, with source URL and source/vendored checksums recorded in `experimental-animals.provenance.json`. It supplies individual mouse metadata to the interactive explorer. Hidden imported source tables retain the grouped manuscript data needed for deterministic generation but are not shown beside the record-level explorer. Individual session rows are expanded from the grouped session IDs in that source.
@@ -184,3 +200,7 @@ session and unit. Regenerate with
 `neuropixels-event-responses.json` and `figure_sources/media/neuropixels-event-responses/` contain per-unit mismatch and matched-control spike-density functions for four sessions from mouse 830846, one per predictive-processing context. Standard-oddball, sensorimotor, and sequence windows span −0.75 to 0.75 s; duration spans −1.5 to 1.5 s. Extraction bins spikes at 2.5 ms and applies a 10 ms causal exponential kernel with 10τ (100 ms) support, using 97.5 ms of hidden causal pre-padding. Quantized uint16 mean-SDF atlases retain every native 2.5 ms sample at 0.05 spikes/s resolution, so the browser does not repeat, interpolate, or downsample the convolution. Metadata records manuscript-QC status, sorter label, the NWB Units-table firing rate and peak-to-valley duration, same-session 5 Hz SST optotagging classification, derived RS/FS/SST type, probe, depth, exact CCF area, canonical parent area, positive Allen IDs, ontology levels, exact and parent `graph_order` values from `iblatlas.BrainRegions.order`, Allen major parent and analysis-area groups, separate mismatch/control baseline statistics, mismatch-presentation response rates, and event-specific Rastermap 1.0 ranks derived from the native mismatch-z-score SDFs. Canonical parent areas collapse Allen layer nodes and hyphenated subdivisions to the nearest non-collapsible ancestor while retaining already canonical annotations. DANDI digests and source/code checksums make the snapshot independently verifiable. Refresh it with `uv run --with h5py --with iblatlas --with numpy --with pandas --with rastermap==1.0 --with remfile --with scipy python scripts/extract_neuropixels_event_responses.py --cache-dir /tmp/openscope-p3-neural-response-cache`.
 
 `stimulus-table-excerpts/` contains compact, checksum-verified excerpts from all four pinned example tables. Context excerpts span approximately 24 seconds around the first true mismatch; shared-block excerpts preserve the first approximately 24 seconds of each generated control block. Source row and trial numbers are retained.
+
+## Receptive fields
+
+`receptive-fields/` holds the HDF5 intermediate of the receptive-field figure: example Gabor-patch and Zebra-noise receptive-field maps, significance overlap, and Gaussian-fit summaries for one Neuropixels, mesoscope, and SLAP2 session. Its layout, populations, source results, and refresh command are in [`receptive-fields/README.md`](receptive-fields/README.md); the analysis pipeline is in `scripts/receptive_fields/`.

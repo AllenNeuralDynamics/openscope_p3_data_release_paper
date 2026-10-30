@@ -13,24 +13,47 @@ Two corrections relative to the 27-session build:
    rule, which agrees with the k-means class only ~69% of the time.
 
 
-Run outside the repo build: needs scipy (not a repo dependency) and the
-per-ROI cohort table, which is too large to commit and is pinned by
-checksum in figure_sources/data/mesoscope-unit-extraction.provenance.json.
+Run outside the repo build. Inputs are both committed:
+
+    python scripts/build_mesoscope_unit_extraction_panels.py \\
+        --cohort figure_sources/data/mesoscope-unit-extraction-roi-metrics.csv.gz \\
+        --payload figure_sources/data/mesoscope-unit-extraction-example-session.json \\
+        --out-dir figure_sources/media/mesoscope-unit-extraction
+
+writes panel-b.png, panel-f.png, panel-j.png (plus SVGs) and the stacked
+composite figure-06-unit-extraction-mesoscope.png into --out-dir. The cohort
+table is the 17-column per-ROI snapshot produced by
+scripts/extract_mesoscope_roi_metrics.py; its checksum and the renderer
+checksums are recorded in figure_sources/data/
+mesoscope-unit-extraction.provenance.json. Needs numpy, pandas, matplotlib
+and Pillow (all repo dependencies); nothing here touches the network.
 """
 from __future__ import annotations
 
-import base64
-import io
+import argparse
 import json
 import pathlib
 import sys
 from pathlib import Path
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.ndimage import binary_erosion
+
+from openscope_p3_publication.mesoscope_unit_extraction import (
+    DEPTH_ORDER as DEPTH_ORDER,
+)
+from openscope_p3_publication.mesoscope_unit_extraction import (
+    build_planes,
+    decode_plane,
+    load_cohort,
+    onsets,
+    panel_inputs,
+    pick_example,
+)
+from openscope_p3_publication.mesoscope_unit_extraction import (
+    shares as shares,
+)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import mesoscope_matched_panels as M
@@ -38,7 +61,6 @@ import mesoscope_matched_panels as M
 SESSION = "839909_2026-02-26"
 SESSION_LABEL = "multiplane-ophys_839909_2026-02-26"
 FR = ["frac_events_lt2sd", "frac_events_2_4sd", "frac_events_gt4sd"]
-
 
 
 # Layout of the committed composite. It is built here rather than in the figure
@@ -63,57 +85,11 @@ def compose(panel_dir: pathlib.Path) -> pathlib.Path:
     canvas.save(out, format="PNG", optimize=True)
     return out
 
-def decode_plane(p):
-    raw_dff = np.frombuffer(base64.b64decode(p["dffBase64"]), dtype="<i2")
-    raw_ev = np.frombuffer(base64.b64decode(p["eventsBase64"]), dtype="<i2")
-    dff = raw_dff.astype(np.float32) * p["dffScale"]
-    ev = raw_ev.astype(np.float32) * p["eventsScale"]
-    n, f = p["nRois"], p["excerptFrames"]
-    return dff.reshape(n, f), ev.reshape(n, f)
-
-
-def build_planes(payload, cls_lookup):
-    out = []
-    for p in payload["planes"]:
-        h, w = p["imageHeight"], p["imageWidth"]
-        runs = np.frombuffer(base64.b64decode(p["maskRunsBase64"]), dtype="<u2")
-        offs = p["maskRunOffsets"]
-        lab = np.full((h, w), -1, dtype=np.int32)
-        rc = {}
-        for i, rr in enumerate(p["rois"]):
-            for k in range(offs[i], offs[i + 1], 3):
-                row, col, ln = int(runs[k]), int(runs[k + 1]), int(runs[k + 2])
-                lab[row, col:col + ln] = i
-            rc[i] = cls_lookup.get((p["plane"], rr["roi_index"]))
-        out.append(dict(plane=p["plane"], depth=p["depthUm"], n=p["nRois"],
-                        projection=mpl.image.imread(io.BytesIO(base64.b64decode(p["projectionPng"]))),
-                        labels=lab, roi_class=rc, raw=p))
-    return out
-
-
-def onsets(e):
-    o = np.zeros(e.shape, bool)
-    o[1:] = (e[1:] > 0) & (e[:-1] <= 0)
-    o[0] = e[0] > 0
-    return o
-
-
-def pick_example(planes_):
-    """Brightest-firing mid-sized High SNR ROI, as in the 27-session build."""
-    best = None
-    for q in planes_:
-        dffq, evq = decode_plane(q["raw"])
-        for i, rr in enumerate(q["raw"]["rois"]):
-            if q["roi_class"][i] != "High SNR":
-                continue
-            nev = int((evq[i] > 0).sum())
-            if 150 <= rr["roi_area_pix"] <= 450 and (best is None or nev > best[0]):
-                best = (nev, q, i, rr, dffq[i], evq[i])
-    return best
-
-
-def render(cohort: pd.DataFrame, payload_path: str, inputs: dict) -> dict:
+def render(cohort: pd.DataFrame, payload_path: str, inputs: dict,
+           out_dir: pathlib.Path = pathlib.Path(".")) -> dict:
     counts = inputs["counts"]
+    out_dir = pathlib.Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
     ses = cohort[cohort["session"] == SESSION]
     cls_lookup = {(r.plane, int(r.roi_index)): r.amp_threshold_quality_class
                   for r in ses.itertuples()}
@@ -144,14 +120,14 @@ def render(cohort: pd.DataFrame, payload_path: str, inputs: dict) -> dict:
         trace=dtr, events=onsets(dev).astype(float),
         rate_hz=float(ex_row["event_rate_hz"]), n_events=int(ex_row["n_events"]),
         zoom=q_ex["projection"][zs],
-        zoom_edge=mem & ~binary_erosion(mem, np.ones((3, 3), bool)),
+        zoom_edge=M.mask_outline(mem),
     )
     cnts_b = {"n_rois": int(len(ses)),
               "per_class": ses["amp_threshold_quality_class"].value_counts().to_dict()}
 
     plt.close("all")
-    fig_b = M.panel_B(planes, example, cnts_b, "figure6_panelB_mesoscope.png", SESSION_LABEL)
-    fig_b.savefig("figure6_panelB_mesoscope.svg")
+    fig_b = M.panel_B(planes, example, cnts_b, str(out_dir / "panel-b.png"), SESSION_LABEL)
+    fig_b.savefig(out_dir / "panel-b.svg")
     plt.close(fig_b)
 
     # ---- F -------------------------------------------------------------
@@ -170,13 +146,46 @@ def render(cohort: pd.DataFrame, payload_path: str, inputs: dict) -> dict:
         examples.append((cls, sub.iloc[int(np.linalg.norm(sub[FR].values - cen, axis=1).argmin())]))
 
     fig_f = M.panel_F(dffq[idx] / noise, t, evq[idx] / noise, examples, cohort, counts,
-                      "figure6_panelF_mesoscope.png", ex_label)
-    fig_f.savefig("figure6_panelF_mesoscope.svg")
+                      str(out_dir / "panel-f.png"), ex_label)
+    fig_f.savefig(out_dir / "panel-f.svg")
     plt.close(fig_f)
 
     # ---- J -------------------------------------------------------------
     fig_j = M.panel_J(inputs["by_area"], inputs["by_depth"], inputs["by_session"], counts,
-                      "figure6_panelJ_mesoscope.png", by_mouse=inputs["by_mouse"])
-    fig_j.savefig("figure6_panelJ_mesoscope.svg")
+                      str(out_dir / "panel-j.png"), by_mouse=inputs["by_mouse"])
+    fig_j.savefig(out_dir / "panel-j.svg")
     plt.close(fig_j)
     return {"example": example, "counts_b": cnts_b, "examples_F": examples}
+
+
+# ---------------------------------------------------------------------------
+# Cohort aggregation for panel J and the caption counts.
+# ---------------------------------------------------------------------------
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--cohort", required=True, type=pathlib.Path,
+                    help="per-ROI cohort table (figure_sources/data/*.csv.gz)")
+    ap.add_argument("--payload", required=True, type=pathlib.Path,
+                    help="example-session viewer payload JSON for panel B")
+    ap.add_argument("--out-dir", required=True, type=pathlib.Path)
+    ap.add_argument("--no-compose", action="store_true",
+                    help="write the three panels only, skip the stacked composite")
+    args = ap.parse_args(argv)
+
+    cohort = load_cohort(args.cohort)
+    inputs = panel_inputs(cohort)
+    c = inputs["counts"]
+    print(f"{c['sessions']} sessions, {c['mice']} mice, {c['rois']:,} ROIs; "
+          f"classes {c['per_class']}")
+    render(cohort, str(args.payload), inputs, out_dir=args.out_dir)
+    for k in ("b", "f", "j"):
+        print(f"wrote {args.out_dir / f'panel-{k}.png'}")
+    if not args.no_compose:
+        print(f"wrote {compose(args.out_dir)}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

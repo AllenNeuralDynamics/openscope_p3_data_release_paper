@@ -13,6 +13,7 @@ import urllib.parse
 from io import BytesIO, StringIO
 from pathlib import Path
 from types import SimpleNamespace
+from xml.etree import ElementTree
 
 import pytest
 
@@ -33,7 +34,9 @@ from openscope_p3_publication.figures import (
     FIGURE_TYPE_SCALE,
     HARDWARE_DESCRIPTION_FONT_SIZE,
     NEURAL_EXCERPTS_PATH,
+    NEURAL_LAYER_COLORS,
     NEURAL_MEDIA_DIR,
+    NEURAL_SLAP2_PLANE_COLORS,
     NEURAL_STATIC_FRAME_DIR,
     NEURAL_STATIC_FRAME_PROVENANCE_PATH,
     NEUROPIXELS_TRAJECTORY_DATA_PATH,
@@ -84,7 +87,6 @@ from openscope_p3_publication.figures import (
     session_table_modality,
     text_sha256_matches,
     total_duration_minutes,
-    write_basic_stimuli_plan_svg,
     write_behavior_static_svg,
     write_behavior_viewer_html,
     write_context_controls_svg,
@@ -93,11 +95,13 @@ from openscope_p3_publication.figures import (
     write_eye_tracking_viewer_html,
     write_figure_1_panel_c_svg,
     write_hardware_figure_svg,
+    write_hardware_supplement_svg,
     write_interactive_html,
     write_literature_comparison_html,
     write_merged_figure_1_svg,
     write_neural_static_svg,
     write_neural_viewer_html,
+    write_neuropixels_implant_svg,
     write_neuropixels_trajectory_html,
     write_neuropixels_trajectory_svg,
     write_optotagging_heatmap_html,
@@ -168,7 +172,7 @@ def test_svg_output_uses_lf_line_endings(tmp_path: Path) -> None:
     write_svg_output(
         output,
         [
-            '<svg xmlns="http://www.w3.org/2000/svg" width="1200">',
+            '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800">',
             f'<text font-family="{FIGURE_SANS_FONT}" font-size="12">Test</text>',
             "</svg>",
         ],
@@ -179,8 +183,8 @@ def test_svg_output_uses_lf_line_endings(tmp_path: Path) -> None:
 
 
 def test_experimental_design_data() -> None:
-    assert FIGURE_SANS_FONT == "Myriad Pro, Arial, sans-serif"
-    assert FIGURE_MONO_FONT == "IBM Plex Mono, monospace"
+    assert FIGURE_SANS_FONT == "Arial, sans-serif"
+    assert FIGURE_MONO_FONT == "Arial, sans-serif"
     assert FIGURE_REFERENCE_WIDTH == 1200
     assert FIGURE_TEXT_MARGIN == 8
     assert HARDWARE_DESCRIPTION_FONT_SIZE == 12
@@ -238,8 +242,27 @@ def test_interactive_figures_share_readable_typography() -> None:
     for path in sorted((REPO_ROOT / "images" / "figures" / "generated").glob("*.svg")):
         svg = path.read_text(encoding="utf-8")
         width_match = re.search(r'<svg[^>]+width="([0-9.]+)"', svg)
-        sizes = [float(size) for size in re.findall(r'font-size="([0-9.]+)"', svg)]
-        if width_match is None or not sizes:
+        if width_match is None:
+            continue
+        root = ElementTree.fromstring(svg)
+
+        def text_sizes(
+            node: ElementTree.Element, scale: float = 1, *, outermost: bool = False,
+        ) -> list[float]:
+            if not outermost and node.tag == "{http://www.w3.org/2000/svg}svg":
+                # Inline panels retain their own viewBox coordinate units.
+                _, _, width, height = map(float, node.get("viewBox").split())
+                scale *= min(float(node.get("width")) / width, float(node.get("height")) / height)
+            sizes = []
+            size = node.get("font-size", "")
+            if re.fullmatch(r"[0-9.]+", size):
+                sizes.append(float(size) * scale)
+            for child in node:
+                sizes.extend(text_sizes(child, scale))
+            return sizes
+
+        sizes = text_sizes(root, outermost=True)
+        if not sizes:
             continue
         if path.name in {"figure-01-overview.svg", "raw-neural-recordings.svg"}:
             minimum = min(sizes)
@@ -876,7 +899,8 @@ def test_optotagging_snapshot_is_source_backed(tmp_path: Path) -> None:
     assert {
         path.name
         for path in (REPO_ROOT / "interactive" / "media" / "optotagging").iterdir()
-    } == {"optotagging-heatmaps.svg"}
+    } == {"optotagging-heatmaps.svg", "supplementary-cell-type-validation.svg"}
+    assert "media/optotagging/supplementary-cell-type-validation.svg" in interactive_html
     summary = load_optotagging_static_summary()
     assert summary["source"] == OPTOTAGGING_RESULTS_PATH.relative_to(REPO_ROOT).as_posix()
     assert summary["source_sha256"] == hashlib.sha256(
@@ -1267,6 +1291,104 @@ def test_neuropixels_trajectory_snapshot_is_source_backed() -> None:
     assert reflected_sign_error_um > 4_000
 
 
+def test_implant_composite_preserves_source_panels_and_recorded_trajectories(
+    tmp_path: Path,
+) -> None:
+    output = write_neuropixels_implant_svg(tmp_path / "implant.svg")
+    first = output.read_bytes()
+    root = ElementTree.fromstring(first)
+    namespace = {"svg": "http://www.w3.org/2000/svg"}
+    panels = root.findall("svg:svg[@class='implant-panel']", namespace)
+    assert [panel.get("data-panel") for panel in panels] == list("ABCD")
+    assert panels[1].get("height") == "1150"
+    assert panels[2].get("viewBox") == "1480 650 370 555"
+    assert len(root.findall(".//svg:clipPath", namespace)) == 4
+    for panel in panels:
+        letter = panel.get("data-panel")
+        crop = panel.find(f"svg:defs/svg:clipPath[@id='implant-crop-{letter}']/svg:rect", namespace)
+        assert [crop.get(key) for key in ("x", "y", "width", "height")] == (
+            panel.get("viewBox").split()
+        )
+    assert len(root.findall(".//svg:polyline", namespace)) == 332
+    assert len(root.findall(".//svg:line[@class='ccf-scale-bar']", namespace)) == 1
+    orientation_axes = root.findall(".//svg:line[@class='ccf-orientation-axis']", namespace)
+    assert len(orientation_axes) == 3
+    for axis in orientation_axes:
+        horizontal = float(axis.get("x2")) - float(axis.get("x1"))
+        vertical = float(axis.get("y2")) - float(axis.get("y1"))
+        assert math.hypot(horizontal, vertical) == pytest.approx(38, abs=0.01)
+        assert float(axis.get("stroke-width")) == pytest.approx(2.4)
+    brain = root.find(".//svg:image[@class='ccf-brain-render']", namespace)
+    assert brain.get("data-view") == "implant-oblique"
+    assert panels[3].get("height") == "1130"
+    native_source = root.findall(".//svg:image[@id='implant-slide']", namespace)
+    assert len(native_source) == 1
+    assert native_source[0].get("width") == "2048"
+    assert native_source[0].get("height") == "1408"
+    source_dir = REPO_ROOT / "figure_sources/google-slides"
+    provenance = json.loads(
+        (source_dir / "slide-15-neuropixels-implant.provenance.json").read_text()
+    )["native_image"]
+    source_path = source_dir / provenance["file"]
+    original_bytes = source_path.read_bytes()
+    assert hashlib.sha256(original_bytes).hexdigest() == provenance["sha256"]
+    assert base64.b64decode(native_source[0].get("href").split(",", 1)[1]) == original_bytes
+    transform = [
+        float(value) for value in native_source[0].get("transform")[7:-1].split()
+    ]
+    assert transform == pytest.approx(provenance["native_to_slide_transform"])
+    assert transform == pytest.approx(
+        [0.8499973958333333, 0, 0, 0.8499971064814815, 402.6900077160494, 32.9623912037037]
+    )
+    assert 1 / transform[0] > 1.17
+    assert root.find("svg:defs/svg:g[@id='recorded-trajectories']", namespace) is not None
+    assert root.find("svg:defs/svg:svg[@id='recorded-trajectories']", namespace) is None
+    assert not root.findall(".//svg:text[@class='probe-legend-label']", namespace)
+    assert not root.findall(".//svg:text[@class='implant-probe-legend-label']", namespace)
+    gray_source = root.find("svg:defs/svg:image[@id='implant-structure-slide']", namespace)
+    assert gray_source.get("data-render-mode") == "grayscale-body-colored-header"
+    assert gray_source.get("transform") == native_source[0].get("transform")
+    gray_png = base64.b64decode(gray_source.get("href").split(",", 1)[1])
+    pixels = np.asarray(Image.open(BytesIO(gray_png)))
+    assert pixels.shape == (1408, 2048, 4)
+    header_bottom = int(gray_source.get("data-color-header-bottom"))
+    assert header_bottom == 79
+    table = pixels[header_bottom:685, 1056:2009]
+    np.testing.assert_array_equal(table[..., 0], table[..., 1])
+    np.testing.assert_array_equal(table[..., 1], table[..., 2])
+    with Image.open(source_path) as source_image:
+        original = np.asarray(source_image.convert("RGBA"))
+    np.testing.assert_array_equal(
+        pixels[:header_bottom, 1056:2009], original[:header_bottom, 1056:2009]
+    )
+    assert np.any(pixels[:header_bottom, 1056:2009, 0]
+                  != pixels[:header_bottom, 1056:2009, 1])
+    assert panels[1].find(".//svg:use", namespace).get("href") == "#implant-structure-slide"
+    anterior_labels = root.findall(
+        "svg:defs/svg:g[@id='recorded-trajectories']/svg:text", namespace
+    )
+    assert sum(
+        label.text == "A" and label.get("class") != "probe-legend-label"
+        for label in anterior_labels
+    ) == 1
+    write_neuropixels_implant_svg(output)
+    assert output.read_bytes() == first
+    assert b"\r\n" not in first
+
+    from openscope_p3_publication.figures import ccf_static_projection
+
+    planned_coordinates = {
+        "A": (-0.1, 0.8), "B": (-2.0, 2.0), "C": (-3.7, 2.3),
+        "D": (-3.9, 4.2), "E": (1.5, 2.6), "F": (2.7, 1.5),
+    }
+    horizontal = {
+        probe: ccf_static_projection((lateral, 0.0, anterior), "implant-oblique")[0]
+        for probe, (anterior, lateral) in planned_coordinates.items()
+    }
+    assert sorted(horizontal, key=horizontal.get) == list("FEABDC")
+    assert ccf_static_projection((0.0, 0.0, 1.0), "implant-oblique")[1] > 0
+
+
 def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> None:
     html_path = write_neuropixels_trajectory_html(
         tmp_path / "neuropixels-trajectories.html",
@@ -1322,6 +1444,8 @@ def test_neuropixels_trajectory_outputs_are_deterministic(tmp_path: Path) -> Non
     assert "probe-port colors" not in svg
     assert "localized insertions ·" not in svg
     assert ".viewer.static-active .source-strip" in html
+    assert ".static-view img { width: 100%; max-width: 100%; }" in html
+    assert ".static-view img { width: 980px;" not in html
     assert svg.count("<polyline ") == 664
     payload = load_neuropixels_trajectory_data()
     insertion_count = len(payload["insertions"])
@@ -1893,11 +2017,14 @@ def test_figure_outputs_are_accessible_and_interactive(tmp_path: Path) -> None:
     assert 'aria-labelledby="title description"' in svg
     assert "Within-session controls enable cross-context comparisons" in svg
     assert svg.count("data:image/png;base64,") == 2
+    assert "Five panels showing the predictive-processing framework" in html
+    overview = (REPO_ROOT / "images/figures/generated/figure-01-overview.svg").read_bytes()
+    assert base64.b64encode(overview).decode("ascii") in html
     assert "Source Sans 3" not in html
     assert 'font-family: "Myriad Pro", Arial, sans-serif;' in html
     assert "IBM Plex Sans" not in svg
     assert "Source Sans 3" not in svg
-    assert 'font-family="Myriad Pro, Arial, sans-serif"' in svg
+    assert 'font-family="Arial, sans-serif"' in svg
 
     assert hashlib.sha256(
         (tmp_path / ZEBRA_MOVIE_SOURCE.name).read_bytes()
@@ -1921,11 +2048,26 @@ def test_opening_figures_are_source_backed(tmp_path: Path) -> None:
     figure_1 = write_merged_figure_1_svg(tmp_path / "figure-01-overview.svg").read_text(
         encoding="utf-8"
     )
-    assert 'width="2000" height="1620"' in figure_1
-    assert figure_1.count("data:image/png;base64,") == 2
-    assert figure_1.count("data:image/svg+xml;base64,") == 1
+    assert 'width="3640" height="1620"' in figure_1
+    assert figure_1.count("data:image/png;base64,") == 7
+    assert "data:image/svg+xml;base64," not in figure_1
     assert 'viewBox="0 60 580 460"' in figure_1
-    assert figure_1.count('class="panel-label"') == 3
+    assert figure_1.count('class="panel-label"') == 5
+    figure_1_root = ElementTree.fromstring(figure_1)
+    cohorts = figure_1_root.find(".//{http://www.w3.org/2000/svg}svg[@class='cohort-panel']")
+    assert cohorts is not None
+    cohort_labels = " ".join(cohorts.itertext())
+    assert "Habituation / training" in cohort_labels
+    assert "Neural recording contexts" in cohort_labels
+    assert "Motor cohort" in cohort_labels and "Sequence cohort" in cohort_labels
+    labels = figure_1_root.findall(".//{http://www.w3.org/2000/svg}text[@class='panel-label']")
+    assert [float(label.get("font-size")) * 170 / 3640 * 72 / 25.4
+            for label in labels] == pytest.approx([9] * 5)
+    assert {label.get("font-family") for label in labels} == {FIGURE_SANS_FONT}
+    assert figure_1_root.get("data-embedded-artwork-typography") == "inherited"
+    assert 'class="context-panels" data-panels="D E"' in figure_1
+    assert ">D</text>" in figure_1
+    assert ">E</text>" in figure_1
     assert figure_1.count('class="workflow-label-mask"') == 1
     assert figure_1.count('class="workflow-modality-label"') == 1
     assert 'class="workflow-modality-label" x="526" y="203"' in figure_1
@@ -1938,6 +2080,14 @@ def test_opening_figures_are_source_backed(tmp_path: Path) -> None:
     assert 'width="1600" height="640"' in panel_c
     assert panel_c.count('class="modality-cohort" data-modality=') == 3
     assert panel_c.count('class="modality-title"') == 3
+    panel_c_root = ElementTree.fromstring(panel_c)
+    modality_groups = panel_c_root.findall(
+        ".//{http://www.w3.org/2000/svg}g[@class='modality-cohort']"
+    )
+    assert [
+        [label.text for label in group.findall("{http://www.w3.org/2000/svg}text")]
+        for group in modality_groups
+    ] == [["Neuropixels"], ["Mesoscope"], ["SLAP2"]]
     assert_modality_title_scale(panel_c)
     assert panel_c.count('class="platform-logo"') == 3
     assert panel_c.count('class="cohort-line"') == 5
@@ -1955,9 +2105,9 @@ def test_opening_figures_are_source_backed(tmp_path: Path) -> None:
         assert panel_c.count(f'data-context="{context}"') == 7
     assert "Habituation / training" in panel_c
     assert "Habituation without mismatch" in panel_c
-    assert panel_c.count('font-size="26.67"') == 3
-    assert panel_c.count('font-size="32"') == 2
-    assert panel_c.count('font-size="20"') == 13
+    assert panel_c.count('font-size="26.67"') == 5
+    assert panel_c.count('font-size="32"') == 0
+    assert panel_c.count('font-size="20"') == 10
     assert panel_c.count('width="110" height="110"') == 3
     assert "#F6F8F7" not in panel_c
 
@@ -1983,6 +2133,14 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
     assert assets["slap2_brain_targeting"]["width"] == 448
     assert assets["neuropixels_brain_targeting"]["width"] == 1172
     assert all(len(asset["slide_box_inches"]) == 4 for asset in assets.values())
+
+    supplement = write_hardware_supplement_svg(tmp_path / "supplementary-hardware.svg")
+    supplemental_svg = supplement.read_text(encoding="utf-8")
+    assert supplemental_svg.count('class="hardware-image"') == 6
+    assert "_brain_targeting" not in supplemental_svg
+    assert 'class="zoom-connector"' not in supplemental_svg
+    assert "Rig geometry" in supplemental_svg
+    assert "Mouse platform" in supplemental_svg
 
     svg = write_hardware_figure_svg(tmp_path / "multimodal-hardware.svg").read_text(
         encoding="utf-8"
@@ -2066,24 +2224,25 @@ def test_hardware_figure_is_powerpoint_source_backed(tmp_path: Path) -> None:
         assert f'data-asset="{asset_id}"' in svg
 
 
-def test_placeholder_plans_mask_obsolete_figure_numbers(tmp_path: Path) -> None:
-    cases = (
-        (
-            write_basic_stimuli_plan_svg,
-            "figure-08-basic-stimuli-plan.svg",
-            "Basic stimuli → unit/system identification",
-            "Figure 5",
-            1,
-        ),
+def test_static_inventory_and_behavior_fit_available_width() -> None:
+    publication_styles = (REPO_ROOT / "styles.css").read_text(encoding="utf-8")
+    assert (
+        "#fig-recording-session-inventory,\n#fig-behavior-tracking,\n#fig-supp-wavemap,"
+        in publication_styles
     )
-    for writer, filename, expected_title, obsolete_title, title_lines in cases:
-        svg = writer(tmp_path / filename).read_text(encoding="utf-8")
-        assert 'width="2048" height="1024"' in svg
-        assert svg.count("data:image/png;base64,") == 1
-        assert svg.count('class="stale-title-mask"') == 1
-        assert svg.count('class="placeholder-title"') == title_lines
-        assert expected_title in svg
-        assert obsolete_title not in svg
+    assert "grid-column: screen-start / screen-end" in publication_styles
+    assert "max-width: 80ch" in publication_styles
+    for name in ("data-explorer.css", "behavior-viewer.css", "optotagging-heatmaps.css"):
+        stylesheet = (REPO_ROOT / "figure_sources/javascript" / name).read_text(encoding="utf-8")
+        assert "min-width: 900px" not in stylesheet
+        assert "min-width: 864px" not in stylesheet
+        assert "width: 90%" not in stylesheet
+        assert "width: calc(100% / 0.95)" not in stylesheet
+        assert "translateX(-2.5%)" not in stylesheet
+        rule = re.search(r"[.]static-shell img\s*\{([^}]+)\}", stylesheet)
+        assert rule is not None
+        assert "width: 100%" in rule.group(1)
+        assert "min-width: 0" in rule.group(1)
 
 
 def test_data_explorer_is_deterministic(tmp_path: Path) -> None:
@@ -2340,7 +2499,7 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
 
     failed_blocks = re.findall(
         r'<rect class="session-block"[^>]+fill="none" '
-        r'stroke="(#[0-9A-F]{6})" stroke-width="2" pointer-events="all"/>',
+        r'stroke="(#[0-9A-F]{6})" stroke-width="2" pointer-events="all"\s*/>',
         svg,
     )
     assert failed_blocks
@@ -2351,7 +2510,7 @@ def test_experimental_session_snapshot_and_static_figure(tmp_path: Path) -> None
 
     filled_blocks = re.findall(
         r'<rect class="session-block"[^>]+fill="(#[0-9A-F]{6})" '
-        r'stroke="(#[0-9A-F]{6})" stroke-width="2"/>',
+        r'stroke="(#[0-9A-F]{6})" stroke-width="2"\s*/>',
         svg,
     )
     assert filled_blocks
@@ -2717,7 +2876,7 @@ def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
     svg_path = write_behavior_static_svg(tmp_path / "synchronized-behavior.svg")
     svg = svg_path.read_text(encoding="utf-8")
     statistics_payload = load_running_statistics()
-    assert 'width="1800" height="1080"' in svg
+    assert 'width="1800" height="1310"' in svg
     assert svg.count("data:image/jpeg;base64,") == 10
     assert svg.count("data:image/png;base64,") == 3
     assert svg.count('class="platform-heading" data-modality=') == 3
@@ -2731,40 +2890,59 @@ def test_behavior_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert "Full-session running profile" not in svg
     assert "camera streams" not in svg
     assert svg.count('class="running-profile"') == 3
-    assert svg.count('class="running-profile-block"') == 24
-    assert svg.count(">0m</text>") == 1
-    assert svg.count(">20m</text>") == 1
-    assert svg.count(">40m</text>") == 1
-    assert svg.count(">60m</text>") == 1
-    for block, color in {
-        "standard": "#D9DFE3",
-        "context": "#283185",
-        "standard_repeat": "#C7D0D6",
-        "sequence": "#B5C1C8",
-        "jitter": "#A4B2BA",
-        "open_loop": "#92A3AC",
-        "movie": "#80949E",
-        "rf": "#6F858F",
-    }.items():
-        assert re.search(
-            rf'class="running-profile-block" data-block="{block}"[^>]+fill="{color}"',
-            svg,
-        )
-    assert re.search(
-        r'class="running-block-region" data-block="context"[^>]+fill="#68706E"',
-        svg,
+    assert 'class="running-profile-block"' not in svg
+    assert svg.count('class="running-profile-boundary"') == 21
+    assert svg.count('class="running-time-axis-title"') == 3
+    assert svg.count('class="running-speed-axis-title"') == 3
+    assert 'font-family="IBM Plex Mono, monospace"' not in svg
+    root = ElementTree.fromstring(svg)
+    namespace = {"svg": "http://www.w3.org/2000/svg"}
+    examples = root.findall("svg:g[@class='example-running-panel']", namespace)
+    headings = root.findall("svg:g[@class='platform-heading']/svg:text", namespace)
+    assert [heading.text for heading in headings if heading.get("class") != "modality-title"] == (
+        list("ABC")
     )
+    assert [example.get("data-panel") for example in examples] == list("DEF")
+    assert [example.find("svg:text", namespace).text for example in examples] == list("DEF")
+    summary = root.find("svg:g[@class='running-summary']", namespace)
+    assert summary.get("data-panel") == "G"
+    assert summary.find("svg:text[@class='running-panel-label']", namespace).text == "G"
+    summary_offset = float(summary.get("transform").split()[1].rstrip(")"))
+    profile_bottom = max(
+        float(label.get("y"))
+        for label in root.findall(".//svg:text[@class='running-time-axis-title']", namespace)
+    )
+    summary_top = min(float(rect.get("y")) for rect in summary.findall("svg:rect", namespace))
+    assert 20 <= summary_offset + summary_top - profile_bottom <= 30
+    for example in examples:
+        assert ">Std</text>" not in ElementTree.tostring(example, encoding="unicode")
+        labels = example.findall(".//svg:text[@class='running-block-label']", namespace)
+        assert [label.text for label in labels] == [
+            "C1", "Context", "C1", "C2", "C3", "C4", "Movie", "RF",
+        ]
+        boundaries = example.findall(".//svg:line[@class='running-profile-boundary']", namespace)
+        assert len(boundaries) == 7
+    for modality in ("neuropixels", "mesoscope", "slap2"):
+        cards = root.findall(f"svg:g[@class='behavior-camera-card'][@data-modality='{modality}']",
+                             namespace)
+        assert {card.get("data-grid-column") for card in cards} == {"0", "1"}
+        assert {card.get("data-grid-row") for card in cards} == {"0", "1"}
+    for line in root.findall(".//svg:line[@class='running-profile-boundary']", namespace):
+        assert line.get("stroke-dasharray") == "5 5"
     assert "Wheel encoder velocity (counts/s)" not in svg
     assert "Average running speed across blocks" not in svg
     assert svg.count('class="running-summary-plot" data-shared-y-axis="true"') == 1
-    assert '<g class="running-summary" transform="translate(0 30)">' in svg
+    assert '<g class="running-summary" data-panel="G" transform="translate(0 220)">' in svg
     assert 'class="running-panel-label"' in svg
     assert svg.count('class="running-block-header"') == 0
-    assert svg.count('class="running-block-region"') == 8
-    assert svg.count("Mean forward speed (cm/s)") == 1
+    assert 'class="running-block-region"' not in svg
+    assert svg.count('class="running-summary-boundary"') == 7
+    assert svg.count('class="running-block-axis-title"') == 1
+    assert svg.count("Mean speed (cm/s)") == 1
+    assert "forward" not in svg.lower()
     axis_title = re.search(r'<text class="running-y-axis-title"[^>]*>', svg)
     assert axis_title is not None
-    assert "transform=" not in axis_title.group()
+    assert 'transform="rotate(' in axis_title.group()
     assert svg.count('class="running-block-mean"') == 24
     assert svg.count('class="running-block-point"') == len(
         statistics_payload["mouse_block"]
@@ -3252,6 +3430,20 @@ def test_slap2_acquisition_bands_are_source_backed(tmp_path: Path) -> None:
         load_slap2_acquisition_bands(payload, bad_path)
 
 
+def test_static_calcium_examples_prefer_sustained_transients_without_changing_samples() -> None:
+    from openscope_p3_publication.figures import static_segmentation_trace_indices
+
+    noise = [float(index % 2 * 2 - 1) for index in range(100)]
+    transient = [0.0] * 100
+    transient[20:25] = [8, 8, 6, 4, 2]
+    isolated = [0.0] * 100
+    isolated[30] = 100
+    rows = [noise, transient, isolated]
+    original = [row.copy() for row in rows]
+    assert static_segmentation_trace_indices(rows, count=1, prefer_clean_transients=True) == [1]
+    assert rows == original
+
+
 def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     provenance = json.loads(
         NEURAL_STATIC_FRAME_PROVENANCE_PATH.read_text(encoding="utf-8")
@@ -3304,20 +3496,104 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
 
     svg_path = write_neural_static_svg(tmp_path / "raw-neural-recordings.svg")
     svg = svg_path.read_text(encoding="utf-8")
-    assert 'width="1876" height="1900"' in svg
-    assert svg.count('class="figure-row-label"') == 3
-    assert svg.count('class="figure-row-label" x="60"') == 3
+    assert 'width="1876" height="2380"' in svg
+    assert 'transform="translate(76 480)"' in svg
+    assert svg.count('class="figure-row-label"') == 4
+    assert svg.count('class="figure-row-label" x="60"') == 4
+    assert svg.count('class="targeting-panel"') == 3
+    assert svg.count('class="raw-panel-label"') == 12
+    root = ElementTree.fromstring(svg)
+    namespace = {"svg": "http://www.w3.org/2000/svg"}
+    cards = root.findall(".//svg:g[@class='raw-image-card']", namespace)
+    probe_colors = load_neuropixels_trajectory_data()["probeColors"]
+    for card in cards:
+        identity = card.get("data-target-identity")
+        modality = card.get("data-modality")
+        expected = (
+            probe_colors[identity] if modality == "neuropixels"
+            else NEURAL_LAYER_COLORS[identity] if modality == "mesoscope"
+            else NEURAL_SLAP2_PLANE_COLORS[identity]
+        )
+        assert card.get("data-target-color") == expected
+        label = card.find("svg:text", namespace)
+        assert label.get("fill") == "#000000"
+        image = card.find("svg:image[@class='raw-card-image']", namespace)
+        assert float(label.get("y")) < float(image.get("y"))
+        outline = card.find("svg:rect[@class='raw-color-outline']", namespace)
+        assert outline.get("stroke") == expected
+    assert len(cards) == 16
+    extracted = root.findall(".//svg:g[@class='extraction-panel'][@data-row='3']", namespace)
+    assert [panel.get("data-target-color") for panel in extracted] == [
+        probe_colors["A"], NEURAL_LAYER_COLORS["L2/3"], NEURAL_SLAP2_PLANE_COLORS["dmd1"]
+    ]
+    for panel in extracted:
+        outline = panel.find("svg:rect[@class='extraction-color-outline']", namespace)
+        assert outline.get("stroke") == panel.get("data-target-color")
+        for label in panel.findall("svg:text", namespace):
+            assert label.get("fill") == "#000000"
+            assert float(label.get("y")) < float(outline.get("y"))
+        viewport = panel.find("svg:svg", namespace)
+        content_x, content_y, content_width, content_height = map(
+            float, panel.get("data-source-content-bounds").split()
+        )
+        view_x, view_y, view_width, view_height = map(float, viewport.get("viewBox").split())
+        scale = min(float(viewport.get("width")) / view_width,
+                    float(viewport.get("height")) / view_height)
+        assert float(outline.get("width")) == pytest.approx(content_width * scale, abs=0.001)
+        assert float(outline.get("height")) == pytest.approx(content_height * scale, abs=0.001)
+        assert float(outline.get("x")) > float(viewport.get("x"))
+        assert float(outline.get("y")) > float(viewport.get("y"))
+    assert 'class="modality-scale"' not in svg
+    target_labels = root.findall(".//svg:text[@class='slap2-plane-label']", namespace)
+    assert [label.text for label in target_labels] == ["DMD1 · apical", "DMD2 · proximal"]
+    assert all(label.get("text-anchor") == "end" for label in target_labels)
+    assert [float(label.get("data-plane-label-offset-y")) for label in target_labels] == [-55, 55]
+    assert all(label.get("fill") == "#000000" for label in target_labels)
+    connectors = root.findall("svg:line[@class='zoom-connector']", namespace)
+    assert len(connectors) == 6
+    assert all(float(line.get("x2")) > float(line.get("x1")) for line in connectors)
+    target_groups = root.findall("svg:g[@class='targeting-panel']", namespace)
+    mesoscope = next(group for group in target_groups if group.get("data-modality") == "mesoscope")
+    border = mesoscope.find("svg:rect[@class='mesoscope-target-border']", namespace)
+    offset_x, offset_y, scale = map(float, re.findall(r"[-0-9.]+", mesoscope.get("transform")))
+    corners = [
+        (offset_x + float(border.get("x")) * scale,
+         offset_y + (float(border.get("y")) + index * float(border.get("height"))) * scale)
+        for index in (0, 1)
+    ]
+    lines = [line for line in connectors
+             if line.get("data-stage") == "neuropixels-to-mesoscope"]
+    for line, corner in zip(lines, corners, strict=True):
+        assert (float(line.get("x2")), float(line.get("y2"))) == pytest.approx(corner, abs=0.01)
+    slap2 = next(group for group in target_groups if group.get("data-modality") == "slap2")
+    image = next(child for child in slap2 if child.get("data-asset") == "slap2_brain_targeting")
+    offset_x, offset_y, scale = map(float, re.findall(r"[-0-9.]+", slap2.get("transform")))
+    box_x, box_y, box_width, box_height = (
+        float(image.get(key)) for key in ("x", "y", "width", "height")
+    )
+    aspect = 448 / 406
+    render_width = min(box_width, box_height * aspect)
+    render_height = render_width / aspect
+    expected_corners = [
+        (offset_x + (box_x + (box_width - render_width) / 2 + 18 / 448 * render_width) * scale,
+         offset_y + (box_y + (box_height - render_height) / 2 + row / 406 * render_height) * scale)
+        for row in (79, 329)
+    ]
+    lines = [line for line in connectors if line.get("data-stage") == "mesoscope-to-slap2"
+             and line.get("stroke") == "#000000"]
+    for line, corner in zip(lines, expected_corners, strict=True):
+        assert (float(line.get("x2")), float(line.get("y2"))) == pytest.approx(corner, abs=0.01)
     assert svg.count(">Raw data</text>") == 1
     assert svg.count(">Extracted sources</text>") == 1
     assert svg.count(">Activity traces</text>") == 1
     assert svg.count('class="extraction-panel"') == 6
-    assert svg.count('data-row="2"') == 3
     assert svg.count('data-row="3"') == 3
+    assert svg.count('data-row="4"') == 3
     assert svg.count('class="source-panel-label"') == 3
     assert "VISp · L2/3 · 152 µm</text>" in svg
     assert ">VISp 0</text>" not in svg
     for trace_panel in re.findall(
-        r'<g class="extraction-panel"[^>]+data-row="3".*?</g>', svg, re.DOTALL
+        r'<g class="extraction-panel"[^>]+data-row="4".*?</g>', svg, re.DOTALL
     ):
         assert 'class="source-panel-label"' not in trace_panel
     for label in re.findall(r'<text class="image-scale-label"[^>]+>', svg):
@@ -3338,14 +3614,15 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
         assert all(math.isclose(float(size) * embedded_scale, 24, abs_tol=0.02) for size in sizes)
         assert all(math.isclose(float(size) * embedded_scale, 4, abs_tol=0.01) for size in strokes)
     for modality in ("neuropixels", "mesoscope", "slap2"):
-        assert svg.count(f'<use href="#extraction-{modality}"/>') == 2
-    assert svg.count("data:image/png;base64,") == 21
+        assert svg.count(f'href="#extraction-{modality}"') == 2
+    assert svg.count("data:image/png;base64,") == 24
     assert svg.count('class="acquisition-band-overlay"') == 2
     assert "Cyan: targeted raster regions" not in svg
     assert svg.count('class="acquisition-band-legend"') == 1
     assert 'class="acquisition-band-swatch" x="1395" y="647.5"' in svg
     assert 'width="18" height="18" fill="#25AAE1"' in svg
-    assert 'fill="#25AAE1">targeted raster regions</text>' in svg
+    assert any(element.text == "targeted raster regions" and element.get("fill") == "#25AAE1"
+               for element in root.iter("{http://www.w3.org/2000/svg}text"))
     assert svg.index('class="acquisition-band-legend"') > svg.index(
         'data-option-id="dmd2-composite"'
     )
@@ -3353,7 +3630,7 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
     assert_modality_title_scale(svg)
     assert svg.count('class="platform-logo"') == 3
     for heading in re.findall(r'<g class="platform-heading".*?</g>', svg, re.DOTALL):
-        letter_x = float(re.search(r'<text x="([^"]+)"', heading).group(1))
+        letter_x = float(re.search(r'<text[^>]+ x="([^"]+)"', heading).group(1))
         logo_x = float(re.search(r'class="platform-logo"[^>]+ x="([^"]+)"', heading).group(1))
         assert logo_x - letter_x == 56
     assert svg.count('y="1" width="96" height="96"') == 3
@@ -3387,9 +3664,9 @@ def test_neural_static_figure_is_source_backed(tmp_path: Path) -> None:
         pixels = np.asarray(Image.open(BytesIO(base64.b64decode(image))))
         assert np.array_equal(pixels[..., 0], pixels[..., 1])
         assert np.array_equal(pixels[..., 1], pixels[..., 2])
-    assert ">6 probe recordings</text>" in svg
-    assert ">8 planes · 4 VISp + 4 VISl</text>" in svg
-    assert ">2 VISp planes</text>" in svg
+    assert ">6 probe recordings</text>" not in svg
+    assert ">8 planes · 4 VISp + 4 VISl</text>" not in svg
+    assert ">2 VISp planes</text>" not in svg
     assert "all raw excerpts" not in svg
     assert "all raw frames" not in svg
     assert "reference + acquisition bands" not in svg
@@ -3593,7 +3870,177 @@ def test_ecephys_qc_dashboard_snapshot_and_outputs(tmp_path: Path) -> None:
         assert mpl.rcParams["ytick.major.width"] == 0.6
     assert svg_1.read_bytes() == svg_2.read_bytes()
     svg_text = svg_1.read_text(encoding="utf-8")
-    assert "Neuropixels Unit Quality Control and Stability" in svg_text
+    assert "Neuropixels Unit Quality Control and Stability" not in svg_text
+    assert 'id="panel-D-unit-yield"' in svg_text
+    assert 'id="unit-yield-daily-mean"' in svg_text
+    assert "Unit yield across days" in svg_text
+    assert "Yield (% of day 1)" in svg_text
+    root = ElementTree.fromstring(svg_text)
+    namespace = {"svg": "http://www.w3.org/2000/svg"}
+    assert root.get("data-metric-guide") == "recorded-isi-snr-and-unit-location-drift"
+    assert root.get("data-trace-unit") == "201"
+    assert root.get("data-panel-layout") == "A/BCD/EFG"
+    assert float(root.get("height").removesuffix("pt")) < 0.83 * float(
+        root.get("width").removesuffix("pt")
+    )
+    assert not list(root.iter("{http://www.w3.org/2000/svg}image"))
+    assert root.find(".//svg:g[@id='panel-G-snr-depth-cells']/svg:path", namespace) is not None
+    for gid in ("panel-A-ordinary-isi", "panel-A-violating-isi", "panel-A-measured-snr",
+                "saved-noise-band", "panel-E-measured-drift", "recorded-snr-voltage",
+                "recorded-spike-amplitude"):
+        assert root.find(f".//svg:g[@id='{gid}']", namespace) is not None
+    assert "panel-A-metric-guide-" not in svg_text
+    assert "2.77 ms" in svg_text and "0.67 ms" in svg_text
+    texts = ["".join(node.itertext()) for node in root.findall(".//svg:text", namespace)]
+    assert "Recorded spikes, refractory intervals and measured signal-to-noise" not in texts
+    yield_title = next(
+        node for node in root.findall(".//svg:text", namespace)
+        if "".join(node.itertext()) == "Unit yield across days"
+    )
+    assert "font-weight:700" in yield_title.get("style").replace(" ", "")
+    assert not any("13.40" in text for text in texts)
+    assert not any("unit 201" in text.lower() or "cluster 60" in text.lower() for text in texts)
+    assert not any("ProbeA" in text or "AP192" in text for text in texts)
+    assert "SNR: amplitude / noise" in texts and "Amplitude" in texts
+    assert "Measure unit drift" in texts and "Individual mice" in texts
+    assert "20 × 500 ms" not in texts and "31.09 µm" not in texts
+    assert "panel-A-mean-waveform" not in svg_text
+    band = root.find(".//svg:g[@id='saved-noise-band']/svg:path", namespace)
+    assert "fill: #d3d3d3" in band.get("style").lower()
+    assert root.find(".//svg:g[@id='panel-A-raw-trace']", namespace) is not None
+    trace_path = root.find(".//svg:g[@id='recorded-raw-voltage']/svg:path", namespace)
+    assert trace_path is not None
+    assert root.find(".//svg:g[@id='recorded-unit-spikes']", namespace) is not None
+    assert "Time (ms)" in svg_text and "Voltage (µV)" in svg_text
+    assert "Recorded AP voltage; triangles = assigned spikes" not in svg_text
+    spike_label = root.find(".//svg:g[@id='assigned-spikes-label']/svg:text", namespace)
+    first_marker = root.find(".//svg:g[@id='recorded-unit-spikes']//svg:use", namespace)
+    assert "".join(spike_label.itertext()) == "assigned spikes"
+    assert "fill: #0072b2" in spike_label.get("style").lower()
+    assert "fill: #0072b2" in first_marker.get("style").lower()
+    assert float(spike_label.get("x")) == pytest.approx(float(first_marker.get("x")))
+    assert float(spike_label.get("y")) < float(first_marker.get("y"))
+    assert "illustrative-raw-voltage" not in svg_text
+    from openscope_p3_publication.ecephys_qc_figure import load_ecephys_unit_trace
+    trace = load_ecephys_unit_trace()
+    snr_path = root.find(".//svg:g[@id='recorded-snr-voltage']/svg:path", namespace)
+    snr_points = re.findall(r"[ML]\s+([-0-9.]+)\s+([-0-9.]+)", snr_path.get("d"))
+    assert len(snr_points) == 600
+    center = round(trace["unit_spike_times_ms"][1] * trace["sample_rate_hz"] / 1000)
+    snr_voltage = trace["diagnostics"]["snr"]["recording"]["voltage_uv"][
+        center - 300:center + 300
+    ]
+    peak, trough = int(np.argmax(snr_voltage)), int(np.argmin(snr_voltage))
+    for index, value in enumerate(snr_voltage):
+        fraction = (value - min(snr_voltage)) / (max(snr_voltage) - min(snr_voltage))
+        expected = float(snr_points[trough][1]) + fraction * (
+            float(snr_points[peak][1]) - float(snr_points[trough][1])
+        )
+        assert float(snr_points[index][1]) == pytest.approx(expected, abs=1e-5)
+    band_y = [
+        float(y) for _, y in re.findall(r"[ML]\s+([-0-9.]+)\s+([-0-9.]+)", band.get("d"))
+    ]
+    for level, actual_y in (
+        (trace["diagnostics"]["snr"]["noise_sigma_uv"], min(band_y)),
+        (-trace["diagnostics"]["snr"]["noise_sigma_uv"], max(band_y)),
+    ):
+        fraction = (level - min(snr_voltage)) / (max(snr_voltage) - min(snr_voltage))
+        expected = float(snr_points[trough][1]) + fraction * (
+            float(snr_points[peak][1]) - float(snr_points[trough][1])
+        )
+        assert actual_y == pytest.approx(expected, abs=1e-5)
+    start_ms = (center - 300) * 1000 / trace["sample_rate_hz"]
+    assert sum(start_ms <= t < start_ms + 20 for t in trace["unit_spike_times_ms"]) == 1
+    drift_path = root.find(".//svg:g[@id='recorded-unit-drift']/svg:path", namespace)
+    assert drift_path is not None
+    assert "stroke: #000000" in drift_path.get("style")
+    assert "stroke-dasharray" not in drift_path.get("style")
+    for letter in "BCF":
+        panel = root.find(f".//svg:g[@id='panel-{letter}-metrics']", namespace)
+        assert "stroke-dasharray" not in ElementTree.tostring(panel, encoding="unicode")
+    depths = np.asarray(trace["diagnostics"]["drift"]["median_depth_um"], dtype=float)
+    assert len(re.findall(r"[ML]\s+", drift_path.get("d"))) == np.isfinite(depths).sum()
+    # Each missing-bin run must split the line, not join adjacent valid observations.
+    expected_segments = np.sum(np.isfinite(depths) & ~np.r_[False, np.isfinite(depths[:-1])])
+    assert drift_path.get("d").count("M") == expected_segments
+    trace_points = re.findall(r"[ML]\s+([-0-9.]+)\s+([-0-9.]+)", trace_path.get("d"))
+    assert len(trace_points) == len(trace["raw_adc"]) == 6000
+    voltage = [
+        sample * trace["gain_to_uv"] + trace["offset_to_uv"] for sample in trace["raw_adc"]
+    ]
+    peak = voltage.index(max(voltage))
+    trough = voltage.index(min(voltage))
+    y_peak, y_trough = float(trace_points[peak][1]), float(trace_points[trough][1])
+    for index in range(0, len(voltage), 37):
+        expected = y_trough + (voltage[index] - min(voltage)) / (
+            max(voltage) - min(voltage)
+        ) * (y_peak - y_trough)
+        assert float(trace_points[index][1]) == pytest.approx(expected, abs=1e-5)
+    def panel_bounds(label: str) -> tuple[float, float, float, float]:
+        panel = root.find(f".//svg:g[@id='panel-{label}-metrics']", namespace)
+        if label == "D":
+            panel = root.find(".//svg:g[@id='panel-D-unit-yield']", namespace)
+        elif label == "E":
+            panel = root.find(".//svg:g[@id='panel-E-measured-drift']", namespace)
+        elif label == "A":
+            panel = root.find(".//svg:g[@id='panel-A-ordinary-isi']", namespace)
+        vertices = re.findall(
+            r"[ML]\s+([-0-9.]+)\s+([-0-9.]+)", panel.find("svg:g/svg:path", namespace).get("d")
+        )
+        xs, ys = zip(*[(float(x), float(y)) for x, y in vertices], strict=True)
+        return min(xs), min(ys), max(xs), max(ys)
+    b, c, d, e, f, g = [panel_bounds(label) for label in "BCDEFG"]
+    assert b[2] < c[0] < c[2] < d[0]
+    assert b[1] == c[1] == d[1] and b[3] == c[3] == d[3]
+    assert e[2] < f[0] < f[2] < g[0]
+    assert e[1] == f[1] == g[1] and e[3] == f[3] == g[3]
+    assert b[3] < e[1]
+    assert 51 < b[1] - panel_bounds("A")[3] < 60
+    assert 51 < e[1] - b[3] < 60
+    assert f[2] - f[0] >= 1.19 * (e[2] - e[0])
+    assert f[0] - e[2] < 65
+    for letter in "BCDF":
+        panel_id = f"panel-{letter}-metrics" if letter != "D" else "panel-D-unit-yield"
+        panel = root.find(f".//svg:g[@id='{panel_id}']", namespace)
+        legend = next(
+            node for node in panel.iter("{http://www.w3.org/2000/svg}g")
+            if node.get("id", "").startswith("legend_")
+        )
+        assert not any(
+            node.get("id", "").startswith("patch_")
+            for node in legend.iter("{http://www.w3.org/2000/svg}g")
+        )
+        labels = legend.findall(".//svg:text", namespace)
+        assert len(labels) == 2
+        assert all(re.search(r"font-size:\s*10px", label.get("style")) for label in labels)
+        if letter == "F":
+            assert all(float(label.get("x")) > (f[0] + f[2]) / 2 for label in labels)
+            assert all(float(label.get("y")) > (f[1] + f[3]) / 2 for label in labels)
+    assert b[2] - b[0] < g[2] - g[0]
+    for record in load_unit_yield_data()["summary"]:
+        count = root.find(
+            f".//svg:g[@id='yield-session-count-day-{record['day']}']/svg:text", namespace
+        )
+        assert d[0] + 13 < float(count.get("x")) < d[2] - 13
+    mean_path = root.find(".//svg:g[@id='unit-yield-daily-mean']/svg:path", namespace)
+    points = [tuple(map(float, pair)) for pair in re.findall(
+        r"[ML]\s+([-0-9.]+)\s+([-0-9.]+)", mean_path.get("d")
+    )]
+    summary = load_unit_yield_data()["summary"]
+    assert len(points) == len(summary)
+    for point, record in zip(points, summary, strict=True):
+        day_fraction = (record["day"] - summary[0]["day"]) / (
+            summary[-1]["day"] - summary[0]["day"]
+        )
+        assert point[0] == pytest.approx(
+            points[0][0] + day_fraction * (points[-1][0] - points[0][0]), abs=1e-5
+        )
+        value_fraction = (record["meanPercent"] - summary[0]["meanPercent"]) / (
+            summary[-1]["meanPercent"] - summary[0]["meanPercent"]
+        )
+        assert point[1] == pytest.approx(
+            points[0][1] + value_fraction * (points[-1][1] - points[0][1]), abs=1e-5
+        )
     assert "<dc:date>" not in svg_text
 
     html_out = tmp_path / "dashboard.html"

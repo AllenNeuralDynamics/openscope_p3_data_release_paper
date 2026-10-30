@@ -59,6 +59,60 @@ html[data-theme="dark"] .manuscript-wip-inline {
 
 #fig-graphical-abstract {
   grid-column: body-outset-start / body-outset-end;
+  width: 100%;
+  container-type: inline-size;
+}
+
+#fig-graphical-abstract .relative.inline-block {
+  height: calc(44.51cqw + 72px);
+  padding-bottom: 0 !important;
+}
+
+#fig-recording-session-inventory,
+#fig-behavior-tracking,
+#fig-supp-wavemap,
+#fig-ecephys-qc-dashboard,
+#fig-supp-optotagging-anatomy {
+  grid-column: screen-start / screen-end;
+  justify-self: center;
+  width: 100%;
+  max-width: 1200px;
+}
+
+#fig-recording-session-inventory > figcaption,
+#fig-behavior-tracking > figcaption,
+#fig-supp-wavemap > figcaption,
+#fig-ecephys-qc-dashboard > figcaption,
+#fig-supp-optotagging-anatomy > figcaption {
+  max-width: 80ch;
+  margin-inline: auto;
+}
+
+#fig-supp-neuropixels-implant-trajectories {
+  width: 100%;
+  max-width: 1800px;
+  container-type: inline-size;
+}
+
+#fig-supp-neuropixels-implant-trajectories .relative.inline-block {
+  height: calc(38.24cqw + 80px);
+  padding-bottom: 0 !important;
+}
+
+#fig-supp-wavemap,
+#fig-supp-optotagging-anatomy {
+  width: 100%;
+  container-type: inline-size;
+}
+
+#fig-supp-wavemap .relative.inline-block {
+  height: calc(59.10cqw + 80px);
+  padding-bottom: 0 !important;
+}
+
+#fig-supp-optotagging-anatomy .relative.inline-block {
+  height: calc(71.22cqw + 80px);
+  padding-bottom: 0 !important;
 }
 
 #fig-supp-eye-tracking .relative.inline-block {
@@ -609,4 +663,12 @@ article table.table-laser-power td:first-child {
   #fig-behavior-tracking .relative.inline-block {
     height: 1080px;
   }
+}
+
+#fig-aligned-neural-signals .relative.inline-block {
+  height: calc(126.87cqw + 80px);
+}
+
+#fig-behavior-tracking .relative.inline-block {
+  height: calc(77.23cqw + 80px);
 }

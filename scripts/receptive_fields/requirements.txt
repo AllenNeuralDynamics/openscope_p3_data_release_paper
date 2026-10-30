@@ -1,0 +1,17 @@
+# Dependencies of the receptive-field pipeline (not of the publication build).
+# Use with: uv run --with-requirements scripts/receptive_fields/requirements.txt python <script>
+#
+# waven from its allen_open_scope branch, the version used for this analysis.
+waven0.1 @ git+https://github.com/RaabeM/waven.git@allen_open_scope
+dandi
+h5py
+numpy
+oasis-deconv
+pandas
+pynwb
+quantities
+remfile
+requests
+scipy
+torch
+tqdm

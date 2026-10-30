@@ -56,6 +56,35 @@ Every figure needs:
 
 Do not commit NWB files or other large primary datasets. Cite a versioned DANDI asset or project S3 asset and record its URL, path, version or DOI, retrieval date, and any required checksum.
 
+Publication SVG text uses Arial (with a sans-serif fallback). Panel letters are bold
+(weight 700), 9 pt at the native PDF's final size: 170 mm wide, proportionally reduced
+when the 205 mm height limit applies. Owning generators apply the shared
+[`figure_typography.py`](src/openscope_p3_publication/figure_typography.py) normalizer
+after composition, including embedded SVGs and math tspans. Mark panel letters explicitly
+with a `panel-label` class or a `panel-label-X` group ID; do not resize anatomical
+direction markers. Matplotlib retains its portable layout metrics; editable SVG text
+is normalized without requiring Arial font files in the build environment.
+
+Mesoscope Figure 4 uses the same editable Arial typography and A–I lettering.
+`build-publication-figures` renders its one-FOV layout directly from the
+checksummed cohort table and example payload, preserving the original classes
+and all cohort summaries. Only the dense cohort scatter is rasterized; plot
+text and axes remain editable. Its original B/F/J raster snapshots remain
+archival references. Reproduce those legacy panels and their stacked composite
+in a scratch directory with:
+
+```bash
+uv run python scripts/build_mesoscope_unit_extraction_panels.py \
+  --cohort figure_sources/data/mesoscope-unit-extraction-roi-metrics.csv.gz \
+  --payload figure_sources/data/mesoscope-unit-extraction-example-session.json \
+  --out-dir _build/mesoscope-reproduction
+```
+
+Compare decoded panel pixels rather than PNG file bytes: Matplotlib embeds its
+version in the PNG metadata. Do not refresh committed images or provenance merely
+to change that metadata. Text baked into imported raster artwork is not rewritten
+by the shared SVG typography normalizer.
+
 ## Repository health and binary files
 
 This repository intentionally versions small binary sources needed to edit and reproduce the manuscript, including Illustrator, PowerPoint, Word, image, and short media files. Git history is effectively permanent: deleting a large file in a later commit does not recover the space, and each revision of a binary may add nearly the file's full size again.

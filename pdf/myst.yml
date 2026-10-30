@@ -1,0 +1,16 @@
+version: 1
+project:
+  title: OpenScope Predictive Processing Community Project - Data Release
+  bibliography:
+    - ../references.bib
+  toc:
+    - file: ../index.md
+  plugins:
+    - https://github.com/AllenNeuralDynamics/AuthorshipExtractor/releases/latest/download/authorship-plugin.mjs
+    - ./print.mjs
+  exports:
+    - format: typst
+      template: ./template
+      output: ../_build/exports/openscope-p3.pdf
+      articles:
+        - ../index.md

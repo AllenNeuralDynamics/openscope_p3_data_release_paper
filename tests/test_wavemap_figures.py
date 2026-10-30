@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfFile
 from matplotlib.figure import Figure
 from matplotlib.path import Path as PlotPath
@@ -29,6 +30,11 @@ from openscope_p3_publication.wavemap_publication_figures import (
     _canonical_png,
     _CanonicalPdfFile,
     _CanonicalPdfPages,
+    _plot_region_embedding,
+    _plot_region_waveforms,
+    build_cell_type_static_figures,
+    build_context_figure,
+    build_regional_waveform_figure,
     build_wavemap_static_figures,
 )
 
@@ -99,12 +105,12 @@ def test_wavemap_time_axis_requires_recorded_rate(snapshot: dict) -> None:
 
 def test_wavemap_complements_optotagging_as_a_main_figure() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
-    assert manuscript.count(":label: fig-supp-wavemap") == 1
-    assert "[Figure 11](#fig-supp-wavemap)" in manuscript
+    assert manuscript.count(":label: fig-supp-wavemap\n") == 1
+    assert "[Figure 8](#fig-supp-wavemap)" in manuscript
     assert ":label: fig-supp-wavemap\n:width: 100%" in manuscript
-    assert ":placeholder: ./images/figures/generated/supplementary-wavemap.svg" in manuscript
+    assert ":placeholder: ./images/figures/generated/cell-type-characterization.svg" in manuscript
     assert ":label: fig-unit-extraction-plan" in manuscript
-    assert ":label: fig-supp-optotagging-heatmaps" in manuscript
+    assert "(fig-supp-optotagging-heatmaps)=" in manuscript
     assert "waveform sample index" in manuscript
     assert "22,878 QC-selected units" in manuscript
     assert "15,155 displayed units" in manuscript
@@ -196,6 +202,278 @@ def test_wavemap_pdf_image_compression_is_canonical_and_lossless(tmp_path: Path)
     for reference in images:
         stream = reference.get_object()
         assert stream._data == zlib.compress(zlib.decompress(stream._data))
+
+
+def test_visual_cortex_plots_reuse_saved_coordinates_and_waveforms(snapshot: dict) -> None:
+    figure, (embedding, waveform) = plt.subplots(1, 2)
+    try:
+        _plot_region_embedding(embedding, snapshot, "VIS")
+        _plot_region_waveforms(waveform, snapshot, "VIS")
+        units = snapshot["units_df"]
+        selected = (units["wavemap_group"] == "VIS") & (units["wavemap_local"] > 0)
+        classes = sorted(units.loc[selected, "wavemap_local"].astype(int).unique())
+        assert len(embedding.collections) == len(classes)
+        for collection, line, local in zip(
+            embedding.collections, waveform.lines, classes, strict=False
+        ):
+            mask = selected & (units["wavemap_local"] == local)
+            np.testing.assert_array_equal(
+                collection.get_offsets(), units.loc[mask, ["umap_x", "umap_y"]].to_numpy()
+            )
+            np.testing.assert_array_equal(line.get_ydata(), snapshot["normWFs"][mask].mean(axis=0))
+            np.testing.assert_array_equal(line.get_xdata(), np.arange(210))
+        assert waveform.get_xlabel() == "Waveform sample"
+    finally:
+        plt.close(figure)
+
+
+def test_main_waveform_legend_clears_the_axis_label(tmp_path, snapshot, monkeypatch) -> None:
+    from openscope_p3_publication import wavemap_publication_figures as figures
+
+    def check_layout(figure, name, output_dir):
+        figure.canvas.draw()
+        renderer = figure.canvas.get_renderer()
+        axes = {axis.get_gid(): axis for axis in figure.axes if axis.get_gid()}
+        waveform = axes["panel-A-visual-cortex-waveforms"]
+        legend = axes["panel-A-waveform-legend"].get_legend()
+        label_box = waveform.xaxis.label.get_window_extent(renderer)
+        legend_box = legend.get_window_extent(renderer)
+        assert label_box.y0 >= legend_box.y1 + 6
+        plt.close(figure)
+        return output_dir / f"{name}.png", output_dir / f"{name}.pdf"
+
+    monkeypatch.setattr(figures, "_save", check_layout)
+    figures.build_unified_cell_type_figure(snapshot, tmp_path)
+
+
+@pytest.mark.parametrize("standalone", [False, True])
+def test_context_panel_letters_match_publication_scale(
+    tmp_path, snapshot, monkeypatch, standalone
+) -> None:
+    from openscope_p3_publication import wavemap_publication_figures as figures
+
+    def check_labels(figure, name, output_dir, pages):
+        labels = {text.get_text(): text for text in figure.texts}
+        letters = ("A", "B") if standalone else ("D1", "D2")
+        expected_size = 16 if standalone else 9
+        assert all(labels[letter].get_fontsize() == expected_size for letter in letters)
+        assert all(labels[letter].get_fontweight() == "bold" for letter in letters)
+        if standalone:
+            assert expected_size * 1200 / (figure.get_figwidth() * 72) >= 20
+            assert labels["A"].get_position()[0] < labels["B"].get_position()[0]
+            figure.canvas.draw()
+            renderer = figure.canvas.get_renderer()
+            plot_top = max(axis.get_window_extent(renderer).y1 for axis in figure.axes[:12])
+            assert min(labels[letter].get_window_extent(renderer).y0 for letter in letters) > (
+                plot_top
+            )
+        plt.close(figure)
+        return output_dir / f"{name}.png", output_dir / f"{name}.pdf"
+
+    monkeypatch.setattr(figures, "_save", check_labels)
+    build_context_figure(snapshot, tmp_path, standalone=standalone)
+
+
+def test_cell_type_split_keeps_main_and_supplementary_content_distinct(
+    tmp_path: Path, snapshot: dict
+) -> None:
+    outputs = build_cell_type_static_figures(snapshot, tmp_path)
+    assert len(outputs) == 20
+    main = ET.parse(tmp_path / "cell-type-characterization.svg").getroot()
+    assert main.attrib["data-region"] == "VIS"
+    assert main.attrib["data-regions"] == "MO PFC VIS STR HPC THAL"
+    assert main.attrib["data-unified-renderer"] == "true"
+    assert (tmp_path / "cell-type-characterization.svg").stat().st_size < 8 * 1024 * 1024
+    canvas_width = float(main.get("viewBox").split()[2])
+    canvas_height = float(main.get("viewBox").split()[3])
+    assert canvas_height / canvas_width < 0.6
+    text_sizes = [float(element.get("font-size")) * 1200 / canvas_width
+                  for element in main.iter("{http://www.w3.org/2000/svg}text")
+                  if element.get("font-size")]
+    assert min(text_sizes) >= 12
+    namespace = "{http://www.w3.org/2000/svg}"
+    for group in ("MO", "PFC", "VIS", "STR", "HPC", "THAL"):
+        assert main.find(f".//{namespace}g[@id='panel-B-{group}']") is not None
+    assert main.find(f".//{namespace}g[@id='panel-A-visual-cortex-waveforms']") is not None
+    panel_ids = [element.get("id") for element in main.iter(f"{namespace}g")
+                 if element.get("id", "").startswith("panel-")]
+    assert panel_ids[0] == "panel-A-visual-cortex-waveforms"
+    panel_letters = [main.find(f".//{namespace}g[@id='panel-label-{letter}']/{namespace}text")
+                     for letter in "ABCDE"]
+    assert float(panel_letters[0].get("x")) < float(panel_letters[1].get("x"))
+    assert len({letter.get("font-size") for letter in panel_letters}) == 1
+    assert {letter.get("font-family") for letter in panel_letters} == {
+        "Arial, sans-serif"
+    }
+    assert "A shows the enlarged visual-cortex mean waveforms first" in main.findtext(
+        "{http://www.w3.org/2000/svg}desc"
+    )
+    assert "B shows all six independently fitted regional maps" in main.findtext(
+        "{http://www.w3.org/2000/svg}desc"
+    )
+    main_text = PdfReader(tmp_path / "cell-type-characterization.pdf").pages[0].extract_text()
+    assert "5 Hz optotagging" not in main_text
+    assert "Optotagged-cell yield" not in main_text
+    assert "Visual cortex" in main_text
+    assert "community mean waveforms" in main_text
+    visual = PdfReader(tmp_path / "wavemap-visual-cortex.pdf").pages[0].extract_text()
+    for label in ("Visual cortex", "VIS community waveforms", "Putative FS/PV-like",
+                  "Optotagged SST", "SST and FS overlap", "Waveform sample"):
+        assert label in visual
+    regional = PdfReader(tmp_path / "wavemap-regional-waveforms.pdf").pages[0].extract_text()
+    for label in ("Motor cortex", "Prefrontal cortex", "Visual cortex", "Striatum",
+                  "Hippocampus", "Thalamus"):
+        assert label in regional
+    embeddings = PdfReader(tmp_path / "wavemap-regional-embeddings.pdf").pages[0].extract_text()
+    for label in ("Motor cortex", "Prefrontal cortex", "Visual cortex", "Striatum",
+                  "Hippocampus", "Thalamus"):
+        assert label in embeddings
+    composition = PdfReader(tmp_path / "wavemap-composition.pdf").pages[0].extract_text()
+    assert "D1" not in composition and "D2" not in composition
+    assert "Mean units per class (%)" in composition
+    assert (tmp_path / "supplementary-optotagging-anatomy.svg").is_file()
+    assert (tmp_path / "supplementary-wavemap-regions.svg").is_file()
+    assert (tmp_path / "supplementary-wavemap-composition.svg").is_file()
+    regional_root = ET.parse(tmp_path / "supplementary-wavemap-regions.svg")
+    assert len(regional_root.findall(".//{http://www.w3.org/2000/svg}image")) == 6
+    assert regional_root.findall(".//{http://www.w3.org/2000/svg}text")
+    validation_root = ET.parse(tmp_path / "supplementary-cell-type-validation.svg")
+    validation_box = [float(value) for value in validation_root.getroot().get("viewBox").split()]
+    assert validation_box[3] / validation_box[2] < 0.72
+    assert validation_root.find(
+        f".//{namespace}g[@id='panel-D-anatomical-yield-continued']"
+    ) is not None
+    print_panels = json.loads(validation_root.getroot().get("data-print-panels"))
+    assert [title for title, _ in print_panels] == ["A-B", "C-D", "E"]
+    panel_c_label = validation_root.find(f".//{namespace}g[@id='panel-label-C']/{namespace}text")
+    assert float(panel_c_label.get("y")) - float(panel_c_label.get("font-size")) >= (
+        print_panels[1][1][1]
+    )
+    panel_e_label = validation_root.find(f".//{namespace}g[@id='panel-label-E']/{namespace}text")
+    assert float(panel_e_label.get("y")) - float(panel_e_label.get("font-size")) >= (
+        print_panels[2][1][1]
+    )
+    panel_labels = [
+        validation_root.find(f".//{namespace}g[@id='panel-label-{letter}']/{namespace}text")
+        for letter in "ABCDE"
+    ]
+    points_per_unit = min(170 / validation_box[2], 205 / validation_box[3]) * 72 / 25.4
+    assert [float(label.get("font-size")) * points_per_unit
+            for label in panel_labels] == pytest.approx([9] * 5)
+    for column in ("putative_fs", "sst_optotagged", "sst_fs_overlap"):
+        for group in ("MO", "PFC", "VIS", "STR", "HPC", "THAL"):
+            assert validation_root.find(
+                f".//{namespace}g[@id='panel-E-{column}-{group}']"
+            ) is not None
+    validation_pdf = PdfReader(tmp_path / "supplementary-cell-type-validation.pdf")
+    validation_text = validation_pdf.pages[0].extract_text()
+    assert "Optotagged cells / session" in validation_text
+    assert "5 Hz optotagging control" in validation_text
+    assert "Overall optotagged-cell yield" in validation_text
+    assert "FS/PV-like" in validation_text
+    assert "SST" in validation_text
+    overlays = PdfReader(tmp_path / "wavemap-regional-overlays.pdf").pages[0].extract_text()
+    assert "FS/PV-like" in overlays and "Optotagged" in overlays
+
+
+@pytest.mark.parametrize(
+    ("stem", "publication"),
+    [
+        ("wavemap-regional-waveforms", "supplementary-wavemap-regions"),
+        ("wavemap-composition", "supplementary-wavemap-composition"),
+    ],
+)
+def test_vector_supplement_serialization_is_deterministic(
+    tmp_path: Path, stem: str, publication: str,
+) -> None:
+    import matplotlib.pyplot as plt
+
+    from openscope_p3_publication import wavemap_publication_figures as figures
+
+    def render() -> bytes:
+        figure, axis = plt.subplots(figsize=(1.5, 1.2))
+        axis.scatter([0, 1], [1, 0], rasterized=True)
+        figure.text(0.01, 0.95, "A", gid="panel-label-A")
+        figures._save(figure, stem, tmp_path)
+        path = tmp_path / f"{publication}.svg"
+        figures._image_svg(path, path, "Example", "Two measured points.")
+        return path.read_bytes()
+
+    assert render() == render()
+
+
+def test_supplement_maps_do_not_touch_axis_labels(tmp_path, snapshot, monkeypatch) -> None:
+    from openscope_p3_publication import wavemap_publication_figures as figures
+
+    def check_layout(figure, name, output_dir, pages=None):
+        figure.canvas.draw()
+        renderer = figure.canvas.get_renderer()
+        if name == "wavemap-regional-waveforms":
+            for index in range(0, len(figure.axes), 3):
+                embedding, waveform = figure.axes[index:index + 2]
+                label_box = waveform.yaxis.label.get_window_extent(renderer)
+                assert label_box.x0 >= embedding.get_window_extent(renderer).x1 + 6
+        else:
+            heatmaps = [axis for axis in figure.axes if axis.images]
+            for index, axis in enumerate(heatmaps):
+                labels = [label.get_window_extent(renderer) for label in axis.get_yticklabels()]
+                assert all(label.x1 <= axis.get_window_extent(renderer).x0 - 4 for label in labels)
+                if index % 3:
+                    previous = heatmaps[index - 1].get_window_extent(renderer)
+                    assert all(label.x0 >= previous.x1 + 4 for label in labels)
+        plt.close(figure)
+        return output_dir / f"{name}.png", output_dir / f"{name}.pdf"
+
+    monkeypatch.setattr(figures, "_save", check_layout)
+    figures.build_regional_waveform_figure(snapshot, tmp_path)
+    figures.build_context_figure(snapshot, tmp_path, standalone=True)
+
+
+def test_regional_waveforms_are_compact_with_aligned_panel_letters(
+    tmp_path: Path, snapshot: dict
+) -> None:
+    png, pdf = build_regional_waveform_figure(snapshot, tmp_path)
+    with Image.open(png) as image:
+        assert image.height / image.width < 0.65
+    labels = {}
+    legend_positions = {}
+
+    def collect(text, current_matrix, text_matrix, font, size):
+        position = (current_matrix[4] + text_matrix[4], current_matrix[5] + text_matrix[5])
+        if text.strip() in set("ABCDEF"):
+            labels[text.strip()] = position
+        for group in ("MO", "PFC", "VIS", "STR", "HPC", "THAL"):
+            if text.strip().startswith(group + "-"):
+                legend_positions.setdefault(group, []).append(position)
+
+    PdfReader(pdf).pages[0].extract_text(visitor_text=collect)
+    assert set(labels) == set("ABCDEF")
+    for left, right in (("A", "B"), ("C", "D"), ("E", "F")):
+        assert labels[left][1] == pytest.approx(labels[right][1], abs=0.1)
+    assert len({round(labels[letter][0], 1) for letter in "ACE"}) == 1
+    assert len({round(labels[letter][0], 1) for letter in "BDF"}) == 1
+    for letter, group in zip("ABCDEF", ("MO", "PFC", "VIS", "STR", "HPC", "THAL"), strict=True):
+        assert legend_positions[group]
+        assert min(position[0] for position in legend_positions[group]) > labels[letter][0] + 150
+
+
+def test_composition_panels_are_side_by_side(tmp_path: Path, snapshot: dict) -> None:
+    png, pdf = build_context_figure(snapshot, tmp_path, standalone=True)
+    with Image.open(png) as image:
+        assert image.width > image.height * 1.3
+    labels = {}
+
+    def collect(text, current_matrix, text_matrix, font, size):
+        if text.strip() in {"A", "B"}:
+            labels[text.strip()] = (current_matrix[4] + text_matrix[4],
+                                    current_matrix[5] + text_matrix[5])
+
+    page = PdfReader(pdf).pages[0]
+    text = page.extract_text(visitor_text=collect)
+    assert labels["B"][0] > labels["A"][0] + 250
+    assert labels["A"][1] == pytest.approx(labels["B"][1], abs=2)
+    assert "Mean units per class (%)" in text
+    assert "enrichment" in text
 
 
 def test_wavemap_static_supplement_is_complete_and_deterministic(

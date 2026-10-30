@@ -1,0 +1,13 @@
+jtex: v1
+kind: typst
+title: OpenScope Data Release Preprint
+description: A single-column, print-only template for the OpenScope data release.
+version: 1.0.0
+template: template.typ
+files:
+  - print.typ
+doc:
+  - id: title
+    required: true
+  - id: authors
+  - id: affiliations

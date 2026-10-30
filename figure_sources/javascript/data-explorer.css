@@ -77,7 +77,7 @@ html.is-embedded .explorer { min-height: 0; }
 .static-shell svg,
 .static-shell img {
   width: 100%;
-  min-width: 900px;
+  min-width: 0;
   height: auto;
   display: block;
 }
@@ -89,9 +89,8 @@ html.is-embedded .explorer { min-height: 0; }
 
 .inventory-view .static-shell svg,
 .static-view .static-shell img {
-  width: calc(100% / 0.95);
-  max-width: none;
-  transform: translateX(-2.5%);
+  width: 100%;
+  max-width: 100%;
 }
 
 .static-shell .session-qc-outline,

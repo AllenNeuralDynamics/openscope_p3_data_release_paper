@@ -177,19 +177,24 @@ def build_wavemap_publication(output_root: Path = REPO_ROOT) -> tuple[Path, ...]
         load_figure_stylesheet,
     )
     from openscope_p3_publication.wavemap_publication_figures import (
+        build_cell_type_static_figures,
         build_wavemap_static_figures,
     )
 
     snapshot = load_wavemap_snapshot()
     with mpl.rc_context():
-        static = build_wavemap_static_figures(snapshot, output_root / "images/figures/generated")
+        static_dir = output_root / "images/figures/generated"
+        static = (
+            *build_wavemap_static_figures(snapshot, static_dir),
+            *build_cell_type_static_figures(snapshot, static_dir),
+        )
         explorers = build_wavemap_figures(output_root=output_root, snapshot=snapshot)
     interactive_dir = output_root / "interactive"
     media_dir = interactive_dir / "media/wavemap"
     media_dir.mkdir(parents=True, exist_ok=True)
     pdf = next(path for path in static if path.name == "supplementary-wavemap.pdf")
     shutil.copyfile(pdf, media_dir / pdf.name)
-    svg = next(path for path in static if path.suffix == ".svg")
+    svg = next(path for path in static if path.name == "cell-type-characterization.svg")
     sources = REPO_ROOT / "figure_sources/javascript"
     html = (sources / "wavemap-supplement.html").read_text(encoding="utf-8")
     html = (

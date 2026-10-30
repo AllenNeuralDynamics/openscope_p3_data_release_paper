@@ -1,0 +1,503 @@
+{
+  "description": "Receptive-field figure intermediate: example Zebra and Gabor maps, significance overlap and Gaussian-fit summaries for one session per modality.",
+  "generator": "scripts/extract_receptive_fields.py",
+  "retrieved": "2026-10-29",
+  "pipeline": {
+    "code": "scripts/receptive_fields/",
+    "requirements": "scripts/receptive_fields/requirements.txt",
+    "waven": {
+      "repository": "https://github.com/RaabeM/waven",
+      "branch": "allen_open_scope"
+    }
+  },
+  "results": {
+    "url": null,
+    "layout": "figure_sources/data/receptive-fields/README.md",
+    "inputs": [
+      {
+        "path": "ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/unit_areas.csv",
+        "bytes": 329725,
+        "sha256": "66eca711e94445e402ea9b884f9aec22276f23cda12cad5d479c0f92a6c1068d"
+      },
+      {
+        "path": "gabors/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys__rf-spike-count__ProbeA__optimized.h5",
+        "bytes": 1215389,
+        "sha256": "aa2ecc0ccb9afceef14bce0cb07a064f8c3a257c43e6fc12b572e074c297c930"
+      },
+      {
+        "path": "gabors/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys__rf-spike-count__ProbeB__optimized.h5",
+        "bytes": 983265,
+        "sha256": "53b3290b3a3481c146ebb418a2ac13bc88ae38a24768f74f1efec3acc8f1cf48"
+      },
+      {
+        "path": "gabors/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys__rf-spike-count__ProbeC__optimized.h5",
+        "bytes": 1482075,
+        "sha256": "982ad84c1693e6689c0b421c8ffec16a6e661fc7c23cd39c7e8dfcacaaf1d6f9"
+      },
+      {
+        "path": "gabors/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys__rf-spike-count__ProbeD__optimized.h5",
+        "bytes": 1318869,
+        "sha256": "428c83f15332f6863c2cd58c57b0a6d8d5a3dab4dc96f02acfc3c085661b334e"
+      },
+      {
+        "path": "gabors/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys__rf-spike-count__ProbeE__optimized.h5",
+        "bytes": 1238536,
+        "sha256": "7050ee42b0d59bac4567139a24533e8c13b4c77a567f17c159d0a36aab682c71"
+      },
+      {
+        "path": "gabors/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys__rf-spike-count__ProbeF__optimized.h5",
+        "bytes": 1467749,
+        "sha256": "53f732601752ec3495b0a5ebd24eedea926d06bd03dabb8eafb2c745c18cec31"
+      },
+      {
+        "path": "gabors/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__rf-events__VISl_4__optimized.h5",
+        "bytes": 394684,
+        "sha256": "a52c59faf662ea589f9be1a2b03c8b4466deddb2eb019c6cd8980ee755ed3810"
+      },
+      {
+        "path": "gabors/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__rf-events__VISl_5__optimized.h5",
+        "bytes": 746147,
+        "sha256": "692668706f05cb5108d68957b337cdd618581d14fda5662b43c84d83ca5422af"
+      },
+      {
+        "path": "gabors/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__rf-events__VISl_6__optimized.h5",
+        "bytes": 157690,
+        "sha256": "dcc490bb457a72b3570ef708fee7ea695d63308c64dd4f8402a535c407dfa825"
+      },
+      {
+        "path": "gabors/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__rf-events__VISl_7__optimized.h5",
+        "bytes": 604957,
+        "sha256": "04baf0d8d34679e202a294362d2db230059d5befe333478833f024b6bf61c85f"
+      },
+      {
+        "path": "gabors/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__rf-events__VISp_0__optimized.h5",
+        "bytes": 471851,
+        "sha256": "a95bf341bf6d863291bc220ebb0c6ae9f9dcdf0a9e21c331d4533e0b6b6694a2"
+      },
+      {
+        "path": "gabors/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__rf-events__VISp_1__optimized.h5",
+        "bytes": 917588,
+        "sha256": "62eee6c20218a1b68845de00a2e138d1f1feef0a63148a9a2cf8ce2527f3f3a0"
+      },
+      {
+        "path": "gabors/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__rf-events__VISp_2__optimized.h5",
+        "bytes": 113129,
+        "sha256": "23d3b49b5e3a0ce194534d7210857bc00ed81bc50d94062515e057fa15012351"
+      },
+      {
+        "path": "gabors/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__rf-events__VISp_3__optimized.h5",
+        "bytes": 506341,
+        "sha256": "db27ef7d99ea2edb4737c7807b92308599d287d5c9440aab31f8707758a34dab"
+      },
+      {
+        "path": "gabors/slap2/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys/events/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys__rf-events-green__DMD1__optimized.h5",
+        "bytes": 218388,
+        "sha256": "56b8869239eee45456170a3e75faa507804a4c0a8233dae2f12b5de43565ccb0"
+      },
+      {
+        "path": "gabors/slap2/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys/events/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys__rf-events-green__DMD2__optimized.h5",
+        "bytes": 310255,
+        "sha256": "d392577453c3a15fb2b3e9c9d7dca47ae8b6a144a3a794f5f8f7e459daa6b88e"
+      },
+      {
+        "path": "zebra/nullresults/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/ProbeA/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 22889318,
+        "sha256": "543f0d7a2cad9967cd501e14a4ce1014acff9750050f4a96c45642a48b0789f8"
+      },
+      {
+        "path": "zebra/nullresults/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/ProbeB/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 18077768,
+        "sha256": "a71be77996f11d07ea2c97916c41dec96af2c6a5c06afec67b075cac30133b6a"
+      },
+      {
+        "path": "zebra/nullresults/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/ProbeC/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 26047159,
+        "sha256": "3273d1cfa4762a7ed171d4da52e33b89e8e5e2295f75d7c69dc6e238ecdafc65"
+      },
+      {
+        "path": "zebra/nullresults/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/ProbeD/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 24858541,
+        "sha256": "1a5f70feb0b0236695d9e1f685650b3bd0efbeeb86bcd7a32689e9b9e5ba2184"
+      },
+      {
+        "path": "zebra/nullresults/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/ProbeE/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 26709949,
+        "sha256": "05eb889a6ec55e925694f9f2c36f18c2d99a9d8d825c3e1002f127ad6104016e"
+      },
+      {
+        "path": "zebra/nullresults/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/ProbeF/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 29060863,
+        "sha256": "f13f114d6b919a692d1956469640db4680ea44ed3b8a5d19bfc538d87a8eb6be"
+      },
+      {
+        "path": "zebra/nullresults/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/VISl_4/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 15053401,
+        "sha256": "ea8bd6cb42bac1c473cbc5ee4bbbfc30da1735f40910bef3604f7a902af6d057"
+      },
+      {
+        "path": "zebra/nullresults/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/VISl_5/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 16604950,
+        "sha256": "a68b32da4c25fe632767c952b869af1ed328084825b1aa70de34f8ea6c0dc05c"
+      },
+      {
+        "path": "zebra/nullresults/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/VISl_6/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 5373792,
+        "sha256": "00b5b17a9e80765aa36795b30b2e896f8c9ce6f219dc4840fc3a14cc9df0676b"
+      },
+      {
+        "path": "zebra/nullresults/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/VISl_7/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 13551932,
+        "sha256": "b1ec927edb445e93b90e1f66149c243a396ca33303be7a86562897a81f660400"
+      },
+      {
+        "path": "zebra/nullresults/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/VISp_0/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 17836284,
+        "sha256": "1e69cee2f2ca37a656b0127484d2c460d642816ee3aabff86c60e5073a086ec4"
+      },
+      {
+        "path": "zebra/nullresults/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/VISp_1/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 22150640,
+        "sha256": "89a9923c26f74a1a0595b371630e12980c8595fdc86aec694fac521b08e5001c"
+      },
+      {
+        "path": "zebra/nullresults/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/VISp_2/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 2697004,
+        "sha256": "8610542bf109ddf82c252ef80ebd342b49675eafda53d75c8aa3a052b761c539"
+      },
+      {
+        "path": "zebra/nullresults/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/VISp_3/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 12584960,
+        "sha256": "6fcb1ec29ca48a9cb8f461db38b34edee45166feb1815ecb40ff658768e6beb5"
+      },
+      {
+        "path": "zebra/nullresults/slap2/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys/dff/DMD1/green/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 2168877,
+        "sha256": "9123babc448fae222ff783777c9a00cdc29098eb48df0a42a8d5ad30eba0b621"
+      },
+      {
+        "path": "zebra/nullresults/slap2/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys/dff/DMD1/red/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 2175895,
+        "sha256": "4403445599690e7af355705409ca6ce6d07df97c8bbb1a57456cf80f3f77ec5c"
+      },
+      {
+        "path": "zebra/nullresults/slap2/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys/dff/DMD2/green/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 3233966,
+        "sha256": "9c65dcd615d7783b6762dd1137ecd3eebddbfb26e528ba8d75a049aed299f846"
+      },
+      {
+        "path": "zebra/nullresults/slap2/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys/dff/DMD2/red/pooled_trials/phase_0/lib_0c638217c1/null__lib_0c638217c1.h5",
+        "bytes": 3239844,
+        "sha256": "21aa2b106289ffe0b2b5fb02e0d85d8fa01e6acf7edea76ae35ab44f46821892"
+      },
+      {
+        "path": "zebra/optimized/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/optimized__sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys__ProbeA__pooled_trials__phase_0.h5",
+        "bytes": 4507064,
+        "sha256": "4cc0ff254a26e265afc27d84deddcbf35d75a9a9e9e0bee8946e56bfc9322a0d"
+      },
+      {
+        "path": "zebra/optimized/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/optimized__sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys__ProbeB__pooled_trials__phase_0.h5",
+        "bytes": 3525186,
+        "sha256": "bdf3a92614f111e451c8cbe9ce7497e14754fbe1e3980ee5e8d5f5c2bbe4b973"
+      },
+      {
+        "path": "zebra/optimized/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/optimized__sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys__ProbeC__pooled_trials__phase_0.h5",
+        "bytes": 4724382,
+        "sha256": "dbb7f62f9095ff59295a63e1781091171b68030ecff66964bebe07624fb6c28b"
+      },
+      {
+        "path": "zebra/optimized/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/optimized__sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys__ProbeD__pooled_trials__phase_0.h5",
+        "bytes": 4653968,
+        "sha256": "d5b0d367d20a7163099998931c1bfa30622b6c65a6832a9304700c2ac3a0300e"
+      },
+      {
+        "path": "zebra/optimized/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/optimized__sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys__ProbeE__pooled_trials__phase_0.h5",
+        "bytes": 5009965,
+        "sha256": "79400685076e311496e36ee214dc4ca0638dfd8ee87e1b5b1d50908edfa48c67"
+      },
+      {
+        "path": "zebra/optimized/ecephys/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys/spikes/optimized__sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys__ProbeF__pooled_trials__phase_0.h5",
+        "bytes": 5328217,
+        "sha256": "9fac54cf9e905d4c779e9cb13449ea09fc63249686c3312c5003a18ebdfa96db"
+      },
+      {
+        "path": "zebra/optimized/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/optimized__sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__VISl_4__pooled_trials__phase_0.h5",
+        "bytes": 2580501,
+        "sha256": "c01b203b08db21e5b4ee65f8780de3761fb3c962527e521d6164e5dd0146767d"
+      },
+      {
+        "path": "zebra/optimized/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/optimized__sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__VISl_5__pooled_trials__phase_0.h5",
+        "bytes": 2825562,
+        "sha256": "5c611b0090edf7ebf16df947894d884a54f26771ba141d133ccef9e918f90544"
+      },
+      {
+        "path": "zebra/optimized/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/optimized__sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__VISl_6__pooled_trials__phase_0.h5",
+        "bytes": 953820,
+        "sha256": "70a50b774a71a2e37f1c14c330faf1cc7ef0ac89dd93e7ff3e4453412a09530f"
+      },
+      {
+        "path": "zebra/optimized/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/optimized__sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__VISl_7__pooled_trials__phase_0.h5",
+        "bytes": 2306904,
+        "sha256": "ad8b7ef44f1b93ecc424cd4eccc0d6092a2319a7f46420f86da7a8a170721fae"
+      },
+      {
+        "path": "zebra/optimized/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/optimized__sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__VISp_0__pooled_trials__phase_0.h5",
+        "bytes": 3022433,
+        "sha256": "d12ab506e950fe7a8b48396398601dc0b0d761302c00e5793767fba3645e7ddb"
+      },
+      {
+        "path": "zebra/optimized/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/optimized__sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__VISp_1__pooled_trials__phase_0.h5",
+        "bytes": 3727527,
+        "sha256": "ab6ed12a3d7f52439b5697e9fb215c44fab0df036f0f5c2114260fb6dc0f9c0a"
+      },
+      {
+        "path": "zebra/optimized/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/optimized__sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__VISp_2__pooled_trials__phase_0.h5",
+        "bytes": 497384,
+        "sha256": "647931b75ae4723592657a3b1f1fe7c9cccec5c7d656ac95a042c8d6cf51b27d"
+      },
+      {
+        "path": "zebra/optimized/mesoscope/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys/events/optimized__sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys__VISp_3__pooled_trials__phase_0.h5",
+        "bytes": 2137685,
+        "sha256": "2afcb6268de261c0cf44111fb6d240c994cc0f22238fa509f62b5c514aae9acd"
+      },
+      {
+        "path": "zebra/optimized/slap2/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys/dff/optimized__sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys__DMD1__green__pooled_trials__phase_0.h5",
+        "bytes": 375260,
+        "sha256": "38e955af8cb970ec3ce9e106be6a83cdec4a32b4ca3a845fe2a45cd8b2298b46"
+      },
+      {
+        "path": "zebra/optimized/slap2/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys/dff/optimized__sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys__DMD1__red__pooled_trials__phase_0.h5",
+        "bytes": 375918,
+        "sha256": "d5f506599aa0dbf2db2eadb9e6e233db24fa16b3d6515d2448e9e6ae650b2e0f"
+      },
+      {
+        "path": "zebra/optimized/slap2/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys/dff/optimized__sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys__DMD2__green__pooled_trials__phase_0.h5",
+        "bytes": 566936,
+        "sha256": "e6953a1545273cd936b5a9978efc0ce88fe216213e3cef317491a4e49231508f"
+      },
+      {
+        "path": "zebra/optimized/slap2/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys/dff/optimized__sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys__DMD2__red__pooled_trials__phase_0.h5",
+        "bytes": 567911,
+        "sha256": "fe2c6bde3fde9a6a34faab69fe2dbdc9dce5b67228bc42cb36a492dcb40255a6"
+      }
+    ]
+  },
+  "sessions": {
+    "ecephys": {
+      "session": "sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys",
+      "dandiset": "001637",
+      "asset_path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-26-12-02-05_ecephys.nwb",
+      "zebra_signal": "spikes",
+      "gabor_signal": "spikes",
+      "channel": null,
+      "zebra_library_ids": [
+        "0c638217c1"
+      ]
+    },
+    "mesoscope": {
+      "session": "sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys",
+      "dandiset": "001768",
+      "asset_path": "sub-832700/sub-832700_ses-multiplane-ophys-832700-2026-01-24-12-06-12_ophys.nwb",
+      "zebra_signal": "events",
+      "gabor_signal": "events",
+      "channel": null,
+      "zebra_library_ids": [
+        "0c638217c1"
+      ]
+    },
+    "slap2": {
+      "session": "sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys",
+      "dandiset": "001424",
+      "asset_path": "sub-829704/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys.nwb",
+      "zebra_signal": "dff",
+      "gabor_signal": "events",
+      "channel": "green",
+      "zebra_library_ids": [
+        "0c638217c1"
+      ]
+    }
+  },
+  "stimulus": {
+    "movie_url": "https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/raw/9f4d70abe948940c1c8f7ad76a41eb33181fc962/code/stimulus-control/src/Mindscope/movies/zebra_allen_screen_tscale_30_scale_10.mp4",
+    "movie_sha256": "3ee4d88356dba7220eb67e53f7d117400932f3adf95132d6301fe212ff7cf899",
+    "zebra_frame_index": 1000,
+    "zebra_frame_downsample": 4,
+    "gabor_patch": {
+      "x_deg": -20.0,
+      "y_deg": -20.0,
+      "orientation_rad": 0.7853981633974483,
+      "spatial_frequency_cpd": 0.08,
+      "diameter_deg": 20.0,
+      "contrast": 0.8
+    }
+  },
+  "parameters": {
+    "q_level": 0.05,
+    "zebra_test": "Gumbel fit (method of moments) to the surrogate maxima of the sweep-wide maximum |r|; Benjamini-Hochberg over the session (ecephys, mesoscope) or per DMD x channel (SLAP2)",
+    "gabor_test": "unit-level Gumbel p-value after the search over windows and orientations (compute_gabor_unit_significance.py), Benjamini-Hochberg q in p_value_bh",
+    "untested_units": "p = q = 1 on the untested stimulus",
+    "zebra_block": "pooled_trials",
+    "phase": 0,
+    "gabor_centre_limit_deg": 40.0,
+    "bootstrap_resamples": 2000,
+    "permutations": 10000,
+    "random_seed": 0,
+    "example_rank": {
+      "ecephys": 2,
+      "mesoscope": 1,
+      "slap2": 1
+    }
+  },
+  "environment": {
+    "python": "3.12.3",
+    "numpy": "2.5.2",
+    "scipy": "1.18.1",
+    "pandas": "2.3.3",
+    "h5py": "3.16.0",
+    "opencv-python-headless": "5.0.0.93"
+  },
+  "counts": {
+    "ecephys": {
+      "structures": {
+        "V1": {
+          "units": 240,
+          "neither": 37,
+          "zebra_only": 40,
+          "gabor_only": 42,
+          "both": 121,
+          "gabor_fits": 163,
+          "zebra_fits": 161
+        },
+        "LM": {
+          "units": 151,
+          "neither": 42,
+          "zebra_only": 15,
+          "gabor_only": 45,
+          "both": 49,
+          "gabor_fits": 94,
+          "zebra_fits": 64
+        }
+      },
+      "excluded_gabor_fit_or_centre": {
+        "VISl": 5,
+        "VISp": 10
+      },
+      "example_units": [
+        {
+          "selection": "both",
+          "group": "ProbeC",
+          "unit_id": "e18e5fab-43f6-453e-b5c6-4f9480d79656",
+          "eligible": 25
+        },
+        {
+          "selection": "gabor-only",
+          "group": "ProbeC",
+          "unit_id": "80deaf14-bd28-4807-842c-acae3c1498ed",
+          "eligible": 21
+        },
+        {
+          "selection": "zebra-only",
+          "group": "ProbeC",
+          "unit_id": "01cbb24a-d5e8-4b5e-a2e6-c76eba04affd",
+          "eligible": 12
+        }
+      ]
+    },
+    "mesoscope": {
+      "structures": {
+        "LM": {
+          "units": 1106,
+          "neither": 406,
+          "zebra_only": 127,
+          "gabor_only": 355,
+          "both": 218,
+          "gabor_fits": 573,
+          "zebra_fits": 345
+        },
+        "V1": {
+          "units": 1270,
+          "neither": 431,
+          "zebra_only": 308,
+          "gabor_only": 224,
+          "both": 307,
+          "gabor_fits": 531,
+          "zebra_fits": 615
+        }
+      },
+      "excluded_gabor_fit_or_centre": {
+        "VISl": 68,
+        "VISp": 14
+      },
+      "example_units": [
+        {
+          "selection": "both",
+          "group": "VISp_0",
+          "unit_id": "216",
+          "eligible": 64
+        },
+        {
+          "selection": "gabor-only",
+          "group": "VISp_0",
+          "unit_id": "124",
+          "eligible": 103
+        },
+        {
+          "selection": "zebra-only",
+          "group": "VISp_0",
+          "unit_id": "15",
+          "eligible": 75
+        }
+      ]
+    },
+    "slap2": {
+      "structures": {
+        "DMD1\n(apical)": {
+          "units": 49,
+          "neither": 26,
+          "zebra_only": 22,
+          "gabor_only": 0,
+          "both": 1,
+          "gabor_fits": 1,
+          "zebra_fits": 23
+        },
+        "DMD2\n(basal)": {
+          "units": 74,
+          "neither": 44,
+          "zebra_only": 30,
+          "gabor_only": 0,
+          "both": 0,
+          "gabor_fits": 0,
+          "zebra_fits": 30
+        }
+      },
+      "excluded_gabor_fit_or_centre": {
+        "DMD1\n(apical)": 1,
+        "DMD2\n(basal)": 1
+      },
+      "example_units": [
+        {
+          "selection": "both",
+          "group": "DMD1__green",
+          "unit_id": "43",
+          "eligible": 3
+        },
+        {
+          "selection": "gabor-only",
+          "group": "",
+          "unit_id": "",
+          "eligible": 0
+        },
+        {
+          "selection": "zebra-only",
+          "group": "DMD1__green",
+          "unit_id": "23",
+          "eligible": 52
+        }
+      ]
+    }
+  },
+  "output": {
+    "path": "figure_sources/data/receptive-fields/receptive-fields.h5",
+    "bytes": 1031336,
+    "sha256": "6ce2a3674647da108c1f4bd88212b4d5ad92a03871ae9ee08317e2de663c7610"
+  }
+}

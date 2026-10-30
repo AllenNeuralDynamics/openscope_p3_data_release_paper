@@ -14,6 +14,49 @@ myst start
 
 MyST prints the local preview URL, normally `http://localhost:3000`.
 
+## PDF preprint
+
+The PDF-only project in `pdf/` reads the same `index.md` and author snapshot as the
+website. It uses a local, single-column academic Typst template, expands Methods and
+glossary dropdowns, and supplies static figures and the complete literature table.
+The HTML configuration, interactive figures, scientific data, and manuscript text
+are not modified by PDF generation. Draft notices remain visible.
+
+Install Node.js and [Typst 0.15.1 or newer](https://github.com/typst/typst#installation),
+then run from the repository root:
+
+```bash
+uv sync --extra dev --extra pdf
+uv run --extra pdf build-publication-pdf
+```
+
+For a portable compiler outside `PATH`, add `--typst /path/to/typst` to the build
+command. MyST 1.10.1 is invoked through `npx`; its first run and the authorship
+plugin's first load require network access. No primary data are downloaded.
+
+The combined manuscript and supplement PDF is written to
+`_build/exports/openscope-p3.pdf`. The wrapper prepares only the literature-table
+manifest under `_build/pdf-assets/`, then invokes MyST's Typst exporter
+(`npx mystmd@1.10.1 build --typst --strict` from `pdf/`). Neither build directory
+is committed. Figures use MyST's native figure rendering and original static
+assets: no figure cropping, splitting, or raster preprocessing is performed.
+The export template scales images to the text width, preserving aspect ratio;
+images too tall for a portrait page are proportionally reduced to 205 mm high.
+Manuscript and figure pages use A4 portrait throughout; long legends can flow
+onto the next page.
+Main figures retain MyST's automatic caption numbers. Figures marked
+`enumerated: false`, including the supplements, retain their authored caption
+labels without an additional automatic "Figure" prefix; reference targets remain intact.
+This is a review/preprint export, not an assertion that the
+unfinished scientific sections or provisional authorship are ready for submission.
+
+The build fails on compiler warnings, missing critical content or author metadata,
+landscape pages, and text extending outside a page. Focused regression checks are available with:
+
+```bash
+uv run --extra dev --extra pdf pytest tests/test_pdf_export.py
+```
+
 ## Validate
 
 ```bash
@@ -24,6 +67,61 @@ myst build --html
 ```
 
 The GitHub Actions workflow runs the same checks and deploys the static site from `main`.
+
+### Figure 6 recorded diagnostic examples
+
+Panel A reads the compact, checksummed
+[`ecephys-unit-trace.json`](figure_sources/data/ecephys-unit-trace.json) snapshot:
+200 ms of native AP samples on the peak electrode of NWB unit 201, with ten
+assigned spikes, an ordinary ISI zoom, and a genuine refractory-violating pair
+from NWB unit 60 on its own peak electrode. This cluster passes the other signal
+gates but fails ISI QC. The snapshot also contains unit 201's saved
+mean template and noise level (SNR), plus measured 60 s median spike-location
+bins reproducing its saved `drift_ptp`. Missing drift bins remain gaps. Its
+[provenance](figure_sources/data/ecephys-unit-trace.provenance.json) records the
+NWB asset, raw AP store and chunk checksums, electrode mapping, calibration,
+sample intervals, selection rules, sorting-run metadata, and SpikeInterface
+analyzer version/parameters. Only ADC-to-µV conversion is applied to raw voltage;
+it is not interpolated, smoothed, or synthesized. The template/noise are separate
+preprocessing-matched analyzer measurements. A separate 500 ms real voltage
+excerpt replays the saved phase shift, high-pass filter and median reference.
+The noise band uses the saved estimate from twenty random 500 ms chunks
+(10 s total), not an estimate fitted to the displayed excerpt.
+The band spans plus/minus one saved same-channel noise level, not the full
+range of noise excursions.
+The original random sample positions were not saved. The figure crops a 20 ms window
+centered on the second assigned spike of the top raw trace, retaining all
+600 native samples. A baseline-to-trough arrow illustrates this event's
+amplitude over a light-gray noise band; the released SNR still uses the
+saved mean waveform, not this single event. Noise-sampling details and the
+numeric SNR are given only in the caption.
+Per-unit location drift is not the
+Kilosort 4 motion-correction estimate. Amplitude cutoff and presence ratio
+remain QC gates, without cartoons in panel A.
+
+The normal figure build reads this committed snapshot offline. To deliberately
+refresh it from the pinned public sources, install the optional readers in an
+isolated extraction environment and run:
+
+```bash
+uv run --with h5py --with remfile --with s3fs --with "zarr<3" --with wavpack-numcodecs --with "spikeinterface==0.103.0" python scripts/extract_ecephys_unit_trace.py
+uv run build-publication-figures
+```
+
+Review and commit the snapshot, provenance, and regenerated figures together.
+Panel G uses vector heatmap cells, and the compact layout is A / B–C–D / E–F–G.
+The measured drift example (E) precedes its population distribution (F).
+Its solid black segments preserve missing-bin gaps, and the drift-measurement
+label is beside the range arrow. Panel D identifies individual-mouse traces
+in its legend and leaves horizontal margins around session counts.
+Panels B, C and F omit gridlines.
+Vertical spacing is tightened without shrinking the plotting areas; F is wider
+than E, using the otherwise empty gap between them.
+Unit and recording identifiers belong in the caption, not plot titles.
+The consecutive-mismatch analysis remains available in its committed
+[snapshot](figure_sources/data/mismatch-adjacency.json) and
+[provenance](figure_sources/data/mismatch-adjacency.provenance.json); its
+publication summary is now in Limitations rather than a supplementary figure.
 
 ## Repository map
 

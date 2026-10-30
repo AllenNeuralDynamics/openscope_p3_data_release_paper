@@ -559,12 +559,14 @@ def svg_text(
     anchor: str = "start",
     fill: str = "#303536",
     transform: str | None = None,
+    panel: bool = False,
 ) -> str:
     transform_attribute = f' transform="{transform}"' if transform else ""
+    panel_attribute = ' class="panel-label"' if panel else ""
     return (
         f'<text x="{x:.2f}" y="{y:.2f}" text-anchor="{anchor}" '
         f'font-family="{FIGURE_SANS_FONT}" font-size="{size}" '
-        f'font-weight="{weight}" fill="{fill}"{transform_attribute}>'
+        f'font-weight="{weight}" fill="{fill}"{transform_attribute}{panel_attribute}>'
         f"{escape(text)}</text>"
     )
 
@@ -1488,7 +1490,7 @@ def write_neuropixels_event_svg(
             "</pattern></defs>"
         ),
         '<rect width="100%" height="100%" fill="#ffffff"/>',
-        svg_text(36, 52, "A", size=FIGURE_TYPE_SCALE["panel"], weight=800),
+        svg_text(36, 52, "A", size=FIGURE_TYPE_SCALE["panel"], weight=700, panel=True),
         svg_text(
             98,
             50,
@@ -1608,7 +1610,7 @@ def write_neuropixels_event_svg(
                 heatmap_top - 118,
                 "B",
                 size=FIGURE_TYPE_SCALE["panel"],
-                weight=800,
+                weight=700, panel=True,
             ),
             svg_text(
                 98,

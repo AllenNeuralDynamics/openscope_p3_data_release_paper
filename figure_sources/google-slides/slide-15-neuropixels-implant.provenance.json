@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "source_url": "https://docs.google.com/presentation/d/1AcIeGZM_OYsmshYT6lfQXNcyg2PRDKwzgfDtbkuSJ1o/edit?slide=id.g3d628d76e0d_0_0#slide=id.g3d628d76e0d_0_0",
   "export_url": "https://docs.google.com/presentation/d/1AcIeGZM_OYsmshYT6lfQXNcyg2PRDKwzgfDtbkuSJ1o/export/png?id=1AcIeGZM_OYsmshYT6lfQXNcyg2PRDKwzgfDtbkuSJ1o&pageid=g3d628d76e0d_0_0",
   "slide_id": "g3d628d76e0d_0_0",
@@ -8,5 +8,18 @@
   "sha256": "e705404cc2d3bef0cbe5f76aaeef89bdee619f996304552b137eb26761555f33",
   "width_px": 2500,
   "height_px": 1250,
-  "notes": "Source-quality PNG exported from the linked Google Slides implant panel."
+  "notes": "Full-slide PNG retained as the Methods coordinate-table reference. Supplementary Figure 1 uses the native embedded image below to avoid the slide export's downsampling.",
+  "native_image": {
+    "file": "slide-15-neuropixels-implant-native.png",
+    "export_url": "https://docs.google.com/presentation/d/1AcIeGZM_OYsmshYT6lfQXNcyg2PRDKwzgfDtbkuSJ1o/export/svg?id=1AcIeGZM_OYsmshYT6lfQXNcyg2PRDKwzgfDtbkuSJ1o&pageid=g3d628d76e0d_0_0",
+    "retrieved_date": "2026-10-29",
+    "svg_sha256": "ec427e0197997c50bb8119659cede7b0092121f466cac66bf63855aa76eb3301",
+    "sha256": "a140de0edfca359702e29c377506b0b162b8fbbda65b8477e52c12ae33935151",
+    "width_px": 2048,
+    "height_px": 1408,
+    "svg_view_box": [0, 0, 6803.149606299213, 3401.5748031496064],
+    "svg_image_transform": [2.313063779527559, 0, 0, 2.3130629921259844, 1095.8241469816273, 89.69923149606299],
+    "native_to_slide_transform": [0.8499973958333333, 0, 0, 0.8499971064814815, 402.6900077160494, 32.9623912037037],
+    "notes": "Byte-identical base64-decoded PNG from the SVG export's sole image element; no resampling, sharpening or synthesized detail. Transform maps native pixels into the retained 2500 x 1250 slide-coordinate crops, giving approximately 17.65 percent more linear source resolution."
+  }
 }

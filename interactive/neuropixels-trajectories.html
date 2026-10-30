@@ -412,8 +412,8 @@ input:focus-visible {
   .interactive-layout { min-height: 0; grid-template-columns: 1fr; }
   .scene-shell { height: min(70vh, 560px); min-height: 420px; }
   .profile-panel { min-height: 480px; border-top: 1px solid var(--line); border-left: 0; }
-  .static-view { min-height: 0; overflow-x: auto; }
-  .static-view img { width: 980px; max-width: none; }
+  .static-view { min-height: 0; overflow-x: hidden; }
+  .static-view img { width: 100%; max-width: 100%; }
   .source-strip { align-items: flex-start; flex-direction: column; }
 }
 
@@ -611,7 +611,7 @@ button.legend-toggle:focus-visible {
       </aside>
     </section>
     <section id="static-view" class="static-view">
-      <img src="media/neuropixels-trajectories/supplementary-neuropixels-trajectories.svg" alt="Semi-transparent, depth-shaded oblique and dorsal projections of all localized Neuropixels insertions on the Allen CCF whole-brain surface, with 2 millimeter scale bars">
+      <img src="media/neuropixels-trajectories/supplementary-neuropixels-implant-trajectories.svg" alt="Semi-transparent, depth-shaded oblique and dorsal projections of all localized Neuropixels insertions on the Allen CCF whole-brain surface, with 2 millimeter scale bars">
     </section>
     <footer class="source-strip">
       <span id="source-summary"></span>

@@ -15,13 +15,20 @@ from dataclasses import asdict, dataclass
 from html import escape
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from xml.etree import ElementTree
+
+from .figure_typography import FIGURE_FONT, normalize_figure_svg
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-FIGURE_SANS_FONT = "Myriad Pro, Arial, sans-serif"
-FIGURE_MONO_FONT = "IBM Plex Mono, monospace"
+FIGURE_SANS_FONT = FIGURE_FONT
+FIGURE_MONO_FONT = FIGURE_FONT
 FIGURE_REFERENCE_WIDTH = 1200
 FIGURE_TEXT_MARGIN = 8
 HARDWARE_DESCRIPTION_FONT_SIZE = 12
+NEURAL_LAYER_COLORS = {
+    "L1": "#8CC63F", "L2/3": "#CCE8F8", "L4": "#53A8DC", "L5": "#2B388D",
+}
+NEURAL_SLAP2_PLANE_COLORS = {"dmd1": "#8CC63F", "dmd2": "#C5E9FA"}
 FIGURE_TYPE_SCALE = {
     "panel": 34,
     "title": 28,
@@ -39,13 +46,21 @@ SESSION_TYPE_COLORS = {
 }
 
 
-def write_svg_output(output: Path, svg: list[str]) -> None:
+def write_svg_output(
+    output: Path, svg: list[str], *, publication_typography: bool = True,
+) -> None:
     content = "\n".join(svg)
-    for previous_font in (
+    previous_fonts = (
         "Source Sans 3, sans-serif",
         "IBM Plex Sans, sans-serif",
-    ):
-        content = content.replace(previous_font, FIGURE_SANS_FONT)
+    )
+    if publication_typography:
+        previous_fonts += ("Myriad Pro, Arial, sans-serif", "IBM Plex Mono, monospace")
+    for previous_font in previous_fonts:
+        content = content.replace(
+            previous_font,
+            FIGURE_SANS_FONT if publication_typography else "Myriad Pro, Arial, sans-serif",
+        )
 
     width_match = re.search(r'<svg\b[^>]*\bwidth="([0-9.]+)"', content)
     if width_match is None:
@@ -61,13 +76,24 @@ def write_svg_output(output: Path, svg: list[str]) -> None:
         tag = match.group(0)
         if not any(
             f'font-family="{font}"' in tag
-            for font in (FIGURE_SANS_FONT, FIGURE_MONO_FONT)
+            for font in (FIGURE_SANS_FONT, FIGURE_MONO_FONT, "Myriad Pro, Arial, sans-serif")
         ):
             return tag
         return re.sub(r'font-size="([0-9.]+)"', normalized_font_size, tag)
 
     content = re.sub(r"<text\b[^>]*>", normalized_text_tag, content)
-    output.write_text(content + "\n", encoding="utf-8", newline="\n")
+    if publication_typography:
+        content = normalize_figure_svg(content)
+    output.write_text(content.rstrip() + "\n", encoding="utf-8", newline="\n")
+
+
+def _write_svg_tree(output: Path, root: ElementTree.Element) -> None:
+    ElementTree.register_namespace("", "http://www.w3.org/2000/svg")
+    output.write_text(
+        normalize_figure_svg(ElementTree.tostring(root, encoding="unicode")),
+        encoding="utf-8",
+        newline="\n",
+    )
 
 
 DATA_DIR = REPO_ROOT / "figure_sources" / "data"
@@ -114,17 +140,16 @@ HARDWARE_SOURCE_PROVENANCE_PATH = (
 HARDWARE_STATIC_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "multimodal-hardware.svg"
 )
+HARDWARE_SUPPLEMENT_OUTPUT = HARDWARE_STATIC_OUTPUT.with_name(
+    "supplementary-recording-hardware.svg"
+)
+NEUROPIXELS_IMPLANT_STATIC_OUTPUT = HARDWARE_STATIC_OUTPUT.with_name(
+    "supplementary-neuropixels-implant-trajectories.svg"
+)
 IMPORTED_FIGURE_DIR = REPO_ROOT / "images" / "figures" / "imported"
 UNIT_EXTRACTION_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-04-unit-extraction-plan.png"
-BASIC_STIMULI_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-05-basic-stimuli-plan.png"
 UNIT_EXTRACTION_PLAN_OUTPUT = (
     REPO_ROOT / "images" / "figures" / "generated" / "figure-07-unit-extraction-plan.svg"
-)
-MESOSCOPE_UNIT_EXTRACTION_PANEL_DIR = (
-    REPO_ROOT / "figure_sources" / "media" / "mesoscope-unit-extraction"
-)
-MESOSCOPE_UNIT_EXTRACTION_PROVENANCE_PATH = (
-    DATA_DIR / "mesoscope-unit-extraction.provenance.json"
 )
 MESOSCOPE_UNIT_EXTRACTION_OUTPUT = (
     REPO_ROOT
@@ -132,10 +157,6 @@ MESOSCOPE_UNIT_EXTRACTION_OUTPUT = (
     / "figures"
     / "generated"
     / "figure-06-unit-extraction-mesoscope.svg"
-)
-MESOSCOPE_UNIT_EXTRACTION_PAD = 40
-BASIC_STIMULI_PLAN_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-08-basic-stimuli-plan.svg"
 )
 LITERATURE_COMPARISON_OUTPUT = REPO_ROOT / "interactive" / "literature-comparison.html"
 BEHAVIOR_VIEWER_OUTPUT = REPO_ROOT / "interactive" / "behavior-viewer.html"
@@ -420,11 +441,7 @@ def load_experimental_design_sources() -> dict[str, Path]:
 def write_merged_figure_1_svg(output: Path = MERGED_FIGURE_1_OUTPUT) -> Path:
     graphical_abstract = png_data_uri(GRAPHICAL_ABSTRACT_SOURCE, (3200, 2400))
     experimental_design = png_data_uri(EXPERIMENTAL_DESIGN_SOURCE, (1108, 780))
-    cohort_panel_path = write_figure_1_panel_c_svg()
-    cohort_panel = (
-        "data:image/svg+xml;base64,"
-        f"{base64.b64encode(normalized_text_bytes(cohort_panel_path)).decode()}"
-    )
+    cohort_panel_path = write_figure_1_panel_c_svg(output.parent / FIGURE_1_PANEL_C_OUTPUT.name)
     svg = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1620" '
         'viewBox="0 0 2000 1620" role="img" aria-labelledby="title description">',
@@ -450,14 +467,54 @@ def write_merged_figure_1_svg(output: Path = MERGED_FIGURE_1_OUTPUT) -> Path:
         'font-size="28" font-weight="700" fill="#293133">A</text>',
         '<text class="panel-label" x="1020" y="48" font-family="Source Sans 3, sans-serif" '
         'font-size="28" font-weight="700" fill="#293133">B</text>',
-        f'<image href="{cohort_panel}" x="40" y="825" width="1920" height="768" '
-        'preserveAspectRatio="xMidYMid meet"/>',
+        '<g class="cohort-panel-placeholder"/>',
         '<text class="panel-label" x="20" y="818" font-family="Source Sans 3, sans-serif" '
         'font-size="28" font-weight="700" fill="#293133">C</text>',
         '</svg>',
     ]
     output.parent.mkdir(parents=True, exist_ok=True)
     write_svg_output(output, svg)
+    namespace = "http://www.w3.org/2000/svg"
+    ElementTree.register_namespace("", namespace)
+    root = ElementTree.fromstring(output.read_text(encoding="utf-8"))
+    cohorts = ElementTree.fromstring(cohort_panel_path.read_text(encoding="utf-8"))
+    cohorts.attrib.update(
+        {"x": "40", "y": "825", "width": "1920", "height": "768", "class": "cohort-panel"}
+    )
+    cohorts.attrib.pop("aria-labelledby", None)
+    for element in cohorts:
+        if element.tag in {f"{{{namespace}}}title", f"{{{namespace}}}desc"}:
+            element.attrib.pop("id", None)
+    placeholder = root.find(f"{{{namespace}}}g[@class='cohort-panel-placeholder']")
+    root.insert(list(root).index(placeholder), cohorts)
+    root.remove(placeholder)
+    root.set("width", "3640")
+    root.set("viewBox", "0 0 3640 1620")
+    root.set("data-embedded-artwork-typography", "inherited")
+    root.find(f"{{{namespace}}}rect").set("width", "3640")
+    root.find(f"{{{namespace}}}desc").text += (
+        " Panels D and E show the shared session architecture and the context, control, "
+        "and system-identification stimuli."
+    )
+    context_path = write_context_controls_svg(output.parent / CONTEXT_CONTROLS_STATIC_OUTPUT.name)
+    contexts = ElementTree.fromstring(context_path.read_text(encoding="utf-8"))
+    contexts.attrib.update(
+        {"x": "2020", "y": "10", "class": "context-panels", "data-panels": "D E"}
+    )
+    contexts.attrib.pop("aria-labelledby", None)
+    for element in contexts:
+        if element.tag in {f"{{{namespace}}}title", f"{{{namespace}}}desc"}:
+            element.attrib.pop("id", None)
+        if element.get("class") == "panel-label":
+            element.text = {"A": "D", "B": "E"}[element.text]
+        elif element.tag == f"{{{namespace}}}text":
+            element.set("font-size", "32")
+    root.append(contexts)
+    for label in root.iter(f"{{{namespace}}}text"):
+        if label.get("class") == "panel-label":
+            label.set("font-size", "48")
+            label.set("font-family", FIGURE_SANS_FONT)
+    _write_svg_tree(output, root)
     return output
 
 
@@ -468,7 +525,6 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
         (
             "neuropixels",
             "Neuropixels",
-            "4 recording days · each context once",
             ((1, 190), (2, 245)),
             1,
             125,
@@ -477,7 +533,6 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
         (
             "mesoscope",
             "Mesoscope",
-            "8 recording sessions · each context twice",
             ((1, 365), (2, 420)),
             2,
             300,
@@ -486,7 +541,6 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
         (
             "slap2",
             "SLAP2",
-            "4 recording sessions · motor cohort only",
             ((1, 565),),
             1,
             480,
@@ -504,10 +558,10 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
         'SLAP2 sampled the motor-habituated cohort only.</desc>',
         '<rect width="1600" height="640" fill="#FFFFFF"/>',
         '<text x="680" y="105" text-anchor="middle" '
-        'font-family="Source Sans 3, sans-serif" font-size="24" font-weight="700" '
+        'font-family="Source Sans 3, sans-serif" font-size="20" font-weight="700" '
         'fill="#4D5553">Habituation / training</text>',
         '<text x="1110" y="105" text-anchor="middle" '
-        'font-family="Source Sans 3, sans-serif" font-size="24" font-weight="700" '
+        'font-family="Source Sans 3, sans-serif" font-size="20" font-weight="700" '
         'fill="#4D5553">Neural recording contexts</text>',
     ]
 
@@ -535,7 +589,7 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
         ]
     )
 
-    for modality, label, summary, cohort_lines, repeats, heading_y, icon_y in modality_groups:
+    for modality, label, cohort_lines, repeats, heading_y, icon_y in modality_groups:
         logo_data = base64.b64encode(logo_paths[modality].read_bytes()).decode()
         svg.extend(
             [
@@ -544,9 +598,6 @@ def write_figure_1_panel_c_svg(output: Path = FIGURE_1_PANEL_C_OUTPUT) -> Path:
                 'font-family="Source Sans 3, sans-serif" '
                 f'font-size="{FIGURE_TYPE_SCALE["modality"]}" '
                 f'font-weight="700" fill="#293133">{label}</text>',
-                f'<text x="42" y="{heading_y + 30}" '
-                'font-family="Source Sans 3, sans-serif" font-size="15" '
-                f'font-weight="600" fill="#68706E">{summary}</text>',
                 f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
                 f'x="42" y="{icon_y}" width="110" height="110" '
                 'preserveAspectRatio="xMidYMid meet"/>',
@@ -1005,41 +1056,256 @@ def write_hardware_figure_svg(output: Path = HARDWARE_STATIC_OUTPUT) -> Path:
     return output
 
 
-def write_placeholder_plan_svg(
-    source: Path,
-    output: Path,
-    *,
-    title_lines: tuple[str, ...],
-    mask_height: int,
-    first_baseline: int,
-    font_size: int,
-    line_gap: int,
-) -> Path:
-    image_data = png_data_uri(source, (2048, 1024))
-    svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="1024" '
-        'viewBox="0 0 2048 1024" role="img" aria-labelledby="title description">',
-        f'<title id="title">{escape(" ".join(title_lines))}</title>',
-        '<desc id="description">Draft analysis-panel plan retained as a work-in-progress '
-        'placeholder; its obsolete embedded figure number is masked so manuscript numbering '
-        'is supplied only by MyST.</desc>',
-        '<rect width="2048" height="1024" fill="#FFFFFF"/>',
-        f'<image href="{image_data}" width="2048" height="1024"/>',
-        f'<rect class="stale-title-mask" x="0" y="0" width="2048" '
-        f'height="{mask_height}" fill="#FFFFFF"/>',
-    ]
-    for line_index, line in enumerate(title_lines):
-        svg.append(
-            f'<text class="placeholder-title" x="64" '
-            f'y="{first_baseline + line_index * line_gap}" '
-            'font-family="Source Sans 3, sans-serif" '
-            f'font-size="{font_size}" font-weight="600" fill="#111111">'
-            f'{escape(line)}</text>'
-        )
-    svg.append("</svg>")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    write_svg_output(output, svg)
+def write_hardware_supplement_svg(output: Path = HARDWARE_SUPPLEMENT_OUTPUT) -> Path:
+    """Keep the rig and mouse-platform artwork without the targeting column."""
+    source = write_hardware_figure_svg(output.parent / HARDWARE_STATIC_OUTPUT.name)
+    root = ElementTree.fromstring(source.read_text(encoding="utf-8"))
+    namespace = "http://www.w3.org/2000/svg"
+    root.set("width", "1230")
+    root.set("viewBox", "0 0 1230 1310")
+    root.find(f"{{{namespace}}}rect").set("width", "1230")
+    root.find(f"{{{namespace}}}title").text = "Recording rigs and head-fixed mouse platforms"
+    root.find(f"{{{namespace}}}desc").text = (
+        "Three modality rows show rig geometry and the corresponding mouse platform "
+        "using the six unchanged source images from the hardware PowerPoint."
+    )
+    for element in list(root):
+        element_class = element.get("class", "")
+        if (
+            element.get("data-asset", "").endswith("_brain_targeting")
+            or element_class.startswith(("zoom-", "mesoscope-", "slap2-plane-label"))
+            or element.text == "Brain targeting"
+        ):
+            root.remove(element)
+    _write_svg_tree(output, root)
     return output
+
+
+def _add_targeting_to_neural_static_svg(output: Path) -> None:
+    namespace = "http://www.w3.org/2000/svg"
+
+    def tag(name: str) -> str:
+        return f"{{{namespace}}}{name}"
+
+    root = ElementTree.fromstring(output.read_text(encoding="utf-8"))
+    root.set("height", "2380")
+    root.set("viewBox", "0 0 1876 2380")
+    root.find(tag("rect")).set("height", "2380")
+    root.find(tag("title")).text = (
+        "Brain targeting, raw recordings, extracted sources, and activity"
+    )
+    root.find(tag("desc")).text = (
+        "Neuropixels, mesoscope, and SLAP2 occupy the same three columns across four rows: "
+        "brain targeting, raw data, extracted sources, and matched activity traces. "
+        "Targeting zoom connectors progress from left to right without rotating the artwork."
+    )
+    grid = next(element for element in root if element.get("class") == "figure-grid")
+    grid.set("transform", "translate(76 480)")
+    sessions = {session["id"]: session for session in load_neural_excerpts()["sessions"]}
+    mesoscope_options = {option["id"]: option for option in sessions["mesoscope"]["options"]}
+    probe_colors = load_neuropixels_trajectory_data()["probeColors"]
+    for card in grid.findall(f"{tag('g')}[@class='raw-image-card']"):
+        modality = card.get("data-modality")
+        option_id = card.get("data-option-id")
+        if modality == "neuropixels":
+            identity = option_id.rsplit("-", 1)[1].upper()
+            color = probe_colors[identity]
+        elif modality == "mesoscope":
+            identity = mesoscope_options[option_id]["targetLayer"]
+            color = NEURAL_LAYER_COLORS[identity]
+        else:
+            identity = option_id.split("-", 1)[0]
+            color = NEURAL_SLAP2_PLANE_COLORS[identity]
+        card.set("data-target-identity", identity)
+        card.set("data-target-color", color)
+        label = card.find(tag("text"))
+        label.set("fill", "#000000")
+        for attribute in ("stroke", "stroke-width", "paint-order"):
+            label.attrib.pop(attribute, None)
+        image = card.find(f"{tag('image')}[@class='raw-card-image']")
+        image_box = {key: image.get(key) for key in ("x", "y", "width", "height")}
+        for outline_class, stroke, thickness in (
+            ("raw-color-underlay", "#42514D", "5"),
+            ("raw-color-outline", color, "3"),
+        ):
+            ElementTree.SubElement(card, tag("rect"), {
+                **image_box, "class": outline_class, "fill": "none",
+                "stroke": stroke, "stroke-width": thickness,
+            })
+    headings = ElementTree.SubElement(root, tag("g"), {"transform": "translate(76 0)"})
+    for element in list(grid):
+        if element.get("class") == "platform-heading":
+            grid.remove(element)
+            for child in list(element):
+                if child.get("class") == "modality-scale":
+                    element.remove(child)
+            headings.append(element)
+        if element.get("class") == "extraction-panel":
+            element.set("data-row", str(int(element.get("data-row")) + 1))
+            element[0].text = chr(ord(element[0].text) + 3)
+            if element.get("data-row") == "3":
+                modality = element.get("data-modality")
+                source_id = element.get("data-source-id")
+                if modality == "neuropixels":
+                    color = probe_colors[source_id.rsplit("-", 1)[1].upper()]
+                elif modality == "mesoscope":
+                    color = NEURAL_LAYER_COLORS[mesoscope_options[source_id]["targetLayer"]]
+                else:
+                    color = NEURAL_SLAP2_PLANE_COLORS[source_id]
+                element.set("data-target-color", color)
+                for label in element.findall(tag("text")):
+                    label.set("fill", "#000000")
+                    for attribute in ("stroke", "stroke-width", "paint-order"):
+                        label.attrib.pop(attribute, None)
+                panel = element.find(tag("svg"))
+                embedded = root.find(f".//{tag('image')}[@id='extraction-{modality}']")
+                source_panel = ElementTree.fromstring(
+                    base64.b64decode(embedded.get("href").split(",", 1)[1])
+                )
+                content = next(image for image in source_panel.iter(tag("image"))
+                               if float(image.get("y", "0")) >= 90
+                               and float(image.get("width", "0")) > 100)
+                source_x, source_y, source_width, source_height = map(
+                    float, panel.get("viewBox").split()
+                )
+                panel_x, panel_y, panel_width, panel_height = (
+                    float(panel.get(key)) for key in ("x", "y", "width", "height")
+                )
+                scale = min(panel_width / source_width, panel_height / source_height)
+                content_x, content_y, content_width, content_height = (
+                    float(content.get(key)) for key in ("x", "y", "width", "height")
+                )
+                element.set("data-source-content-bounds", " ".join(
+                    str(value) for value in (content_x, content_y, content_width, content_height)
+                ))
+                image_left = panel_x + (panel_width - source_width * scale) / 2
+                image_top = panel_y + (panel_height - source_height * scale) / 2
+                box = {
+                    "x": f"{image_left + (content_x - source_x) * scale:.3f}",
+                    "y": f"{image_top + (content_y - source_y) * scale:.3f}",
+                    "width": f"{content_width * scale:.3f}",
+                    "height": f"{content_height * scale:.3f}",
+                }
+                for outline_class, stroke, thickness in (
+                    ("extraction-color-underlay", "#42514D", "5"),
+                    ("extraction-color-outline", color, "3"),
+                ):
+                    ElementTree.SubElement(element, tag("rect"), {
+                        **box, "class": outline_class, "fill": "none",
+                        "stroke": stroke, "stroke-width": thickness,
+                    })
+    for element in root:
+        if element.get("class") == "figure-row-label":
+            element.set("transform", "translate(0 480) " + element.get("transform"))
+    label = ElementTree.SubElement(
+        root, tag("text"),
+        {"class": "figure-row-label", "x": "60", "y": "340",
+         "transform": "rotate(-90 60 340)", "text-anchor": "middle",
+         "font-family": FIGURE_SANS_FONT, "font-size": "40.65", "font-weight": "700"},
+    )
+    label.text = "Brain targeting"
+    for letter, left in zip("DEF", (35, 645, 1235), strict=True):
+        label = ElementTree.SubElement(
+            grid, tag("text"),
+            {"class": "raw-panel-label", "x": str(left), "y": "84",
+             "font-family": FIGURE_SANS_FONT, "font-size": "37.52", "font-weight": "700"},
+        )
+        label.text = letter
+
+    hardware = write_hardware_figure_svg(output.parent / HARDWARE_STATIC_OUTPUT.name)
+    source = ElementTree.fromstring(hardware.read_text(encoding="utf-8"))
+    assets = load_hardware_sources()
+    bounds = {}
+    focus = {}
+    for modality, left in zip(("neuropixels", "mesoscope", "slap2"), (111, 721, 1311), strict=True):
+        image = next(element for element in source
+                     if element.get("data-asset") == f"{modality}_brain_targeting")
+        box = tuple(float(image.get(key)) for key in ("x", "y", "width", "height"))
+        scale = min(510 / box[2], 430 / box[3])
+        offset_x = left + (550 - box[2] * scale) / 2 - box[0] * scale
+        offset_y = 110 - box[1] * scale
+        group = ElementTree.SubElement(
+            root, tag("g"),
+            {"class": "targeting-panel", "data-modality": modality,
+             "transform": f"translate({offset_x:.6f} {offset_y:.6f}) scale({scale:.6f})"},
+        )
+        fitted = fitted_image_bounds(assets[f"{modality}_brain_targeting"], box)
+        bounds[modality] = (
+            offset_x + fitted[0] * scale, offset_y + fitted[1] * scale,
+            fitted[2] * scale, fitted[3] * scale,
+        )
+        for element in source:
+            element_class = element.get("class", "")
+            belongs = (
+                element is image
+                or (element_class == "zoom-focus-box" and element.get("data-modality") == modality)
+                or (modality == "mesoscope" and element_class.startswith("mesoscope-"))
+                or (modality == "slap2" and element_class == "slap2-plane-label")
+            )
+            if not belongs:
+                continue
+            if element_class == "slap2-plane-label":
+                identity = "dmd1" if element.text == "Apical plane" else "dmd2"
+                location = "apical" if identity == "dmd1" else "proximal"
+                element.text = f"{identity.upper()} · {location}"
+                element.set("text-anchor", "end")
+                offset = -55 if identity == "dmd1" else 55
+                element.set("x", f"{(left + 542 - offset_x) / scale:.2f}")
+                element.set("y", f"{float(element.get('y')) + offset / scale:.2f}")
+                element.set("data-plane-label-offset-y", str(offset))
+                element.set("fill", "#000000")
+                element.set("stroke", "#FFFFFF")
+                element.set("stroke-width", "3")
+                element.set("data-target-identity", identity)
+            group.append(element)
+            if element_class == "zoom-focus-box":
+                rect_x, rect_y, rect_width, rect_height = (
+                    float(element.get(key)) for key in ("x", "y", "width", "height")
+                )
+                angle = re.search(r"rotate\(([-0-9.]+)", element.get("transform", ""))
+                radians = math.radians(float(angle.group(1))) if angle else 0
+                corners = []
+                for vertical in (-0.5, 0.5):
+                    relative_x, relative_y = rect_width / 2, rect_height * vertical
+                    corners.append((
+                        offset_x + scale * (rect_x + rect_width / 2
+                                            + relative_x * math.cos(radians)
+                                            - relative_y * math.sin(radians)),
+                        offset_y + scale * (rect_y + rect_height / 2
+                                            + relative_x * math.sin(radians)
+                                            + relative_y * math.cos(radians)),
+                    ))
+                focus[modality] = corners
+
+    for modality, following in (("neuropixels", "mesoscope"), ("mesoscope", "slap2")):
+        destination = bounds[following]
+        for index, (start_x, start_y) in enumerate(focus[modality]):
+            if following == "mesoscope":
+                end_x = destination[0]
+                end_y = destination[1] + index * destination[3]
+            else:
+                end_x, end_y = image_point(
+                    destination,
+                    18 / assets["slap2_brain_targeting"]["width"],
+                    (79 if index == 0 else 329) / assets["slap2_brain_targeting"]["height"],
+                )
+            segments = [(start_x, start_y, end_x, end_y, "#000000")]
+            if modality == "mesoscope":
+                edge_x = bounds[modality][0] + bounds[modality][2]
+                fraction = (edge_x - start_x) / (end_x - start_x)
+                edge_y = start_y + fraction * (end_y - start_y)
+                segments = [(start_x, start_y, edge_x, edge_y, "#FFFFFF"),
+                            (edge_x, edge_y, end_x, end_y, "#000000")]
+            for x1, y1, x2, y2, color in segments:
+                ElementTree.SubElement(
+                    root, tag("line"),
+                    {"class": "zoom-connector", "data-stage": f"{modality}-to-{following}",
+                     "data-target-corner": "upper-left" if index == 0 else "lower-left",
+                     "x1": f"{x1:.2f}", "y1": f"{y1:.2f}",
+                     "x2": f"{x2:.2f}", "y2": f"{y2:.2f}",
+                     "stroke": color, "stroke-width": "4", "stroke-dasharray": "2 10"},
+                )
+    _write_svg_tree(output, root)
 
 
 def write_unit_extraction_plan_svg(output: Path = UNIT_EXTRACTION_PLAN_OUTPUT) -> Path:
@@ -1053,78 +1319,12 @@ def write_unit_extraction_plan_svg(output: Path = UNIT_EXTRACTION_PLAN_OUTPUT) -
 def write_unit_extraction_mesoscope_svg(
     output: Path = MESOSCOPE_UNIT_EXTRACTION_OUTPUT,
 ) -> Path:
-    """Wrap the committed mesoscope-column composite in SVG.
-
-    The B, F and J panels and the stacked composite are both produced offline
-    by ``scripts/build_mesoscope_unit_extraction_panels.py`` from the per-ROI
-    cohort table and committed under ``figure_sources/media``. This function
-    deliberately re-encodes no image bytes -- it embeds the committed PNG as
-    it stands -- because Pillow's PNG output depends on the local zlib build,
-    so compositing at build time makes the generated SVG differ between
-    platforms and the repo's "generated figures are current" check fail on
-    one runner while passing on another. Cohort counts for the subtitle are
-    read from the provenance sidecar so the figure and the caption cannot
-    drift apart.
-    """
-    provenance = json.loads(
-        MESOSCOPE_UNIT_EXTRACTION_PROVENANCE_PATH.read_text(encoding="utf-8")
+    """Render the editable A-I mesoscope figure from checksummed committed inputs."""
+    from openscope_p3_publication.mesoscope_unit_extraction import (
+        write_mesoscope_unit_extraction_svg,
     )
-    cohort = provenance["cohort"]
-    (composite_name, composite_meta), = provenance["composite"].items()
-    source = MESOSCOPE_UNIT_EXTRACTION_PANEL_DIR / composite_name
-    digest = hashlib.sha256(source.read_bytes()).hexdigest()
-    if digest != composite_meta["sha256"]:
-        raise RuntimeError(
-            f"Composite source {composite_name} does not match its recorded checksum; "
-            "re-run scripts/build_mesoscope_unit_extraction_panels.py or refresh the "
-            "provenance sidecar."
-        )
-    width = int(composite_meta["width"])
-    height = int(composite_meta["height"])
-    image_data = png_data_uri(source, (width, height))
-    pad = MESOSCOPE_UNIT_EXTRACTION_PAD
 
-    subtitle = (
-        "Unit extraction and event-amplitude quality classes \u2014 "
-        f"{cohort['sessions']} of {cohort['qc_pass_total']} QC-Pass mesoscope sessions "
-        f"(of {cohort['released_total']} released), {cohort['mice']} mice, "
-        f"{cohort['rois']:,} ROIs"
-    )
-    title_size = FIGURE_TYPE_SCALE["title"]
-    svg = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
-        f'viewBox="0 0 {width} {height}" role="img" aria-labelledby="title description">',
-        '<title id="title">Mesoscope unit extraction and event-amplitude quality '
-        "classes</title>",
-        f"<desc id=\"description\">{escape(subtitle)}</desc>",
-        f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
-        f'<image href="{image_data}" width="{width}" height="{height}"/>',
-        f'<text class="placeholder-title" x="{pad + 8}" y="62" '
-        f'font-family="Source Sans 3, sans-serif" font-size="{title_size}" '
-        'font-weight="600" fill="#111111">Mesoscope</text>',
-        f'<text class="placeholder-subtitle" x="{pad + 8}" y="112" '
-        f'font-family="Source Sans 3, sans-serif" font-size="{FIGURE_TYPE_SCALE["modality"]}" '
-        f'fill="#52514E">{escape(subtitle)}</text>',
-        "</svg>",
-    ]
-    output.parent.mkdir(parents=True, exist_ok=True)
-    write_svg_output(output, svg)
-    return output
-
-
-def write_basic_stimuli_plan_svg(output: Path = BASIC_STIMULI_PLAN_OUTPUT) -> Path:
-    return write_placeholder_plan_svg(
-        BASIC_STIMULI_PLAN_SOURCE,
-        output,
-        title_lines=(
-            "Basic stimuli → unit/system identification → distributions across areas and "
-            "modalities",
-        ),
-        mask_height=94,
-        first_baseline=62,
-        font_size=FIGURE_TYPE_SCALE["title"],
-        line_gap=44,
-    )
+    return write_mesoscope_unit_extraction_svg(output)
 
 
 @dataclass(frozen=True)
@@ -1394,7 +1594,7 @@ def write_interactive_html(output: Path = INTERACTIVE_OUTPUT) -> Path:
     template = (JAVASCRIPT_DIR / "stimulus-viewer.html").read_text(encoding="utf-8")
     stylesheet = load_figure_stylesheet("stimulus-viewer.css")
     javascript = (JAVASCRIPT_DIR / "stimulus-viewer.js").read_text(encoding="utf-8")
-    static_output = write_context_controls_svg()
+    static_output = write_merged_figure_1_svg()
     static_data = base64.b64encode(normalized_text_bytes(static_output)).decode()
     html = (
         template.replace("__SIMULATOR_CSS__", stylesheet)
@@ -1729,6 +1929,7 @@ def write_optotagging_heatmap_html(
     media_dir: Path = OPTOTAGGING_HEATMAP_SOURCE_DIR,
     static_output: Path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT,
     static_source: Path | None = None,
+    static_presentation: Path | None = None,
 ) -> Path:
     """Build the standalone representative-session optotagging heatmap explorer."""
 
@@ -1743,6 +1944,7 @@ def write_optotagging_heatmap_html(
         media_dir,
         static_source=static_source,
     )
+    static_presentation = static_output if static_presentation is None else static_presentation
     template = (JAVASCRIPT_DIR / "optotagging-heatmaps.html").read_text(
         encoding="utf-8"
     )
@@ -1768,7 +1970,7 @@ def write_optotagging_heatmap_html(
         template.replace("__OPTOTAGGING_CSS__", stylesheet)
         .replace(
             "__OPTOTAGGING_STATIC_IMAGE__",
-            f"media/optotagging/{static_output.name}",
+            f"media/optotagging/{static_presentation.name}",
         )
         .replace(
             "__OPTOTAGGING_DATA__",
@@ -1799,6 +2001,8 @@ def write_optotagging_heatmap_html(
                 media_output / session["image_file"],
             )
     shutil.copy2(static_output, media_output / static_output.name)
+    if static_presentation != static_output:
+        shutil.copy2(static_presentation, media_output / static_presentation.name)
     return output
 
 
@@ -2256,10 +2460,15 @@ def write_neuropixels_trajectory_html(
     static_output: Path = NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT,
     data_path: Path = NEUROPIXELS_TRAJECTORY_DATA_PATH,
     provenance_path: Path = NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH,
+    *,
+    include_implant: bool = False,
 ) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     payload = load_neuropixels_trajectory_data(data_path, provenance_path)
-    write_neuropixels_trajectory_svg(static_output, data_path, provenance_path)
+    if include_implant:
+        write_neuropixels_implant_svg(static_output)
+    else:
+        write_neuropixels_trajectory_svg(static_output, data_path, provenance_path)
     template = (JAVASCRIPT_DIR / "neuropixels-trajectories.html").read_text(
         encoding="utf-8"
     )
@@ -2857,6 +3066,11 @@ def load_behavior_static_frames(
     return paths
 
 
+RUNNING_BLOCK_LABELS = dict(zip(
+    PROTOCOL_BLOCK_COLORS, ("C1", "Context", "C1", "C2", "C3", "C4", "Movie", "RF"), strict=True,
+))
+
+
 def running_profile_svg(
     profile: dict,
     modality: str,
@@ -2870,10 +3084,10 @@ def running_profile_svg(
     show_block_labels: bool,
     show_time_axis: bool,
 ) -> list[str]:
-    margin_left = 46
+    margin_left = 58
     margin_right = 12
-    margin_top = 20
-    margin_bottom = 22
+    margin_top = 24
+    margin_bottom = 42
     plot_left = left + margin_left
     plot_top = top + margin_top
     plot_width = width - margin_left - margin_right
@@ -2886,58 +3100,41 @@ def running_profile_svg(
     def y(value: float) -> float:
         return plot_top + (speed_limit - value) / speed_limit * plot_height
 
-    block_labels = {
-        "standard": "Std",
-        "context": "Context",
-        "standard_repeat": "Std 2",
-        "sequence": "Seq",
-        "jitter": "Jitter",
-        "open_loop": "Open",
-        "movie": "Movie",
-        "rf": "RF",
-    }
     svg = [
-        f'<rect x="{left}" y="{top}" width="{width}" height="{height}" '
-        'fill="#FFFFFF" stroke="#D0D4D2"/>',
+        f'<line class="running-profile-axis" x1="{plot_left}" y1="{plot_top}" '
+        f'x2="{plot_left}" y2="{plot_top + plot_height}" stroke="#293133"/>',
+        f'<line class="running-profile-axis" x1="{plot_left}" y1="{plot_top + plot_height}" '
+        f'x2="{plot_left + plot_width}" y2="{plot_top + plot_height}" stroke="#293133"/>',
+        f'<text class="running-speed-axis-title" x="{left + 14}" '
+        f'y="{plot_top + plot_height / 2}" '
+        f'transform="rotate(-90 {left + 14} {plot_top + plot_height / 2})" '
+        f'font-family="{FIGURE_SANS_FONT}" font-size="12" text-anchor="middle">'
+        'Speed (cm/s)</text>',
     ]
-    for block in profile["blocks"]:
-        block_color = (
-            SESSION_TYPE_COLORS[profile["context"]]
-            if block["id"] == "context"
-            else PROTOCOL_BLOCK_COLORS[block["id"]]
-        )
+    for index, block in enumerate(profile["blocks"]):
         block_left = x(block["start_seconds"])
         block_right = x(block["end_seconds"])
-        svg.extend(
-            [
-                f'<rect class="running-profile-block" data-block="{block["id"]}" '
-                f'x="{block_left:.2f}" y="{top + 1}" '
-                f'width="{max(0, block_right - block_left):.2f}" height="{height - 2}" '
-                f'fill="{block_color}" fill-opacity="0.18"/>',
-                f'<rect x="{block_left:.2f}" y="{top + 1}" '
-                f'width="{max(0, block_right - block_left):.2f}" height="18" '
-                f'fill="{block_color}"/>',
-                f'<line x1="{block_left:.2f}" y1="{top}" x2="{block_left:.2f}" '
-                f'y2="{top + height}" stroke="#C8CECB"/>',
-            ]
-        )
-        if show_block_labels:
-            label_fill = "#FFFFFF" if block["id"] in {"context", "movie", "rf"} else "#172126"
+        if index:
             svg.append(
-                f'<text x="{(block_left + block_right) / 2:.2f}" y="{top + 14}" '
-                'font-family="Source Sans 3, sans-serif" font-size="12" '
-                f'font-weight="600" text-anchor="middle" fill="{label_fill}">'
-                f'{block_labels[block["id"]]}</text>'
+                f'<line class="running-profile-boundary" data-block="{block["id"]}" '
+                f'x1="{block_left:.2f}" y1="{plot_top}" x2="{block_left:.2f}" '
+                f'y2="{plot_top + plot_height}" stroke="#8F9996" stroke-dasharray="5 5"/>'
+            )
+        if show_block_labels:
+            svg.append(
+                f'<text class="running-block-label" x="{(block_left + block_right) / 2:.2f}" '
+                f'y="{top + 14}" font-family="{FIGURE_SANS_FONT}" font-size="12" '
+                'font-weight="600" text-anchor="middle" fill="#293133">'
+                f'{RUNNING_BLOCK_LABELS[block["id"]]}</text>'
             )
     for fraction in (0, 0.5, 1):
         grid_y = plot_top + (1 - fraction) * plot_height
         svg.extend(
             [
                 f'<line x1="{plot_left}" y1="{grid_y:.2f}" '
-                f'x2="{plot_left + plot_width}" y2="{grid_y:.2f}" '
-                'stroke="#D8DCDA"/>',
+                f'x2="{plot_left - 4}" y2="{grid_y:.2f}" stroke="#293133"/>',
                 f'<text x="{plot_left - 7}" y="{grid_y + 4:.2f}" '
-                'font-family="IBM Plex Mono, monospace" font-size="12" '
+                f'font-family="{FIGURE_SANS_FONT}" font-size="12" '
                 f'text-anchor="end" fill="#68706E">{fraction * speed_limit:.0f}</text>',
             ]
         )
@@ -2954,10 +3151,16 @@ def running_profile_svg(
         for minute in dict.fromkeys(tick_minutes):
             tick_time = min(duration, minute * 60)
             svg.append(
-                f'<text x="{x(tick_time):.2f}" y="{top + height - 6}" '
-                'font-family="IBM Plex Mono, monospace" font-size="12" '
-                f'text-anchor="middle" fill="#68706E">{minute}m</text>'
+                f'<text class="running-time-tick" x="{x(tick_time):.2f}" '
+                f'y="{plot_top + plot_height + 18}" '
+                f'font-family="{FIGURE_SANS_FONT}" font-size="12" '
+                f'text-anchor="middle" fill="#68706E">{minute}</text>'
             )
+        svg.append(
+            f'<text class="running-time-axis-title" x="{plot_left + plot_width / 2}" '
+            f'y="{top + height - 2}" font-family="{FIGURE_SANS_FONT}" '
+            'font-size="12" text-anchor="middle">Time (min)</text>'
+        )
     return svg
 
 
@@ -2978,20 +3181,10 @@ def running_summary_svg(payload: dict) -> list[str]:
         "mesoscope": "Mesoscope",
         "slap2": "SLAP2",
     }
-    block_labels = {
-        "standard": "Standard",
-        "context": "Context",
-        "standard_repeat": "Standard repeat",
-        "sequence": "Sequence",
-        "jitter": "Jitter",
-        "open_loop": "Open loop",
-        "movie": "Natural movie",
-        "rf": "RF mapping",
-    }
     block_order = tuple(PROTOCOL_BLOCK_COLORS)
     profile_block_order = tuple(block["id"] for block in payload["example_profiles"][0]["blocks"])
     if block_order != profile_block_order:
-        raise RuntimeError("Panel D block order does not match the example profiles.")
+        raise RuntimeError("Panel G block order does not match the example profiles.")
     speed_limit = running_speed_limit(
         max(record["mean_forward_speed_cm_s"] for record in summaries)
     )
@@ -3019,10 +3212,16 @@ def running_summary_svg(payload: dict) -> list[str]:
     svg = [
         '<text class="running-panel-label" x="35" y="704" '
         'font-family="Source Sans 3, sans-serif" font-size="24" '
-        'font-weight="700" fill="#293133">D</text>',
-        '<text class="running-y-axis-title" x="72" y="704" '
-        'font-family="Source Sans 3, sans-serif" font-size="16" '
-        'font-weight="700" fill="#3F4745">Mean forward speed (cm/s)</text>',
+        'font-weight="700" fill="#293133">G</text>',
+        f'<text class="running-y-axis-title" x="110" y="{plot_top + plot_height / 2}" '
+        f'transform="rotate(-90 110 {plot_top + plot_height / 2})" '
+        f'font-family="{FIGURE_SANS_FONT}" font-size="14" text-anchor="middle" '
+        'fill="#3F4745">Mean speed (cm/s)</text>',
+        f'<line x1="{plot_left}" y1="{plot_top}" x2="{plot_left}" y2="{plot_bottom}" '
+        'stroke="#293133"/>',
+        f'<text class="running-block-axis-title" x="{plot_left + plot_width / 2}" '
+        f'y="{plot_bottom + 34}" font-family="{FIGURE_SANS_FONT}" '
+        'font-size="14" text-anchor="middle">Protocol block</text>',
     ]
     legend_left = 980
     for index, modality in enumerate(modality_labels):
@@ -3043,35 +3242,32 @@ def running_summary_svg(payload: dict) -> list[str]:
     block_width = plot_width / len(block_order)
     for block_index, block_id in enumerate(block_order):
         left = plot_left + block_index * block_width
-        color = PROTOCOL_BLOCK_COLORS[block_id]
         svg.extend(
             [
-                f'<rect class="running-block-region" data-block="{block_id}" '
-                f'x="{left:.2f}" y="{plot_top}" width="{block_width:.2f}" '
-                f'height="{plot_height}" fill="{color}" fill-opacity="0.08"/>',
-                f'<text x="{left + block_width / 2:.2f}" y="{block_label_y}" '
-                'font-family="Source Sans 3, sans-serif" font-size="14" '
+                f'<text class="running-block-label" x="{left + block_width / 2:.2f}" '
+                f'y="{block_label_y}" font-family="{FIGURE_SANS_FONT}" font-size="14" '
                 'font-weight="700" text-anchor="middle" fill="#3F4745">'
-                f'{block_labels[block_id]}</text>',
+                f'{RUNNING_BLOCK_LABELS[block_id]}</text>',
             ]
         )
         if block_index:
             svg.append(
-                f'<line x1="{left:.2f}" y1="{plot_top}" '
-                f'x2="{left:.2f}" y2="{plot_bottom}" stroke="#C8CECB"/>'
+                f'<line class="running-summary-boundary" x1="{left:.2f}" y1="{plot_top}" '
+                f'x2="{left:.2f}" y2="{plot_bottom}" stroke="#8F9996" stroke-dasharray="5 5"/>'
             )
     tick_step = 30 if speed_limit > 80 else 20 if speed_limit > 40 else 10
     tick_values = list(range(0, speed_limit, tick_step)) + [speed_limit]
     for tick_value in tick_values:
         y = plot_bottom - tick_value / speed_limit * plot_height
-        grid_color = "#AEB5B2" if tick_value == 0 else "#DDE1DF"
+        grid_color = "#293133"
         svg.append(
             f'<line x1="{plot_left}" y1="{y:.2f}" '
-            f'x2="{plot_left + plot_width}" y2="{y:.2f}" stroke="{grid_color}"/>'
+            f'x2="{plot_left + plot_width if tick_value == 0 else plot_left - 5}" '
+            f'y2="{y:.2f}" stroke="{grid_color}"/>'
         )
         svg.append(
             f'<text x="{plot_left - 10}" y="{y + 4:.2f}" '
-            'font-family="IBM Plex Mono, monospace" font-size="13" '
+            f'font-family="{FIGURE_SANS_FONT}" font-size="13" '
             f'text-anchor="end" fill="#68706E">{tick_value}</text>'
         )
     for block_index, block_id in enumerate(block_order):
@@ -3136,8 +3332,7 @@ def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
     }
     frame_paths = load_behavior_static_frames(payload, profiles)
     width = 1800
-    height = 1080
-    row_tops = (40, 276, 512)
+    height = 1310
     accents = {
         "neuropixels": "#4B79C6",
         "mesoscope": "#14866C",
@@ -3158,9 +3353,11 @@ def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
         'protocol block.</desc>',
         f'<rect width="{width}" height="{height}" fill="#FFFFFF"/>',
     ]
-    for row_index, (letter, session, row_top) in enumerate(
-        zip("ABC", payload["sessions"], row_tops, strict=True)
+    for column, (letter, session) in enumerate(
+        zip("ABC", payload["sessions"], strict=True)
     ):
+        column_left = 35 + column * 600
+        row_top = 40
         modality = session["id"]
         cameras = session["cameras"]
         profile = profiles[modality]
@@ -3168,62 +3365,73 @@ def write_behavior_static_svg(output: Path = BEHAVIOR_STATIC_OUTPUT) -> Path:
         svg.extend(
             [
                 f'<g class="platform-heading" data-modality="{modality}">',
-                f'<text x="35" y="{row_top}" font-family="Source Sans 3, sans-serif" '
+                f'<text class="panel-label" x="{column_left}" y="{row_top}" '
+                'font-family="Source Sans 3, sans-serif" '
                 f'font-size="24" font-weight="700" fill="#293133">{letter}</text>',
                 f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
-                f'x="63" y="{row_top - 38}" width="54" height="54" '
+                f'x="{column_left + 28}" y="{row_top - 38}" width="54" height="54" '
                 'preserveAspectRatio="xMidYMid meet"/>',
-                f'<text class="modality-title" x="125" y="{row_top}" '
+                f'<text class="modality-title" x="{column_left + 90}" y="{row_top}" '
                 'font-family="Source Sans 3, sans-serif" '
                 f'font-size="{FIGURE_TYPE_SCALE["modality"]}" '
                 'font-weight="700" fill="#293133">'
-                f'{modality_labels[modality]} · mouse {escape(profile["mouse_id"])}</text>',
+                f'{modality_labels[modality]}</text>',
                 "</g>",
             ]
         )
-        camera_width = 198
-        camera_height = 148
-        camera_gap = 12
-        camera_top = row_top + 42
+        camera_width = 255
+        camera_height = 192
+        camera_gap = 16
+        camera_top = row_top + 70
         for index, camera in enumerate(cameras):
-            left = 35 + index * (camera_width + camera_gap)
+            left = column_left + (index % 2) * (camera_width + camera_gap)
+            camera_y = camera_top + (index // 2) * (camera_height + 52)
             image_data = base64.b64encode(
                 frame_paths[(modality, camera["id"])].read_bytes()
             ).decode()
             svg.extend(
                 [
                     f'<g class="behavior-camera-card" data-modality="{modality}" '
-                    f'data-camera-id="{camera["id"]}">',
-                    f'<text x="{left}" y="{camera_top - 8}" '
+                    f'data-camera-id="{camera["id"]}" '
+                    f'data-grid-row="{index // 2}" data-grid-column="{index % 2}">',
+                    f'<text x="{left}" y="{camera_y - 8}" '
                     'font-family="Source Sans 3, sans-serif" font-size="15" '
                     f'font-weight="700" fill="#303536">{escape(camera["label"])} camera</text>',
-                    f'<rect x="{left}" y="{camera_top}" width="{camera_width}" '
+                    f'<rect x="{left}" y="{camera_y}" width="{camera_width}" '
                     f'height="{camera_height}" fill="#171A19"/>',
                     f'<image href="data:image/jpeg;base64,{image_data}" x="{left}" '
-                    f'y="{camera_top}" width="{camera_width}" height="{camera_height}" '
+                    f'y="{camera_y}" width="{camera_width}" height="{camera_height}" '
                     'preserveAspectRatio="xMidYMid meet"/>',
-                    f'<rect x="{left}" y="{camera_top}" width="{camera_width}" '
+                    f'<rect x="{left}" y="{camera_y}" width="{camera_width}" '
                     f'height="{camera_height}" fill="none" stroke="#8F9996"/>',
                     "</g>",
                 ]
             )
 
+        svg.extend([
+            f'<g class="example-running-panel" data-modality="{modality}" '
+            f'data-panel="{chr(ord("D") + column)}">',
+            f'<text class="panel-label" x="{column_left}" y="625" '
+            f'font-family="{FIGURE_SANS_FONT}" '
+            f'font-size="24" font-weight="700">{chr(ord("D") + column)}</text>',
+        ])
         svg.extend(
             running_profile_svg(
                 profile,
                 modality,
                 accents[modality],
-                910,
-                row_top + 28,
-                850,
-                148,
+                column_left,
+                645,
+                550,
+                240,
                 profile_speed_limits[modality],
                 shared_profile_duration,
-                row_index == 0,
-                row_index == 2,
+                True,
+                True,
             )
         )
-    svg.append('<g class="running-summary" transform="translate(0 30)">')
+        svg.append('</g>')
+    svg.append('<g class="running-summary" data-panel="G" transform="translate(0 220)">')
     svg.extend(running_summary_svg(running_statistics))
     svg.append("</g>")
     svg.append("</svg>")
@@ -4229,7 +4437,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
         svg.extend(
             [
                 f'<g class="platform-heading" data-modality="{modality}">',
-                f'<text x="{left}" y="36" '
+                f'<text class="raw-panel-label" x="{left}" y="36" '
                 'font-family="Source Sans 3, sans-serif" font-size="24" '
                 f'font-weight="700" fill="#293133">{letter}</text>',
                 f'<image class="platform-logo" href="data:image/png;base64,{logo_data}" '
@@ -4361,7 +4569,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
                 [
                     f'<g class="extraction-panel" data-modality="{modality}" '
                     f'data-row="{row + 1}" data-source-id="{source["sourceId"]}">',
-                    f'<text x="{left}" y="{top - 22}" '
+                    f'<text class="raw-panel-label" x="{left}" y="{top - 22}" '
                     f'font-family="{FIGURE_SANS_FONT}" font-size="24" '
                     f'font-weight="700" fill="#293133">{letter}</text>',
                     *([
@@ -4378,6 +4586,7 @@ def write_neural_static_svg(output: Path = NEURAL_STATIC_OUTPUT) -> Path:
     svg.extend(["</g>", "</svg>"])
     output.parent.mkdir(parents=True, exist_ok=True)
     write_svg_output(output, svg)
+    _add_targeting_to_neural_static_svg(output)
     return output
 
 
@@ -4623,6 +4832,8 @@ def segmentation_trace_rows(viewer: dict) -> list[list[float]]:
 def static_segmentation_trace_indices(
     rows: list[list[float]],
     count: int = 10,
+    *,
+    prefer_clean_transients: bool = False,
 ) -> list[int]:
     active_indices = []
     for index, values in enumerate(rows):
@@ -4631,6 +4842,25 @@ def static_segmentation_trace_indices(
             active_indices.append(index)
     if len(active_indices) <= count:
         return active_indices
+    if prefer_clean_transients:
+        from statistics import median
+
+        scored = []
+        for index in active_indices:
+            finite = [value for value in rows[index] if math.isfinite(value)]
+            ordered = sorted(finite)
+            signal = ordered[int(0.98 * (len(ordered) - 1))] - median(ordered)
+            differences = [right - left for left, right
+                           in zip(finite[:-1], finite[1:], strict=True)]
+            center = median(differences)
+            noise = median(abs(value - center) for value in differences) / 0.67448975 / math.sqrt(2)
+            if noise <= 0:
+                noise = math.sqrt(
+                    sum(value * value for value in differences) / len(differences) / 2
+                )
+            scored.append((signal / max(noise, 1e-12), index))
+        selected = sorted(scored, key=lambda item: (-item[0], item[1]))[:count]
+        return sorted(index for _, index in selected)
     return [
         active_indices[round(position * (len(active_indices) - 1) / (count - 1))]
         for position in range(count)
@@ -4800,13 +5030,19 @@ def write_segmentation_viewer_svg(
     )
     viewer = modality_record["sources"][0]
     trace_rows = segmentation_trace_rows(viewer)
-    trace_indices = static_segmentation_trace_indices(trace_rows)
+    trace_indices = static_segmentation_trace_indices(
+        trace_rows, prefer_clean_transients=modality == "mesoscope",
+    )
+    trace_selection = (
+        "positive-transient-contrast" if modality == "mesoscope" else "extraction-order"
+    )
     represented_filters = set(trace_indices)
     left_panel_label, right_panel_label = SEGMENTATION_PANEL_LABELS[modality]
     logo_data = base64.b64encode(load_platform_logos()[modality].read_bytes()).decode()
     svg = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" '
-        'viewBox="0 0 1400 760" role="img" aria-labelledby="title description">',
+        'viewBox="0 0 1400 760" role="img" aria-labelledby="title description" '
+        f'data-trace-selection="{trace_selection}">',
         f'<title id="title">{escape(SEGMENTATION_VIEWER_TITLES[modality])}</title>',
         '<desc id="description">A source projection shows all extraction filters; '
         'ten representative filters are paired with vertically stacked activity traces.</desc>',
@@ -6337,9 +6573,12 @@ def ccf_static_view_axes(
 ]:
     if view == "dorsal":
         return (-1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0)
-    if view != "oblique":
+    if view not in {"oblique", "implant-oblique"}:
         raise RuntimeError(f"Unsupported static CCF view: {view}")
-    toward_camera = normalized_vector((11_200.0, 7_300.0, 11_600.0))
+    toward_camera = normalized_vector(
+        (14_000.0, 8_500.0, -10_000.0) if view == "implant-oblique"
+        else (11_200.0, 7_300.0, 11_600.0)
+    )
     right = normalized_vector(vector_cross((0.0, 1.0, 0.0), toward_camera))
     up = normalized_vector(vector_cross(toward_camera, right))
     return right, up, toward_camera
@@ -6499,6 +6738,8 @@ def write_neuropixels_trajectory_svg(
     output: Path = NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT,
     data_path: Path = NEUROPIXELS_TRAJECTORY_DATA_PATH,
     provenance_path: Path = NEUROPIXELS_TRAJECTORY_PROVENANCE_PATH,
+    *,
+    single_view: bool = False,
 ) -> Path:
     payload = load_neuropixels_trajectory_data(data_path, provenance_path)
     surface = payload["brainSurface"]
@@ -6508,6 +6749,10 @@ def write_neuropixels_trajectory_svg(
         "oblique": (50.0, 100.0, 975.0, 710.0),
         "dorsal": (1060.0, 100.0, 490.0, 710.0),
     }
+    canvas_width, canvas_height = 1600, 900
+    if single_view:
+        panels = {"implant-oblique": (50.0, 100.0, 1000.0, 1040.0)}
+        canvas_width, canvas_height = 1200, 1200
 
     def atlas_coordinates(point: list[int]) -> tuple[float, float, float]:
         anterior_posterior, dorsal_ventral, medial_lateral = point
@@ -6571,24 +6816,29 @@ def write_neuropixels_trajectory_svg(
         brain_images[view] = base64.b64encode(rendered).decode()
 
     svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" '
-        'viewBox="0 0 1600 900" role="img" aria-labelledby="title description">',
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{canvas_width}" '
+        f'height="{canvas_height}" viewBox="0 0 {canvas_width} {canvas_height}" '
+        'role="img" aria-labelledby="title description">',
         '<title id="title">All localized Neuropixels insertions in the Allen CCF</title>',
-        '<desc id="description">Oblique and dorsal projections show all localized '
+          '<desc id="description">'
+          + ('A planned-orientation oblique projection shows all localized ' if single_view
+              else 'Oblique and dorsal projections show all localized ')
+          +
         'Neuropixels insertions over semi-transparent, depth-shaded projections of the '
         'Allen CCF whole-brain surface. Line color denotes probe A through F; each panel '
         'includes a 2 millimeter scale bar and anatomical direction marker.</desc>',
         '<defs><marker id="ccf-arrow" markerWidth="6" markerHeight="6" refX="5" '
         'refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#41504C"/>'
         '</marker></defs>',
-        '<rect width="1600" height="900" fill="#FFFFFF"/>',
-        f'<image class="ccf-brain-render" data-surface-opacity="'
-        f'{CCF_STATIC_SURFACE_OPACITY}" href="data:image/png;base64,'
-        f'{brain_images["oblique"]}" x="50" y="100" width="975" height="710"/>',
-        f'<image class="ccf-brain-render" data-surface-opacity="'
-        f'{CCF_STATIC_SURFACE_OPACITY}" href="data:image/png;base64,'
-        f'{brain_images["dorsal"]}" x="1060" y="100" width="490" height="710"/>',
+        f'<rect width="{canvas_width}" height="{canvas_height}" fill="#FFFFFF"/>',
     ]
+    for view, (left, top, width, height) in panels.items():
+        svg.append(
+            f'<image class="ccf-brain-render" data-view="{view}" data-surface-opacity="'
+            f'{CCF_STATIC_SURFACE_OPACITY}" href="data:image/png;base64,'
+            f'{brain_images[view]}" x="{left:g}" y="{top:g}" '
+            f'width="{width:g}" height="{height:g}"/>'
+        )
 
     for view in panels:
         transform = transforms[view]
@@ -6630,6 +6880,10 @@ def write_neuropixels_trajectory_svg(
 
         origin_x = left + width - 68
         origin_y = top + 68
+        axis_length = 38 if single_view else 31
+        label_offset = 50 if single_view else 41
+        orientation_font_size = 16 if single_view else 13
+        orientation_stroke_width = 2.4 if single_view else 2
         for label, axis in (
             ("L", (1.0, 0.0, 0.0)),
             ("D", (0.0, 1.0, 0.0)),
@@ -6641,17 +6895,18 @@ def write_neuropixels_trajectory_svg(
             length = math.hypot(screen_horizontal, screen_vertical)
             if length < 0.1:
                 continue
-            end_x = origin_x + 31 * screen_horizontal / length
-            end_y = origin_y + 31 * screen_vertical / length
-            label_x = origin_x + 41 * screen_horizontal / length
-            label_y = origin_y + 41 * screen_vertical / length + 4
+            end_x = origin_x + axis_length * screen_horizontal / length
+            end_y = origin_y + axis_length * screen_vertical / length
+            label_x = origin_x + label_offset * screen_horizontal / length
+            label_y = origin_y + label_offset * screen_vertical / length + 4
             svg.extend(
                 [
                     f'<line class="ccf-orientation-axis" x1="{origin_x:.2f}" '
                     f'y1="{origin_y:.2f}" x2="{end_x:.2f}" y2="{end_y:.2f}" '
-                    'stroke="#41504C" stroke-width="2" marker-end="url(#ccf-arrow)"/>',
+                    f'stroke="#41504C" stroke-width="{orientation_stroke_width}" '
+                    'marker-end="url(#ccf-arrow)"/>',
                     f'<text x="{label_x:.2f}" y="{label_y:.2f}" text-anchor="middle" '
-                    'font-family="Source Sans 3, sans-serif" font-size="13" '
+                    f'font-family="Source Sans 3, sans-serif" font-size="{orientation_font_size}" '
                     f'font-weight="700" fill="#293133">{label}</text>',
                 ]
             )
@@ -6659,33 +6914,129 @@ def write_neuropixels_trajectory_svg(
             f'<circle cx="{origin_x:.2f}" cy="{origin_y:.2f}" r="3" fill="#41504C"/>'
         )
 
-    svg.extend(
-        [
-            '<text x="74" y="77" font-family="Source Sans 3, sans-serif" '
-            'font-size="24" font-weight="700" fill="#293133">A</text>',
-            '<text x="1084" y="77" font-family="Source Sans 3, sans-serif" '
-            'font-size="24" font-weight="700" fill="#293133">B</text>',
-        ]
-    )
-    legend_x = 620
-    svg.append(
-        '<text class="probe-legend-title" x="555" y="851" text-anchor="end" '
-        'font-family="Source Sans 3, sans-serif" font-size="14" '
-        'font-weight="700" fill="#293133">Probe:</text>'
-    )
-    for index, probe in enumerate("ABCDEF"):
-        x = legend_x + index * 78
-        color = payload["probeColors"][probe]
-        svg.extend(
-            [
-                f'<line x1="{x}" y1="846" x2="{x + 25}" y2="846" '
-                f'stroke="{color}" stroke-width="5"/>',
-                f'<text class="probe-legend-label" x="{x + 32}" y="851" '
-                'font-family="Source Sans 3, sans-serif" font-size="13" '
-                f'fill="#414A48">{probe}</text>',
-            ]
+    for index, (left, _, _, _) in enumerate(panels.values()):
+        svg.append(
+            f'<text x="{left + 24:g}" y="77" font-family="Source Sans 3, sans-serif" '
+            f'font-size="24" font-weight="700" fill="#293133">{chr(65 + index)}</text>'
         )
+    if not single_view:
+        legend_x = 620
+        legend_y = canvas_height - 49
+        svg.append(
+            f'<text class="probe-legend-title" x="555" y="{legend_y}" text-anchor="end" '
+            'font-family="Source Sans 3, sans-serif" font-size="14" '
+            'font-weight="700" fill="#293133">Probe:</text>'
+        )
+        for index, probe in enumerate("ABCDEF"):
+            x = legend_x + index * 78
+            color = payload["probeColors"][probe]
+            svg.extend(
+                [
+                    f'<line x1="{x}" y1="{legend_y - 5}" x2="{x + 25}" y2="{legend_y - 5}" '
+                    f'stroke="{color}" stroke-width="5"/>',
+                    f'<text class="probe-legend-label" x="{x + 32}" y="{legend_y}" '
+                    'font-family="Source Sans 3, sans-serif" font-size="13" '
+                    f'fill="#414A48">{probe}</text>',
+                ]
+            )
     svg.append("</svg>")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    write_svg_output(output, svg)
+    return output
+
+
+def write_neuropixels_implant_svg(output: Path = NEUROPIXELS_IMPLANT_STATIC_OUTPUT) -> Path:
+    """Arrange source-backed implant panels beside the recorded CCF trajectories."""
+    from PIL import Image, ImageOps
+
+    source_dir = REPO_ROOT / "figure_sources/google-slides"
+    provenance = json.loads(
+        (source_dir / "slide-15-neuropixels-implant.provenance.json").read_text(encoding="utf-8")
+    )
+    native = provenance["native_image"]
+    source = source_dir / native["file"]
+    if hashlib.sha256(source.read_bytes()).hexdigest() != native["sha256"]:
+        raise RuntimeError("Native implant image checksum does not match its provenance.")
+    source_width, source_height = native["width_px"], native["height_px"]
+    image = png_data_uri(source, (source_width, source_height))
+    transform = native["native_to_slide_transform"]
+    image_transform = "matrix(" + " ".join(str(value) for value in transform) + ")"
+    # Keep slide-coordinate crops without resampling the native raster.
+    header_bottom = round((100 - transform[5]) / transform[3])
+    with Image.open(source) as source_image:
+        structure_image = ImageOps.grayscale(source_image).convert("RGBA")
+        structure_image.putalpha(source_image.convert("RGBA").getchannel("A"))
+        structure_image.paste(
+            source_image.convert("RGBA").crop((0, 0, source_image.width, header_bottom)), (0, 0)
+        )
+        structure_png = encode_rgba_png(
+            structure_image.width, structure_image.height, structure_image.tobytes()
+        )
+    structure_uri = "data:image/png;base64," + base64.b64encode(structure_png).decode("ascii")
+    trajectory_path = write_neuropixels_trajectory_svg(
+        output.parent / NEUROPIXELS_TRAJECTORY_STATIC_OUTPUT.name, single_view=True
+    )
+    trajectory = ElementTree.fromstring(trajectory_path.read_text(encoding="utf-8"))
+    namespace = "http://www.w3.org/2000/svg"
+    for element in list(trajectory):
+        if (
+            element.tag == f"{{{namespace}}}text"
+            and element.text in {"A", "B"}
+            and element.get("y") == "77"
+            or element.get("class") in {"probe-legend-title", "probe-legend-label"}
+        ):
+            trajectory.remove(element)
+    trajectory.attrib.pop("aria-labelledby", None)
+    for element in trajectory:
+        if element.tag in {f"{{{namespace}}}title", f"{{{namespace}}}desc"}:
+            element.attrib.pop("id", None)
+    trajectory_group = ElementTree.Element(
+        f"{{{namespace}}}g", {"id": "recorded-trajectories"}
+    )
+    trajectory_group.extend(list(trajectory))
+    trajectory_svg = ElementTree.tostring(trajectory_group, encoding="unicode")
+    svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="3400" height="1300" '
+        'viewBox="0 0 3400 1300" role="img" aria-labelledby="title description">',
+        '<title id="title">Planned implant geometry and recorded Neuropixels trajectories</title>',
+        '<desc id="description">A shows planned probe trajectories; B enlarges the six '
+        'atlas-structure columns over the full figure height; C shows the implant top view. '
+        'D shows one complete oblique view of the recorded trajectories, with rostral-left '
+        'orientation selected to match the planned view in A. '
+        'The source coordinate table is transcribed in Methods rather than repeated here.</desc>',
+        '<rect width="3400" height="1300" fill="#FFFFFF"/>',
+        '<defs>',
+        f'<image id="implant-slide" href="{image}" width="{source_width}" '
+        f'height="{source_height}" transform="{image_transform}"/>',
+        f'<image id="implant-structure-slide" data-render-mode="grayscale-body-colored-header" '
+        f'data-color-header-bottom="{header_bottom}" '
+        f'href="{structure_uri}" width="{source_width}" height="{source_height}" '
+        f'transform="{image_transform}"/>',
+        trajectory_svg,
+        '</defs>',
+    ]
+    for letter, box, view_box, source_id in (
+        ("A", (40, 90, 620, 560), "500 25 650 620", "implant-slide"),
+        ("B", (710, 80, 1560, 1150), "1300 25 810 590", "implant-structure-slide"),
+        ("C", (110, 710, 470, 540), "1480 650 370 555", "implant-slide"),
+        ("D", (2340, 90, 1000, 1130), "40 90 1020 1050", "recorded-trajectories"),
+    ):
+        left, top, width, height = box
+        crop_x, crop_y, crop_width, crop_height = view_box.split()
+        svg.extend([
+            f'<text class="panel-label" x="{left}" y="{top - 20}" '
+            f'font-family="{FIGURE_SANS_FONT}" font-size="24" font-weight="700">'
+            f'{letter}</text>',
+            f'<svg class="implant-panel" data-panel="{letter}" x="{left}" y="{top}" '
+            f'width="{width}" height="{height}" viewBox="{view_box}" overflow="hidden" '
+            'preserveAspectRatio="xMidYMid meet">',
+            f'<defs><clipPath id="implant-crop-{letter}" clipPathUnits="userSpaceOnUse">'
+            f'<rect x="{crop_x}" y="{crop_y}" width="{crop_width}" '
+            f'height="{crop_height}"/></clipPath></defs>',
+            f'<g clip-path="url(#implant-crop-{letter})"><use href="#{source_id}"/></g>',
+            '</svg>',
+        ])
+    svg.append('</svg>')
     output.parent.mkdir(parents=True, exist_ok=True)
     write_svg_output(output, svg)
     return output
@@ -6697,12 +7048,12 @@ def main() -> None:
         write_mesoscope_plane_snr_html,
         write_mesoscope_plane_snr_svg,
     )
-    from .mismatch_adjacency_figure import write_mismatch_adjacency_svg
     from .neural_response_figure import (
         write_neuropixels_event_html,
         write_neuropixels_event_svg,
     )
     from .pupil_figure import write_pupil_event_html, write_pupil_event_svg
+    from .receptive_field_figure import write_receptive_fields_svg
     from .sensorimotor_running_figure import (
         write_sensorimotor_running_html,
         write_sensorimotor_running_svg,
@@ -6712,9 +7063,10 @@ def main() -> None:
     merged_figure_1_path = write_merged_figure_1_svg()
     figure_1_panel_c_path = write_figure_1_panel_c_svg()
     hardware_path = write_hardware_figure_svg()
+    hardware_supplement_path = write_hardware_supplement_svg()
     unit_extraction_plan_path = write_unit_extraction_plan_svg()
     unit_extraction_mesoscope_path = write_unit_extraction_mesoscope_svg()
-    basic_stimuli_plan_path = write_basic_stimuli_plan_svg()
+    receptive_fields_path = write_receptive_fields_svg()
     html_path = write_interactive_html()
     data_explorer_path = write_data_explorer_html()
     nwb_file_contents_path = write_nwb_file_contents_html()
@@ -6736,23 +7088,29 @@ def main() -> None:
         static_output=unit_extraction_mesoscope_path
     )
     unit_yield_html_path = write_unit_yield_html()
-    trajectory_html_path = write_neuropixels_trajectory_html()
+    trajectory_html_path = write_neuropixels_trajectory_html(
+        static_output=NEUROPIXELS_IMPLANT_STATIC_OUTPUT, include_implant=True
+    )
     optotagging_source_path = write_optotagging_static_source()
-    optotagging_html_path = write_optotagging_heatmap_html()
     optotagging_svg_path = OPTOTAGGING_HEATMAP_STATIC_OUTPUT
     unit_yield_svg_path = write_unit_yield_svg()
-    mismatch_adjacency_svg_path = write_mismatch_adjacency_svg()
     sensorimotor_running_svg_path = write_sensorimotor_running_svg()
     sensorimotor_running_html_path = write_sensorimotor_running_html()
     wavemap_paths = build_wavemap_publication()
+    optotagging_html_path = write_optotagging_heatmap_html(
+        static_presentation=OPTOTAGGING_HEATMAP_STATIC_OUTPUT.with_name(
+            "supplementary-cell-type-validation.svg"
+        )
+    )
     qc_svg_path = write_ecephys_qc_svg()
     qc_html_path = write_ecephys_qc_html()
     print(f"Wrote {merged_figure_1_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {figure_1_panel_c_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {hardware_supplement_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_plan_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_mesoscope_path.relative_to(REPO_ROOT)}")
-    print(f"Wrote {basic_stimuli_plan_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {receptive_fields_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {data_explorer_path.relative_to(REPO_ROOT)}")
@@ -6779,7 +7137,6 @@ def main() -> None:
     print(f"Wrote {optotagging_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {optotagging_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")
-    print(f"Wrote {mismatch_adjacency_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {sensorimotor_running_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {sensorimotor_running_html_path.relative_to(REPO_ROOT)}")
     for path in wavemap_paths:

@@ -54,10 +54,35 @@ differences across these cohorts are not evidence of preparation-quality differe
 Context labels are inferred from orientation statistics in the older sessions and
 read from named interval tables in the dual-channel sessions.
 
-The original context table omits zero-event source/context pairs. Panel K therefore
-shows means and SEM over retained event-bearing records with at least 5 valid seconds,
-not an unconditional mean over every source. Classes with fewer than 10 sources in
-a cohort and named contexts with fewer than 100 retained records are not drawn.
+The publication retains all three archived classes. Panel A shows one 20 s raw
+trace with inline event labeling, one measured event-amplitude arrow, a ±3 raw-noise
+SD band, with the individual synapse footprint in B at right. This raw-noise reference
+is not the detector's filtered-trace threshold. The separate filtered/raw measurement
+plots are omitted. The three class-example histograms (C–E) retain all finite
+amplitudes but highlight only below-2 and at-least-4-SD fractions, matching the
+scatter axes. Percentages retain their original all-event denominators; the
+middle range is unshaded and has no separate percentage annotation.
+These histograms precede a single transparent filled DMD2 dendritic map (F),
+placed to the left of the grid-free archive scatter (G). Map and scatter use
+identical white, dark-edged rings and source IDs for the three histogram
+examples only. Counts are caption-only. The map covers all 59 DMD2
+sources from only the example session, while the scatter retains both DMDs and includes
+all 2,521 classified sources. Distinct gold, blue, and green encodings are shared
+across the class panels. Fit details and processing-cohort caveats are in the manuscript
+caption rather than gray plot footnotes.
+
+Panel H places four compartment/cohort pools and all 20 individual-session class
+compositions on one vertical 0–100% stacked-bar axis. Each denominator excludes
+unclassified sources; the pools and session bars reuse the same source population.
+The shared class legend appears only in G. The DMD2 map retains its native aspect
+ratio below its header, and B is centered in the space beside A.
+The map and scatter share a row below the histograms. Trace labels sit
+beside the amplitude arrow and close to the noise band, clear of the raw trace.
+Session dates sit above mouse-group brackets and IDs, with explicit Date and
+Mouse ID row labels below the axis.
+The stimulus-context event-rate plots are no longer included. Their unchanged
+source table remains available; it omits zero-event source/context pairs and must
+not be treated as an unconditional sample of all sources.
 
 ## Rebuild Offline
 
@@ -70,7 +95,9 @@ uv run pytest tests/test_slap2_glutamate_qc.py
 ```
 
 The build generates canonical SVGs for C/G/K, the continuous-color C/G variants,
-and the Figure 7 composition from committed inputs. It does not open a primary NWB.
+and the Figure 5 composition with logical A–H lettering from committed inputs.
+Legacy C/G/K filenames and CLI selectors remain stable.
+It does not open a primary NWB.
 PNG previews remain available through the notebook and standalone rendering command
 but are not versioned: native rasterizers differ by a few antialiased pixel values.
 The plotted example uses float64 matched-filter accumulation for stable SVG geometry;
