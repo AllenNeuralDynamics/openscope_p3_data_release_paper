@@ -1,5 +1,5 @@
 {
-  "description": "Mesoscope column (panels B, F, J) of the cross-modality unit-extraction figure. The panels and the stacked composite are both produced offline by the renderer scripts below and committed under figure_sources/media; openscope_p3_publication.figures.write_unit_extraction_mesoscope_svg only wraps the committed composite in SVG, so the build re-encodes no image bytes and its output is identical on every platform.",
+  "description": "Mesoscope column (panels B, F, J) of the cross-modality unit-extraction figure. The panels and the stacked composite are produced offline by scripts/build_mesoscope_unit_extraction_panels.py from the two committed inputs below and committed under figure_sources/media; openscope_p3_publication.figures.write_unit_extraction_mesoscope_svg only wraps the committed composite in SVG, so the build re-encodes no image bytes and its output is identical on every platform.",
   "cohort": {
     "sessions": 81,
     "qc_pass_total": 83,
@@ -25,7 +25,7 @@
       "sha256": "fa96837763a3e1916d9b0885bef1cb384cc80f95e99a37c56e4db5ab43a90414"
     },
     "panel-f.png": {
-      "sha256": "174c6e88d51e5e5d2d3023458bf5206ede9c0646ad9af78c32cc13d102059d51"
+      "sha256": "a7f8a9652c6775ac545b53bace9c0f0fa50e32aeb5bea8e625bb1aba85ed432d"
     },
     "panel-j.png": {
       "sha256": "ac8ebb8590ab379500e17fde5ee23d87fbf0cbe0bd29f59e1ca3af0aa20000ce"
@@ -33,24 +33,70 @@
   },
   "renderer": {
     "scripts/mesoscope_matched_panels.py": {
-      "sha256": "c140e59d90cd41ab1c35ecbadec8f44d1770467530990136d009c18d278f5569"
+      "sha256": "f7023eebf862e121b7d4354af85a5d12a0c166ed399cb1ce3a3c0096fc02f907"
     },
     "scripts/build_mesoscope_unit_extraction_panels.py": {
-      "sha256": "339d744d2dbde44ee9c20e9ffa846f2bd665bd788c00494ec23b0438414aa348"
+      "sha256": "19606ae3350607568fcd76dbcdb85e97fe95c02c549bcd7ac14ecdd55a77ad03"
+    },
+    "scripts/extract_mesoscope_roi_metrics.py": {
+      "sha256": "85214d3d73be39112d166564bff0509ec08a1d6bec7cfcbed59db8e3e23e8784"
     }
   },
   "source_table": {
-    "name": "mesoscope_roi_metrics_cohort81.csv.gz",
-    "sha256": "9a99329862c87b4705b2e68415742a229d5c2aa1ab7cbd2e817c5bd91b9fc7f5",
+    "path": "figure_sources/data/mesoscope-unit-extraction-roi-metrics.csv.gz",
+    "sha256": "29a98d8ceb51d77c49b547cedffb4a9e89eee95013b30d611fee4e27d9739878",
     "rows": 175508,
-    "note": "not committed: 37 MB per-ROI table produced on the analysis cluster; the checksum pins the table the panels were rendered from"
+    "columns": [
+      "session",
+      "subject_id",
+      "acq_date",
+      "plane",
+      "structure",
+      "depth_um",
+      "depth_bin",
+      "roi_index",
+      "roi_area_pix",
+      "n_events",
+      "event_rate_hz",
+      "frac_events_lt2sd",
+      "frac_events_2_4sd",
+      "frac_events_gt4sd",
+      "amp_threshold_quality_class",
+      "amp_threshold_quality_class_session",
+      "session_label"
+    ],
+    "row_order": "session, cortical area (VISp before VISl), plane, roi_index",
+    "produced_by": "scripts/extract_mesoscope_roi_metrics.py (session stage per processed asset on the AIND bucket, then assemble)",
+    "note": "One row per ROI. Column subset of the 54-column per-ROI extraction table (sha256 9a99329862c87b4705b2e68415742a229d5c2aa1ab7cbd2e817c5bd91b9fc7f5, 37 MB, not committed); the other columns are by-products of the same pass and are not inputs to these. amp_threshold_quality_class is the cohort-wide k-means fit the panels used; a refit from scratch reproduces the fractions exactly but the k-means objective has several near-equivalent local optima, so a few percent of boundary ROIs can change class with row order or seed. This file is the record of the labels drawn."
   },
-  "note": "The renderer scripts need scipy, which is not a repo dependency, and the uncommitted per-ROI cohort table; they are committed as the record of how the panel PNGs were produced, not as part of the figure build.",
+  "note": "Regenerate with: python scripts/build_mesoscope_unit_extraction_panels.py --cohort figure_sources/data/mesoscope-unit-extraction-roi-metrics.csv.gz --payload figure_sources/data/mesoscope-unit-extraction-example-session.json --out-dir figure_sources/media/mesoscope-unit-extraction. Needs only the repo's declared dependencies (numpy, pandas, matplotlib, Pillow).",
   "composite": {
     "figure-06-unit-extraction-mesoscope.png": {
-      "sha256": "c6ba07cdf4d17e3387cd4d9c098595a66935b05146e25e0415d448c50a0de211",
+      "sha256": "b081940a4c2d93d4a762af9c997a07a8c00871e4aea52c5fbe58bd8deff406af",
       "width": 2840,
       "height": 5680
     }
+  },
+  "example_payload": {
+    "path": "figure_sources/data/mesoscope-unit-extraction-example-session.json",
+    "sha256": "46b3d4ef3ed1cb594abb039d37a7cd7ff4cf1e91a0777544425865e1e0654536",
+    "session": "multiplane-ophys_839909_2026-02-26",
+    "source": "s3://aind-open-data/multiplane-ophys_839909_2026-02-26_15-11-01_processed_2026-02-27_11-23-59/pophys.nwb.zarr",
+    "produced_by": "scripts/extract_mesoscope_plane_snr.py (same schema as mesoscope-plane-snr.json)",
+    "note": "Panel B imagery, ROI masks and the 60 s excerpt traces; the quality classes are joined from source_table on (plane, roi_index)."
+  },
+  "extraction": {
+    "source_bucket": "s3://aind-open-data",
+    "asset_pattern": "multiplane-ophys_<subject>_<date>_<time>_processed_<date>_<time>/pophys.nwb.zarr",
+    "session_selection": "mesoscope rows of figure_sources/data/experimental-sessions.csv with qc == Pass (83); 81 extracted",
+    "metric_module": {
+      "repository": "https://github.com/davisgrubin/openscope-ophys-qc",
+      "commit": "6081e672cf113e741e51def74d470cffdf5e14c1",
+      "files": [
+        "src/snr_three_metrics.py",
+        "src/mesoscope_qc_pipeline.py"
+      ]
+    },
+    "cost": "about 9 min and 0.5 GB per session on 2 cores; ~17 core-hours for the cohort"
   }
 }

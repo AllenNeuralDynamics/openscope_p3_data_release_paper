@@ -12,9 +12,10 @@ Row semantics come from the shared grid (figure07_panel_letters.csv):
     row 3  J  distribution of classes across context / anatomy / sessions
 
 
-Run outside the repo build: needs scipy (not a repo dependency) and the
-per-ROI cohort table, which is too large to commit and is pinned by
-checksum in figure_sources/data/mesoscope-unit-extraction.provenance.json.
+Run outside the repo build (see build_mesoscope_unit_extraction_panels.py):
+reads the committed per-ROI cohort table figure_sources/data/
+mesoscope-unit-extraction-roi-metrics.csv.gz and needs only numpy, pandas
+and matplotlib.
 """
 from __future__ import annotations
 
@@ -66,13 +67,29 @@ def footnote(fig, text, y=0.022):
 
 # ─────────────────────────── B: example imagery and traces ────────────────────
 
+def mask_outline(mask):
+    """One-pixel boundary of a boolean mask: the mask minus its 3x3 erosion.
+
+    A pixel survives the erosion only if it and all eight neighbours are set;
+    pixels on the array border count as having unset neighbours outside it.
+    Nine shifted views of a zero-padded copy give exactly that, so no image
+    library is needed.
+    """
+    m = np.asarray(mask, dtype=bool)
+    padded = np.pad(m, 1, constant_values=False)
+    eroded = np.ones_like(m)
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            eroded &= padded[1 + dy:1 + dy + m.shape[0], 1 + dx:1 + dx + m.shape[1]]
+    return m & ~eroded
+
+
 def _class_outlines(labels, roi_class, cls):
     """Boundary pixels of every ROI assigned to `cls`, in one pass per class."""
-    from scipy.ndimage import binary_erosion
     members = np.isin(labels, [i for i, c in roi_class.items() if c == cls])
     if not members.any():
         return None
-    return members & ~binary_erosion(members, np.ones((3, 3), bool))
+    return mask_outline(members)
 
 
 def panel_B(planes, example, counts, out, session_label):
