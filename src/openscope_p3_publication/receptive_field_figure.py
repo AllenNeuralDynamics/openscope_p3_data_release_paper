@@ -35,7 +35,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Ellipse, Patch
 
 from .figure_typography import normalize_figure_svg
-from .figures import FIGURE_SANS_FONT, load_platform_logos
+from .figures import load_platform_logos
 from .image_encoding import canonical_svg_images
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -82,7 +82,7 @@ INCH_PER_DEG = 0.0088
 FIG_W = 15.0
 STIM_W = 1.25
 MARGIN_L = 0.35
-MODULE_X = 1.85
+MODULE_X = 1.95
 MODULE_W = (FIG_W - MODULE_X - 0.55) / len(MODALITIES)
 
 TICK = 10.0
@@ -92,8 +92,7 @@ MODALITY_TITLE = 16.0
 LETTER = 18.0
 
 RC_PARAMS = {
-    "font.family": "sans-serif",
-    "font.sans-serif": FIGURE_SANS_FONT.split(", "),
+    "font.family": "DejaVu Sans",
     "font.size": LABEL,
     "axes.linewidth": 0.45,
     "xtick.labelsize": TICK,

@@ -9,6 +9,7 @@ from openscope_p3_publication.ecephys_qc_figure import (
     UNIT_TRACE_PATH,
     load_ecephys_unit_trace,
 )
+from openscope_p3_publication.figures import text_sha256_matches
 
 
 def test_recorded_unit_trace_preserves_native_samples_and_identity() -> None:
@@ -44,9 +45,10 @@ def test_recorded_unit_trace_preserves_native_samples_and_identity() -> None:
     assert provenance["diagnostics"]["analyzer_cluster_id"] == 259
     assert provenance["diagnostics"]["analyzer_channel_id"] == trace["channel"]
     assert provenance["diagnostics"]["sorter"]["parameters"]["sorter_name"] == "kilosort4"
-    assert provenance["script_sha256"] == hashlib.sha256(
-        (UNIT_TRACE_PATH.parents[2] / "scripts" / "extract_ecephys_unit_trace.py").read_bytes()
-    ).hexdigest()
+    assert text_sha256_matches(
+        UNIT_TRACE_PATH.parents[2] / "scripts" / "extract_ecephys_unit_trace.py",
+        provenance["script_sha256"],
+    )
 
 
 def test_recorded_diagnostics_reproduce_source_metrics() -> None:

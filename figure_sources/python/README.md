@@ -6,6 +6,10 @@ The installable package in `src/openscope_p3_publication/` owns figures generate
 uv run build-publication-figures
 ```
 
+The mesoscope and receptive-field renderers use Matplotlib's bundled DejaVu Sans
+for portable layout metrics, then normalize editable SVG text to Arial for the
+publication. Installing Arial locally must not change generated geometry.
+
 The experimental-design generator writes:
 
 - `images/figures/generated/figure-01-overview.svg`: horizontal conceptual-framework and multimodal-workflow composition.

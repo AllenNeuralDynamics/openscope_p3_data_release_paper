@@ -52,6 +52,13 @@ def rendered_figure(data: dict) -> Iterator[plt.Figure]:
         plt.close(figure)
 
 
+def test_layout_uses_bundled_font_metrics(rendered_figure: plt.Figure) -> None:
+    assert all(
+        text.get_fontproperties().get_name() == "DejaVu Sans"
+        for text in rendered_figure.findobj(Text)
+    )
+
+
 def test_example_scales_are_shared_without_changing_values(
     data: dict, rendered_figure: plt.Figure,
 ) -> None:

@@ -48,15 +48,26 @@ jobs:
         timeout-minutes: 2
         run: git --no-pager diff --exit-code --name-only -- interactive images/figures/generated figure_sources/media/optotagging/optotagging-static-composite.svg
 
-      - name: Preserve SLAP2 drift diagnostics
+      - name: Describe mesoscope SVG drift
+        if: failure() && steps.generated-figures.outcome == 'failure'
+        shell: pwsh
+        run: |
+          git --no-pager diff --unified=1 -- images/figures/generated/figure-06-unit-extraction-mesoscope.svg |
+            ForEach-Object { if ($_.Length -gt 300) { $_.Substring(0, 200) + ' ... [long SVG line]' } else { $_ } } |
+            Select-Object -First 150
+
+      - name: Preserve figure drift diagnostics
         if: failure() && steps.generated-figures.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
-          name: slap2-windows-drift
+          name: figures-windows-drift
           retention-days: 3
           path: |
             images/figures/generated/figure7_panel*
             images/figures/generated/figure-07-unit-extraction-plan.svg
+            images/figures/generated/figure-06-unit-extraction-mesoscope.svg
+            images/figures/generated/receptive-fields.svg
+            interactive/mesoscope-plane-snr.html
 
   build:
     runs-on: ubuntu-latest
