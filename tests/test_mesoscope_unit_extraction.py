@@ -1,11 +1,13 @@
 """Scientific and layout regressions for the editable mesoscope quality figure."""
 
 import json
+import math
 import re
 import socket
 from xml.etree import ElementTree as ET
 
 import matplotlib as mpl
+import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
@@ -219,6 +221,10 @@ def test_editable_svg_build_is_offline_and_byte_deterministic(tmp_path, monkeypa
     monkeypatch.setattr(socket, "socket", reject_network)
     output = write_mesoscope_unit_extraction_svg(tmp_path / "figure.svg")
     first = output.read_bytes()
+    write_mesoscope_unit_extraction_svg(output)
+    assert output.read_bytes() == first
+    # Python 3.12 sums float GridSpec ratios more accurately than Python 3.11.
+    monkeypatch.setattr(gridspec, "sum", math.fsum, raising=False)
     write_mesoscope_unit_extraction_svg(output)
     assert output.read_bytes() == first
     root = ET.fromstring(first)

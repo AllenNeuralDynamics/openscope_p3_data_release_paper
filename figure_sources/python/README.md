@@ -9,6 +9,9 @@ uv run build-publication-figures
 The mesoscope and receptive-field renderers use Matplotlib's bundled DejaVu Sans
 for portable layout metrics, then normalize editable SVG text to Arial for the
 publication. Installing Arial locally must not change generated geometry.
+Use equivalent integer GridSpec ratios where possible: Python 3.12's improved
+floating-point summation can otherwise change SVG clip IDs even when serialized
+geometry is identical.
 
 The experimental-design generator writes:
 

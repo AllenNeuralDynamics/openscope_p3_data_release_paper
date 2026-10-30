@@ -214,8 +214,9 @@ def make_mesoscope_figure(cohort: pd.DataFrame, payload: dict[str, Any]) -> Figu
     examples = class_examples(cohort)
     inputs = panel_inputs(cohort)
     figure = plt.figure(figsize=(7.2, 8.2))
+    # Exact integer sums keep SVG clip IDs stable across Python versions.
     outer = figure.add_gridspec(
-        5, 1, height_ratios=[1, 0.65, 1.65, 1.3, 1.05],
+        5, 1, height_ratios=[20, 13, 33, 26, 21],
         hspace=0.65, left=0.10, right=0.975, top=0.945, bottom=0.075,
     )
 
