@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import shutil
@@ -271,13 +272,33 @@ def test_plot_groups_share_the_modality_heading_centres(rendered_figure: plt.Fig
     np.testing.assert_allclose(np.diff(centres), np.diff(centres)[0], atol=1e-6)
 
 
-def test_tentative_caption_reports_saved_populations_and_parameters(provenance: dict) -> None:
+def test_contributed_receptive_field_text_is_preserved() -> None:
+    """Preserve PR #50 wording, allowing only figure-reference and formatting changes."""
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    section = manuscript.split("## Receptive field analysis across modalities", 1)[1].split(
+        "## Cell-type characterization", 1,
+    )[0]
+    body = section.split(":::{figure}", 1)[0]
+    caption = section.split(":width: 100%", 1)[1].split("\n\nEach column", 1)[0]
+    for text, expected in (
+        (body, "51470ca41dd98de85b2e49435bb74542681774ed488bff5c25b0faf9322ef304"),
+        (caption, "50d2058b10368ff9be983d43c84b68767170cff833be1cc264f8a8c9544d9c7e"),
+    ):
+        normalized = re.sub(r"\[Fig\. \d+([A-Z,]+)\]\(#[^)]+\)", r"[Fig. \1]", text)
+        normalized = " ".join(normalized.split())
+        assert hashlib.sha256(normalized.encode("utf-8")).hexdigest() == expected
+    assert "figure-09-RF-mapping.png" not in section
+    assert "#fig-RF-mapping" not in section
+    assert ":::{figure} ./images/figures/generated/receptive-fields.svg" in section
+
+
+def test_caption_reports_saved_populations_and_parameters(provenance: dict) -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     caption = manuscript.split(":label: fig-basic-stimuli-plan", 1)[1].split(":::", 1)[0]
     caption = " ".join(caption.split())
-    assert "tentative caption" in caption
+    assert "tentative caption" not in caption
     assert "Draft panel plan" not in caption
-    assert all(f"**{letter},**" in caption for letter in "ABC")
+    assert all(f"**{letter})**" in caption for letter in "ABC")
     for modality, label, structures in (
         ("ecephys", "Neuropixels V1/LM", ("V1", "LM")),
         ("mesoscope", "mesoscope V1/LM", ("V1", "LM")),
