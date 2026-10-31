@@ -1229,8 +1229,8 @@ Each column shows one session from Neuropixels, mesoscope calcium imaging, or
 SLAP2 glutamate imaging, not the full released cohort. Maps use spikes for
 Neuropixels, OASIS events for mesoscope, and green-channel OASIS events (Gabor)
 or fluorescence changes, ΔF/F (Zebra), for SLAP2.
-**A,** Example map pairs selected for significance with both stimuli, Gabor
-only, or Zebra only; colored frames match the categories in B. Gabor responses
+**A,** Example map pairs ordered left to right as Zebra only, Gabor only,
+and both stimuli significant; colored frames match the categories in B. Gabor responses
 (top) are z scores and Zebra maps (bottom) are correlations, with a separate
 symmetric color scale shared across modalities for each stimulus. Outlined
 ellipses and white-centred markers show the one-sigma Gaussian fits and their

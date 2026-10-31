@@ -13,8 +13,8 @@ and this module only draws them.
 
 Columns are the modalities (Neuropixels, mesoscope, SLAP2 glutamate):
 
-* A: one example unit per selection (both tests significant, only Gabor, only
-  Zebra), Gabor map above Zebra map, with the Gaussian fit of a significant map.
+* A: one example unit per selection (only Zebra, only Gabor, both tests
+  significant), Gabor map above Zebra map, with the Gaussian fit of a significant map.
 * B: units of the two compared structures by which test they pass.
 * C: Gaussian centre, one-sigma area and peak strength of the significant maps,
   Gabor above Zebra, with the median, its bootstrap 95% CI and a permutation test.
@@ -50,6 +50,7 @@ MODALITIES = (
     ("slap2", "SLAP2 glutamate"),
 )
 SELECTIONS = ("both", "gabor-only", "zebra-only")
+EXAMPLE_ORDER = ("zebra-only", "gabor-only", "both")
 SELECTION_TITLES = {
     "both": "Both\nsignificant",
     "gabor-only": "Only Gabor\nsignificant",
@@ -270,29 +271,31 @@ def draw_examples(place, data: dict, modality: str, x: float, y: float,
     gabor_y = y + title_h
     zebra_y = gabor_y + gabor_h + row_gap
     present = ex["present"]
-    for col, selection in enumerate(ex["selection"]):
+    indices = {selection: index for index, selection in enumerate(ex["selection"])}
+    for col, selection in enumerate(EXAMPLE_ORDER):
+        index = indices[selection]
         zx = x + left + col * (zebra_w + gap)
         gabor_ax = place(zx + (zebra_w - gabor_w) / 2, gabor_y, gabor_w, gabor_h)
         zebra_ax = place(zx, zebra_y, zebra_w, zebra_h)
         gabor_ax.set_gid(f"example-{modality}-gabor-{selection}")
         zebra_ax.set_gid(f"example-{modality}-zebra-{selection}")
         gabor_ax.set_title(SELECTION_TITLES[selection], fontsize=LABEL, pad=4)
-        if not present[col]:
+        if not present[index]:
             note = "No significant result"
             _draw_empty(gabor_ax, gabor_extent, note if selection != "zebra-only" else None)
             _draw_empty(zebra_ax, zebra_extent, note if selection != "gabor-only" else None)
             continue
-        _draw_map(gabor_ax, ex["gabor_map"][col], gabor_extent, "lower", norms["gabor"])
-        _draw_map(zebra_ax, ex["zebra_map"][col], zebra_extent, "upper",
+        _draw_map(gabor_ax, ex["gabor_map"][index], gabor_extent, "lower", norms["gabor"])
+        _draw_map(zebra_ax, ex["zebra_map"][index], zebra_extent, "upper",
                   norms["zebra"], faint_zero=True)
         gabor_ax.tick_params(labelbottom=False)
         for ax, kind in ((gabor_ax, "gabor"), (zebra_ax, "zebra")):
             ax.tick_params(labelsize=TICK, pad=1.5)
             _frame(ax, SELECTION_COLORS[selection])
-            passed = bool(ex[f"pass_{kind}"][col])
+            passed = bool(ex[f"pass_{kind}"][index])
             _mark_q(ax, passed, q_level)
             if passed:
-                _draw_gaussian(ax, ex[f"{kind}_fit"][col])
+                _draw_gaussian(ax, ex[f"{kind}_fit"][index])
         if col > 0 or modality != MODALITIES[0][0]:
             gabor_ax.tick_params(labelleft=False)
             zebra_ax.tick_params(labelleft=False)
@@ -434,15 +437,16 @@ def _draw_comparison(ax, fits: dict, summary: dict, tests: dict, column: str, yl
             rise = 0.035 * y_span
             y_lo = float(np.nanmin(pooled)) - 0.05 * y_span
             y_hi = bracket + 0.28 * y_span
+            annotation_y = bracket + 0.045 * y_span
+            annotation_transform = ax.transData
         else:
             y_lo, y_hi = 0.0, float(ymax)
-            y_span = y_hi - y_lo
-            bracket = y_hi - 0.16 * y_span
-            rise = 0.03 * y_span
+            bracket, rise, annotation_y = 1.02, 0.03, 1.065
+            annotation_transform = ax.get_xaxis_transform()
         ax.plot([0, 0, 1, 1], [bracket, bracket + rise, bracket + rise, bracket],
-                color="k", lw=0.4, clip_on=ymax is not None)
-        ax.text(0.5, bracket + 0.045 * y_span, _star_label(p_value), ha="center", va="bottom",
-                fontsize=TICK, clip_on=ymax is not None)
+                color="k", lw=0.4, transform=annotation_transform, clip_on=False)
+        ax.text(0.5, annotation_y, _star_label(p_value), ha="center", va="bottom",
+                fontsize=TICK, transform=annotation_transform, clip_on=False)
         ax.set_ylim(y_lo, y_hi)
         if ymax is not None:
             ax.set_yticks(np.arange(0, ymax + 1, 1000))
@@ -468,7 +472,7 @@ def draw_summary(place, data: dict, modality: str, x: float, y: float) -> tuple[
     gabor_w, height = (s * INCH_PER_DEG for s in _span(gabor_window))
     zebra_w = _span(zebra_window)[0] * INCH_PER_DEG
     legend_h, row_gap = 0.28, 0.72
-    box_w, box_gap = 0.82, 0.60
+    box_w, box_gap = 0.80, 0.64
     left = (MODULE_W - zebra_w - 2 * (box_w + box_gap)) / 2
     centres = []
     for row, (kind, window, width, strength_label) in enumerate((
@@ -482,7 +486,10 @@ def draw_summary(place, data: dict, modality: str, x: float, y: float) -> tuple[
         position = place(sx, top, width, height)
         position.set_gid(f"summary-{modality}-{kind}-position")
         _draw_position(position, fits, window)
-        if modality != MODALITIES[0][0]:
+        position.set_xlabel("Azimuth (deg)", fontsize=LABEL, labelpad=1)
+        if modality == MODALITIES[0][0]:
+            position.set_ylabel("Elevation (deg)", fontsize=LABEL, labelpad=1)
+        else:
             position.tick_params(labelleft=False)
         area_x = x + left + zebra_w + box_gap
         summary, tests = packed[f"{kind}_summary"], packed[f"{kind}_tests"]
@@ -490,13 +497,8 @@ def draw_summary(place, data: dict, modality: str, x: float, y: float) -> tuple[
         strength = place(area_x + box_w + box_gap, top, box_w, height)
         area.set_gid(f"summary-{modality}-{kind}-area")
         strength.set_gid(f"summary-{modality}-{kind}-strength")
-        _draw_comparison(area, fits, summary, tests, "area", "", ymax=AREA_YMAX)
-        if row == 0:
-            area.set_title("RF area (deg²)", fontsize=LABEL, pad=10)
-            area.tick_params(labelbottom=False)
-            strength.tick_params(labelbottom=False)
-        _draw_comparison(strength, fits, summary, tests, "strength", "")
-        strength.set_title(strength_label, fontsize=LABEL, pad=10)
+        _draw_comparison(area, fits, summary, tests, "area", "Area (deg²)", ymax=AREA_YMAX)
+        _draw_comparison(strength, fits, summary, tests, "strength", strength_label)
         centres.append(top + height / 2)
     return centres[0], centres[1]
 
@@ -579,25 +581,21 @@ def build_figure(data: dict) -> plt.Figure:
     )
     legend.set_gid("overlap-shared-legend")
 
-    for row, centres, axis_prefix, label_x, prefix in (
-        ("examples", a_centres, "example-", 1.60, ""),
-        ("summary", c_centres, "summary-", 1.60, "RF centre "),
-    ):
-        bottom = fig_h * (1 - min(
-            axis.get_position().y0 for axis in fig.axes
-            if axis.get_gid() and axis.get_gid().startswith(axis_prefix)
-        ))
-        elevation = fig.text(
-            label_x / FIG_W, 1 - np.mean(centres) / fig_h, f"{prefix}elevation (deg)",
-            fontsize=LABEL, rotation=90, ha="center", va="center",
-        )
-        elevation.set_gid(f"{row}-shared-elevation")
-        azimuth = fig.text(
-            (MODULE_X + 3 * MODULE_W / 2) / FIG_W,
-            1 - (bottom + 0.38) / fig_h, f"{prefix}azimuth (deg)",
-            fontsize=LABEL, ha="center", va="top",
-        )
-        azimuth.set_gid(f"{row}-shared-azimuth")
+    bottom = fig_h * (1 - min(
+        axis.get_position().y0 for axis in fig.axes
+        if axis.get_gid() and axis.get_gid().startswith("example-")
+    ))
+    elevation = fig.text(
+        1.60 / FIG_W, 1 - np.mean(a_centres) / fig_h, "elevation (deg)",
+        fontsize=LABEL, rotation=90, ha="center", va="center",
+    )
+    elevation.set_gid("examples-shared-elevation")
+    azimuth = fig.text(
+        (MODULE_X + 3 * MODULE_W / 2) / FIG_W,
+        1 - (bottom + 0.38) / fig_h, "azimuth (deg)",
+        fontsize=LABEL, ha="center", va="top",
+    )
+    azimuth.set_gid("examples-shared-azimuth")
 
     zebra = data["zebra_frame"] / 255.0
     gabor = gabor_frame(zebra.shape, data["attrs"]["visual_coverage_deg"], data["gabor_patch"])
