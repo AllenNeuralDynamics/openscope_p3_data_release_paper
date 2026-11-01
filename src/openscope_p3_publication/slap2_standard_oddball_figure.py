@@ -35,7 +35,7 @@ def build_slap2_standard_oddball(
     """Render DMD-separated heatmaps and the glutamate-only cohort without scientific refits."""
     payload, statistics, arrays = load_snapshot()
     cohort = cohort_plot_data()
-    cohort_outputs = write_audits(cohort)
+    cohort_outputs = write_audits(cohort, audit_dir.parent / "slap2-standard-oddball-cohort")
     logo = load_platform_logos()["slap2"]
     outputs, records = [], []
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -133,7 +133,7 @@ def build_slap2_standard_oddball(
         root.set("viewBox", " ".join(box))
         root.set("width", "54mm")
         root.set("height", f"{height}mm")
-        path.write_text(ET.tostring(root, encoding="unicode"))
+        path.write_text(ET.tostring(root, encoding="unicode"), encoding="utf-8", newline="\n")
         outputs.append(path)
         records.append({
             **record, "example_roi_keys": example_keys, "native_unit": unit,
@@ -151,9 +151,13 @@ def build_slap2_standard_oddball(
     audit = audit_dir / "provenance.json"
     audit.write_text(json.dumps({
         "version": 2, "records": records,
-        "sources": [{"path": str(p.relative_to(ROOT)), "sha256": sha256(p)} for p in sources],
+        "sources": [
+            {"path": p.relative_to(ROOT).as_posix() if p.is_relative_to(ROOT) else p.as_posix(),
+             "sha256": sha256(p)}
+            for p in sources
+        ],
         "outputs": [{"path": p.name, "sha256": sha256(p)} for p in outputs],
-    }, indent=2, sort_keys=True) + "\n")
+    }, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
     return [*outputs, audit, *cohort_outputs]
 
 

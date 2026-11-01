@@ -15,11 +15,12 @@
   "output_sha256": "b5aa5ba8bf45c8ef74faf38c75d2850039566a1f63c97e06869181c307f4a09f",
   "retrieved_date": "2026-10-30",
   "selection_rule": "fixed user-selected VISp4 unit 993; visual cortex; finite baseline-subtracted Q2 p >=0.05 and abs(MI) <0.25; finite session firingRateHz >3; no Q1 restriction; 90-degree event; Q1 may be significant; not evidence of equivalence or absent visual responsiveness",
-  "source_verification": "pinned asset metadata path/digest, exact clean trials, unit metadata, and full-unit spike digest; exact SDF/baseline matches committed population; full NWB not downloaded or rehashed",
+  "source_verification": "pinned asset metadata path/digest, exact clean trials, unit metadata, and full-unit spike digest; float64-roundoff SDF/exact baseline matches committed population; full NWB not downloaded or rehashed",
   "sources": [
     {
+      "extraction_sha256": "ec1b6da5126869c53b39f4f42b389bc4d6c39e67bc55981786e1f46a29515271",
       "path": "scripts/extract_neuropixels_standard_oddball_comparison.py",
-      "sha256": "ec1b6da5126869c53b39f4f42b389bc4d6c39e67bc55981786e1f46a29515271"
+      "sha256": "57406e6592f986b2443a71c395e348c0b3edc175b570a766619c5fe2e2a6132a"
     },
     {
       "path": "figure_sources/data/neuropixels-event-responses.json",
@@ -34,8 +35,9 @@
       "sha256": "4942d04f811030b6412875281356676668aa6af25e1bf3b028b8b3d54d22115c"
     },
     {
+      "extraction_sha256": "33fe2dc045d1dde147ba906fae69443e873858e734f149b4c55a2f860a89497d",
       "path": "src/openscope_p3_publication/standard_oddball_comparison.py",
-      "sha256": "33fe2dc045d1dde147ba906fae69443e873858e734f149b4c55a2f860a89497d"
+      "sha256": "151caf0ac556c88c853f24b755161aa3f3e9274ac886de474729f4ebe7a54b6d"
     },
     {
       "path": "src/openscope_p3_publication/standard_oddball_candidates.py",
@@ -71,5 +73,6 @@
     "context": 34,
     "control": 68
   },
+  "validation_refreshed_date": "2026-11-01",
   "version": 1
 }

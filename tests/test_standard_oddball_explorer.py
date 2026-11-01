@@ -107,7 +107,7 @@ def test_deterministic_self_contained_output(
     before = path.read_bytes(), path.with_suffix(".provenance.json").read_bytes()
     explorer.build_standard_oddball_explorer(path)
     assert before == (path.read_bytes(), path.with_suffix(".provenance.json").read_bytes())
-    html = path.read_text()
+    html = path.read_text(encoding="utf-8")
     for control in (
         "modality-tabs", "event-select", "area-select", "responsiveness-select",
         "metric-select", "sort-select", "source-select", "colorbar-canvas",
@@ -133,7 +133,7 @@ def test_deterministic_self_contained_output(
 
 
 def test_manuscript_figure9_and_supplement6_are_distinct() -> None:
-    manuscript = (explorer.ROOT / "index.md").read_text()
+    manuscript = (explorer.ROOT / "index.md").read_text(encoding="utf-8")
     assert manuscript.count(":label: fig-standard-oddball-responses") == 1
     assert manuscript.count(":label: fig-neuropixels-event-responses") == 1
     assert (

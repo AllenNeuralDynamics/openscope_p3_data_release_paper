@@ -301,9 +301,11 @@ def test_products_are_deterministic_editable_and_scientifically_labelled(rendere
 
 
 def test_build_and_static_packaging_are_wired():
-    source = (meso.ROOT / "src/openscope_p3_publication/figures.py").read_text()
+    source = (meso.ROOT / "src/openscope_p3_publication/figures.py").read_text(encoding="utf-8")
     assert "mesoscope_oddball_paths = build_mesoscope_standard_oddball(primary_only=True)" in source
-    assert str(meso.SNAPSHOT.relative_to(meso.ROOT)) in (meso.ROOT / "myst.yml").read_text()
+    assert meso.SNAPSHOT.relative_to(meso.ROOT).as_posix() in (
+        meso.ROOT / "myst.yml"
+    ).read_text(encoding="utf-8")
     assert "figure_sources/data/standard-oddball-publication" in (
         meso.ROOT / "myst.yml"
     ).read_text()

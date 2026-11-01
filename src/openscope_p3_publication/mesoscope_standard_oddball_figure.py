@@ -48,7 +48,7 @@ def load_display_snapshot(
     payload: dict, statistics: pd.DataFrame, arrays: dict, directory: Path = SNAPSHOT,
 ) -> tuple[dict, dict]:
     """Validate display-only replacement trials, stimulus bounds and anatomical metadata."""
-    display = json.loads((directory / "display-provenance.json").read_text())
+    display = json.loads((directory / "display-provenance.json").read_text(encoding="utf-8"))
     if (
         display.get("version") != 2 or display.get("session_id") != payload["session_id"]
         or display.get("asset_id") != ASSET_ID or display.get("asset_sha256") != ASSET_SHA256
@@ -584,10 +584,12 @@ def build_mesoscope_standard_oddball(
             "provenance_sha256": sha256(cohort_paths[-1]),
         },
         "stimulus_spans": payload["stimulus_spans"],
-        "sources": [{"path": str(p.relative_to(ROOT)), "sha256": sha256(p)} for p in sources],
+        "sources": [{"path": p.relative_to(ROOT).as_posix(), "sha256": sha256(p)} for p in sources],
         "outputs": [{"path": p.name, "sha256": sha256(p)} for p in [*paths, table_path]],
     }
-    provenance_path.write_text(json.dumps(provenance, indent=2, sort_keys=True) + "\n")
+    provenance_path.write_text(
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n",
+    )
     return [*paths, table_path, provenance_path, *cohort_paths]
 
 

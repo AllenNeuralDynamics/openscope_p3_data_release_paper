@@ -6,6 +6,7 @@ import hashlib
 import io
 import json
 import re
+import runpy
 from copy import deepcopy
 from xml.etree import ElementTree as ET
 
@@ -18,6 +19,15 @@ from PIL import Image
 from openscope_p3_publication import standard_oddball_column as column
 from openscope_p3_publication.figure_typography import normalize_figure_svg
 from openscope_p3_publication.standard_oddball_cohort_figure import SCREENS, cohort_plot_data
+from openscope_p3_publication.standard_oddball_comparison import (
+    COMPARISON_PATH,
+    COMPARISON_PROVENANCE,
+    COMPARISON_UNIT_ID,
+    SDF_REPLAY_RTOL,
+    load_comparison_spikes,
+    spike_summary_matches,
+    validate_comparison_spikes,
+)
 from openscope_p3_publication.standard_oddball_examples import load_example_spikes, trial_mean_sdf
 from openscope_p3_publication.standard_oddball_neuropixels import (
     REPO_ROOT,
@@ -100,7 +110,9 @@ def test_population_has_every_eligible_visual_unit_and_exact_clean_trials(
     np.testing.assert_allclose(baselines[1], data.baseline_mean[1, 1], atol=1e-5, rtol=1e-6)
 
 
-def test_clean_population_matches_all_six_raw_spike_examples_exactly(data, examples, population):
+def test_clean_population_matches_all_six_raw_spike_examples_at_float64_precision(
+    data, examples, population,
+):
     by_id = {unit["id"]: unit for unit in population["units"]}
     trials = population["event"]["conditions"]
     for example in examples["units"]:
@@ -110,7 +122,143 @@ def test_clean_population_matches_all_six_raw_spike_examples_exactly(data, examp
             expected = summarize_spike_trials(
                 example["spikes"][EVENT_ID][condition], trials[condition]["trials"],
             )
-            assert unit["conditions"][condition] == expected
+            assert spike_summary_matches(expected, unit["conditions"][condition])
+
+
+def test_spike_summary_accepts_observed_roundoff_without_changing_the_snapshot():
+    frozen = {
+        "mean_hz": [0.0, 25.790714357476933, 34.816673373835215],
+        "baseline_mean_hz": 10.0,
+    }
+    replayed = deepcopy(frozen)
+    replayed["mean_hz"][1:] = [25.790714357476936, 34.81667337383522]
+    original = deepcopy(frozen)
+    assert spike_summary_matches(replayed, frozen)
+    assert frozen == original
+
+
+@pytest.mark.parametrize("mutation", ["sdf", "nan", "inf", "shape", "zero", "baseline", "key"])
+@pytest.mark.parametrize("side", ["replayed", "frozen"])
+def test_spike_summary_rejects_changes_beyond_roundoff(mutation, side):
+    replayed = {"mean_hz": [0.0, 25.0, 35.0], "baseline_mean_hz": 10.0}
+    frozen = deepcopy(replayed)
+    changed = replayed if side == "replayed" else frozen
+    if mutation == "sdf":
+        changed["mean_hz"][1] *= 1 + 2 * SDF_REPLAY_RTOL
+    elif mutation in ("nan", "inf"):
+        changed["mean_hz"][1] = float(mutation)
+    elif mutation == "shape":
+        changed["mean_hz"] = [changed["mean_hz"]]
+    elif mutation == "zero":
+        changed["mean_hz"][0] = np.finfo(np.float64).tiny
+    elif mutation == "baseline":
+        changed["baseline_mean_hz"] = np.nextafter(10.0, np.inf)
+    else:
+        changed["extra"] = 0
+    assert not spike_summary_matches(replayed, frozen)
+
+
+@pytest.mark.parametrize("baseline", [float("nan"), float("inf")])
+def test_spike_summary_rejects_nonfinite_baselines_even_when_both_match(baseline):
+    summary = {"mean_hz": [0.0, 1.0], "baseline_mean_hz": baseline}
+    assert not spike_summary_matches(summary, summary)
+
+
+@pytest.mark.parametrize("mutation", ["spike", "trials", "digest", "baseline", "sdf", "shape"])
+def test_comparison_replay_retains_scientific_integrity_checks(data, population, mutation):
+    payload = deepcopy(load_comparison_spikes(data, population))
+    reference = deepcopy(population)
+    unit = next(u for u in reference["units"] if u["id"] == COMPARISON_UNIT_ID)
+    if mutation == "spike":
+        spikes = payload["units"][0]["spikes"][EVENT_ID]["context"][0]
+        spikes.append(0.123)
+        spikes.sort()
+    elif mutation == "trials":
+        payload["events"][0]["conditions"]["context"]["trials"].pop()
+    elif mutation == "digest":
+        payload["units"][0]["source_spike_array_sha256"] = "f" * 64
+    elif mutation == "baseline":
+        baseline = unit["conditions"]["context"]["baseline_mean_hz"]
+        unit["conditions"]["context"]["baseline_mean_hz"] = np.nextafter(baseline, np.inf)
+    elif mutation == "sdf":
+        unit["conditions"]["context"]["mean_hz"][100] += 1e-6
+    else:
+        unit["conditions"]["context"]["mean_hz"].pop()
+    with pytest.raises(ValueError):
+        validate_comparison_spikes(payload, data, reference)
+
+
+@pytest.mark.parametrize("mutation", ["spike", "trials", "digest"])
+def test_column_replay_rejects_changed_responsive_example(data, examples, population, mutation):
+    changed = deepcopy(examples)
+    unit = next(u for u in changed["units"] if u["id"] == column.EXAMPLE_UNIT_IDS[0])
+    if mutation == "spike":
+        spikes = unit["spikes"][EVENT_ID]["context"][0]
+        spikes.append(0.123)
+        spikes.sort()
+    elif mutation == "trials":
+        changed["events"][1]["conditions"]["context"]["trials"].pop()
+    else:
+        unit["source_spike_array_sha256"] = "f" * 64
+    with pytest.raises(ValueError):
+        column.column_data(data, population, changed)
+
+
+def test_validation_provenance_refresh_is_offline_and_preserves_payload(
+    tmp_path, monkeypatch, data, population,
+):
+    def reject_network(*args, **kwargs):
+        raise AssertionError("Validation refresh must remain offline.")
+
+    monkeypatch.setattr("urllib.request.urlopen", reject_network)
+    refresh = runpy.run_path(
+        str(REPO_ROOT / "scripts/extract_neuropixels_standard_oddball_comparison.py"),
+    )["refresh_validation_provenance"]
+    path, provenance_path = tmp_path / "spikes.json", tmp_path / "provenance.json"
+    payload_bytes = COMPARISON_PATH.read_bytes()
+    path.write_bytes(payload_bytes)
+    original = json.loads(COMPARISON_PROVENANCE.read_text())
+    validator = next(
+        s for s in original["sources"] if s["path"].endswith("standard_oddball_comparison.py")
+    )
+    historical_hash = validator["extraction_sha256"]
+    validator["sha256"] = historical_hash
+    provenance_path.write_text(json.dumps(original))
+    refresh(path, provenance_path)
+    refreshed = json.loads(provenance_path.read_text())
+    assert path.read_bytes() == payload_bytes
+    assert b"\r\n" not in provenance_path.read_bytes()
+    assert refreshed["output_sha256"] == original["output_sha256"]
+    assert refreshed["retrieved_date"] == original["retrieved_date"]
+    validator = next(
+        s for s in refreshed["sources"] if s["path"].endswith("standard_oddball_comparison.py")
+    )
+    assert validator["extraction_sha256"] == historical_hash
+    assert validator["sha256"] == hashlib.sha256(
+        (REPO_ROOT / validator["path"]).read_bytes(),
+    ).hexdigest()
+    load_comparison_spikes(data, population, path, provenance_path)
+
+
+@pytest.mark.parametrize("mutation", ["payload", "analysis_source"])
+def test_validation_refresh_rejects_other_changes_without_overwriting_provenance(
+    tmp_path, mutation,
+):
+    refresh = runpy.run_path(
+        str(REPO_ROOT / "scripts/extract_neuropixels_standard_oddball_comparison.py"),
+    )["refresh_validation_provenance"]
+    path, provenance_path = tmp_path / "spikes.json", tmp_path / "provenance.json"
+    path.write_bytes(COMPARISON_PATH.read_bytes())
+    provenance = json.loads(COMPARISON_PROVENANCE.read_text())
+    if mutation == "payload":
+        path.write_text("{}")
+    else:
+        provenance["sources"][1]["sha256"] = "0" * 64
+    provenance_path.write_text(json.dumps(provenance))
+    original = provenance_path.read_bytes()
+    with pytest.raises(ValueError, match="checksum mismatch|source changed"):
+        refresh(path, provenance_path)
+    assert provenance_path.read_bytes() == original
 
 
 @pytest.mark.parametrize("mutation", ["unit", "trials", "tau", "rate", "baseline", "shape"])
@@ -537,7 +685,7 @@ def test_column_geometry_typography_bounds_accessibility_and_determinism(
     first = {p.name: p.read_bytes() for p in paths}
     for path in column.build_standard_oddball_column(output, audit_dir):
         assert path.read_bytes() == first[path.name]
-    root = ET.fromstring(output.read_text())
+    root = ET.fromstring(output.read_text(encoding="utf-8"))
     assert float(root.get("width").removesuffix("pt")) * 25.4 / 72 == pytest.approx(54)
     assert float(root.get("height").removesuffix("pt")) * 25.4 / 72 == pytest.approx(165)
     assert float(root.get("viewBox").split()[3]) * 25.4 / 72 == pytest.approx(165)

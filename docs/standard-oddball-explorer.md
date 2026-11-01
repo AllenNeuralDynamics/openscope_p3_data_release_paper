@@ -42,6 +42,30 @@ named in their provenance remain necessary for integrity checks even when they
 are not executed. No NWBs, checkpoint directories, browser screenshots or local
 extraction caches belong in the publication commit.
 
+Replaying the frozen Neuropixels spikes checks exact trial identities, source
+spike digests, baselines, array shapes and finite values. Only the causal
+50-term float64 SDF convolution permits relative roundoff of
+`64 * float64 epsilon` (approximately `1.42e-14`), with **zero absolute tolerance**.
+Zero SDF bins therefore remain exact. The frozen scientific values are not
+rounded or regenerated to accommodate numerical-library differences.
+Publication-renderer metadata uses slash-separated repository-relative paths on
+both Windows and Linux; filesystem access continues to use native paths.
+SVGs, interactive sources and audit sidecars use explicit UTF-8 and LF output.
+Custom SLAP2 build directories keep their cohort audits alongside the requested
+audit directory instead of overwriting the committed default audits.
+
+After changing only the comparison replay validator, refresh its provenance
+offline using the owning extractor:
+
+```bash
+uv run python scripts/extract_neuropixels_standard_oddball_comparison.py --refresh-validation-provenance
+```
+
+This verifies the existing spike checksum and replay before updating provenance,
+retains the original extraction-code hashes as `extraction_sha256`, and records
+the validation refresh date separately from retrieval. Other extraction-source
+changes are rejected; the spike payload and population snapshot remain unchanged.
+
 After deliberately refreshing the full analyses, freeze a new publication
 snapshot with:
 

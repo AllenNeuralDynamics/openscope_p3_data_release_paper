@@ -42,14 +42,51 @@ from openscope_p3_publication.standard_oddball_population import (
     load_population,
 )
 
+SOURCE_VERIFICATION = (
+    "pinned asset metadata path/digest, exact clean trials, unit metadata, and "
+    "full-unit spike digest; float64-roundoff SDF/exact baseline matches committed "
+    "population; full NWB not downloaded or rehashed"
+)
+
+
+def refresh_validation_provenance(path: Path, provenance_path: Path) -> None:
+    """Revalidate frozen spikes offline, preserving extraction hashes and payload bytes."""
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    if hashlib.sha256(path.read_bytes()).hexdigest() != provenance["output_sha256"]:
+        raise ValueError("Comparison spike snapshot checksum mismatch.")
+    validation_sources = {
+        "scripts/extract_neuropixels_standard_oddball_comparison.py",
+        "src/openscope_p3_publication/standard_oddball_comparison.py",
+    }
+    for source in provenance["sources"]:
+        actual = hashlib.sha256((REPO_ROOT / source["path"]).read_bytes()).hexdigest()
+        if actual != source["sha256"]:
+            if source["path"].replace("\\", "/") not in validation_sources:
+                raise ValueError(f"Comparison extraction source changed: {source['path']}")
+            source.setdefault("extraction_sha256", source["sha256"])
+            source["sha256"] = actual
+    data = load_diagnostic()
+    population = load_population(data, load_example_spikes(data)["events"][1])
+    validate_comparison_spikes(json.loads(path.read_text(encoding="utf-8")), data, population)
+    provenance["source_verification"] = SOURCE_VERIFICATION
+    provenance["validation_refreshed_date"] = dt.datetime.now(dt.UTC).date().isoformat()
+    provenance_path.write_text(
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n",
+    )
+    print(f"Revalidated {path}; refreshed {provenance_path} without changing spike data.")
+
 
 def main() -> None:
-    """Write a one-unit spike sidecar, checking the existing clean population exactly."""
+    """Write a one-unit spike sidecar, or refresh its validation provenance offline."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=COMPARISON_PATH)
     parser.add_argument("--provenance-output", type=Path, default=COMPARISON_PROVENANCE)
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--refresh-validation-provenance", action="store_true")
     args = parser.parse_args()
+    if args.refresh_validation_provenance:
+        refresh_validation_provenance(args.output, args.provenance_output)
+        return
     if not args.overwrite and (args.output.exists() or args.provenance_output.exists()):
         raise SystemExit("Comparison output exists; inspect it before passing --overwrite.")
     import remfile
@@ -137,7 +174,7 @@ def main() -> None:
         "retrieved_date": dt.datetime.now(dt.UTC).date().isoformat(),
         "output_sha256": hashlib.sha256(content.encode()).hexdigest(),
         "sources": [
-            {"path": str(path.relative_to(REPO_ROOT)),
+            {"path": path.relative_to(REPO_ROOT).as_posix(),
              "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
             for path in paths
         ],
@@ -146,16 +183,14 @@ def main() -> None:
             for condition, record in events[0]["conditions"].items()
         },
         "spike_offsets": "native float64 differences in padded half-open trial windows",
-        "source_verification": (
-            "pinned asset metadata path/digest, exact clean trials, unit metadata, and "
-            "full-unit spike digest; exact SDF/baseline matches committed population; "
-            "full NWB not downloaded or rehashed"
-        ),
+        "source_verification": SOURCE_VERIFICATION,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.provenance_output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(content)
-    args.provenance_output.write_text(json.dumps(provenance, indent=2, sort_keys=True) + "\n")
+    args.output.write_text(content, encoding="utf-8", newline="\n")
+    args.provenance_output.write_text(
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n",
+    )
     print(f"Wrote {args.output} ({len(content):,} bytes) and {args.provenance_output}")
 
 

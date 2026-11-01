@@ -278,13 +278,13 @@ def build_standard_oddball_explorer(output: Path = OUTPUT) -> Path:
     if not STATIC.is_file():
         raise ValueError("Build the three-modality static counterpart before the explorer.")
     payload = load_explorer_data()
-    template = (JAVASCRIPT_DIR / "standard-oddball-explorer.html").read_text()
+    template = (JAVASCRIPT_DIR / "standard-oddball-explorer.html").read_text(encoding="utf-8")
     replacements = {
         "__DATA__": json.dumps(payload, allow_nan=False, separators=(",", ":")).replace(
             "<", "\\u003c"
         ),
         "__CSS__": load_figure_stylesheet("standard-oddball-explorer.css"),
-        "__JS__": (JAVASCRIPT_DIR / "standard-oddball-explorer.js").read_text(),
+        "__JS__": (JAVASCRIPT_DIR / "standard-oddball-explorer.js").read_text(encoding="utf-8"),
         "__CONTROLS__": load_figure_controls(),
         "__STATIC__": "data:image/svg+xml;base64," + base64.b64encode(
             STATIC.read_bytes()
@@ -315,7 +315,7 @@ def build_standard_oddball_explorer(output: Path = OUTPUT) -> Path:
     ]
     output.with_suffix(".provenance.json").write_text(json.dumps({
         "version": 2, "population_events": list(EVENTS), "statistics_events": list(EVENTS),
-        "sources": [{"path": str(p.relative_to(ROOT)), "sha256": sha256(p)} for p in sources],
+        "sources": [{"path": p.relative_to(ROOT).as_posix(), "sha256": sha256(p)} for p in sources],
         "output_sha256": sha256(output),
-    }, indent=2, sort_keys=True) + "\n")
+    }, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
     return output

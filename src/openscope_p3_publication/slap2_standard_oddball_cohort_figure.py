@@ -86,7 +86,7 @@ def write_audits(cohort: dict, directory: Path = DERIVED) -> list[Path]:
         ("group-statistics.csv", cohort["pooled"]),
     ):
         path = directory / name
-        frame.to_csv(path, index=False, float_format="%.17g")
+        frame.to_csv(path, index=False, float_format="%.17g", lineterminator="\n")
         outputs.append(path)
     sources = [
         Path(__file__), ROOT / "src/openscope_p3_publication/slap2_standard_oddball_cohort.py",
@@ -101,7 +101,7 @@ def write_audits(cohort: dict, directory: Path = DERIVED) -> list[Path]:
         "response_rule": "Both Q1/Q2 raw p<0.05, abs(MI)>0.1; either sign.",
         "denominator": "Eligible jointly Q1/Q2-testable source/session observations.",
         "uncertainty": "Pooled bars + individual mouse/session proportions; no bootstrap.",
-        "sources": [{"path": str(p.relative_to(ROOT)), "sha256": sha256(p)} for p in sources],
+        "sources": [{"path": p.relative_to(ROOT).as_posix(), "sha256": sha256(p)} for p in sources],
         "outputs": [{"path": p.name, "sha256": sha256(p)} for p in outputs],
-    }, indent=2, sort_keys=True) + "\n")
+    }, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
     return [*outputs, provenance]

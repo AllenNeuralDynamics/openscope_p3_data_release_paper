@@ -45,6 +45,7 @@ from .standard_oddball_comparison import (
     COMPARISON_RULE,
     COMPARISON_UNIT_ID,
     load_comparison_spikes,
+    spike_summary_matches,
 )
 from .standard_oddball_examples import (
     EXAMPLES_PATH,
@@ -52,7 +53,6 @@ from .standard_oddball_examples import (
     WINDOW,
     _trial_windows,
     load_example_spikes,
-    trial_mean_sdf,
 )
 from .standard_oddball_neuropixels import (
     CONTEXT_COLOR,
@@ -69,11 +69,13 @@ from .standard_oddball_neuropixels import (
 from .standard_oddball_ordering import ORDER_PATH, load_context_order
 from .standard_oddball_population import (
     BIN_SECONDS,
+    EVENT_ID,
     POPULATION_PATH,
     POPULATION_PROVENANCE,
     TAU_SECONDS,
     load_population,
     population_arrays,
+    summarize_spike_trials,
 )
 from .standard_oddball_publication_data import DIRECTORY as PUBLICATION_DIRECTORY
 
@@ -89,6 +91,9 @@ COLUMN_AUDIT_DIR = REPO_ROOT / "figure_sources/derived/neuropixels-standard-oddb
 
 def column_data(data: Diagnostic, population: dict, examples: dict) -> dict:
     """Prepare positive-responder means and verify example/population trial agreement."""
+    event, = [record for record in examples["events"] if record["id"] == EVENT_ID]
+    if event != population["event"]:
+        raise ValueError("Example/population clean trial identity or timing changed.")
     rates, baselines = population_arrays(population)
     baseline_record = load_baselines(population)
     baseline_sd = np.asarray([
@@ -123,12 +128,14 @@ def column_data(data: Diagnostic, population: dict, examples: dict) -> dict:
             raise ValueError(
                 f"Example {unit_id} no longer satisfies its 90-degree comparison role."
             )
-        for c, condition in enumerate(("context", "control")):
-            mean = trial_mean_sdf(
-                spikes[0]["spikes"]["orientation_90"][condition],
-                bin_seconds=BIN_SECONDS, tau_seconds=TAU_SECONDS,
+        reference = population["units"][i]
+        if spikes[0]["source_spike_array_sha256"] != reference["source_spike_array_sha256"]:
+            raise ValueError("Example/population source spike digest changed.")
+        for condition, record in population["event"]["conditions"].items():
+            summary = summarize_spike_trials(
+                spikes[0]["spikes"][EVENT_ID][condition], record["trials"],
             )
-            if not np.array_equal(mean, rates[c, i]):
+            if not spike_summary_matches(summary, reference["conditions"][condition]):
                 raise ValueError("Example/population SDFs do not use identical trial spikes.")
         example_indices.append(i)
         example_spikes.append(spikes[0])
@@ -339,7 +346,7 @@ def _render_column(
             {
                 "data-intended-width-mm": str(COLUMN_WIDTH_MM),
                 "data-intended-height-mm": str(COLUMN_HEIGHT_MM),
-                "data-platform-logo": str(logo_path.relative_to(REPO_ROOT)),
+                "data-platform-logo": logo_path.relative_to(REPO_ROOT).as_posix(),
                 "data-condition-legend": "none",
                 "data-event-id": "orientation_90",
                 "data-session-id": data.session["sessionId"],
@@ -395,7 +402,9 @@ def _render_column(
         root.set("viewBox", " ".join(viewport))
         root.set("height", f"{COLUMN_HEIGHT_MM * 72 / 25.4}pt")
         root.set("overflow", "hidden")
-        output.write_text(ET.tostring(root, encoding="unicode") + "\n", encoding="utf-8")
+        output.write_text(
+            ET.tostring(root, encoding="unicode") + "\n", encoding="utf-8", newline="\n",
+        )
 
 
 def build_standard_oddball_column(
@@ -496,8 +505,8 @@ def build_standard_oddball_column(
         },
         "footprint_mm": [COLUMN_WIDTH_MM, COLUMN_HEIGHT_MM],
         "header": {
-            "label": "Neuropixels", "logo": str(logo_path.relative_to(REPO_ROOT)),
-            "logo_provenance": str(PLATFORM_LOGO_PROVENANCE_PATH.relative_to(REPO_ROOT)),
+            "label": "Neuropixels", "logo": logo_path.relative_to(REPO_ROOT).as_posix(),
+            "logo_provenance": PLATFORM_LOGO_PROVENANCE_PATH.relative_to(REPO_ROOT).as_posix(),
             "logo_reference": "Figure 3", "condition_legend": "removed",
         },
         "bottom_crop_mm": LAYOUT_HEIGHT_MM - COLUMN_HEIGHT_MM,
@@ -555,7 +564,7 @@ def build_standard_oddball_column(
         },
         "heatmap": prepared["heatmap"], "parameters": population["parameters"],
         "sources": [
-            {"path": str(path.relative_to(REPO_ROOT)), "sha256": _sha256(path)}
+            {"path": path.relative_to(REPO_ROOT).as_posix(), "sha256": _sha256(path)}
             for path in sources
         ],
         "outputs": [
@@ -580,7 +589,9 @@ def build_standard_oddball_column(
         },
     }
     provenance_path = audit_dir / "provenance.json"
-    provenance_path.write_text(json.dumps(provenance, indent=2, sort_keys=True) + "\n")
+    provenance_path.write_text(
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n",
+    )
     return [output, audit_path, cohort_path, provenance_path]
 
 

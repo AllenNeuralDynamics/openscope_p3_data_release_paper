@@ -43,7 +43,7 @@ URL_REFERENCE = re.compile(r"url\(#([^)]*)\)")
 
 
 def _source_column(path: Path, provenance_path: Path, output_key: str) -> ET.Element:
-    provenance = json.loads(provenance_path.read_text())
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
     matching = [p for p in provenance["outputs"] if p[output_key] == path.name]
     if len(matching) != 1 or sha256(path) != matching[0]["sha256"]:
         raise ValueError(f"Source column checksum missing or changed: {path.name}")
@@ -252,7 +252,7 @@ def build_matched_standard_oddball_columns(
         path.write_text(normalize_figure_svg(
             ET.tostring(root, encoding="unicode"), target_width_mm=WIDTH_MM,
             target_height_mm=HEIGHT_MM,
-        ))
+        ), encoding="utf-8", newline="\n")
         paths.append(path)
     sources = [
         Path(__file__), ROOT / "src/openscope_p3_publication/figure_typography.py",
@@ -265,12 +265,14 @@ def build_matched_standard_oddball_columns(
         "neuropixels_cohort_shift_mm": COHORT_SHIFT_MM,
         "neuropixels_cohort_letter_shift_mm": COHORT_LETTER_SHIFT_MM,
         "analysis": "None; compose canonical source columns without rescaling artwork.",
-        "sources": [{"path": str(p.relative_to(ROOT)), "sha256": sha256(p)} for p in sources],
+        "sources": [{"path": p.relative_to(ROOT).as_posix(), "sha256": sha256(p)} for p in sources],
         "outputs": [{"path": p.name, "sha256": sha256(p)} for p in paths],
     }
     audit_dir.mkdir(parents=True, exist_ok=True)
     path = audit_dir / "provenance.json"
-    path.write_text(json.dumps(provenance, indent=2, sort_keys=True) + "\n")
+    path.write_text(
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n",
+    )
     return [*paths, path]
 
 
@@ -364,7 +366,7 @@ def build_three_modality_standard_oddball_columns(
             path.write_text(normalize_figure_svg(
                 ET.tostring(root, encoding="unicode"), target_width_mm=THREE_WIDTH_MM,
                 target_height_mm=height_mm,
-            ))
+            ), encoding="utf-8", newline="\n")
             paths.append(path)
     sources.extend([Path(__file__), ROOT / "src/openscope_p3_publication/figure_typography.py"])
     audit_dir.mkdir(parents=True, exist_ok=True)
@@ -382,10 +384,10 @@ def build_three_modality_standard_oddball_columns(
         "slap2_cohort_panel": {"glutamate": "present", "calcium": "absent"},
         "neuropixels_cohort_shift_mm": COHORT_SHIFT_MM,
         "neuropixels_cohort_letter_shift_mm": COHORT_LETTER_SHIFT_MM,
-        "sources": [{"path": str(p.relative_to(ROOT)), "sha256": sha256(p)}
+        "sources": [{"path": p.relative_to(ROOT).as_posix(), "sha256": sha256(p)}
                     for p in dict.fromkeys(sources)],
         "outputs": [{"path": p.name, "sha256": sha256(p)} for p in paths],
-    }, indent=2, sort_keys=True) + "\n")
+    }, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
     return [*paths, provenance]
 
 
