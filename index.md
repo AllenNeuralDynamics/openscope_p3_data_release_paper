@@ -294,6 +294,25 @@ After each experiment, the probes are retracted from the brain at a rate of ~300
 
 Possible QC failure can come from these cases: white foam buildup on the edge of the eye covering the pupil, software failures compromising critical data streams, visual stimulus synchronizing failure, cortical bleeding or compromised brain health resulting in low unit activity and/or atypical visual responses, gap in data acquisition and discovery of purulent material over right hemisphere during ex-vivo imaging. Out of a total of 56 sessions, 12 are excluded for eye foam.
 
+#### Neuropixels unit quality control
+
+The unit-quality analyses in [Figure 6](#fig-ecephys-qc-dashboard) used a committed
+pool of 192,273 sorted units from 59 CCF-aligned sessions across 16 mice
+([DANDI:001637](https://dandiarchive.org/dandiset/001637/draft)). Unit anatomy was
+assigned via the extremum electrode channel. Population panels B, C, F, and G
+retained 23,045 units with ISI violations ratio < 0.01 (1.5 ms refractory
+threshold), presence ratio > 0.90, amplitude cutoff < 0.10, and peak-channel
+waveform SNR ≥ 3.0, together with non-negative depth from cortical entry and
+exclusion of unannotated (`void`) channels. Designated initial and final session
+groups were compared, where available, using empirical cumulative distributions
+of SNR, ISI violations ratio, and peak-to-peak unit-location drift.
+Zero-violation ratios are displayed at $10^{-6}$ on logarithmic axes; the drift
+display is limited to the 99th percentile without discarding retained values.
+These comparisons concern repeated acute insertions, not tracking the same
+neurons across days. Recording-day yield in panel D used broader gates:
+ISI violations ratio < 0.5, presence ratio > 0.8, and amplitude cutoff < 0.1,
+without an SNR threshold.
+
 #### Optotagging protocol
 
 At the end of every experiment, an optotagging protocol is run during which the cortical surface is stimulated with blue light. In Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)\_EYFP)/wt mice, this protocol allowes us to identify putative Sst+ cortical interneurons by an increase in spiking activity time-locked to laser stimulation (and consequent ChR2 activation). Blue light is delivered by a 473 nm laser (Laser Quantum, model Ciel or Cobolt model 06-MLD). The light source is coupled to a 400 μm diameter fiber optic cable (Thorlabs) or bifurcated fiber bundle (Thorlabs, BFYL4LF01), with the tip(s) positioned such that blue light illuminates the entire cranial window. Two types of stimuli at 3 different light levels are randomly interleaved: a 10 ms pulse, and a 1s raised cosine ramp. For the pulse stimulus, a 0.5 ms ramp is applied at the beginning and end of the pulse. Stimuli are presented at intervals of 1.5 s plus a uniformly distributed delay between 0 and 0.5 s. Representative laser-aligned responses and session-level yield summaries are shown in [Figure 8](#fig-supp-optotagging-heatmaps).
