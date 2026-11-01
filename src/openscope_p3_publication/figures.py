@@ -7048,6 +7048,7 @@ def main() -> None:
         write_mesoscope_plane_snr_html,
         write_mesoscope_plane_snr_svg,
     )
+    from .mesoscope_standard_oddball_figure import build_mesoscope_standard_oddball
     from .neural_response_figure import (
         write_neuropixels_event_html,
         write_neuropixels_event_svg,
@@ -7057,6 +7058,12 @@ def main() -> None:
     from .sensorimotor_running_figure import (
         write_sensorimotor_running_html,
         write_sensorimotor_running_svg,
+    )
+    from .slap2_standard_oddball_figure import build_slap2_standard_oddball
+    from .standard_oddball_column import build_standard_oddball_column
+    from .standard_oddball_explorer import build_standard_oddball_explorer
+    from .standard_oddball_matched_columns import (
+        build_three_modality_standard_oddball_columns,
     )
     from .wavemap_figure import build_wavemap_publication
 
@@ -7081,6 +7088,11 @@ def main() -> None:
     neural_response_html_path = write_neuropixels_event_html(
         static_output=neural_response_svg_path
     )
+    oddball_column_paths = build_standard_oddball_column()
+    mesoscope_oddball_paths = build_mesoscope_standard_oddball(primary_only=True)
+    slap2_oddball_paths = build_slap2_standard_oddball(primary_only=True)
+    three_modality_oddball_paths = build_three_modality_standard_oddball_columns(primary_only=True)
+    oddball_explorer_path = build_standard_oddball_explorer()
     neural_viewer_path = write_neural_viewer_html()
     segmentation_viewer_path = write_segmentation_viewers()
     mesoscope_plane_snr_svg_path = write_mesoscope_plane_snr_svg()
@@ -7124,6 +7136,15 @@ def main() -> None:
     print(f"Wrote {pupil_event_html_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {neural_response_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {neural_response_html_path.relative_to(REPO_ROOT)}")
+    for path in oddball_column_paths:
+        print(f"Wrote {path.relative_to(REPO_ROOT)}")
+    for path in mesoscope_oddball_paths:
+        print(f"Wrote {path.relative_to(REPO_ROOT)}")
+    for path in slap2_oddball_paths:
+        print(f"Wrote {path.relative_to(REPO_ROOT)}")
+    for path in three_modality_oddball_paths:
+        print(f"Wrote {path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {oddball_explorer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {neural_viewer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {NEURAL_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
     print(f"Wrote {segmentation_viewer_path.relative_to(REPO_ROOT)}")

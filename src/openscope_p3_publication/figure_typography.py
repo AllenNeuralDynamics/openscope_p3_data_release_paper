@@ -46,18 +46,27 @@ def _transform_scale(transform: str) -> float:
     return scale
 
 
-def normalize_figure_svg(svg: str) -> str:
+def normalize_figure_svg(
+    svg: str, *, target_width_mm: float = PDF_FIGURE_WIDTH_MM,
+    target_height_mm: float = PDF_FIGURE_HEIGHT_MM,
+) -> str:
     """Set editable text to Arial and marked panel letters to 9 pt at PDF size.
 
     Nested SVG viewports and SVG images retain their geometry. Raster artwork is
     not modified. Panel letters are explicitly identified by class or Matplotlib
     group ID, so anatomical direction markers and ordinary single-letter labels
-    are not mistaken for panel lettering.
+    are not mistaken for panel lettering. Optional target dimensions support
+    columns embedded at their native size inside a larger composite.
     """
+    if (
+        not math.isfinite(target_width_mm + target_height_mm)
+        or min(target_width_mm, target_height_mm) <= 0
+    ):
+        raise ValueError("Target figure dimensions must be finite and positive.")
     root = ET.fromstring(svg)
     width, height = _dimensions(root)
     points_per_unit = min(
-        PDF_FIGURE_WIDTH_MM / width, PDF_FIGURE_HEIGHT_MM / height,
+        target_width_mm / width, target_height_mm / height,
     ) * 72 / 25.4
 
     def visit(node: ET.Element, scale: float, panel_group: bool = False) -> None:

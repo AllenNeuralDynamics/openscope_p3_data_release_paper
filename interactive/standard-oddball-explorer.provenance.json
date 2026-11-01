@@ -1,0 +1,90 @@
+{
+  "output_sha256": "434e5461bd7841a5ab12a8eac6c19c6df6a0dbd1ae68663094daaead1529ff98",
+  "population_events": [
+    "orientation_45",
+    "orientation_90",
+    "halt",
+    "omission"
+  ],
+  "sources": [
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_explorer.py",
+      "sha256": "bed73742c7c41ed5e40bdce5b5a3512bcca9066d8cb9471ee9e4e7e04b579664"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_cohort_figure.py",
+      "sha256": "8da6ce3fc3b610b44509e227faf0a9f5a069f9ec249cae1d1fc7f0a218e7b843"
+    },
+    {
+      "path": "images/figures/generated/standard-oddball-three-modality-dff-glutamate.svg",
+      "sha256": "149403ea4492dd45e8dcaa071b25d41750878b67e7be79bd4c84d49a8d216aa3"
+    },
+    {
+      "path": "figure_sources/javascript/standard-oddball-explorer.html",
+      "sha256": "c90544ae3bc1c8af92f4904de083e9eb65c96f8b0053b4e2502a605fb364cf73"
+    },
+    {
+      "path": "figure_sources/javascript/standard-oddball-explorer.css",
+      "sha256": "f17f04d4459f9240869c98fa8704f8adfc0454206602fd8b67bb66f89f91e97b"
+    },
+    {
+      "path": "figure_sources/javascript/standard-oddball-explorer.js",
+      "sha256": "1b4a189877b32270706e2d7a044ac87fcdbeaaa61f78cd58fd9fe36511d67d20"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-90-population.provenance.json",
+      "sha256": "4942d04f811030b6412875281356676668aa6af25e1bf3b028b8b3d54d22115c"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-90-rastermap.json",
+      "sha256": "bc9f80842ae18b0e5aa8b12b2d60005c11a4a33c3e77d647f2309eb0bc3b7461"
+    },
+    {
+      "path": "figure_sources/data/standard-oddball-explorer-window/provenance.json",
+      "sha256": "32e3db276068b6a8890ed8360a73623d8178cb0006e73ef73e9b20e45525e495"
+    },
+    {
+      "path": "figure_sources/data/standard-oddball-explorer-events/provenance.json",
+      "sha256": "cc38493832884cd7db75753061838974fa563f0e95f6c92dcea2a69bfe4a510c"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_explorer_events.py",
+      "sha256": "dd04ab84aec54decc4bd8b298dab191b13fb3aa35c5652b413569bd26b3453ba"
+    },
+    {
+      "path": "figure_sources/data/standard-oddball-publication/provenance.json",
+      "sha256": "1f334a7cf9b58773bd40756587df2e358c69aae1f1fef0b79bcb51a6abf39b0a"
+    },
+    {
+      "path": "figure_sources/data/standard-oddball-publication/cohorts.json",
+      "sha256": "69f0e1395ce8e5dcbbb84b1fb3ef7fb271a684842de9c37267290f9c021bcdad"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_publication_data.py",
+      "sha256": "266cf5d501c7fbaccdf6f576afb7558f48166f207a731bd30aed2a9cc28352be"
+    },
+    {
+      "path": "figure_sources/data/mesoscope-standard-oddball-832700-2026-01-30/display-provenance.json",
+      "sha256": "9a1efa3dfa688f9832447a52a1a9096f0f8dab86a293109e7e5e17fd00ace3d1"
+    },
+    {
+      "path": "figure_sources/data/slap2-standard-oddball-cohort/provenance.json",
+      "sha256": "706bbb61421cf73ba633f67b09c4ab692d003b08fa7eb00d7099c5e0e246f2bd"
+    },
+    {
+      "path": "figure_sources/data/mesoscope-standard-oddball-832700-2026-01-30/provenance.json",
+      "sha256": "85a77de50984be4ac8cc6a009870a32bd9f09633595f446ab1ed4c6a850c8b23"
+    },
+    {
+      "path": "figure_sources/data/slap2-standard-oddball-828408-2025-11-18/provenance.json",
+      "sha256": "648129ad3aa0f16be47a7431d27b56a58ea5eb82e9ad74285a49af86059eeb09"
+    }
+  ],
+  "statistics_events": [
+    "orientation_45",
+    "orientation_90",
+    "halt",
+    "omission"
+  ],
+  "version": 2
+}

@@ -1,0 +1,157 @@
+{
+  "amplitude_gate": "None; dF/F>0.5 applies only to panel A example selection.",
+  "bootstrap_replicates": 10000,
+  "bootstrap_rule": "95% percentile mouse-cluster bootstrap; resample contributing mice with replacement within each region and recompute summed responsive / summed joint-testable counts; fixed session/group inclusion and shared resamples for Q1, Q2 and Both",
+  "bootstrap_seed": 0,
+  "denominator": "Each signal's own eligible, jointly Q1/Q2-testable ROI/session observations.",
+  "events": [
+    "orientation_45",
+    "orientation_90",
+    "halt",
+    "omission"
+  ],
+  "included_mouse_count": 10,
+  "included_session_count": 20,
+  "minimum_eligible_rois": 20,
+  "minimum_rule": "Pool planes per session/area before applying the eligible soma/SNR cutoff.",
+  "outputs": [
+    {
+      "path": "session-area-statistics.csv",
+      "sha256": "7b7e4c8e3091ff90451554a5232195416fc71e87e0bafac1dbec32843e26898c"
+    },
+    {
+      "path": "mouse-area-statistics.csv",
+      "sha256": "e8cfd5a7beb5804ae05f88f5047cc9031e4c134877248009cd9f831b985a40e0"
+    },
+    {
+      "path": "area-statistics.csv",
+      "sha256": "7efbd702858e6046f4cdfb5a15b8916dc5da05d30d544b69304f43314b44fbfb"
+    }
+  ],
+  "response_rule": "Raw p<0.05 and abs(MI)>0.1, either sign; Both is the intersection.",
+  "signals": [
+    "dff",
+    "oasis"
+  ],
+  "source_asset_urls": [
+    {
+      "asset_id": "8b7e9f4a-2544-4c47-b1a9-e65cb58e62cd",
+      "download_url": "https://api.dandiarchive.org/api/assets/8b7e9f4a-2544-4c47-b1a9-e65cb58e62cd/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/8b7e9f4a-2544-4c47-b1a9-e65cb58e62cd/"
+    },
+    {
+      "asset_id": "83e0c8f3-5208-417c-87c4-bc4617b0f834",
+      "download_url": "https://api.dandiarchive.org/api/assets/83e0c8f3-5208-417c-87c4-bc4617b0f834/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/83e0c8f3-5208-417c-87c4-bc4617b0f834/"
+    },
+    {
+      "asset_id": "4899cef5-e772-4af8-a5c8-f414a950dd76",
+      "download_url": "https://api.dandiarchive.org/api/assets/4899cef5-e772-4af8-a5c8-f414a950dd76/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/4899cef5-e772-4af8-a5c8-f414a950dd76/"
+    },
+    {
+      "asset_id": "b425c043-ebf5-456c-83a9-1d99465224c6",
+      "download_url": "https://api.dandiarchive.org/api/assets/b425c043-ebf5-456c-83a9-1d99465224c6/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/b425c043-ebf5-456c-83a9-1d99465224c6/"
+    },
+    {
+      "asset_id": "80047d6b-6958-4124-a0c3-3cb67b791327",
+      "download_url": "https://api.dandiarchive.org/api/assets/80047d6b-6958-4124-a0c3-3cb67b791327/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/80047d6b-6958-4124-a0c3-3cb67b791327/"
+    },
+    {
+      "asset_id": "e11c921f-48b5-412b-92eb-237e938f37ab",
+      "download_url": "https://api.dandiarchive.org/api/assets/e11c921f-48b5-412b-92eb-237e938f37ab/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/e11c921f-48b5-412b-92eb-237e938f37ab/"
+    },
+    {
+      "asset_id": "6e9abda3-0fad-451e-acd2-d75fa4b5efe3",
+      "download_url": "https://api.dandiarchive.org/api/assets/6e9abda3-0fad-451e-acd2-d75fa4b5efe3/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/6e9abda3-0fad-451e-acd2-d75fa4b5efe3/"
+    },
+    {
+      "asset_id": "cb6b3893-90ae-442f-886f-58e4cffb5cef",
+      "download_url": "https://api.dandiarchive.org/api/assets/cb6b3893-90ae-442f-886f-58e4cffb5cef/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/cb6b3893-90ae-442f-886f-58e4cffb5cef/"
+    },
+    {
+      "asset_id": "31b0789e-de41-4c40-97c3-915919d0397a",
+      "download_url": "https://api.dandiarchive.org/api/assets/31b0789e-de41-4c40-97c3-915919d0397a/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/31b0789e-de41-4c40-97c3-915919d0397a/"
+    },
+    {
+      "asset_id": "de9fc0a6-246d-4a0a-8597-00a240b0d6ee",
+      "download_url": "https://api.dandiarchive.org/api/assets/de9fc0a6-246d-4a0a-8597-00a240b0d6ee/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/de9fc0a6-246d-4a0a-8597-00a240b0d6ee/"
+    },
+    {
+      "asset_id": "ab004f5f-cc27-44e3-a89c-5808d6aef1a3",
+      "download_url": "https://api.dandiarchive.org/api/assets/ab004f5f-cc27-44e3-a89c-5808d6aef1a3/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/ab004f5f-cc27-44e3-a89c-5808d6aef1a3/"
+    },
+    {
+      "asset_id": "568daf63-3dcb-4c03-bb24-d827210a32e7",
+      "download_url": "https://api.dandiarchive.org/api/assets/568daf63-3dcb-4c03-bb24-d827210a32e7/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/568daf63-3dcb-4c03-bb24-d827210a32e7/"
+    },
+    {
+      "asset_id": "75ee604b-885d-40c5-baa8-cebe13e467bb",
+      "download_url": "https://api.dandiarchive.org/api/assets/75ee604b-885d-40c5-baa8-cebe13e467bb/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/75ee604b-885d-40c5-baa8-cebe13e467bb/"
+    },
+    {
+      "asset_id": "6288e7b0-5b44-4660-b36d-c14d19220e2c",
+      "download_url": "https://api.dandiarchive.org/api/assets/6288e7b0-5b44-4660-b36d-c14d19220e2c/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/6288e7b0-5b44-4660-b36d-c14d19220e2c/"
+    },
+    {
+      "asset_id": "502db71d-8ca1-4584-b676-fb8e1bb6dd45",
+      "download_url": "https://api.dandiarchive.org/api/assets/502db71d-8ca1-4584-b676-fb8e1bb6dd45/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/502db71d-8ca1-4584-b676-fb8e1bb6dd45/"
+    },
+    {
+      "asset_id": "457acda8-80a6-4de1-a003-df1b397e83f9",
+      "download_url": "https://api.dandiarchive.org/api/assets/457acda8-80a6-4de1-a003-df1b397e83f9/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/457acda8-80a6-4de1-a003-df1b397e83f9/"
+    },
+    {
+      "asset_id": "6dc5f369-7199-4242-b0c9-3874f23e644e",
+      "download_url": "https://api.dandiarchive.org/api/assets/6dc5f369-7199-4242-b0c9-3874f23e644e/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/6dc5f369-7199-4242-b0c9-3874f23e644e/"
+    },
+    {
+      "asset_id": "740b24eb-0fbc-4b17-ae9e-36d8c0a88d34",
+      "download_url": "https://api.dandiarchive.org/api/assets/740b24eb-0fbc-4b17-ae9e-36d8c0a88d34/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/740b24eb-0fbc-4b17-ae9e-36d8c0a88d34/"
+    },
+    {
+      "asset_id": "931b2c27-cd9c-4022-a5a2-cd5e4fd3febb",
+      "download_url": "https://api.dandiarchive.org/api/assets/931b2c27-cd9c-4022-a5a2-cd5e4fd3febb/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/931b2c27-cd9c-4022-a5a2-cd5e4fd3febb/"
+    },
+    {
+      "asset_id": "f95228c0-0be3-4c43-9a83-1df1310f8699",
+      "download_url": "https://api.dandiarchive.org/api/assets/f95228c0-0be3-4c43-9a83-1df1310f8699/download/",
+      "metadata_url": "https://api.dandiarchive.org/api/assets/f95228c0-0be3-4c43-9a83-1df1310f8699/"
+    }
+  ],
+  "sources": [
+    {
+      "path": "src/openscope_p3_publication/mesoscope_standard_oddball_cohort_figure.py",
+      "sha256": "227373b0eea2287a33b1cc70dd363d5d0d15b3cf95d9c90bb9121f3a965cfc95"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_cohort_figure.py",
+      "sha256": "8da6ce3fc3b610b44509e227faf0a9f5a069f9ec249cae1d1fc7f0a218e7b843"
+    },
+    {
+      "path": "figure_sources/data/standard-oddball-publication/provenance.json",
+      "sha256": "1f334a7cf9b58773bd40756587df2e358c69aae1f1fef0b79bcb51a6abf39b0a"
+    },
+    {
+      "path": "figure_sources/data/standard-oddball-publication/cohorts.json",
+      "sha256": "69f0e1395ce8e5dcbbb84b1fb3ef7fb271a684842de9c37267290f9c021bcdad"
+    }
+  ],
+  "version": 1
+}

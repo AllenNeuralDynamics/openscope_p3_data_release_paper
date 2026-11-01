@@ -1,0 +1,199 @@
+{
+  "outputs": [
+    {
+      "path": "slap2-standard-oddball-90-glutamate.svg",
+      "sha256": "4026f7eacba788ce8b2143971d2a4751d6b0f45596f124b80e028a1e057ef7cf"
+    }
+  ],
+  "records": [
+    {
+      "display_order": [
+        "DMD1:40",
+        "DMD1:77",
+        "DMD1:16",
+        "DMD1:22",
+        "DMD1:33",
+        "DMD1:5",
+        "DMD1:12",
+        "DMD1:6",
+        "DMD1:86",
+        "DMD1:76",
+        "DMD1:91",
+        "DMD1:75",
+        "DMD1:32",
+        "DMD1:46",
+        "DMD1:38",
+        "DMD1:17",
+        "DMD1:30",
+        "DMD1:37",
+        "DMD1:54",
+        "DMD1:66",
+        "DMD1:47",
+        "DMD1:25",
+        "DMD1:49",
+        "DMD1:67",
+        "DMD1:89",
+        "DMD1:39",
+        "DMD1:73",
+        "DMD1:18",
+        "DMD1:44",
+        "DMD1:48",
+        "DMD1:21",
+        "DMD1:42",
+        "DMD1:92",
+        "DMD1:68",
+        "DMD1:82",
+        "DMD1:80",
+        "DMD1:2",
+        "DMD1:3",
+        "DMD1:1",
+        "DMD1:15",
+        "DMD1:70",
+        "DMD1:64",
+        "DMD1:83",
+        "DMD1:9",
+        "DMD1:72",
+        "DMD1:71",
+        "DMD1:93",
+        "DMD1:59",
+        "DMD1:85",
+        "DMD1:60",
+        "DMD1:43",
+        "DMD1:31",
+        "DMD1:61",
+        "DMD1:4",
+        "DMD1:24",
+        "DMD1:51",
+        "DMD1:81",
+        "DMD1:58",
+        "DMD1:69",
+        "DMD1:84",
+        "DMD1:34",
+        "DMD1:8",
+        "DMD1:0",
+        "DMD1:90",
+        "DMD1:7",
+        "DMD1:45",
+        "DMD1:74",
+        "DMD1:23",
+        "DMD1:78",
+        "DMD1:11",
+        "DMD1:65",
+        "DMD1:28",
+        "DMD1:36",
+        "DMD1:13",
+        "DMD1:79",
+        "DMD1:35",
+        "DMD1:14",
+        "DMD1:41",
+        "DMD1:10",
+        "DMD2:34",
+        "DMD2:36",
+        "DMD2:37",
+        "DMD2:31",
+        "DMD2:35",
+        "DMD2:12",
+        "DMD2:18",
+        "DMD2:17",
+        "DMD2:39",
+        "DMD2:26",
+        "DMD2:23",
+        "DMD2:33",
+        "DMD2:22",
+        "DMD2:19",
+        "DMD2:4",
+        "DMD2:8",
+        "DMD2:30",
+        "DMD2:10",
+        "DMD2:1",
+        "DMD2:0",
+        "DMD2:29",
+        "DMD2:27",
+        "DMD2:5",
+        "DMD2:32",
+        "DMD2:20",
+        "DMD2:2",
+        "DMD2:38",
+        "DMD2:6",
+        "DMD2:3",
+        "DMD2:24",
+        "DMD2:16",
+        "DMD2:9",
+        "DMD2:7",
+        "DMD2:11",
+        "DMD2:25",
+        "DMD2:13",
+        "DMD2:15",
+        "DMD2:28",
+        "DMD2:14",
+        "DMD2:21"
+      ],
+      "example_roi_keys": [
+        "DMD2:9",
+        "DMD1:35"
+      ],
+      "footprint_mm": [
+        54,
+        174
+      ],
+      "native_unit": "a.u.",
+      "nonq2_count": 95,
+      "population_heatmap_limit": 1.0,
+      "responsive_count": 7,
+      "responsive_rule": "positive_joint",
+      "signal": "glutamate",
+      "trial_heatmap_limit": 4.0
+    }
+  ],
+  "sources": [
+    {
+      "path": "src/openscope_p3_publication/slap2_standard_oddball_figure.py",
+      "sha256": "89358d28b574245d36cd276a9e2fb52647b673beebf605d1da37e52a88ccc237"
+    },
+    {
+      "path": "src/openscope_p3_publication/mesoscope_standard_oddball_figure.py",
+      "sha256": "d93718a21b62431bb8b8b44b322ef0884dc7baaef63970f8cf28c0ece957628e"
+    },
+    {
+      "path": "src/openscope_p3_publication/slap2_standard_oddball_cohort_figure.py",
+      "sha256": "66c2c038480ded5217b09d04cda4acb82dcf6df434b13111db6497f7b27febb8"
+    },
+    {
+      "path": "figure_sources/derived/slap2-standard-oddball-cohort/session-dmd-statistics.csv",
+      "sha256": "436889f166d4dd7caad5b5875272d470ffab666bafaba798fb88cddab83d8a58"
+    },
+    {
+      "path": "figure_sources/derived/slap2-standard-oddball-cohort/group-statistics.csv",
+      "sha256": "ef1038a18be9d1d1ebeeb49a0d222c4d2f7a3c7087630fec3e17c9637869684b"
+    },
+    {
+      "path": "figure_sources/derived/slap2-standard-oddball-cohort/provenance.json",
+      "sha256": "56d652b84ebee01d760938fbe1bc7cafa6b5837d83a558c2c2c6aace50876224"
+    },
+    {
+      "path": "src/openscope_p3_publication/figure_typography.py",
+      "sha256": "171ba65deff578a2e0e7d786611bf033d9349cb21bd5d38677c4fb09d2b556f8"
+    },
+    {
+      "path": "figure_sources/illustrator/platform-logos.provenance.json",
+      "sha256": "f21424cbafc7af35d497a95ce67edc0fe30fc88a2191b20fbf232794604ed870"
+    },
+    {
+      "path": "figure_sources/media/platform-logos/slap2.png",
+      "sha256": "efb2549af0ee08cc1d273fbff45a7a72372557c2d10b8bedd6c27971e774d8e4"
+    },
+    {
+      "path": "figure_sources/data/slap2-standard-oddball-828408-2025-11-18/statistics.csv.gz",
+      "sha256": "8857f42e2875912ecf8a5d50fda752b09af4594ca3c0078e06904a3534da8151"
+    },
+    {
+      "path": "figure_sources/data/slap2-standard-oddball-828408-2025-11-18/responses.npz",
+      "sha256": "d109c8c255b88a49619f8c426ed30884a0c237d535c4d21884f8982f950e3e88"
+    },
+    {
+      "path": "figure_sources/data/slap2-standard-oddball-828408-2025-11-18/provenance.json",
+      "sha256": "648129ad3aa0f16be47a7431d27b56a58ea5eb82e9ad74285a49af86059eeb09"
+    }
+  ],
+  "version": 2
+}

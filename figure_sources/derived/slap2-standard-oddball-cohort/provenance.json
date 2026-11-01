@@ -1,0 +1,52 @@
+{
+  "denominator": "Eligible jointly Q1/Q2-testable source/session observations.",
+  "displayed_groups": [
+    "DMD1",
+    "DMD2"
+  ],
+  "groups": [
+    "DMD1",
+    "DMD2",
+    "Pooled"
+  ],
+  "minimum_eligible_sources": 20,
+  "outputs": [
+    {
+      "path": "session-dmd-statistics.csv",
+      "sha256": "436889f166d4dd7caad5b5875272d470ffab666bafaba798fb88cddab83d8a58"
+    },
+    {
+      "path": "group-statistics.csv",
+      "sha256": "ef1038a18be9d1d1ebeeb49a0d222c4d2f7a3c7087630fec3e17c9637869684b"
+    }
+  ],
+  "response_rule": "Both Q1/Q2 raw p<0.05, abs(MI)>0.1; either sign.",
+  "sources": [
+    {
+      "path": "src/openscope_p3_publication/slap2_standard_oddball_cohort_figure.py",
+      "sha256": "66c2c038480ded5217b09d04cda4acb82dcf6df434b13111db6497f7b27febb8"
+    },
+    {
+      "path": "src/openscope_p3_publication/slap2_standard_oddball_cohort.py",
+      "sha256": "42ab491f53ae2380ab9760972ebb2347f3e0ef944123df0ab7c273f445a6811f"
+    },
+    {
+      "path": "figure_sources/data/slap2-standard-oddball-cohort/sessions.csv",
+      "sha256": "d79da7441d8df247f7faae33507a4e0452a3e22b2e6e6b8530eb261cb0b4f392"
+    },
+    {
+      "path": "figure_sources/data/slap2-standard-oddball-cohort/units.csv.gz",
+      "sha256": "3b923d016170ff40c738f79e984dca9299aec90e752e4a5bfc9ba8427e6120b6"
+    },
+    {
+      "path": "figure_sources/data/slap2-standard-oddball-cohort/stimulus-audit.json",
+      "sha256": "39b2b9068603666aefeb61ea0aae8816e083fcc61b6574a47b697ab1cebca2b4"
+    },
+    {
+      "path": "figure_sources/data/slap2-standard-oddball-cohort/provenance.json",
+      "sha256": "706bbb61421cf73ba633f67b09c4ab692d003b08fa7eb00d7099c5e0e246f2bd"
+    }
+  ],
+  "uncertainty": "Pooled bars + individual mouse/session proportions; no bootstrap.",
+  "version": 1
+}

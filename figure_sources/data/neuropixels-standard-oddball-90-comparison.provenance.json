@@ -1,0 +1,78 @@
+{
+  "asset": {
+    "assetId": "50a50f11-dbf8-482f-bc8f-6629e91c2f06",
+    "dandisetId": "001637",
+    "digest": {
+      "dandi:dandi-etag": "d43748b4b5c0b02f906107f2fcb0613c-170",
+      "dandi:sha2-256": "5cb1309956fff80d0700c3a19363e60b3845dab701b0d11a0c9216caeb98df7c"
+    },
+    "downloadUrl": "https://api.dandiarchive.org/api/assets/50a50f11-dbf8-482f-bc8f-6629e91c2f06/download/",
+    "modified": "2026-08-07T06:16:26.961084Z",
+    "path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-27-11-25-31_ecephys.nwb",
+    "size": 11376942209,
+    "version": "draft"
+  },
+  "output_sha256": "b5aa5ba8bf45c8ef74faf38c75d2850039566a1f63c97e06869181c307f4a09f",
+  "retrieved_date": "2026-10-30",
+  "selection_rule": "fixed user-selected VISp4 unit 993; visual cortex; finite baseline-subtracted Q2 p >=0.05 and abs(MI) <0.25; finite session firingRateHz >3; no Q1 restriction; 90-degree event; Q1 may be significant; not evidence of equivalence or absent visual responsiveness",
+  "source_verification": "pinned asset metadata path/digest, exact clean trials, unit metadata, and full-unit spike digest; float64-roundoff SDF/exact baseline matches committed population; full NWB not downloaded or rehashed",
+  "sources": [
+    {
+      "extraction_sha256": "ec1b6da5126869c53b39f4f42b389bc4d6c39e67bc55981786e1f46a29515271",
+      "path": "scripts/extract_neuropixels_standard_oddball_comparison.py",
+      "sha256": "57406e6592f986b2443a71c395e348c0b3edc175b570a766619c5fe2e2a6132a"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-event-responses.json",
+      "sha256": "a75dd4b49b8e36d30e88820e878ea517c98a4a3e826e5d131a3a7935a19a3cc4"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-90-population.json",
+      "sha256": "214ab09afe84d075b027da3c9d63f1d739c6858228e1fa66acaeac019b6afb60"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-90-population.provenance.json",
+      "sha256": "4942d04f811030b6412875281356676668aa6af25e1bf3b028b8b3d54d22115c"
+    },
+    {
+      "extraction_sha256": "33fe2dc045d1dde147ba906fae69443e873858e734f149b4c55a2f860a89497d",
+      "path": "src/openscope_p3_publication/standard_oddball_comparison.py",
+      "sha256": "151caf0ac556c88c853f24b755161aa3f3e9274ac886de474729f4ebe7a54b6d"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_candidates.py",
+      "sha256": "4c156bdf8f82774c3ef7205cfa8995b609c038c24251bab767644100a7f743a6"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_examples.py",
+      "sha256": "7785e33fbda136181d28ee3af0f7406b8a3ccde4d6b7fb6d422bc5e6f3d60343"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_population.py",
+      "sha256": "da3e1cb7df00a8469790ad712e753d909c93365da9cd84e74675a189b398b369"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_neuropixels.py",
+      "sha256": "256122f5d0f0f87bc523e7c4e7937ad0b25763b7e7d88053ab95c25d6d18d2df"
+    },
+    {
+      "path": "src/openscope_p3_publication/neural_responses.py",
+      "sha256": "5dd453e2faf38ac21e54790622fd52fc586310d4f9f8d96c8fcc1d35e5af3752"
+    },
+    {
+      "path": "src/openscope_p3_publication/mismatch_responsiveness.py",
+      "sha256": "aab9c8b0ea291056269e07755cffa3fd47a71752449de39fa663fe768a185ef4"
+    },
+    {
+      "path": "src/openscope_p3_publication/pupil_responses.py",
+      "sha256": "82c29612e60c6a56cd4ca9e9b08c409316007d1de271ee798ddbcc768a5c9d2f"
+    }
+  ],
+  "spike_offsets": "native float64 differences in padded half-open trial windows",
+  "trial_counts": {
+    "context": 34,
+    "control": 68
+  },
+  "validation_refreshed_date": "2026-11-01",
+  "version": 1
+}
