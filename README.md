@@ -123,6 +123,29 @@ The consecutive-mismatch analysis remains available in its committed
 [provenance](figure_sources/data/mismatch-adjacency.provenance.json); its
 publication summary is now in Limitations rather than a supplementary figure.
 
+### Standard-oddball Figure 9
+
+[Figure 9's build and data reference](docs/standard-oddball-explorer.md) documents
+the Neuropixels / mesoscope Delta F/F / SLAP2 glutamate static figure and explorer.
+All three modalities have committed time courses and source statistics for
+45 degrees, 90 degrees, halt and omission. The explorer selects event, area/DMD,
+responsiveness and source over a native-onset-aligned [-1.5, 1.5]-second window.
+The original four-context Neuropixels figure remains Supplementary Figure 6.
+
+The normal build generates only the three primary source columns, main composite
+and explorer, with their audits. It does not generate candidate/regional galleries,
+baseline-normalization comparisons, two-column composites or alternate signals.
+Compact [publication cohort inputs](figure_sources/data/standard-oddball-publication/)
+retain exact counts, mouse points, bootstrap endpoints and example-session
+statistics; full Neuropixels/mesoscope unit tables are not required in Git or for
+offline builds/tests.
+
+To deliberately refresh those compact inputs, first reproduce the full analyses
+with the extractors, then run `uv run python scripts/freeze_standard_oddball_publication.py`
+with `--output` pointing to a new snapshot directory. Its provenance records the
+full analyses' hashes and source identities without requiring those large files
+during rendering. No tests, classifications or intervals are approximated.
+
 ## Repository map
 
 - [index.md](index.md): sole authoritative MyST manuscript.

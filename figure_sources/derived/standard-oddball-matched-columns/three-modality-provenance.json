@@ -1,0 +1,110 @@
+{
+  "background_color": "#ffffff",
+  "column_width_mm": 54.0,
+  "footprint_mm": [
+    170.0,
+    174.0
+  ],
+  "gutter_mm": 4.0,
+  "main_footprint_mm": [
+    174.0,
+    184.0
+  ],
+  "main_left_gutter_mm": 4.0,
+  "main_shared_colorbar": {
+    "D": {
+      "limit": 44.0,
+      "unit": "spikes/s"
+    },
+    "E": {
+      "limit": 0.4,
+      "unit": "%"
+    },
+    "F": {
+      "limit": 1.0,
+      "unit": "a.u."
+    }
+  },
+  "neuropixels_cohort_letter_shift_mm": 4.6,
+  "neuropixels_cohort_shift_mm": 7.1,
+  "outputs": [
+    {
+      "path": "standard-oddball-three-modality-dff-glutamate.svg",
+      "sha256": "149403ea4492dd45e8dcaa071b25d41750878b67e7be79bd4c84d49a8d216aa3"
+    }
+  ],
+  "panel_letters": {
+    "calcium": {
+      "mesoscope": {
+        "A": "B",
+        "B": "E",
+        "C": "H"
+      },
+      "neuropixels": {
+        "A": "A",
+        "B": "D",
+        "C": "G"
+      },
+      "slap2": {
+        "A": "C",
+        "B": "F"
+      }
+    },
+    "glutamate": {
+      "mesoscope": {
+        "A": "B",
+        "B": "E",
+        "C": "H"
+      },
+      "neuropixels": {
+        "A": "A",
+        "B": "D",
+        "C": "G"
+      },
+      "slap2": {
+        "A": "C",
+        "B": "F",
+        "C": "I"
+      }
+    }
+  },
+  "slap2_cohort_panel": {
+    "calcium": "absent",
+    "glutamate": "present"
+  },
+  "sources": [
+    {
+      "path": "images/figures/generated/neuropixels-standard-oddball-90-column.svg",
+      "sha256": "723f665af6c367f8cf3c6384e7051adfc4356ea9fbb4b9603255af47546fe72b"
+    },
+    {
+      "path": "figure_sources/derived/neuropixels-standard-oddball-90-column/provenance.json",
+      "sha256": "550dbb2e8504bef1fa53ac9941356f1232cc3a22e146b3f022db2d8fa3298add"
+    },
+    {
+      "path": "images/figures/generated/mesoscope-standard-oddball-90-dff.svg",
+      "sha256": "7f86d19743e94b42b5fb084a02f95792706bd999558d6ccb00a60dfdda95febb"
+    },
+    {
+      "path": "figure_sources/derived/mesoscope-standard-oddball-90/provenance.json",
+      "sha256": "b38710355113524261e5e2326b475977c40e10a582c9d6df6755ad426a5c8d78"
+    },
+    {
+      "path": "images/figures/generated/slap2-standard-oddball-90-glutamate.svg",
+      "sha256": "4026f7eacba788ce8b2143971d2a4751d6b0f45596f124b80e028a1e057ef7cf"
+    },
+    {
+      "path": "figure_sources/derived/slap2-standard-oddball-90/provenance.json",
+      "sha256": "70080f08ea5c6926517cc6aef654b62cc474e198f5710bea07f79c85614c3dfd"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_matched_columns.py",
+      "sha256": "640f2700bdc837da69784314844bd982567a5ce94a2cd9879bf6dbd14fd490f1"
+    },
+    {
+      "path": "src/openscope_p3_publication/figure_typography.py",
+      "sha256": "171ba65deff578a2e0e7d786611bf033d9349cb21bd5d38677c4fb09d2b556f8"
+    }
+  ],
+  "version": 1
+}

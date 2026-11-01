@@ -1,0 +1,518 @@
+{
+  "events": [
+    "orientation_45",
+    "orientation_90",
+    "halt",
+    "omission"
+  ],
+  "inputs": [
+    {
+      "path": "scripts/freeze_standard_oddball_publication.py",
+      "sha256": "5366cee73b6673ed45057bf4f413e4e9549b8d1684bae8a421ecb94a8bfc89ef"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_publication_data.py",
+      "sha256": "266cf5d501c7fbaccdf6f576afb7558f48166f207a731bd30aed2a9cc28352be"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_cohort_figure.py",
+      "sha256": "8da6ce3fc3b610b44509e227faf0a9f5a069f9ec249cae1d1fc7f0a218e7b843"
+    },
+    {
+      "path": "src/openscope_p3_publication/mesoscope_standard_oddball_cohort_figure.py",
+      "sha256": "d0f99f145ab5b217d7dee2f62e17cfa3e8e792b3b6546da7516f62a6fd79203a"
+    }
+  ],
+  "neuropixels_sources": [
+    {
+      "asset_id": "21988ae7-fce0-41f2-a2af-b6c2ddcd6e52",
+      "probe_counts": {
+        "ProbeA": {
+          "eligible": 210,
+          "recorded": 736
+        },
+        "ProbeB": {
+          "eligible": 144,
+          "recorded": 593
+        },
+        "ProbeC": {
+          "eligible": 0,
+          "recorded": 701
+        },
+        "ProbeD": {
+          "eligible": 121,
+          "recorded": 633
+        },
+        "ProbeE": {
+          "eligible": 215,
+          "recorded": 825
+        },
+        "ProbeF": {
+          "eligible": 231,
+          "recorded": 787
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_820454_2025-11-05_15-21-15",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "57894ce6da8bf7bf0b98f75e8c1228b7d6be286caa486527aa534aba4a39900a",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "1875ebb0d6048ac7009b600ee22512dcfe64920bfcf3e1af6c3adc4e5c4ed003"
+    },
+    {
+      "asset_id": "50a50f11-dbf8-482f-bc8f-6629e91c2f06",
+      "probe_counts": {
+        "ProbeB": {
+          "eligible": 144,
+          "recorded": 560
+        },
+        "ProbeC": {
+          "eligible": 131,
+          "recorded": 547
+        },
+        "ProbeD": {
+          "eligible": 127,
+          "recorded": 608
+        },
+        "ProbeE": {
+          "eligible": 127,
+          "recorded": 622
+        },
+        "ProbeF": {
+          "eligible": 177,
+          "recorded": 681
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_830794_2026-01-27_11-25-31",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "aad800b5a9a8328f714d62e47c86108da1c104bcf4a3e8dfbc4fbbd5667becd4",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "973f9398190819d7ae5df680c80acd836ac8d93633ffe53c911fa34d82f79c72"
+    },
+    {
+      "asset_id": "bcd5353c-af8e-4a60-87b6-8b29568d84f5",
+      "probe_counts": {
+        "ProbeA": {
+          "eligible": 101,
+          "recorded": 467
+        },
+        "ProbeB": {
+          "eligible": 52,
+          "recorded": 443
+        },
+        "ProbeC": {
+          "eligible": 85,
+          "recorded": 448
+        },
+        "ProbeD": {
+          "eligible": 78,
+          "recorded": 482
+        },
+        "ProbeE": {
+          "eligible": 36,
+          "recorded": 349
+        },
+        "ProbeF": {
+          "eligible": 132,
+          "recorded": 625
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_830795_2026-02-24_15-08-59",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "7f6aa0d132e0cccc3ed10b37b287628d90b7bb799cf50c48fb1e808910e19957",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "4b8925045f98e9eea5f46a2c9d07fe8ed1b5a47d939e0e8ec7a9761982e10654"
+    },
+    {
+      "asset_id": "680d1c0c-e338-4d0b-ba29-4329436d2ae2",
+      "probe_counts": {
+        "ProbeA": {
+          "eligible": 61,
+          "recorded": 421
+        },
+        "ProbeB": {
+          "eligible": 95,
+          "recorded": 491
+        },
+        "ProbeC": {
+          "eligible": 103,
+          "recorded": 531
+        },
+        "ProbeD": {
+          "eligible": 148,
+          "recorded": 685
+        },
+        "ProbeE": {
+          "eligible": 99,
+          "recorded": 578
+        },
+        "ProbeF": {
+          "eligible": 132,
+          "recorded": 649
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_830846_2026-03-11_10-19-32",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "6bb3969c55a88aea02e6122fdf0c8a301e5c2c39294f55bd556b929ab8b13367",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "53f194812601dd51d8d7bef4e05a398288611cba719d013920b337228a1a53e7"
+    },
+    {
+      "asset_id": "156b6e72-c822-471a-be9b-69297f4eda78",
+      "probe_counts": {
+        "ProbeA": {
+          "eligible": 144,
+          "recorded": 584
+        },
+        "ProbeB": {
+          "eligible": 103,
+          "recorded": 472
+        },
+        "ProbeC": {
+          "eligible": 80,
+          "recorded": 450
+        },
+        "ProbeD": {
+          "eligible": 167,
+          "recorded": 797
+        },
+        "ProbeE": {
+          "eligible": 102,
+          "recorded": 561
+        },
+        "ProbeF": {
+          "eligible": 164,
+          "recorded": 654
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_830847_2026-03-11_15-46-40",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "dbfab245bf7371153109bda119269ee662611fc4944fd8938dead129bac23e24",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "e047ba967487144903a6a7c8263515dda71fc94f58209f14b03fe575f6ef208c"
+    },
+    {
+      "asset_id": "e597fc7d-a8e5-4a1f-833e-4eee1c139e35",
+      "probe_counts": {
+        "ProbeA": {
+          "eligible": 107,
+          "recorded": 484
+        },
+        "ProbeB": {
+          "eligible": 111,
+          "recorded": 512
+        },
+        "ProbeC": {
+          "eligible": 88,
+          "recorded": 531
+        },
+        "ProbeD": {
+          "eligible": 74,
+          "recorded": 545
+        },
+        "ProbeE": {
+          "eligible": 103,
+          "recorded": 527
+        },
+        "ProbeF": {
+          "eligible": 95,
+          "recorded": 534
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_830848_2026-03-04_15-34-54",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "979b42cf9baf450451a0a31d0f2171d9d808104d3b217e197ec2aabd7b8e68a2",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "6b0ff7bd1dd19534da3fa62c57a86555b0f639a08193e869265dd4247ef3bf3d"
+    },
+    {
+      "asset_id": "ce62d153-644b-4da9-b5a7-823353bb7ccb",
+      "probe_counts": {
+        "ProbeA": {
+          "eligible": 220,
+          "recorded": 777
+        },
+        "ProbeB": {
+          "eligible": 69,
+          "recorded": 398
+        },
+        "ProbeC": {
+          "eligible": 53,
+          "recorded": 388
+        },
+        "ProbeD": {
+          "eligible": 87,
+          "recorded": 436
+        },
+        "ProbeE": {
+          "eligible": 41,
+          "recorded": 391
+        },
+        "ProbeF": {
+          "eligible": 84,
+          "recorded": 512
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_830849_2026-03-06_10-51-58",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "9cda1993cf346231ef08baa7b69fb1565c0ca1a7e68c6a5f2a901c4e835ddc84",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "c1ca12d559d35a3df3faf4e080781bbefa41294ee5576013b3a87dedb2e66af4"
+    },
+    {
+      "asset_id": "92ea6e6a-7525-4589-bfd3-839a48d27b7c",
+      "probe_counts": {
+        "ProbeA": {
+          "eligible": 97,
+          "recorded": 492
+        },
+        "ProbeB": {
+          "eligible": 43,
+          "recorded": 322
+        },
+        "ProbeC": {
+          "eligible": 83,
+          "recorded": 469
+        },
+        "ProbeD": {
+          "eligible": 83,
+          "recorded": 469
+        },
+        "ProbeE": {
+          "eligible": 63,
+          "recorded": 407
+        },
+        "ProbeF": {
+          "eligible": 161,
+          "recorded": 732
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_830852_2026-02-24_10-20-58",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "4705532e23fce209df686a1987056657f2f4f0f3008054ff39b3eefe38384461",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "52e230aa63582b01ac373806b7db125bfde137e929779649c91cdd1c2f7308d6"
+    },
+    {
+      "asset_id": "edfcb46c-943c-4ba7-b47f-2d3f24e1cf59",
+      "probe_counts": {
+        "ProbeA": {
+          "eligible": 83,
+          "recorded": 425
+        },
+        "ProbeB": {
+          "eligible": 82,
+          "recorded": 460
+        },
+        "ProbeC": {
+          "eligible": 137,
+          "recorded": 544
+        },
+        "ProbeD": {
+          "eligible": 127,
+          "recorded": 515
+        },
+        "ProbeE": {
+          "eligible": 42,
+          "recorded": 355
+        },
+        "ProbeF": {
+          "eligible": 203,
+          "recorded": 770
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_834686_2026-03-25_15-47-48",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "47f8e5d4d157d0f814bc489994e216cf7b2c42d797ff3ff35fe8ae5068bc6008",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "50a50805c3cf811b7c0ac2572f7f784eec691ff8f1bcba4639e0bb6d5fbd8406"
+    },
+    {
+      "asset_id": "a7f50043-8883-4c0e-a956-2ff3e0f1b0ef",
+      "probe_counts": {
+        "ProbeA": {
+          "eligible": 65,
+          "recorded": 396
+        },
+        "ProbeB": {
+          "eligible": 70,
+          "recorded": 465
+        },
+        "ProbeC": {
+          "eligible": 109,
+          "recorded": 547
+        },
+        "ProbeD": {
+          "eligible": 142,
+          "recorded": 578
+        },
+        "ProbeE": {
+          "eligible": 112,
+          "recorded": 601
+        },
+        "ProbeF": {
+          "eligible": 94,
+          "recorded": 546
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_834687_2026-03-18_15-50-10",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "3ed5fadd7ac8297a65878f27f1c6926990b9bda4b592bc40c6c4a891f3f2da31",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "5d36df7f730a188b4c1e0aa5909a6f1d1ece29162556be2c44c11386dfb054f7"
+    },
+    {
+      "asset_id": "a909a36b-7f70-4e9f-b95e-7f913e5d724a",
+      "probe_counts": {
+        "ProbeA": {
+          "eligible": 132,
+          "recorded": 753
+        },
+        "ProbeB": {
+          "eligible": 92,
+          "recorded": 558
+        },
+        "ProbeC": {
+          "eligible": 118,
+          "recorded": 519
+        },
+        "ProbeD": {
+          "eligible": 55,
+          "recorded": 477
+        },
+        "ProbeE": {
+          "eligible": 87,
+          "recorded": 656
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_834691_2026-02-17_10-49-35",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "1fc539fb56a345320a4d652a1a89e8cf3f5ff3a0670ebeabb185605ed4f99d99",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "e7f10c136b8d4975a46c8adaa019e2cee1c2459b278ea8f1ede551696d0b8d5b"
+    },
+    {
+      "asset_id": "fedadbb4-0398-44bd-9678-f0bcc0e52fd3",
+      "probe_counts": {
+        "ProbeA": {
+          "eligible": 110,
+          "recorded": 531
+        },
+        "ProbeB": {
+          "eligible": 109,
+          "recorded": 491
+        },
+        "ProbeC": {
+          "eligible": 126,
+          "recorded": 491
+        },
+        "ProbeD": {
+          "eligible": 141,
+          "recorded": 543
+        },
+        "ProbeE": {
+          "eligible": 99,
+          "recorded": 529
+        },
+        "ProbeF": {
+          "eligible": 117,
+          "recorded": 576
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_848387_2026-05-05_15-55-50",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "a03c340a110dbe9d0cad52bb3ac3efc03d1453270c6b4684ac8fc5737848ce76",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "cdb44f252a6d8f57e1db5b70617724ba15825ea6827b33bd7431c5e07b466562"
+    },
+    {
+      "asset_id": "81807807-957a-40bf-9b81-52a8d560c8e6",
+      "probe_counts": {
+        "ProbeA": {
+          "eligible": 124,
+          "recorded": 474
+        },
+        "ProbeB": {
+          "eligible": 111,
+          "recorded": 465
+        },
+        "ProbeC": {
+          "eligible": 139,
+          "recorded": 574
+        },
+        "ProbeD": {
+          "eligible": 136,
+          "recorded": 742
+        },
+        "ProbeE": {
+          "eligible": 113,
+          "recorded": 702
+        },
+        "ProbeF": {
+          "eligible": 145,
+          "recorded": 620
+        }
+      },
+      "retrieved_date": "2026-10-31",
+      "session_id": "ecephys_848390_2026-05-05_10-08-25",
+      "signature": "a0219cb0a429339342bfaf1fa6d0045882c8ce92f7971dc6a9364d996f060f45",
+      "source_notes": {},
+      "source_spikes_sha256": "31c67b45fad37dc0ed0fa012a0931d1fa9e523328464b2aa716f55ac0cfce3cf",
+      "spike_digest_definition": "concatenated row-order native float64 spikes, little endian",
+      "table_sha256": "13d3c84f8a503bbf4a150e66e58197145f04ff49f32ac40d276d1a5ff7fb39dc"
+    }
+  ],
+  "output_sha256": "69f0e1395ce8e5dcbbb84b1fb3ef7fb271a684842de9c37267290f9c021bcdad",
+  "purpose": "Exact frozen rendering inputs, not a replacement for full cohort analyses.",
+  "tests_recomputed": false,
+  "upstream_analyses": [
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-cohort/units.csv.gz",
+      "sha256": "84789db8d461d20eec080d6a587421f8a4808761283fc7fa52d3f3397a2fa00a"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-cohort/sessions.csv",
+      "sha256": "18068f01af1910fce13e54f743909e61bd66cd015d6b671c7f505de9e92dad5b"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-cohort/provenance.json",
+      "sha256": "8d29cd9da4d5069d1dc37d4fa0fdc87c0ff5cce58469d6c786f708512a94d9d3"
+    },
+    {
+      "path": "figure_sources/data/mesoscope-standard-oddball-cohort/units.csv.gz",
+      "sha256": "c783174f6bf71456bae764d0df3f82d2683f20d7e596bfb170b4698d6044fe24"
+    },
+    {
+      "path": "figure_sources/data/mesoscope-standard-oddball-cohort/sessions.csv",
+      "sha256": "6bbb64414297dce3b06236590a4feb4a6d0c13172cde006b21af5377437c8935"
+    },
+    {
+      "path": "figure_sources/data/mesoscope-standard-oddball-cohort/provenance.json",
+      "sha256": "dfb016869b7a81f45112078e1b1992d1c520c5776ce4ee89b7597dce484b396e"
+    }
+  ],
+  "version": 1
+}

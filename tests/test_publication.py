@@ -605,12 +605,12 @@ def test_static_figure_reorganization_keeps_ten_main_and_six_supplementary_figur
     assert labels == [
         "fig-graphical-abstract", "fig-recording-session-inventory", "fig-aligned-neural-signals",
         "fig-mesoscope-unit-extraction", "fig-unit-extraction-plan", "fig-ecephys-qc-dashboard",
-        "fig-basic-stimuli-plan", "fig-supp-wavemap", "fig-neuropixels-event-responses",
+        "fig-basic-stimuli-plan", "fig-supp-wavemap", "fig-standard-oddball-responses",
         "fig-behavior-tracking",
     ]
-    for number in range(1, 6):
+    for number in range(1, 7):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
-    assert len(re.findall(r"\*\*Supplementary Figure \d+\.\*\*", manuscript)) == 5
+    assert len(re.findall(r"\*\*Supplementary Figure \d+\.\*\*", manuscript)) == 6
     assert ":label: fig-supp-eye-tracking" not in manuscript
     assert ":label: fig-supp-pupil-event-responses" not in manuscript
     assert main[7].index("**A,** Enlarged visual-cortex") < main[7].index("**B,** Saved regional")
@@ -939,10 +939,12 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "Mouse 830846's duration running panel is explicitly unavailable" in prose
     assert "./interactive/neuropixels-event-responses.html" in manuscript
     assert (
-        ":label: fig-neuropixels-event-responses\n:width: 100%"
+        ":label: fig-neuropixels-event-responses\n:enumerated: false\n:width: 100%"
         in manuscript
     )
-    assert ":label: fig-neuropixels-event-responses\n:enumerated: false" not in manuscript
+    assert "**Supplementary Figure 6.** Neuropixels mismatch responses" in manuscript
+    assert ":label: fig-standard-oddball-responses\n:width: 100%" in manuscript
+    assert "./interactive/standard-oddball-explorer.html" in manuscript
     assert (
         ":placeholder: ./images/figures/generated/"
         "figure-10-neuropixels-event-responses.svg"
@@ -1183,8 +1185,12 @@ def test_data_explorer_uses_generated_assets_without_manuscript_data() -> None:
             ("Kilosort 4", "OASIS", "SILo", "source counts are not neuron counts"),
         ),
         (
-            "## Neuropixels mismatch responses across predictive contexts",
+            "# Supplementary Figure 6: Neuropixels mismatch responses across predictive contexts",
             ("Panel A", "panel B", "(Q1)", "(Q2)", "*q* values", "exploratory"),
+        ),
+        (
+            "## Standard-oddball responsiveness across recording modalities",
+            ("Neuropixels", "mesoscope", "SLAP2", "Q1", "Q2", "jointly", "exploratory"),
         ),
         (
             "## Cell-type characterization",
@@ -1267,7 +1273,7 @@ def test_cell_type_figures_are_main_figures_before_responses() -> None:
         < manuscript.index("## Cell-type characterization")
         < manuscript.index("(fig-supp-optotagging-heatmaps)=")
         < manuscript.index(":label: fig-supp-wavemap")
-        < manuscript.index("## Neuropixels mismatch responses across predictive contexts")
+        < manuscript.index("## Standard-oddball responsiveness across recording modalities")
         < manuscript.index("## Behavioral data analysis across modalities")
         < manuscript.index("## Supplementary figures")
     )
@@ -1323,7 +1329,7 @@ def test_all_publication_viewers_default_to_static() -> None:
 
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     paths = re.findall(r"^:::\{iframe\} \./(interactive/[^\n]+)", manuscript, re.MULTILINE)
-    assert len(paths) == 12
+    assert len(paths) == 13
     for relative_path in paths:
         html = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
         parser = FigureElements()
@@ -1470,8 +1476,9 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert (
         manuscript.index("(fig-supp-optotagging-heatmaps)=")
         < manuscript.index(":label: fig-supp-wavemap")
-        < manuscript.index(":label: fig-neuropixels-event-responses")
+        < manuscript.index(":label: fig-standard-oddball-responses")
         < manuscript.index(":label: fig-behavior-tracking")
+        < manuscript.index(":label: fig-neuropixels-event-responses")
     )
     for number, label in (
         (1, "fig-graphical-abstract"),
@@ -1482,7 +1489,7 @@ def test_figure_captions_and_interactive_placement() -> None:
         (6, "fig-ecephys-qc-dashboard"),
         (7, "fig-basic-stimuli-plan"),
         (8, "fig-supp-wavemap"),
-        (9, "fig-neuropixels-event-responses"),
+        (9, "fig-standard-oddball-responses"),
         (10, "fig-behavior-tracking"),
     ):
         assert f"[Figure {number}](#{label})" in manuscript

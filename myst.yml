@@ -9,6 +9,12 @@ project:
   github: https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper
   static_files:
     - interactive
+    - figure_sources/data/mesoscope-standard-oddball-832700-2026-01-30
+    - figure_sources/data/slap2-standard-oddball-828408-2025-11-18
+    - figure_sources/data/slap2-standard-oddball-cohort
+    - figure_sources/data/standard-oddball-explorer-window
+    - figure_sources/data/standard-oddball-explorer-events
+    - figure_sources/data/standard-oddball-publication
   toc:
     - file: index.md
 site:

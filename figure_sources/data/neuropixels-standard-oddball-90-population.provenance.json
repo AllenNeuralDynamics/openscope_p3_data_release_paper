@@ -1,0 +1,69 @@
+{
+  "asset": {
+    "assetId": "50a50f11-dbf8-482f-bc8f-6629e91c2f06",
+    "dandisetId": "001637",
+    "digest": {
+      "dandi:dandi-etag": "d43748b4b5c0b02f906107f2fcb0613c-170",
+      "dandi:sha2-256": "5cb1309956fff80d0700c3a19363e60b3845dab701b0d11a0c9216caeb98df7c"
+    },
+    "downloadUrl": "https://api.dandiarchive.org/api/assets/50a50f11-dbf8-482f-bc8f-6629e91c2f06/download/",
+    "modified": "2026-08-07T06:16:26.961084Z",
+    "path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-27-11-25-31_ecephys.nwb",
+    "size": 11376942209,
+    "version": "draft"
+  },
+  "empty_trials": "retained as empty arrays",
+  "output_sha256": "214ab09afe84d075b027da3c9d63f1d739c6858228e1fa66acaeac019b6afb60",
+  "retrieved_date": "2026-10-30",
+  "selection_rule": "all Figure 9 visual cortex/thalamus QC-passing SUA with firingRateHz > 1; 90-degree event; clean context and all matched controls; no responsiveness filter",
+  "source_verification": "pinned asset metadata digest/path; full NWB not downloaded or rehashed",
+  "source_window_seconds": [
+    -0.9975,
+    0.75
+  ],
+  "sources": [
+    {
+      "path": "figure_sources/data/neuropixels-event-responses.json",
+      "sha256": "a75dd4b49b8e36d30e88820e878ea517c98a4a3e826e5d131a3a7935a19a3cc4"
+    },
+    {
+      "path": "scripts/extract_neuropixels_standard_oddball_examples.py",
+      "sha256": "34857718faf97c1b42bc6a210e38c913e343ad3d4f42041614c1bbfd891d9d4c"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_neuropixels.py",
+      "sha256": "256122f5d0f0f87bc523e7c4e7937ad0b25763b7e7d88053ab95c25d6d18d2df"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_examples.py",
+      "sha256": "7785e33fbda136181d28ee3af0f7406b8a3ccde4d6b7fb6d422bc5e6f3d60343"
+    },
+    {
+      "path": "src/openscope_p3_publication/neural_responses.py",
+      "sha256": "5dd453e2faf38ac21e54790622fd52fc586310d4f9f8d96c8fcc1d35e5af3752"
+    },
+    {
+      "path": "src/openscope_p3_publication/mismatch_responsiveness.py",
+      "sha256": "aab9c8b0ea291056269e07755cffa3fd47a71752449de39fa663fe768a185ef4"
+    },
+    {
+      "path": "src/openscope_p3_publication/pupil_responses.py",
+      "sha256": "82c29612e60c6a56cd4ca9e9b08c409316007d1de271ee798ddbcc768a5c9d2f"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_population.py",
+      "sha256": "da3e1cb7df00a8469790ad712e753d909c93365da9cd84e74675a189b398b369"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-examples.json",
+      "sha256": "195e5cd2113a54ec3b22d2d6524fdd865f26813995aba61e7583b03deded9de2"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-examples.provenance.json",
+      "sha256": "113f5582cb0acbac8c88c208aa1a8966be87e3678c0709f55c5c970f330284be"
+    }
+  ],
+  "spike_offsets": "native float64 differences; only condition mean SDFs and baselines retained",
+  "trial_rule": "clean context using existing adjacent-mismatch exclusion; all matched controls",
+  "version": 1
+}

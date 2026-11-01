@@ -1,0 +1,66 @@
+{
+  "asset": {
+    "assetId": "50a50f11-dbf8-482f-bc8f-6629e91c2f06",
+    "dandisetId": "001637",
+    "digest": {
+      "dandi:dandi-etag": "d43748b4b5c0b02f906107f2fcb0613c-170",
+      "dandi:sha2-256": "5cb1309956fff80d0700c3a19363e60b3845dab701b0d11a0c9216caeb98df7c"
+    },
+    "downloadUrl": "https://api.dandiarchive.org/api/assets/50a50f11-dbf8-482f-bc8f-6629e91c2f06/download/",
+    "modified": "2026-08-07T06:16:26.961084Z",
+    "path": "sub-830794/sub-830794_ses-ecephys-830794-2026-01-27-11-25-31_ecephys.nwb",
+    "size": 11376942209,
+    "version": "draft"
+  },
+  "baseline_rule": "condition-specific clean-trial preceding-grey baseline; complete half-open 20 ms bins; pooled bin-rate mean and population SD (ddof=0); trailing fractional bin omitted",
+  "output_sha256": "de7ae9695576273fcdf72f16ed8aa3e29ee9b864fbb474f67405ebc089415b77",
+  "retrieved_date": "2026-10-30",
+  "source_verification": "pinned asset metadata path/digest, clean trial records, unit metadata, and all full-unit spike-array SHA256 digests match committed population; full NWB not downloaded or rehashed",
+  "sources": [
+    {
+      "path": "scripts/extract_neuropixels_standard_oddball_baselines.py",
+      "sha256": "f6eff32e28a0313502b306227f606b0c0cbd7c5a9e03dc138b68d168b66ab2a9"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-90-population.json",
+      "sha256": "214ab09afe84d075b027da3c9d63f1d739c6858228e1fa66acaeac019b6afb60"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-90-population.provenance.json",
+      "sha256": "4942d04f811030b6412875281356676668aa6af25e1bf3b028b8b3d54d22115c"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_baselines.py",
+      "sha256": "d0fe9dfa36ef79ebd2f9156f4c1e423f26a9b3308fa3bcb79ba19b723a3164d3"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_examples.py",
+      "sha256": "7785e33fbda136181d28ee3af0f7406b8a3ccde4d6b7fb6d422bc5e6f3d60343"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_population.py",
+      "sha256": "da3e1cb7df00a8469790ad712e753d909c93365da9cd84e74675a189b398b369"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_neuropixels.py",
+      "sha256": "256122f5d0f0f87bc523e7c4e7937ad0b25763b7e7d88053ab95c25d6d18d2df"
+    },
+    {
+      "path": "src/openscope_p3_publication/neural_responses.py",
+      "sha256": "5dd453e2faf38ac21e54790622fd52fc586310d4f9f8d96c8fcc1d35e5af3752"
+    },
+    {
+      "path": "src/openscope_p3_publication/mismatch_responsiveness.py",
+      "sha256": "aab9c8b0ea291056269e07755cffa3fd47a71752449de39fa663fe768a185ef4"
+    },
+    {
+      "path": "src/openscope_p3_publication/pupil_responses.py",
+      "sha256": "82c29612e60c6a56cd4ca9e9b08c409316007d1de271ee798ddbcc768a5c9d2f"
+    }
+  ],
+  "trial_counts": {
+    "context": 34,
+    "control": 68
+  },
+  "version": 1
+}

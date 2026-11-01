@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Standard-oddball explorer</title>
+  <style>__CSS__</style>
+</head>
+<body>
+  <main data-simple-view>
+    <script id="oddball-data" type="application/json">__DATA__</script>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" data-view="interactive" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle"
+        aria-label="Figure legend" title="Figure legend" aria-expanded="false"
+        aria-controls="figure-legend" hidden>?</button>
+    </header>
+    <section id="figure-legend" class="figure-legend" hidden>
+      <h2>Standard-oddball explorer legend</h2>
+      <p>Heatmaps show baseline-subtracted context or matched-control signals, or their
+        difference, in the selected modality's native units. Teal and grey traces show
+        context and control means; bands are across-source SEM, not across mice.
+        Individual-source means have no trial uncertainty band. Interactive activity is
+        aligned to native stimulus-table start_time over −1.5 to +1.5 s; the static
+        figure retains its original window. Tan/grey shading marks median actual
+        neighboring/mismatch presentation bounds, not the 500-ms test windows.
+        Neighboring trials retain their actual stimuli; controls have randomized
+        orientations. Recorded samples only contribute to means, without interpolation
+        across acquisition pauses. Source identities, tests and recorded-trial ranges
+        are available to assistive technology; complete counts are in the frozen data.</p>
+      <p>Q1 compares the deviant with the preceding standard; Q2 compares context and
+        matched-control baseline-subtracted responses. The exploratory screen uses raw
+        p&lt;0.05 and |MI|&gt;0.1, either sign. Both is their intersection. Q2-nonsignificant
+        is not proof of absent visual activity. Frozen context-only Rastermap orders are
+        filtered, never refitted. SLAP2 rows remain grouped by DMD.</p>
+      <p>Cohort bars pool responsive counts over eligible jointly testable observations.
+        Points identify mice; Neuropixels/mesoscope intervals are 95% mouse-cluster
+        bootstrap bounds. The two-mouse SLAP2 subset has no bootstrap intervals.
+        SLAP2 circles/squares mark mice 828408/829704. Exact counts and mouse IDs
+        are retained in the embedded data; the barplot has an accessible count summary.
+        Population selections do not change cohort classifications or denominators.
+        These separate recordings are not matched cells or tests of cross-modality differences.</p>
+    </section>
+    <section id="static-view">
+      <img src="__STATIC__" alt="Standard-oddball responses across Neuropixels, mesoscope calcium and SLAP2 glutamate: example trials, population heatmaps and means, and cohort Q1/Q2/Both proportions.">
+    </section>
+    <section id="interactive-view" hidden>
+      <h1>Standard-oddball explorer</h1>
+      <nav id="modality-tabs" aria-label="Recording modality"></nav>
+      <div class="controls">
+        <label>Mismatch event<select id="event-select"></select></label>
+        <label><span id="area-label">Area</span><select id="area-select"></select></label>
+        <label>Population responsiveness<select id="responsiveness-select">
+          <option value="all">All eligible sources</option>
+          <option value="q1_responsive">Q1 responsive</option>
+          <option value="q2_responsive">Q2 responsive</option>
+          <option value="joint_responsive">Both Q1 and Q2</option>
+          <option value="positive_joint">Both positive</option>
+          <option value="q2_nonsignificant">Q2-nonsignificant</option>
+        </select></label>
+        <label>Heatmap value<select id="metric-select">
+          <option value="context">Context change</option>
+          <option value="control">Control change</option>
+          <option value="difference">Context − control</option>
+        </select></label>
+        <label>Row order<select id="sort-select">
+          <option value="rastermap">Frozen context Rastermap</option>
+          <option value="area">Area / DMD</option>
+          <option value="response">Mean response magnitude</option>
+          <option value="peak">Time to positive peak</option>
+        </select></label>
+        <label>Trace<select id="scope-select">
+          <option value="population">Selected-source mean</option>
+          <option value="source">Individual source</option>
+        </select></label>
+        <label id="source-control" hidden>Source<select id="source-select"></select></label>
+        <label>Heatmap color limit<input id="color-limit" type="range" min="25"
+          max="200" value="100" step="5"><output id="color-limit-value">100%</output></label>
+      </div>
+      <p id="unavailable-message" role="status" hidden></p>
+      <section id="population-panels">
+        <h2 id="heatmap-title">Population response heatmap</h2>
+        <canvas id="colorbar-canvas" width="1100" height="90" role="img"
+          aria-label="Heatmap color scale"></canvas>
+        <canvas id="heatmap-canvas" width="1100" height="420" tabindex="0"
+          role="img" aria-label="Selected source-by-time heatmap"></canvas>
+        <p id="source-readout" class="sr-only" aria-live="polite"></p>
+        <h2 id="response-title">Context and control responses</h2>
+        <canvas id="response-canvas" width="1100" height="280" role="img"
+          aria-label="Context and control baseline-subtracted time courses"></canvas>
+      </section>
+      <section id="cohort-panel">
+        <h2>Cohort responsiveness</h2>
+        <canvas id="cohort-canvas" width="1100" height="310" role="img"
+          aria-label="Event-specific Q1, Q2 and Both proportions by area or DMD"></canvas>
+        <p id="cohort-empty" role="status" hidden></p>
+      </section>
+    </section>
+  </main>
+  <script>__JS__</script>
+  <script>__CONTROLS__</script>
+</body>
+</html>

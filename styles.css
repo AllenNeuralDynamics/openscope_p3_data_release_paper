@@ -26,6 +26,7 @@
 #fig-supp-neuropixels-recorded-trajectories,
 #fig-supp-eye-tracking,
 #fig-supp-pupil-event-responses,
+#fig-standard-oddball-responses,
 #fig-neuropixels-event-responses {
   container-type: inline-size;
 }
@@ -558,6 +559,11 @@ article table.table-laser-power td:first-child {
 
 #fig-neuropixels-event-responses .relative.inline-block {
   height: 1470px;
+  padding-bottom: 0 !important;
+}
+
+#fig-standard-oddball-responses .relative.inline-block {
+  height: 1300px;
   padding-bottom: 0 !important;
 }
 
