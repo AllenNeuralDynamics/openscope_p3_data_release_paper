@@ -184,9 +184,11 @@ def write_cohort_audits(prepared: dict, directory: Path) -> list[Path]:
         "amplitude_gate": "None; dF/F>0.5 applies only to panel A example selection.",
         "bootstrap_rule": BOOTSTRAP_RULE, "bootstrap_replicates": BOOTSTRAP_REPLICATES,
         "bootstrap_seed": BOOTSTRAP_SEED,
-        "sources": [{"path": str(p.relative_to(ROOT)), "sha256": sha256(p)} for p in sources],
+        "sources": [{"path": p.relative_to(ROOT).as_posix(), "sha256": sha256(p)} for p in sources],
         "outputs": [{"path": p.name, "sha256": sha256(p)} for p in paths],
     }
     path = directory / "provenance.json"
-    path.write_text(json.dumps(provenance, indent=2, sort_keys=True) + "\n")
+    path.write_text(
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n",
+    )
     return [*paths, path]

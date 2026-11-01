@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 from pathlib import Path
 
@@ -49,11 +50,39 @@ def source_statistics(frame: pd.DataFrame, session: str, keys: list[str], id_col
     return rows.astype(object).where(pd.notna(rows), None).to_dict("records")
 
 
+def refresh_renderer_provenance(directory: Path) -> None:
+    """Refresh only serialization-code hashes, keeping frozen scientific bytes intact."""
+    provenance_path = directory / "provenance.json"
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    if sha256(directory / "cohorts.json") != provenance["output_sha256"]:
+        raise ValueError("Publication cohort snapshot checksum changed.")
+    renderer_sources = {
+        "scripts/freeze_standard_oddball_publication.py",
+        "src/openscope_p3_publication/mesoscope_standard_oddball_cohort_figure.py",
+    }
+    for source in provenance["inputs"]:
+        actual = sha256(ROOT / source["path"])
+        if actual != source["sha256"]:
+            if source["path"].replace("\\", "/") not in renderer_sources:
+                raise ValueError(f"Publication data source changed: {source['path']}")
+            source.setdefault("frozen_source_sha256", source["sha256"])
+            source["sha256"] = actual
+    provenance["renderer_validation_refreshed_date"] = dt.datetime.now(dt.UTC).date().isoformat()
+    provenance_path.write_text(
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n",
+    )
+    print(f"Refreshed {provenance_path}; frozen counts/statistics were not changed.")
+
+
 def main() -> None:
     """Freeze compact rendering inputs from the deliberately refreshed full analyses."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=DIRECTORY)
+    parser.add_argument("--refresh-renderer-provenance", action="store_true")
     args = parser.parse_args()
+    if args.refresh_renderer_provenance:
+        refresh_renderer_provenance(args.output)
+        return
     if args.output.exists():
         raise FileExistsError(f"Refusing to overwrite publication snapshot: {args.output}")
     _, _, np_provenance = load_cohort()
@@ -109,7 +138,7 @@ def main() -> None:
         )],
     ]
     upstream = [
-        {"path": str(path.relative_to(ROOT)), "sha256": sha256(path)}
+        {"path": path.relative_to(ROOT).as_posix(), "sha256": sha256(path)}
         for directory in (COHORT_DIR, MESOSCOPE_COHORT_DIR)
         for name in ("units.csv.gz", "sessions.csv", "provenance.json")
         if (path := directory / name).is_file()
@@ -123,14 +152,17 @@ def main() -> None:
             {k: v for k, v in session.items() if k != "trial_inventory"}
             for session in np_provenance["sessions"]
         ],
-        "inputs": [{"path": str(p.relative_to(ROOT)), "sha256": sha256(p)} for p in inputs],
+        "inputs": [{"path": p.relative_to(ROOT).as_posix(), "sha256": sha256(p)} for p in inputs],
     }
     args.output.mkdir(parents=True)
     path = args.output / "cohorts.json"
-    path.write_text(json.dumps(data, allow_nan=False, separators=(",", ":")) + "\n")
+    path.write_text(
+        json.dumps(data, allow_nan=False, separators=(",", ":")) + "\n",
+        encoding="utf-8", newline="\n",
+    )
     provenance["output_sha256"] = sha256(path)
     (args.output / "provenance.json").write_text(
-        json.dumps(provenance, indent=2, sort_keys=True) + "\n"
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n",
     )
     print(f"Frozen exact publication counts/statistics: {path} ({path.stat().st_size} bytes)")
 

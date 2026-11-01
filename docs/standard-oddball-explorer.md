@@ -66,6 +66,12 @@ retains the original extraction-code hashes as `extraction_sha256`, and records
 the validation refresh date separately from retrieval. Other extraction-source
 changes are rejected; the spike payload and population snapshot remain unchanged.
 
+For a serialization-only change to the mesoscope cohort audit writer, use
+`uv run python scripts/freeze_standard_oddball_publication.py --refresh-renderer-provenance`.
+This retains original code hashes as `frozen_source_sha256`, verifies the
+unchanged frozen cohort checksum, and rejects changes to other owning code.
+It does not require the full upstream analyses or rerun statistical tests.
+
 After deliberately refreshing the full analyses, freeze a new publication
 snapshot with:
 

@@ -7,9 +7,58 @@ import pytest
 
 from openscope_p3_publication.ecephys_qc_figure import (
     UNIT_TRACE_PATH,
+    load_ecephys_qc_data,
     load_ecephys_unit_trace,
 )
 from openscope_p3_publication.figures import text_sha256_matches
+
+
+def test_unit_qc_methods_report_snapshot_population_and_gates() -> None:
+    manuscript = (UNIT_TRACE_PATH.parents[2] / "index.md").read_text(encoding="utf-8")
+    paragraph = manuscript.split("#### Neuropixels unit quality control\n", 1)[1].split(
+        "\n#### ", 1,
+    )[0]
+    prose = " ".join(paragraph.split())
+    units = load_ecephys_qc_data()["units"]
+    count = len(units["snr"])
+    assert f"{count:,} sorted units" in prose
+    assert f"{len(set(units['session_key']))} CCF-aligned sessions" in prose
+    assert f"{len(set(units['mouse_id']))} mice" in prose
+    keep = np.ones(count, dtype=bool)
+    for metric, operation, threshold in (
+        ("isi_violations_ratio", np.less, 0.01),
+        ("presence_ratio", np.greater, 0.90),
+        ("amplitude_cutoff", np.less, 0.10),
+        ("snr", np.greater_equal, 3.0),
+        ("depth_from_cortex_um", np.greater_equal, 0.0),
+    ):
+        keep &= operation(np.asarray(units[metric], dtype=float), threshold)
+    keep &= np.asarray(units["area"]) != "void"
+    assert f"retained {np.count_nonzero(keep):,} units" in prose
+    for requirement in (
+        "ISI violations ratio < 0.01",
+        "1.5 ms refractory threshold",
+        "presence ratio > 0.90",
+        "amplitude cutoff < 0.10",
+        "waveform SNR ≥ 3.0",
+        "non-negative depth from cortical entry",
+        "unannotated (`void`) channels",
+        "initial and final session groups",
+        "where available",
+        "unit-location drift",
+        "$10^{-6}$",
+        "99th percentile without discarding retained values",
+        "not tracking the same neurons",
+        "panel D used broader gates",
+        "ISI violations ratio < 0.5",
+        "presence ratio > 0.8",
+        "amplitude cutoff < 0.1",
+        "without an SNR threshold",
+    ):
+        assert requirement in prose
+    assert "first and fourth" not in prose
+    assert "current source density" not in prose
+    assert "power spectral density" not in prose
 
 
 def test_recorded_unit_trace_preserves_native_samples_and_identity() -> None:

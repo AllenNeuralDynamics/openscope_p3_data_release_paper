@@ -1,6 +1,7 @@
 """Compact Figure 9 inputs preserve exact floats and avoid analysis-scale tables."""
 
 import json
+import runpy
 from pathlib import Path
 
 import numpy as np
@@ -70,3 +71,50 @@ def test_corrupt_compact_output_is_explicit(tmp_path: Path):
     (tmp_path / "cohorts.json").write_text("{}")
     with pytest.raises(ValueError, match="checksum"):
         publication.load_publication_data(tmp_path)
+
+
+def test_renderer_provenance_refresh_preserves_frozen_values_offline(tmp_path, monkeypatch):
+    def reject_csv(*args, **kwargs):
+        raise AssertionError("Serialization refresh must not read full analysis tables.")
+
+    monkeypatch.setattr(pd, "read_csv", reject_csv)
+    refresh = runpy.run_path(
+        str(publication.ROOT / "scripts/freeze_standard_oddball_publication.py"),
+    )["refresh_renderer_provenance"]
+    frozen = (publication.DIRECTORY / "cohorts.json").read_bytes()
+    (tmp_path / "cohorts.json").write_bytes(frozen)
+    metadata = json.loads((publication.DIRECTORY / "provenance.json").read_text())
+    source = metadata["inputs"][-1]
+    historical_hash = source["frozen_source_sha256"]
+    source["sha256"] = historical_hash
+    provenance_path = tmp_path / "provenance.json"
+    provenance_path.write_text(json.dumps(metadata))
+    refresh(tmp_path)
+    updated = json.loads(provenance_path.read_text())
+    assert (tmp_path / "cohorts.json").read_bytes() == frozen
+    assert updated["output_sha256"] == metadata["output_sha256"]
+    assert updated["tests_recomputed"] is False
+    assert updated["inputs"][-1]["frozen_source_sha256"] == historical_hash
+    assert b"\r\n" not in provenance_path.read_bytes()
+    publication.load_publication_data(tmp_path)
+
+
+@pytest.mark.parametrize("mutation", ["payload", "analysis_source"])
+def test_renderer_provenance_refresh_rejects_other_changes(tmp_path, mutation):
+    refresh = runpy.run_path(
+        str(publication.ROOT / "scripts/freeze_standard_oddball_publication.py"),
+    )["refresh_renderer_provenance"]
+    (tmp_path / "cohorts.json").write_bytes(
+        (publication.DIRECTORY / "cohorts.json").read_bytes(),
+    )
+    metadata = json.loads((publication.DIRECTORY / "provenance.json").read_text())
+    if mutation == "payload":
+        (tmp_path / "cohorts.json").write_text("{}")
+    else:
+        metadata["inputs"][1]["sha256"] = "0" * 64
+    provenance_path = tmp_path / "provenance.json"
+    provenance_path.write_text(json.dumps(metadata))
+    original = provenance_path.read_bytes()
+    with pytest.raises(ValueError, match="checksum|source changed"):
+        refresh(tmp_path)
+    assert provenance_path.read_bytes() == original

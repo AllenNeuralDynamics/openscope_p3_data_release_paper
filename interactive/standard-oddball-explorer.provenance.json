@@ -9,7 +9,7 @@
   "sources": [
     {
       "path": "src/openscope_p3_publication/standard_oddball_explorer.py",
-      "sha256": "5ca97dda18498ed0b6c9dbab930d8fdd3753b2a0e81618a566e07178b7e4054d"
+      "sha256": "bed73742c7c41ed5e40bdce5b5a3512bcca9066d8cb9471ee9e4e7e04b579664"
     },
     {
       "path": "src/openscope_p3_publication/standard_oddball_cohort_figure.py",
@@ -53,7 +53,7 @@
     },
     {
       "path": "figure_sources/data/standard-oddball-publication/provenance.json",
-      "sha256": "c382987d919f1228d9e6c401f1b6e1b66aef77653bec714c581daf20ede4a53b"
+      "sha256": "1f334a7cf9b58773bd40756587df2e358c69aae1f1fef0b79bcb51a6abf39b0a"
     },
     {
       "path": "figure_sources/data/standard-oddball-publication/cohorts.json",

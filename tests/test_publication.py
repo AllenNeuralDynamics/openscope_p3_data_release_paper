@@ -1446,7 +1446,12 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert "Percentage denominators exclude those 19 sources" in manuscript
     assert "first four bars pool classified sources" in prose
     assert "cross-cohort class differences must not be interpreted" in prose
-    assert "[Figure 7](#fig-basic-stimuli-plan) outlines a comparison" in manuscript
+    assert "The stimulus design enables receptive field (RF) mapping" in manuscript
+    assert all(
+        f"[Fig. 7{panels}](#fig-basic-stimuli-plan)" in manuscript
+        for panels in ("A,B", "B", "C")
+    )
+    assert "[Figure 7](#fig-basic-stimuli-plan) outlines a comparison" not in manuscript
     assert "fig-standard-oddball-plan" not in manuscript
     assert "./interactive/behavior-viewer.html" in manuscript
     assert ":placeholder: ./images/figures/generated/synchronized-behavior.svg" in manuscript
@@ -1492,7 +1497,9 @@ def test_figure_captions_and_interactive_placement() -> None:
         (9, "fig-standard-oddball-responses"),
         (10, "fig-behavior-tracking"),
     ):
-        assert f"[Figure {number}](#{label})" in manuscript
+        assert re.search(
+            rf"\[(?:Figure|Fig\.) {number}[A-Z,–-]*\]\(#{re.escape(label)}\)", manuscript,
+        )
     assert re.search(r"\[\]\(#fig-", manuscript) is None
     assert "NWB running speed and stimulus rows share the sync-file clock" in prose
     assert "reported dropped frames are removed before mapping" in prose
@@ -1526,7 +1533,9 @@ def test_main_figure_links_match_directive_order() -> None:
     assert numbers["fig-ecephys-qc-dashboard"] == 6
     numbers["fig-interactive-experimental-design"] = numbers["fig-graphical-abstract"]
     numbers["fig-supp-optotagging-heatmaps"] = numbers["fig-supp-wavemap"]
-    for number, label in re.findall(r"\[Figure (\d+)[A-Z]?\]\(#([^)]+)\)", manuscript):
+    for number, label in re.findall(
+        r"\[(?:Figure|Fig\.) (\d+)[A-Z,–-]*\]\(#([^)]+)\)", manuscript,
+    ):
         assert numbers[label] == int(number), (label, number, numbers[label])
 
 

@@ -24,7 +24,7 @@
   "sources": [
     {
       "path": "src/openscope_p3_publication/slap2_standard_oddball_cohort_figure.py",
-      "sha256": "2c5decd78ae1e69c558c1deb8ac985bad49799ef102bcbb30afb81e84bed6090"
+      "sha256": "66c2c038480ded5217b09d04cda4acb82dcf6df434b13111db6497f7b27febb8"
     },
     {
       "path": "src/openscope_p3_publication/slap2_standard_oddball_cohort.py",

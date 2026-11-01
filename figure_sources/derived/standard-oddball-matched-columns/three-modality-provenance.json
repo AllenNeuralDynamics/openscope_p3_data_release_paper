@@ -79,7 +79,7 @@
     },
     {
       "path": "figure_sources/derived/neuropixels-standard-oddball-90-column/provenance.json",
-      "sha256": "550dbb2e8504bef1fa53ac9941356f1232cc3a22e146b3f022db2d8fa3298add"
+      "sha256": "377754481c94bd8eac8a78e2c8a9048ebc4bab781fbaaef9b077d8488b099490"
     },
     {
       "path": "images/figures/generated/mesoscope-standard-oddball-90-dff.svg",
@@ -87,7 +87,7 @@
     },
     {
       "path": "figure_sources/derived/mesoscope-standard-oddball-90/provenance.json",
-      "sha256": "b38710355113524261e5e2326b475977c40e10a582c9d6df6755ad426a5c8d78"
+      "sha256": "eed008779c140969adb40f29a36abbb8746a6f6355bb539ddd716b574a74ffbf"
     },
     {
       "path": "images/figures/generated/slap2-standard-oddball-90-glutamate.svg",
@@ -95,11 +95,11 @@
     },
     {
       "path": "figure_sources/derived/slap2-standard-oddball-90/provenance.json",
-      "sha256": "70080f08ea5c6926517cc6aef654b62cc474e198f5710bea07f79c85614c3dfd"
+      "sha256": "fe523bcc899efdf7fd776ee36b08dbc9716b204d9e85157625cc95bdd4fcdb8d"
     },
     {
       "path": "src/openscope_p3_publication/standard_oddball_matched_columns.py",
-      "sha256": "640f2700bdc837da69784314844bd982567a5ce94a2cd9879bf6dbd14fd490f1"
+      "sha256": "fdf2cf1b065308d00e828cd5e029bf0fec4ffb1ccc0838d56954094d6a181592"
     },
     {
       "path": "src/openscope_p3_publication/figure_typography.py",

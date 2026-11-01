@@ -294,6 +294,25 @@ After each experiment, the probes are retracted from the brain at a rate of ~300
 
 Possible QC failure can come from these cases: white foam buildup on the edge of the eye covering the pupil, software failures compromising critical data streams, visual stimulus synchronizing failure, cortical bleeding or compromised brain health resulting in low unit activity and/or atypical visual responses, gap in data acquisition and discovery of purulent material over right hemisphere during ex-vivo imaging. Out of a total of 56 sessions, 12 are excluded for eye foam.
 
+#### Neuropixels unit quality control
+
+The unit-quality analyses in [Figure 6](#fig-ecephys-qc-dashboard) used a committed
+pool of 192,273 sorted units from 59 CCF-aligned sessions across
+16 mice ([DANDI:001637](https://dandiarchive.org/dandiset/001637/draft)). Unit anatomy was
+assigned via the extremum electrode channel. Population panels B, C, F, and G
+retained 23,045 units with ISI violations ratio < 0.01 (1.5 ms refractory
+threshold), presence ratio > 0.90, amplitude cutoff < 0.10, and peak-channel
+waveform SNR ≥ 3.0, together with non-negative depth from cortical entry and
+exclusion of unannotated (`void`) channels. Designated initial and final session
+groups were compared, where available, using empirical cumulative distributions
+of SNR, ISI violations ratio, and peak-to-peak unit-location drift.
+Zero-violation ratios are displayed at $10^{-6}$ on logarithmic axes; the drift
+display is limited to the 99th percentile without discarding retained values.
+These comparisons concern repeated acute insertions, not tracking the same
+neurons across days. Recording-day yield in panel D used broader gates:
+ISI violations ratio < 0.5, presence ratio > 0.8, and amplitude cutoff < 0.1,
+without an SNR threshold.
+
 #### Optotagging protocol
 
 At the end of every experiment, an optotagging protocol is run during which the cortical surface is stimulated with blue light. In Sst-IRES-Cre/wt;Ai32(RCL-ChR2(H134R)\_EYFP)/wt mice, this protocol allowes us to identify putative Sst+ cortical interneurons by an increase in spiking activity time-locked to laser stimulation (and consequent ChR2 activation). Blue light is delivered by a 473 nm laser (Laser Quantum, model Ciel or Cobolt model 06-MLD). The light source is coupled to a 400 μm diameter fiber optic cable (Thorlabs) or bifurcated fiber bundle (Thorlabs, BFYL4LF01), with the tip(s) positioned such that blue light illuminates the entire cranial window. Two types of stimuli at 3 different light levels are randomly interleaved: a 10 ms pulse, and a 1s raised cosine ramp. For the pulse stimulus, a 0.5 ms ramp is applied at the beginning and end of the pulse. Stimuli are presented at intervals of 1.5 s plus a uniformly distributed delay between 0 and 0.5 s. Representative laser-aligned responses and session-level yield summaries are shown in [Figure 8](#fig-supp-optotagging-heatmaps).
@@ -1216,45 +1235,36 @@ The event-based glutamate QC analysis in [Figure 5](#fig-unit-extraction-plan) c
 Bleaching and remaining cross-session stability analyses are still in progress.
 
 ## Receptive field analysis across modalities
+The stimulus design enables receptive field (RF) mapping with local Gabor patches and Zebra noise in Neuropixels, mesoscope and SLAP2 recordings. Both stimuli gave well-localized RFs in all three modalities. However, for some units only the Zebra or Gabor stimulus detected a significant RF ([Fig. 7A,B](#fig-basic-stimuli-plan)). When both stimuli revealed a receptive field, the receptive field location was typically consistent between the two approaches.
 
-[Figure 7](#fig-basic-stimuli-plan) outlines a comparison of receptive-field measurements and basic stimulus responses across recording modalities.
+Interestingly, the higher visual area LM was biased towards the Gabor stimulus. While in V1 almost the same number of units showed significant RFs for Gabors compared to Zebra (68% versus 67% for Neuropixels, and 42% versus 48% for mesoscope example sessions), in LM more units showed significant responses for Gabors (62% versuss 42% for Neuropixels, and 52% versus 31% for mesoscope) ([Fig. 7B](#fig-basic-stimuli-plan)). In contrast, for SLAP2, significant RFs were found mainly with Zebra noise (47% of apical ROIs and 41% of basal ROIs showed significant RFs with Zebra noise), while almost no ROIs responded significantly to the Gabor patches (<5% for apical, and none for basal). A possible explanation could be the higher stochasticity of synaptic release compared to action potential emission, which requires a higher number of trials for Gabor stimuli to detect significant receptive fields.
+
+In line with previous work [@siegle2021survey], the analysis of RFs further revealed interesting differences between visual areas ([Fig. 7C](#fig-basic-stimuli-plan)). Units in V1 tend to have smaller RFs compared to units in LM, as well as a higher peak z-score for Gabors, and higher correlation with a Gabor filter in the Zebra analysis, consistent with a more reliable response to low-level visual features in V1. Moreover, both stimuli yielded similar spatial positions of RFs on the screen for both, Neuropixels and mesoscope, respectively. For SLAP2, the Zebra analysis further demonstrated that both, apical and basal synapses respond to a localized region in image space.
+Overall, the Gabor and Zebra stimuli allow to characterize complementary aspects of RF properties, which can be integrated into the analysis of visual predictive processing.
 
 :::{figure} ./images/figures/generated/receptive-fields.svg
 :label: fig-basic-stimuli-plan
 :alt: Three aligned modality columns showing Gabor and Zebra receptive-field maps, significance-overlap pie charts, and Gaussian-fit centre, area, and strength summaries for Neuropixels, mesoscope, and SLAP2 glutamate recordings.
 :width: 100%
 
-**Receptive-field mapping with local Gabor patches and Zebra noise across modalities (tentative caption).**
+**Local Gabor patches and Zebra noise stimulus blocks enable receptive field characterization across recording modalities.**
+**A)** Representative receptive field (RF) maps from the three modalities and three example units each (columns), shown for the local Gabor-patch stimulus (top row; z-scored response) and the Zebra-noise stimulus (bottom row; Pearson correlation). Frame color gives the unit's significance class, as in B: green, significant RF for both stimuli; red, Gabor only; blue, Zebra only (Benjamini-Hochberg-corrected q ≤ 0.05). Ellipses mark the one-σ contour of a 2D Gaussian fitted to maps that passed the significance test. Example units are from V1 layer 2/3 (Neuropixels), V1 plane at 150 µm depth (mesoscope) and synaptic glutamate traces from a V1 layer 2/3 pyramidal cell (SLAP2). The SLAP2 example session contained no Gabor-only unit (empty panel).
+**B)** Fraction of units significant for the Gabor stimulus (red), the Zebra stimulus (blue), both (green), or neither (grey) (counts in parentheses) for one example session. Neuropixels and mesoscope are split by area (V1 vs LM). SLAP2 is split by dendritic compartment (DMD1, apical; DMD2, basal).
+**C)** Properties of significant RFs by stimulus (rows) and modality (columns). Left: Gaussian-fit RF centers. Middle: RF area (one-σ area of fitted Gaussian). Right: peak response strength (|z| for Gabors; max |correlation| for Zebra). Boxes show median (with bootstrapp 95% CI) and interquartile range (IQR), whiskers extend to the most extreme data points within 1.5 × IQR of the box edge, and points beyond them indicate outliers. Brackets give two-sided permutation tests on the difference of medians (10,000 permutations; n.s., p > 0.05; * p < 0.05; ** p < 0.01; *** p < 0.001; not corrected for multiple comparisons). The number of units with significant RF per stimulus and group is indicated as n. Data are from example sessions ```ses-ecephys-830794-2026-01-26-12-02-05``` (Neuropixels), ```ses-multiplane-ophys-832700-2026-01-24-12-06-12``` (Mesoscope) and ```ses-829704-2025-12-18-10-57-36_image+ophys``` (SLAP2 glutamate).
+
 Each column shows one session from Neuropixels, mesoscope calcium imaging, or
 SLAP2 glutamate imaging, not the full released cohort. Maps use spikes for
 Neuropixels, OASIS events for mesoscope, and green-channel OASIS events (Gabor)
-or fluorescence changes, ΔF/F (Zebra), for SLAP2.
-**A,** Example map pairs selected for significance with both stimuli, Gabor
-only, or Zebra only; colored frames match the categories in B. Gabor responses
-(top) are z scores and Zebra maps (bottom) are correlations, with a separate
-symmetric color scale shared across modalities for each stimulus. Outlined
-ellipses and white-centred markers show the one-sigma Gaussian fits and their
-centres for significant maps. Significance is defined by Benjamini–Hochberg
-q ≤ 0.05; n.s., not significant. No eligible Gabor-only example was available
-for SLAP2. Neuropixels examples are from V1 layer 2/3, mesoscope examples from
-the V1 plane VISp_0, and SLAP2 examples from the pooled sources.
-**B,** Fractions of spike-sorted units, calcium ROIs, or glutamate sources
-passing neither test (gray), Zebra only (blue), Gabor only (red), or both
-(green). Included populations are Neuropixels V1/LM
-(n = 240/151), mesoscope V1/LM (n = 1,270/1,106), and SLAP2 DMD1 apical/DMD2 basal
-(n = 49/74). Percentages are rounded; labels below 6% are omitted. Untested
-stimuli count as not significant.
-**C,** Centres, one-sigma ellipse areas (deg²), and peak absolute response
-strengths (Gabor |z|; Zebra |r|) of successfully fitted significant maps.
-Spatial points represent individual fits; blue denotes V1 or DMD1 and red
-denotes LM or DMD2. Fit sample sizes are shown beside the spatial plots.
-Boxes span the interquartile range with median lines; whiskers extend to the
-most extreme values within 1.5 interquartile ranges, and points beyond the
-whiskers are outliers. Single fits are shown as points. Black error bars show
-bootstrap 95% confidence intervals of medians (2,000 resamples). Brackets
-report two-sided permutation tests of median differences (10,000 permutations,
-unadjusted p values): *p* ≤ 0.05 (\*), *p* < 0.01 (\*\*), *p* < 0.001 (\*\*\*), and
-n.s., *p* > 0.05. RF-area axes for paired comparisons are capped at 2,000 deg²;
+or fluorescence changes, ΔF/F (Zebra), for SLAP2. Example map pairs are ordered
+left to right as Zebra only, Gabor only, and both stimuli significant, with a
+separate symmetric color scale shared across modalities for each stimulus.
+Included populations are Neuropixels V1/LM (n = 240/151), mesoscope V1/LM
+(n = 1,270/1,106), and SLAP2 DMD1 apical/DMD2 basal (n = 49/74).
+Percentages are rounded; labels below 6% are omitted. Untested stimuli count
+as not significant. Spatial points represent individual fits; blue denotes V1
+or DMD1 and red denotes LM or DMD2. Single fits are shown as points.
+Black error bars show bootstrap 95% confidence intervals of medians
+(2,000 resamples). RF-area axes for paired comparisons are capped at 2,000 deg²;
 statistics include all retained fits, including values above the displayed
 range. Gabor-significant units with failed fits or centres beyond ±40° in
 either coordinate are excluded from B and C; C omits other failed fits.

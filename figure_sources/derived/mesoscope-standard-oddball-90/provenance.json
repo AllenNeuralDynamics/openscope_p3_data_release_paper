@@ -1,7 +1,7 @@
 {
   "cohort_analysis": {
     "directory": "../mesoscope-standard-oddball-cohort",
-    "provenance_sha256": "fa650426629ac997e8aa563e09334ce54551a2ee6846a7e7db76a9c44a1568ee"
+    "provenance_sha256": "036c40a176b96d6c958a07e26a9821cefc1fd1be33648aa2af4d5eeb7217f6a5"
   },
   "example_roi_keys": [
     "VISl_6:64",
@@ -27,7 +27,7 @@
   "sources": [
     {
       "path": "src/openscope_p3_publication/mesoscope_standard_oddball_figure.py",
-      "sha256": "05d30df1b899114ec8865b34198cef2a15a66afb68db2441285dd831ccfc50c5"
+      "sha256": "d93718a21b62431bb8b8b44b322ef0884dc7baaef63970f8cf28c0ece957628e"
     },
     {
       "path": "src/openscope_p3_publication/figure_typography.py",
@@ -55,11 +55,11 @@
     },
     {
       "path": "src/openscope_p3_publication/mesoscope_standard_oddball_cohort_figure.py",
-      "sha256": "d0f99f145ab5b217d7dee2f62e17cfa3e8e792b3b6546da7516f62a6fd79203a"
+      "sha256": "227373b0eea2287a33b1cc70dd363d5d0d15b3cf95d9c90bb9121f3a965cfc95"
     },
     {
       "path": "figure_sources/data/standard-oddball-publication/provenance.json",
-      "sha256": "c382987d919f1228d9e6c401f1b6e1b66aef77653bec714c581daf20ede4a53b"
+      "sha256": "1f334a7cf9b58773bd40756587df2e358c69aae1f1fef0b79bcb51a6abf39b0a"
     },
     {
       "path": "figure_sources/data/standard-oddball-publication/cohorts.json",

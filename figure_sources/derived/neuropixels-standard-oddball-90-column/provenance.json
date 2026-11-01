@@ -2060,7 +2060,7 @@
   "sources": [
     {
       "path": "src/openscope_p3_publication/standard_oddball_column.py",
-      "sha256": "d7f817bbdffa0d3198fe2a0d98d2243073b0e9f04b9e2e508675635f0e2eca00"
+      "sha256": "c98392a54a2117b4a36abda277f004a5c20e093f5581efb81945642a010bdda0"
     },
     {
       "path": "src/openscope_p3_publication/figure_typography.py",
@@ -2088,7 +2088,7 @@
     },
     {
       "path": "figure_sources/data/standard-oddball-publication/provenance.json",
-      "sha256": "c382987d919f1228d9e6c401f1b6e1b66aef77653bec714c581daf20ede4a53b"
+      "sha256": "1f334a7cf9b58773bd40756587df2e358c69aae1f1fef0b79bcb51a6abf39b0a"
     },
     {
       "path": "figure_sources/data/standard-oddball-publication/cohorts.json",
@@ -2132,7 +2132,7 @@
     },
     {
       "path": "src/openscope_p3_publication/standard_oddball_comparison.py",
-      "sha256": "33fe2dc045d1dde147ba906fae69443e873858e734f149b4c55a2f860a89497d"
+      "sha256": "151caf0ac556c88c853f24b755161aa3f3e9274ac886de474729f4ebe7a54b6d"
     },
     {
       "path": "src/openscope_p3_publication/standard_oddball_candidates.py",
@@ -2144,7 +2144,7 @@
     },
     {
       "path": "figure_sources/data/neuropixels-standard-oddball-90-comparison.provenance.json",
-      "sha256": "6a94f8ef42eaf64f6aedb8500987f4c76f22cf3eb8113a3176b3c0e33465709c"
+      "sha256": "ebfce7ff5096774716ac5b08244066250cae68aede5a74666e1029570b5ec221"
     },
     {
       "path": "figure_sources/data/neuropixels-standard-oddball-90-population.json",

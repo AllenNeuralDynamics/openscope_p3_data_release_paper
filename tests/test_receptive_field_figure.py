@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import shutil
@@ -57,6 +58,59 @@ def test_layout_uses_bundled_font_metrics(rendered_figure: plt.Figure) -> None:
         text.get_fontproperties().get_name() == "DejaVu Sans"
         for text in rendered_figure.findobj(Text)
     )
+
+
+def test_example_display_order_preserves_stored_maps(
+    data: dict, rendered_figure: plt.Figure,
+) -> None:
+    axes = {axis.get_gid(): axis for axis in rendered_figure.axes if axis.get_gid()}
+    for modality, _ in MODALITIES:
+        examples = data[modality]["examples"]
+        for kind in ("gabor", "zebra"):
+            ordered = sorted(
+                (
+                    axes[f"example-{modality}-{kind}-{selection}"]
+                    for selection in SELECTIONS
+                ),
+                key=lambda axis: axis.get_position().x0,
+            )
+            assert [
+                axis.get_gid().removeprefix(f"example-{modality}-{kind}-")
+                for axis in ordered
+            ] == [
+                "zebra-only", "gabor-only", "both",
+            ]
+            for index, selection in enumerate(examples["selection"]):
+                axis = axes[f"example-{modality}-{kind}-{selection}"]
+                if examples["present"][index]:
+                    np.testing.assert_array_equal(
+                        axis.images[0].get_array(), examples[f"{kind}_map"][index].T,
+                    )
+                else:
+                    assert not axis.images
+
+
+def test_comparison_annotations_have_clearance(rendered_figure: plt.Figure) -> None:
+    renderer = rendered_figure.canvas.get_renderer()
+    annotations = []
+    for axis in rendered_figure.axes:
+        if not (axis.get_gid() or "").startswith("summary-"):
+            continue
+        for text in axis.texts:
+            annotations.append(text)
+            assert not text.get_clip_on(), axis.get_gid()
+            bounds = text.get_window_extent(renderer)
+            assert rendered_figure.bbox.contains(bounds.x0, bounds.y0)
+            assert rendered_figure.bbox.contains(bounds.x1, bounds.y1)
+            if axis.get_gid().endswith("-area"):
+                assert bounds.y0 > axis.get_window_extent(renderer).y1
+                assert axis.get_ylim() == (0.0, 2000.0)
+            assert all(
+                not bounds.overlaps(other.get_tightbbox(renderer))
+                for other in rendered_figure.axes
+                if other is not axis and other.axison
+            ), axis.get_gid()
+    assert len(annotations) == 10
 
 
 def test_example_scales_are_shared_without_changing_values(
@@ -129,7 +183,7 @@ def test_shared_labels_and_larger_icons_do_not_overlap(rendered_figure: plt.Figu
         logo = axes[f"platform-logo-{modality}"]
         assert logo.get_window_extent(renderer).width / rendered_figure.dpi >= 0.70
     shared = [text for text in rendered_figure.texts if "-shared-" in (text.get_gid() or "")]
-    assert len(shared) == 4
+    assert len(shared) == 2
     for text in shared:
         box = text.get_window_extent(renderer)
         assert all(not box.overlaps(axis.get_tightbbox(renderer))
@@ -139,13 +193,24 @@ def test_shared_labels_and_larger_icons_do_not_overlap(rendered_figure: plt.Figu
             position = axes[f"summary-{modality}-{kind}-position"]
             area = axes[f"summary-{modality}-{kind}-area"]
             strength = axes[f"summary-{modality}-{kind}-strength"]
-            assert not position.get_xlabel() and not position.get_ylabel()
-            assert not area.get_ylabel() and not strength.get_ylabel()
-            assert area.get_title() == ("RF area (deg²)" if kind == "gabor" else "")
-            assert strength.get_title() == ("Peak |z|" if kind == "gabor" else "Peak |r|")
+            assert position.get_xlabel() == "Azimuth (deg)"
+            assert position.get_ylabel() == (
+                "Elevation (deg)" if modality == MODALITIES[0][0] else ""
+            )
+            assert area.get_ylabel() == "Area (deg²)"
+            assert strength.get_ylabel() == ("Peak |z|" if kind == "gabor" else "Peak |r|")
+            assert not area.get_title() and not strength.get_title()
+            assert bool(position.get_yticklabels()) == (modality == MODALITIES[0][0])
+            assert all(text.get_visible() for text in area.get_xticklabels())
+            assert all(text.get_visible() for text in strength.get_xticklabels())
             for following in (area, strength):
-                assert not following.title.get_window_extent(renderer).overlaps(
+                assert not following.yaxis.label.get_window_extent(renderer).overlaps(
                     position.get_legend().get_window_extent(renderer)
+                )
+                previous = position if following is area else area
+                assert (
+                    following.yaxis.label.get_window_extent(renderer).x0
+                    > previous.get_window_extent(renderer).x1
                 )
             labels = [text for text in strength.get_xticklabels() if text.get_visible()]
             assert all(not left.get_window_extent(renderer).overlaps(
@@ -158,7 +223,6 @@ def test_elevation_clearance_and_slightly_raised_row_b(rendered_figure: plt.Figu
     axes = {axis.get_gid(): axis for axis in rendered_figure.axes if axis.get_gid()}
     texts = {text.get_gid(): text for text in rendered_figure.texts if text.get_gid()}
     elevation = texts["examples-shared-elevation"]
-    assert elevation.get_position()[0] == texts["summary-shared-elevation"].get_position()[0]
     stimulus_right = max(
         axis.get_window_extent(renderer).x1 for axis in rendered_figure.axes
         if axis.images and not axis.get_gid()
@@ -208,13 +272,33 @@ def test_plot_groups_share_the_modality_heading_centres(rendered_figure: plt.Fig
     np.testing.assert_allclose(np.diff(centres), np.diff(centres)[0], atol=1e-6)
 
 
-def test_tentative_caption_reports_saved_populations_and_parameters(provenance: dict) -> None:
+def test_contributed_receptive_field_text_is_preserved() -> None:
+    """Preserve PR #50 wording, allowing only figure-reference and formatting changes."""
+    manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
+    section = manuscript.split("## Receptive field analysis across modalities", 1)[1].split(
+        "## Cell-type characterization", 1,
+    )[0]
+    body = section.split(":::{figure}", 1)[0]
+    caption = section.split(":width: 100%", 1)[1].split("\n\nEach column", 1)[0]
+    for text, expected in (
+        (body, "51470ca41dd98de85b2e49435bb74542681774ed488bff5c25b0faf9322ef304"),
+        (caption, "50d2058b10368ff9be983d43c84b68767170cff833be1cc264f8a8c9544d9c7e"),
+    ):
+        normalized = re.sub(r"\[Fig\. \d+([A-Z,]+)\]\(#[^)]+\)", r"[Fig. \1]", text)
+        normalized = " ".join(normalized.split())
+        assert hashlib.sha256(normalized.encode("utf-8")).hexdigest() == expected
+    assert "figure-09-RF-mapping.png" not in section
+    assert "#fig-RF-mapping" not in section
+    assert ":::{figure} ./images/figures/generated/receptive-fields.svg" in section
+
+
+def test_caption_reports_saved_populations_and_parameters(provenance: dict) -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     caption = manuscript.split(":label: fig-basic-stimuli-plan", 1)[1].split(":::", 1)[0]
     caption = " ".join(caption.split())
-    assert "tentative caption" in caption
+    assert "tentative caption" not in caption
     assert "Draft panel plan" not in caption
-    assert all(f"**{letter},**" in caption for letter in "ABC")
+    assert all(f"**{letter})**" in caption for letter in "ABC")
     for modality, label, structures in (
         ("ecephys", "Neuropixels V1/LM", ("V1", "LM")),
         ("mesoscope", "mesoscope V1/LM", ("V1", "LM")),

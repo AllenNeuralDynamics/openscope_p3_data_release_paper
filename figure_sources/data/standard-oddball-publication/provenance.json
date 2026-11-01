@@ -7,8 +7,9 @@
   ],
   "inputs": [
     {
+      "frozen_source_sha256": "5366cee73b6673ed45057bf4f413e4e9549b8d1684bae8a421ecb94a8bfc89ef",
       "path": "scripts/freeze_standard_oddball_publication.py",
-      "sha256": "5366cee73b6673ed45057bf4f413e4e9549b8d1684bae8a421ecb94a8bfc89ef"
+      "sha256": "56e89cd055bbde45187679efd7b354115ed4fa44cf3b32e8a96b2a934abc40ff"
     },
     {
       "path": "src/openscope_p3_publication/standard_oddball_publication_data.py",
@@ -19,8 +20,9 @@
       "sha256": "8da6ce3fc3b610b44509e227faf0a9f5a069f9ec249cae1d1fc7f0a218e7b843"
     },
     {
+      "frozen_source_sha256": "d0f99f145ab5b217d7dee2f62e17cfa3e8e792b3b6546da7516f62a6fd79203a",
       "path": "src/openscope_p3_publication/mesoscope_standard_oddball_cohort_figure.py",
-      "sha256": "d0f99f145ab5b217d7dee2f62e17cfa3e8e792b3b6546da7516f62a6fd79203a"
+      "sha256": "227373b0eea2287a33b1cc70dd363d5d0d15b3cf95d9c90bb9121f3a965cfc95"
     }
   ],
   "neuropixels_sources": [
@@ -487,6 +489,7 @@
   ],
   "output_sha256": "69f0e1395ce8e5dcbbb84b1fb3ef7fb271a684842de9c37267290f9c021bcdad",
   "purpose": "Exact frozen rendering inputs, not a replacement for full cohort analyses.",
+  "renderer_validation_refreshed_date": "2026-11-01",
   "tests_recomputed": false,
   "upstream_analyses": [
     {

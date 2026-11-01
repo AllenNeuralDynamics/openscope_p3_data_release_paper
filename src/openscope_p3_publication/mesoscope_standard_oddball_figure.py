@@ -422,6 +422,8 @@ def render_column(
                 },
                 target_width_mm=WIDTH_MM, target_height_mm=HEIGHT_MM,
             )
+            # Finalize LF without changing the checksum-pinned upstream SVG serializer.
+            output.write_text(output.read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
             return {
                 "signal": signal, "trial_heatmap_limit": trial_limit,
                 "population_heatmap_limit": population_limit,
@@ -522,6 +524,7 @@ def render_column(
             },
             target_width_mm=WIDTH_MM, target_height_mm=HEIGHT_MM,
         )
+    output.write_text(output.read_text(encoding="utf-8"), encoding="utf-8", newline="\n")
     return {
         "signal": signal, "trial_heatmap_limit": trial_limit,
         "population_heatmap_limit": population_limit,
