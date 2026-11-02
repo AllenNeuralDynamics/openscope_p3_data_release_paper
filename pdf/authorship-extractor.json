@@ -1,0 +1,6 @@
+{
+  "print": {
+    "tables": ["credit", "sections"],
+    "authorsPerBlock": 17
+  }
+}

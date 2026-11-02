@@ -22,6 +22,23 @@ glossary dropdowns, and supplies static figures and the complete literature tabl
 The HTML configuration, interactive figures, scientific data, and manuscript text
 are not modified by PDF generation. Draft notices remain visible.
 
+### Contribution-table front matter
+
+The PDF profile opts into AuthorshipExtractor's static renderer through
+`pdf/authorship-extractor.json`. Its `print.tables` selects `credit`, `sections`,
+or both; `print.authorsPerBlock` controls the readable author-column blocks.
+The upstream plugin generates vector SVG figures from the same reviewed
+`authors.yml` snapshot. The PDF adapter places them below the title instead of
+the visible author list and retains the complete author names in PDF metadata.
+The HTML project remains interactive and does not load this PDF-only setting.
+Set `print` to `false` to restore the conventional printed author block.
+
+This option requires an AuthorshipExtractor release with static-table support.
+An older plugin fails with a clear upgrade message rather than silently ignoring
+the setting. For local candidate-plugin testing, `build-publication-pdf` accepts
+`--myst-config` with an alternate MyST configuration relative to the `pdf/`
+directory. The regular configuration and published plugin URL are not rewritten.
+
 Install Node.js and [Typst 0.15.1 or newer](https://github.com/typst/typst#installation),
 then run from the repository root:
 

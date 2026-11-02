@@ -32,6 +32,11 @@ def prepare_pdf_assets(repo_root: Path = REPO_ROOT) -> Path:
             "rows": rows,
         },
     }
+    authorship_settings = repo_root / "pdf" / "authorship-extractor.json"
+    if authorship_settings.exists():
+        settings = json.loads(authorship_settings.read_text(encoding="utf-8"))
+        if settings.get("print"):
+            manifest["authorship"] = settings["print"]
     manifest_path = output_dir / "manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     return manifest_path
@@ -95,6 +100,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--assets-only", action="store_true")
     parser.add_argument("--typst", help="Path to Typst when it is not on PATH.")
+    parser.add_argument(
+        "--myst-config", help="Alternate MyST configuration for local plugin previews."
+    )
     args = parser.parse_args()
     if args.assets_only:
         print(prepare_pdf_assets())
@@ -107,8 +115,12 @@ def main() -> None:
     environment = dict(os.environ)
     environment["PATH"] = str(Path(compiler).parent) + os.pathsep + environment.get("PATH", "")
     started = time.time_ns()
+    command = [launcher, "--yes", "mystmd@1.10.1"]
+    if args.myst_config:
+        command.extend(["--config", args.myst_config])
+    command.extend(["build", "--typst", "--strict"])
     result = subprocess.run(
-        [launcher, "--yes", "mystmd@1.10.1", "build", "--typst", "--strict"],
+        command,
         cwd=REPO_ROOT / "pdf", env=environment, check=True,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8",
     )
