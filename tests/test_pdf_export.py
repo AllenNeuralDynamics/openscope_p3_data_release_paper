@@ -123,6 +123,16 @@ console.log(JSON.stringify({message}));
         assert "Upgrade the plugin" in result["message"]
 
 
+def test_pdf_profile_uses_compact_alphabetical_authorship() -> None:
+    settings = json.loads(
+        (REPO_ROOT / "pdf" / "authorship-extractor.json").read_text(encoding="utf-8")
+    )["print"]
+    assert settings["tables"] == ["credit", "sections"]
+    assert settings["layout"] == "compact"
+    assert settings["authorOrder"] == "alphabetical"
+    assert settings["authorsPerBlock"] == 40
+
+
 @pytest.mark.parametrize("interactive", [False, True])
 @pytest.mark.parametrize("enumerated", [False, True, None])
 def test_figures_use_native_myst_nodes_and_original_assets(

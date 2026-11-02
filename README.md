@@ -26,7 +26,10 @@ are not modified by PDF generation. Draft notices remain visible.
 
 The PDF profile opts into AuthorshipExtractor's static renderer through
 `pdf/authorship-extractor.json`. Its `print.tables` selects `credit`, `sections`,
-or both; `print.authorsPerBlock` controls the readable author-column blocks.
+or both. This paper uses `print.layout: "compact"`, placing full author names
+in rows, with `print.authorOrder: "alphabetical"` sorting by surname.
+`print.authorsPerBlock` allows up to 40 author rows in each table, so the current
+34-contributor snapshot occupies two contribution tables rather than four blocks.
 The upstream plugin generates vector SVG figures from the same reviewed
 `authors.yml` snapshot. The PDF adapter places them below the title instead of
 the visible author list and retains the complete author names in PDF metadata.
