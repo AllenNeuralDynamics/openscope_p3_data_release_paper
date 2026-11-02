@@ -3,10 +3,10 @@
 version: 1
 source:
   project: "p3_data_release"
-  endpoint: "https://data.allenneuraldynamics.org/metadata-viz/contributions/project?project=p3_data_release&commit=72394d8d40c14b77837aee6c6d16df24&format=json"
+  endpoint: "https://data.allenneuraldynamics.org/metadata-viz/contributions/project?project=p3_data_release&commit=618c254515974e7faaa3438f4e6a45c7&format=json"
   contribution_form: "https://data.allenneuraldynamics.org/contributions/add?project=p3_data_release"
-  commit: "72394d8d40c14b77837aee6c6d16df24"
-  timestamp: "2026-10-01T04:22:10.941776+00:00"
+  commit: "618c254515974e7faaa3438f4e6a45c7"
+  timestamp: "2026-10-30T11:55:58.870131+00:00"
   reviewed: true
 portal:
   sections:
@@ -1089,6 +1089,7 @@ project:
       affiliations:
         - "University College London, London, UK"
       roles:
+        - "Conceptualization"
         - "Data curation"
         - "Formal analysis"
         - "Investigation"
@@ -1098,6 +1099,9 @@ project:
         - "Validation"
         - "Visualization"
       credit_levels:
+        -
+          role: "Conceptualization"
+          level: "supporting"
         -
           role: "Data curation"
           level: "equal"
@@ -1152,7 +1156,6 @@ project:
           effort: "supporting"
       timeline:
         joined: "2026-09-08"
-        left: "2026-09-08"
       social_links:
         -
           platform: "orcid"
@@ -1434,6 +1437,82 @@ project:
         -
           platform: "orcid"
           url: "https://orcid.org/0009-0008-5337-4168"
+      is_admin: false
+      from_asset: false
+    -
+      id: "olivia-oritse-seundede-unokesan"
+      name: "Olivia Oritse-SeunDede Unokesan"
+      orcid: "0009-0000-6229-9552"
+      email: "oliviau36@gmail.com"
+      affiliations:
+        - "Allen Institute for Neural Dynamics, Seattle, WA"
+      roles:
+        - "Investigation"
+      credit_levels:
+        -
+          role: "Investigation"
+          level: "equal"
+          description: "performed surgery"
+      section_contributions:
+        -
+          section: "Animal surgeries"
+          effort: "equal"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0009-0000-6229-9552"
+      is_admin: false
+      from_asset: false
+    -
+      id: "marcel-christian-raabe"
+      name: "Marcel Christian Raabe"
+      orcid: "0009-0003-7990-5629"
+      email: "marcel.raabe@uni-goettingen.de"
+      affiliations:
+        - "Georg-August-University Göttingen"
+        - "Max-Planck-Institute for Dynamics and Self-Organization"
+      roles:
+        - "Formal analysis"
+        - "Software"
+        - "Validation"
+        - "Visualization"
+        - "Writing – original draft"
+        - "Writing – review & editing"
+      credit_levels:
+        -
+          role: "Formal analysis"
+          level: "lead"
+          description: "Pipeline development for analyzing receptive fields from local Gabor and Zebra noise block\nStatistical testing of results\nAnalysis of receptive field properties across modalities and regions"
+        -
+          role: "Software"
+          level: "lead"
+          description: "Original build, testing and maintenance of receptive field pipeline include statistical testing and plotting."
+        -
+          role: "Validation"
+          level: "lead"
+          description: "Validating code for receptive field analysis for ensuring reproducibility of results.\nValidate secondary receptive field properties like RF sizes, locations and response times against previous studies."
+        -
+          role: "Visualization"
+          level: "equal"
+          description: "Visualizing receptive field section"
+        -
+          role: "Writing – original draft"
+          level: "equal"
+          description: "Writing original draft of receptive field section in collaboration with Lucas Rudelt."
+        -
+          role: "Writing – review & editing"
+          level: "supporting"
+          description: "General reviewing in terms of understanding and language smoothing."
+      section_contributions:
+        -
+          section: "Receptive field analysis"
+          effort: "lead"
+      timeline:
+        joined: "2025-12-02"
+      social_links:
+        -
+          platform: "orcid"
+          url: "https://orcid.org/0009-0003-7990-5629"
       is_admin: false
       from_asset: false
   affiliations: []
