@@ -36,7 +36,7 @@ the visible author list and retains the complete author names in PDF metadata.
 The HTML project remains interactive and does not load this PDF-only setting.
 Set `print` to `false` to restore the conventional printed author block.
 
-This option requires an AuthorshipExtractor release with static-table support.
+Both MyST profiles pin AuthorshipExtractor v0.1.6; only the PDF enables tables.
 An older plugin fails with a clear upgrade message rather than silently ignoring
 the setting. For local candidate-plugin testing, `build-publication-pdf` accepts
 `--myst-config` with an alternate MyST configuration relative to the `pdf/`

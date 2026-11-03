@@ -261,6 +261,11 @@ console.log(JSON.stringify({values, serialized: JSON.stringify(tree)}));
 def test_pdf_profile_is_separate_from_the_website() -> None:
     web = (REPO_ROOT / "myst.yml").read_text(encoding="utf-8")
     profile = (REPO_ROOT / "pdf" / "myst.yml").read_text(encoding="utf-8")
+    plugin = (
+        "https://github.com/AllenNeuralDynamics/AuthorshipExtractor/"
+        "releases/download/v0.1.6/authorship-plugin.mjs"
+    )
+    assert plugin in web and plugin in profile
     assert "print.mjs" not in web
     assert "../index.md" in profile
     assert "./print.mjs" in profile
