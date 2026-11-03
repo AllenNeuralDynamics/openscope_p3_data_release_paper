@@ -38,6 +38,7 @@ nwb-view = [
 [project.scripts]
 build-publication-figures = "openscope_p3_publication.figures:main"
 build-publication-pdf = "openscope_p3_publication.pdf_export:main"
+bound-publication-hydration = "openscope_p3_publication.site_hydration:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/openscope_p3_publication"]

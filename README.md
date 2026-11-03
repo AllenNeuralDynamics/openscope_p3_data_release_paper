@@ -88,6 +88,14 @@ myst build --html
 
 The GitHub Actions workflow runs the same checks and deploys the static site from `main`.
 
+The HTML deploy also runs `uv run bound-publication-hydration` after MyST builds.
+MyST 1.10.1 schedules client hydration with an idle callback without a deadline;
+on the media-heavy manuscript page this can indefinitely delay the authors widget.
+The build step validates that known bootstrap, adds a 1.5-second deadline, and
+uses a cache-distinct entry URL without changing the original bundled asset,
+manuscript text, or contribution data. Unsupported bootstrap shapes fail clearly.
+Run the same command after local `myst build --html` previews.
+
 ### Figure 6 recorded diagnostic examples
 
 Panel A reads the compact, checksummed
