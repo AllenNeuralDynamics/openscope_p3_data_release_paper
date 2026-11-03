@@ -6,7 +6,7 @@ project:
   toc:
     - file: ../index.md
   plugins:
-    - https://github.com/AllenNeuralDynamics/AuthorshipExtractor/releases/latest/download/authorship-plugin.mjs
+    - https://github.com/AllenNeuralDynamics/AuthorshipExtractor/releases/download/v0.1.6/authorship-plugin.mjs
     - ./print.mjs
   exports:
     - format: typst

@@ -77,6 +77,62 @@ console.log(JSON.stringify({
     assert all((REPO_ROOT / path).is_file() for path in result["fallbacks"])
 
 
+def test_static_authorship_replaces_visible_list_but_retains_metadata() -> None:
+        result = run_node_check("""
+import {preparePrintTree} from './pdf/print.mjs';
+const tree = {children: [
+    {type: 'paragraph', children: [{type: 'text', value: 'Abstract retained'}]},
+    {type: 'anywidget', model: {
+        authors: JSON.stringify({primary: [{name: 'First Author'}, {name: 'Second Author'}]}),
+        staticFigures: JSON.stringify({version: 1, items: [
+            {url: './_build/credit.svg', alt: 'CRediT contributions'},
+            {url: './_build/sections.svg', alt: 'Section contributions'},
+        ]}),
+    }},
+]};
+preparePrintTree(tree, {authorship: {tables: ['credit', 'sections']}});
+console.log(JSON.stringify({
+    metadata: tree.children[0].typst,
+    images: tree.children.filter(node => node.type === 'image'),
+    serialized: JSON.stringify(tree),
+    abstractLast: tree.children.at(-1).children[0].value,
+}));
+""")
+        assert "First Author" in result["metadata"] and "Second Author" in result["metadata"]
+        assert "#set document(author:" in result["metadata"]
+        assert [image["url"] for image in result["images"]] == [
+                "./_build/credit.svg", "./_build/sections.svg",
+        ]
+        assert all(image["width"] == "100%" for image in result["images"])
+        assert "printAuthors" not in result["serialized"]
+        assert "anywidget" not in result["serialized"]
+        assert result["abstractLast"] == "Abstract retained"
+
+
+def test_enabled_static_authorship_rejects_an_old_plugin() -> None:
+        result = run_node_check("""
+import {preparePrintTree} from './pdf/print.mjs';
+let message;
+try {
+    preparePrintTree({children: [{type: 'anywidget', model: {
+        authors: JSON.stringify({primary: [{name: 'First Author'}]}),
+    }}]}, {authorship: {tables: ['credit']}});
+} catch (error) { message = error.message; }
+console.log(JSON.stringify({message}));
+""")
+        assert "Upgrade the plugin" in result["message"]
+
+
+def test_pdf_profile_uses_compact_alphabetical_authorship() -> None:
+    settings = json.loads(
+        (REPO_ROOT / "pdf" / "authorship-extractor.json").read_text(encoding="utf-8")
+    )["print"]
+    assert settings["tables"] == ["credit", "sections"]
+    assert settings["layout"] == "compact"
+    assert settings["authorOrder"] == "alphabetical"
+    assert settings["authorsPerBlock"] == 40
+
+
 @pytest.mark.parametrize("interactive", [False, True])
 @pytest.mark.parametrize("enumerated", [False, True, None])
 def test_figures_use_native_myst_nodes_and_original_assets(
@@ -205,6 +261,11 @@ console.log(JSON.stringify({values, serialized: JSON.stringify(tree)}));
 def test_pdf_profile_is_separate_from_the_website() -> None:
     web = (REPO_ROOT / "myst.yml").read_text(encoding="utf-8")
     profile = (REPO_ROOT / "pdf" / "myst.yml").read_text(encoding="utf-8")
+    plugin = (
+        "https://github.com/AllenNeuralDynamics/AuthorshipExtractor/"
+        "releases/download/v0.1.6/authorship-plugin.mjs"
+    )
+    assert plugin in web and plugin in profile
     assert "print.mjs" not in web
     assert "../index.md" in profile
     assert "./print.mjs" in profile

@@ -90,10 +90,26 @@ function printLiterature(node, manifest) {
   return { ...node, type: 'div', children };
 }
 
-export function authorNodes(model) {
+export function authorNodes(model, settings = {}) {
   const { primary: contributors } = JSON.parse(model.authors);
   if (!Array.isArray(contributors) || contributors.length === 0) {
     throw new Error('The print author list requires the portal-backed contributor snapshot.');
+  }
+  const metadata = raw(`#set document(author: (${contributors.map((author) => JSON.stringify(author.name)).join(',')},))\n`);
+  if (model.staticFigures) {
+    const figures = JSON.parse(model.staticFigures);
+    if (figures.version !== 1 || !Array.isArray(figures.items) || !figures.items.length) {
+      throw new Error('Unsupported or empty AuthorshipExtractor static figure metadata.');
+    }
+    return [metadata, ...figures.items.map((figure) => {
+      if (typeof figure.url !== 'string' || !figure.url.endsWith('.svg') || !figure.alt) {
+        throw new Error('Invalid AuthorshipExtractor static figure.');
+      }
+      return {type: 'image', url: figure.url, alt: figure.alt, width: '100%'};
+    })];
+  }
+  if (settings.tables?.length) {
+    throw new Error('Static authorship tables are enabled, but the AuthorshipExtractor plugin does not provide them. Upgrade the plugin or disable the PDF print option.');
   }
   const affiliations = [];
   const names = [];
@@ -113,7 +129,7 @@ export function authorNodes(model) {
     }
   }
   return [
-    raw(`#set document(author: (${contributors.map((author) => JSON.stringify(author.name)).join(',')},))\n`),
+    metadata,
     raw('#printAuthors[\n'),
     { type: 'paragraph', children: names },
     raw('][\n'),
@@ -130,7 +146,7 @@ export function preparePrintTree(tree, manifest = {}) {
   function expand(children) {
     return children.flatMap((node) => {
       if (node.type === 'anywidget' && node.model?.authors) {
-        authors.push(...authorNodes(node.model));
+        authors.push(...authorNodes(node.model, manifest.authorship));
         return [];
       }
       if (node.type === 'summary') return [];
