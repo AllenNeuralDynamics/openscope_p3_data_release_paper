@@ -7059,6 +7059,7 @@ def main() -> None:
         write_sensorimotor_running_html,
         write_sensorimotor_running_svg,
     )
+    from .slap2_figure5_variants import write_figure5_variants
     from .slap2_standard_oddball_figure import build_slap2_standard_oddball
     from .standard_oddball_column import build_standard_oddball_column
     from .standard_oddball_explorer import build_standard_oddball_explorer
@@ -7072,6 +7073,7 @@ def main() -> None:
     hardware_path = write_hardware_figure_svg()
     hardware_supplement_path = write_hardware_supplement_svg()
     unit_extraction_plan_path = write_unit_extraction_plan_svg()
+    unit_extraction_plan_variant_paths = write_figure5_variants()
     unit_extraction_mesoscope_path = write_unit_extraction_mesoscope_svg()
     receptive_fields_path = write_receptive_fields_svg()
     html_path = write_interactive_html()
@@ -7121,6 +7123,8 @@ def main() -> None:
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {hardware_supplement_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_plan_path.relative_to(REPO_ROOT)}")
+    for variant_path in unit_extraction_plan_variant_paths:
+        print(f"Wrote {variant_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_mesoscope_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {receptive_fields_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")

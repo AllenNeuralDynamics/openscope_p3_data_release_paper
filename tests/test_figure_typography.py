@@ -98,6 +98,8 @@ def test_invalid_figure_dimensions_are_reported() -> None:
         ("session-inventory", "ABC"),
         ("raw-neural-recordings", "ABCDEFGHIJKL"),
         ("figure-07-unit-extraction-plan", "ABCDEFGH"),
+        ("figure-07-unit-extraction-plan-variant-a", "ABCDEFG"),
+        ("figure-07-unit-extraction-plan-variant-b", "ABCDEFG"),
         ("figure-06-unit-extraction-mesoscope", "ABCDEFGHI"),
         ("openscope_qc_dashboard_static", "ABCDEFG"),
         ("receptive-fields", "ABC"),

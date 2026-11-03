@@ -79,7 +79,7 @@
     },
     {
       "path": "figure_sources/derived/neuropixels-standard-oddball-90-column/provenance.json",
-      "sha256": "377754481c94bd8eac8a78e2c8a9048ebc4bab781fbaaef9b077d8488b099490"
+      "sha256": "443a08ac6fde23b543bb5542cff95d634638f3bb9c87b05ded1b027b3ade72ba"
     },
     {
       "path": "images/figures/generated/mesoscope-standard-oddball-90-dff.svg",
@@ -87,7 +87,7 @@
     },
     {
       "path": "figure_sources/derived/mesoscope-standard-oddball-90/provenance.json",
-      "sha256": "eed008779c140969adb40f29a36abbb8746a6f6355bb539ddd716b574a74ffbf"
+      "sha256": "1de3ad252e9144d18dadceb879ee7aa31321db8f23fac37b2def3e7fc0b69729"
     },
     {
       "path": "images/figures/generated/slap2-standard-oddball-90-glutamate.svg",
