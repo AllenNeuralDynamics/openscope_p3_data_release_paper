@@ -1401,9 +1401,9 @@ or cross-modality differences.
 
 The released local field potentials (LFP) offer a complementary population-level
 view of the same events. [Supplementary Figure 7](#fig-supp-lfp-spectral-mi)
-quantifies, across the Neuropixels mice, how much single-trial LFP power carries
-information about each mismatch event, by area and frequency, against both the
-standard and the same stimulus in the matched control block.
+shows, across the Neuropixels mice, how LFP power changes with each mismatch event,
+by area and frequency, relative to both the standard and the same stimulus in the
+matched control block, and where these changes are reliable on single trials.
 
 ## Behavioral data analysis across modalities
 
@@ -1751,11 +1751,11 @@ definitions, exclusions, and multiple-comparison qualifications are given in the
 accompanying text.
 :::
 
-# Supplementary Figure 7: LFP spectral information about mismatch events
+# Supplementary Figure 7: LFP power changes evoked by mismatch events
 
-[Supplementary Figure 7](#fig-supp-lfp-spectral-mi) asks how much the LFP power
-spectrum of a single trial reveals about whether that trial was a mismatch event,
-in which areas and at which frequencies. It uses the LFP series of the released
+[Supplementary Figure 7](#fig-supp-lfp-spectral-mi) asks how the LFP power spectrum
+changes when a mismatch event occurs, in which areas and at which frequencies, and
+whether the change is consistent enough to distinguish single trials. It uses the LFP series of the released
 Neuropixels NWB files (`/processing/ecephys/LFP`) of the 15 mice in the
 standard-oddball cohort, one session per mouse and paradigm where available:
 15 standard-oddball, 15 sensorimotor, 14 sequence and 14 duration sessions.
@@ -1780,17 +1780,19 @@ about eight times, too few for this comparison, and no control block contains th
 duration paradigm's gap deviants, so these two paradigms are compared with the
 standard only.
 
-Mutual information (MI) between log power and trial identity was estimated per
-mouse, area and frequency with Gaussian-copula MI [@ince2017gcmi], always with
-equal numbers of trials in the two classes (20 balanced redraws), and corrected
-for bias by subtracting the mean MI of 200 label shuffles. With balanced classes,
-0 bits means that single-trial power has the same distribution for the two kinds
-of trial and 1 bit means that the distributions do not overlap; for Gaussian
-distributions, 0.04, 0.16 and 0.5 bits correspond to d′ of 0.5, 1 and 2. Because
-MI has no sign, the same balanced draws give the power difference in dB. Across
-mice, MI > 0 was tested with a one-sided Wilcoxon signed-rank test, with
-Benjamini–Hochberg correction across all area × frequency cells of each event and
-contrast; areas recorded in fewer than six mice were not tested.
+For each mouse, area and frequency, the power difference (dB) between the event
+and its reference was averaged over 20 redraws with equal numbers of trials in the
+two classes, and then across mice. Whether a difference is reliable on single trials
+was assessed with the mutual information (MI) between log power and trial identity,
+estimated on the same balanced draws with Gaussian-copula MI [@ince2017gcmi] and
+corrected for bias by subtracting the mean MI of 200 label shuffles. MI is 0 when
+single-trial power has the same distribution for the two kinds of trial and grows
+as the distributions separate; for Gaussian distributions, 0.04, 0.16 and 0.5 bits
+correspond to d′ of 0.5, 1 and 2. Across mice, MI > 0 was tested with a one-sided
+Wilcoxon signed-rank test, with Benjamini–Hochberg correction across all
+area × frequency cells of each event and contrast; areas recorded in fewer than six
+mice were not tested. The figure shows the power differences and marks the cells
+that pass this test.
 
 Event versus standard mixes several effects that need no prediction: the deviant
 is a different stimulus, which drives differently tuned neurons, and the standard
@@ -1805,16 +1807,16 @@ analyses are exploratory and descriptive.
 :label: fig-supp-lfp-spectral-mi
 :enumerated: false
 :width: 100%
-:title: Supplementary Figure 7. LFP spectral information about mismatch events
+:title: Supplementary Figure 7. LFP power changes evoked by mismatch events
 :placeholder: ./images/figures/generated/supplementary-lfp-spectral-mi.png
 
-**Supplementary Figure 7.** Information about mismatch events in single-trial LFP
-power, standard-oddball paradigm. **A,** Example V1 trial for the 45° orientation
+**Supplementary Figure 7.** Changes in LFP power evoked by mismatch events,
+standard-oddball paradigm. **A,** Example V1 trial for the 45° orientation
 deviant: LFP low-passed at 100 Hz and aligned to stimulus onset (shading: standards
 blue, deviant red), above the Morlet spectrogram averaged over 15 trials of
 the same event on the same channel (dB relative to the median over time). The
-example is chosen by a fixed rule: the band is half an octave around the peak of
-the group MI in V1 (dotted lines), the channel is the V1 channel with the largest
+example is chosen by a fixed rule: the band is half an octave around the frequency
+where single-trial discriminability (MI) in V1 peaks across mice (dotted lines), the channel is the V1 channel with the largest
 effect in that band in each mouse, the mouse is the one at the 75th percentile of
 that effect, and the trial is the one at the 80th percentile of band power among
 windows holding no other deviant (here mouse 820454, an L2/3 channel, 22–32 Hz, Cohen's *d* = +1.37 for this mouse). **B,** V1 power spectrum of the
@@ -1825,8 +1827,8 @@ minus the standard, per area (recorded in at least three mice) and frequency
 (4–100 Hz, 50 log-spaced bins); red is more and blue less power on event trials.
 **E,** The same, each event minus the same stimulus in the control block, plus
 the standard minus its control (adaptation). In **D** and **E**, dots mark cells
-where the MI between single-trial power and trial identity is greater than zero
-across mice (one-sided Wilcoxon signed-rank test, Benjamini–Hochberg *q* < 0.05);
+where single-trial power reliably distinguishes the event from its reference across
+mice (MI > 0; one-sided Wilcoxon signed-rank test, Benjamini–Hochberg *q* < 0.05);
 grey cells were not recorded. The interactive version shows the same panels for
 the sequence, sensorimotor and duration paradigms; the last two have no matched
 control, so their panel C shows single-trial V1 power distributions instead and
