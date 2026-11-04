@@ -151,6 +151,9 @@ jobs:
       - name: Build HTML publication
         run: myst build --html
 
+      - name: Bound MyST hydration startup
+        run: uv run bound-publication-hydration --myst-version 1.10.1
+
       - name: Check interactive site assets
         run: |
           test -f _build/html/interactive/experimental-design.html
