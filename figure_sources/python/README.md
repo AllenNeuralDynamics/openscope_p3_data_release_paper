@@ -43,4 +43,12 @@ The supplementary pupil-response viewer uses `images/figures/generated/supplemen
 
 The main-text Neuropixels mismatch-response explorer uses `images/figures/generated/figure-10-neuropixels-event-responses.svg` as its static HTML view and PDF placeholder. It reads checksum-verified unit metadata, RS/FS/SST classifications, firing rates, Rastermap ranks, and offline-computed native 2.5 ms mean-SDF atlases without network access. The extractor performs the τ=10 ms, 10τ causal convolution with hidden pre-padding and stores every quantized 2.5 ms sample used identically by static and browser renderers.
 
+`lfp_spectral_mi.ipynb` is the analysis behind Supplementary Figure 7. It streams the
+Neuropixels LFP from Dandiset 001637, computes single-trial spectra and Gaussian-copula mutual
+information per mouse, and renders every panel of the figure: the static
+`images/figures/generated/supplementary-lfp-spectral-mi.png` and the interactive
+`interactive/lfp-spectral-mi.html` (the same figure with a paradigm switch), which loads its
+panel PNGs from `interactive/media/lfp-spectral-mi/`. It runs for several hours, is resumable,
+and is not part of the build; these files are copied from its `publication/` output folder.
+
 Keep data-loading, transformation, and rendering logic in the package. Store small figure inputs under `figure_sources/data/`; large or externally archived inputs should be represented by a manifest containing their URL, version, and checksum.

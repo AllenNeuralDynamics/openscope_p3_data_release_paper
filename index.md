@@ -1399,6 +1399,12 @@ These exploratory illustrations do not establish predictive computation
 or cross-modality differences.
 :::
 
+The released local field potentials (LFP) offer a complementary population-level
+view of the same events. [Supplementary Figure 7](#fig-supp-lfp-spectral-mi)
+quantifies, across the Neuropixels mice, how much single-trial LFP power carries
+information about each mismatch event, by area and frequency, against both the
+standard and the same stimulus in the matched control block.
+
 ## Behavioral data analysis across modalities
 
 All three recording modalities include continuous raw behavioral videos together with synchronized running-wheel signals and stimulus-presentation intervals. [Figure 10](#fig-behavior-tracking) presents the available body or behavior, face, eye, and nose camera views for the Neuropixels, mesoscope, and SLAP2 examples, alongside their running profiles and stimulus state. The common timing information makes these records a behavioral context for the neural measurements, rather than a separate acquisition stream without alignment.
@@ -1743,6 +1749,92 @@ Data come from the public draft of
 pinned asset IDs and checksums retained in provenance. Context-specific response
 definitions, exclusions, and multiple-comparison qualifications are given in the
 accompanying text.
+:::
+
+# Supplementary Figure 7: LFP spectral information about mismatch events
+
+[Supplementary Figure 7](#fig-supp-lfp-spectral-mi) asks how much the LFP power
+spectrum of a single trial reveals about whether that trial was a mismatch event,
+in which areas and at which frequencies. It uses the LFP series of the released
+Neuropixels NWB files (`/processing/ecephys/LFP`) of the 15 mice in the
+standard-oddball cohort, one session per mouse and paradigm where available:
+15 standard-oddball, 15 sensorimotor, 14 sequence and 14 duration sessions.
+
+For each mouse, up to 10 LFP channels were sampled at random from each main area,
+assigned from the electrode CCF location. Each trial contributed a 1 s chunk centred
+on the stimulus, multiplied by a Gaussian taper whose full width at half maximum
+equals the median standard-stimulus duration of the session (about 0.34 s in the
+standard-oddball paradigm), so that neighbouring presentations do not leak in.
+Power was averaged into 50 log-spaced bins from 4 to 100 Hz and over each area's
+channels. Each event type contributed 35 trials, and up to 400 standards were used.
+In the standard-oddball paradigm, standards within two presentations after any
+deviant were excluded; in the sequence paradigm, only standards in the third
+sequence slot were used and the whole sequence after any deviant was excluded; in
+the sensorimotor paradigm, standards were pseudo-trials matched to the events on
+running speed. Matched-control trials are the presentations of the same stimulus in
+the randomly ordered control block of the standard-oddball and sequence paradigms
+(`BlockType` `standard_control` and `sequential_control_block`), with the same trial
+type and, for gratings, the same orientation and drift direction; up to 70 trials
+per stimulus were used. The sensorimotor open-loop replay presents each event only
+about eight times, too few for this comparison, and no control block contains the
+duration paradigm's gap deviants, so these two paradigms are compared with the
+standard only.
+
+Mutual information (MI) between log power and trial identity was estimated per
+mouse, area and frequency with Gaussian-copula MI [@ince2017gcmi], always with
+equal numbers of trials in the two classes (20 balanced redraws), and corrected
+for bias by subtracting the mean MI of 200 label shuffles. With balanced classes,
+0 bits means that single-trial power has the same distribution for the two kinds
+of trial and 1 bit means that the distributions do not overlap; for Gaussian
+distributions, 0.04, 0.16 and 0.5 bits correspond to d′ of 0.5, 1 and 2. Because
+MI has no sign, the same balanced draws give the power difference in dB. Across
+mice, MI > 0 was tested with a one-sided Wilcoxon signed-rank test, with
+Benjamini–Hochberg correction across all area × frequency cells of each event and
+contrast; areas recorded in fewer than six mice were not tested.
+
+Event versus standard mixes several effects that need no prediction: the deviant
+is a different stimulus, which drives differently tuned neurons, and the standard
+is adapted by repetition. Comparing each event with the same stimulus in the
+control block holds the stimulus constant, and comparing the standard with its
+control isolates adaptation, following the decomposition into prediction error and
+repetition suppression of [@parras2017prediction]. Control blocks are recorded at a
+different time in the session, so slow changes of state can also contribute. These
+analyses are exploratory and descriptive.
+
+:::{iframe} ./interactive/lfp-spectral-mi.html
+:label: fig-supp-lfp-spectral-mi
+:enumerated: false
+:width: 100%
+:title: Supplementary Figure 7. LFP spectral information about mismatch events
+:placeholder: ./images/figures/generated/supplementary-lfp-spectral-mi.png
+
+**Supplementary Figure 7.** Information about mismatch events in single-trial LFP
+power, standard-oddball paradigm. **A,** Example V1 trial for the 45° orientation
+deviant: LFP low-passed at 100 Hz and aligned to stimulus onset (shading: standards
+blue, deviant red), above the Morlet spectrogram averaged over 15 trials of
+the same event on the same channel (dB relative to the median over time). The
+example is chosen by a fixed rule: the band is half an octave around the peak of
+the group MI in V1 (dotted lines), the channel is the V1 channel with the largest
+effect in that band in each mouse, the mouse is the one at the 75th percentile of
+that effect, and the trial is the one at the 80th percentile of band power among
+windows holding no other deviant (here mouse 820454, an L2/3 channel, 22–32 Hz, Cohen's *d* = +1.37 for this mouse). **B,** V1 power spectrum of the
+standard and each event, mean ± SEM across 15 mice. **C,** V1 spectra of
+the standard and the 45° deviant (solid) next to the same stimuli in the control
+block (dashed), mean ± SEM across mice. **D,** Power difference (dB), each event
+minus the standard, per area (recorded in at least three mice) and frequency
+(4–100 Hz, 50 log-spaced bins); red is more and blue less power on event trials.
+**E,** The same, each event minus the same stimulus in the control block, plus
+the standard minus its control (adaptation). In **D** and **E**, dots mark cells
+where the MI between single-trial power and trial identity is greater than zero
+across mice (one-sided Wilcoxon signed-rank test, Benjamini–Hochberg *q* < 0.05);
+grey cells were not recorded. The interactive version shows the same panels for
+the sequence, sensorimotor and duration paradigms; the last two have no matched
+control, so their panel C shows single-trial V1 power distributions instead and
+there is no panel E. Data come from the public draft
+of [Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files); the
+analysis notebook that computes every value and draws every panel is
+`figure_sources/python/lfp_spectral_mi.ipynb`, and the panels are in
+`interactive/media/lfp-spectral-mi/`.
 :::
 
 # Supplementary Text 1: Published oddball paradigms and sampling ranges

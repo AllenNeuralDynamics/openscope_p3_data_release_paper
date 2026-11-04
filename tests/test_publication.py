@@ -590,7 +590,7 @@ def test_data_access_explains_archive_code_and_workflow_skills() -> None:
         assert (REPO_ROOT / ".claude" / "skills" / skill / "SKILL.md").is_file()
 
 
-def test_static_figure_reorganization_keeps_ten_main_and_six_supplementary_figures() -> None:
+def test_static_figure_reorganization_keeps_ten_main_and_seven_supplementary_figures() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     blocks = re.findall(
         r"^:::\{(?:figure|iframe)\} [^\n]+\n.*?^:::\s*$",
@@ -608,9 +608,9 @@ def test_static_figure_reorganization_keeps_ten_main_and_six_supplementary_figur
         "fig-basic-stimuli-plan", "fig-supp-wavemap", "fig-standard-oddball-responses",
         "fig-behavior-tracking",
     ]
-    for number in range(1, 7):
+    for number in range(1, 8):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
-    assert len(re.findall(r"\*\*Supplementary Figure \d+\.\*\*", manuscript)) == 6
+    assert len(re.findall(r"\*\*Supplementary Figure \d+\.\*\*", manuscript)) == 7
     assert ":label: fig-supp-eye-tracking" not in manuscript
     assert ":label: fig-supp-pupil-event-responses" not in manuscript
     assert main[7].index("**A,** Enlarged visual-cortex") < main[7].index("**B,** Saved regional")
@@ -1329,7 +1329,7 @@ def test_all_publication_viewers_default_to_static() -> None:
 
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     paths = re.findall(r"^:::\{iframe\} \./(interactive/[^\n]+)", manuscript, re.MULTILINE)
-    assert len(paths) == 13
+    assert len(paths) == 14
     for relative_path in paths:
         html = (REPO_ROOT / relative_path).read_text(encoding="utf-8")
         parser = FigureElements()

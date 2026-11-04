@@ -54,3 +54,5 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/extract_wavemap_analysis.py" = ["E402"]
+# Embeds the standalone HTML figure as a Python string template.
+"figure_sources/python/lfp_spectral_mi.ipynb" = ["E501"]

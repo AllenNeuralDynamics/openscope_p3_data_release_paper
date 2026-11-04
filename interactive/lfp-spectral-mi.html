@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>LFP spectral information about mismatch events</title>
+<style>
+  :root { --figure-type-panel-title: 1.25rem; --figure-type-section-title: 1rem;
+          --figure-type-body: 0.875rem; --figure-type-control: 0.8125rem;
+          --figure-type-metadata: 0.75rem; --ink: #293133; --muted: #5f6b6a; --line: #d3d8d6;
+          --accent: #167f8c; }
+  body { margin: 0; background: #fff; color: var(--ink);
+         font: var(--figure-type-body)/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main.viewer { max-width: 1180px; margin: 0 auto; }
+  .figure-toolbar {
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #d3d8d6;
+  background: #fff;
+}
+
+.figure-mode-switch {
+  justify-self: start;
+  display: inline-grid;
+  grid-template-columns: repeat(2, 88px);
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid #d3d8d6;
+  border-radius: 6px;
+  background: #f4f7f6;
+}
+
+.figure-mode-switch > button {
+  position: static;
+  min-width: 0;
+  width: 88px;
+  min-height: 30px;
+  height: 30px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: #68716f;
+  font: 650 14px "Myriad Pro", "Aptos", sans-serif;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.figure-mode-switch > button::after { content: none; }
+.figure-mode-switch > button:hover { color: #293133; background: #e8eeeb; }
+.figure-mode-switch > button[aria-pressed="true"] {
+  color: #293133;
+  background: #fff;
+  box-shadow: 0 1px 3px #29313326;
+}
+.figure-mode-switch > button:focus-visible {
+  outline: 2px solid #167f8c;
+  outline-offset: 1px;
+}
+
+button.legend-toggle {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  flex: 0 0 36px;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #8f9b98;
+  border-radius: 50%;
+  background: #fff;
+  color: #293133;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.figure-toolbar > .legend-toggle { grid-column: 2; justify-self: end; }
+
+button.legend-toggle:hover,
+button.legend-toggle[aria-expanded="true"] {
+  border-color: #167f8c;
+  background: #dceff0;
+}
+
+button.legend-toggle:focus-visible {
+  outline: 3px solid #167f8c;
+  outline-offset: 2px;
+}
+
+.figure-legend {
+  min-width: 0;
+  padding: 14px 22px;
+  border-bottom: 1px solid #d3d8d6;
+  background: #f4f7f6;
+  color: #293133;
+  font-size: var(--figure-type-control, 14px);
+  line-height: 1.5;
+}
+
+.figure-legend h2 {
+  margin: 0 0 8px;
+  font-size: var(--figure-type-section-title, 16px);
+  line-height: 1.3;
+}
+
+.figure-legend p { max-width: 85ch; margin: 0; }
+.figure-legend p + p { margin-top: 8px; }
+.figure-legend[hidden], .legend-toggle[hidden] { display: none !important; }
+
+[data-simple-view] > [hidden] { display: none !important; }
+[data-simple-view] #static-view img { width: 100%; height: auto; display: block; }
+
+@media (max-width: 520px) {
+  .figure-legend { padding: 12px 14px; }
+}
+  .lfp-body { padding: 12px 14px 18px; }
+  .paradigms { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line);
+               border-radius: 6px; overflow: hidden; margin: 0 0 10px; }
+  .paradigms button { font: inherit; font-size: var(--figure-type-control); color: var(--ink);
+                      background: #fff; border: 0; padding: 6px 12px; cursor: pointer; }
+  .paradigms button + button { border-left: 1px solid var(--line); }
+  .paradigms button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .paradigms button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .lfp-note { color: var(--muted); margin: 0 0 10px; font-size: var(--figure-type-metadata); }
+  .lfp-top { display: grid; grid-template-columns: 50fr 25fr 25fr; gap: 8px; align-items: start; }
+  figure.lfp-panel { margin: 0; border: 1px solid var(--line); border-radius: 6px; padding: 4px;
+                     position: relative; background: #fff; }
+  figure.lfp-panel img { display: block; width: 100%; height: auto; }
+  figure.lfp-panel .letter { position: absolute; left: 6px; top: 2px; font-weight: 700;
+                             font-size: var(--figure-type-section-title); }
+  figure.lfp-panel.wide { margin-top: 8px; }
+  figure.lfp-panel[hidden] { display: none; }
+  @media (max-width: 900px) { .lfp-top { grid-template-columns: 1fr 1fr; }
+                              .lfp-top figure:first-child { grid-column: 1 / -1; } }
+  @media (max-width: 560px) { .lfp-top { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <main class="viewer" id="lfp-spectral-mi-viewer" data-simple-view>
+    <header class="figure-toolbar">
+      <div class="figure-mode-switch" role="group" aria-label="Figure view">
+        <button type="button" data-view="static" aria-pressed="true">Static</button>
+        <button type="button" data-view="interactive" aria-pressed="false">Interactive</button>
+      </div>
+      <button type="button" class="legend-toggle" id="figure-legend-toggle" aria-label="Figure legend"
+        title="Figure legend" aria-expanded="false" aria-controls="figure-legend" hidden>?</button>
+    </header>
+    <section class="figure-legend" id="figure-legend" aria-labelledby="figure-legend-title" hidden>
+      <h2 id="figure-legend-title">Interactive figure legend</h2>
+      <p><b>A,</b> one V1 trial (LFP below 100 Hz, aligned to stimulus onset; shading marks standards in blue and the event in its colour) above the spectrogram averaged over trials of the same event on the same channel. <b>B,</b> V1 power spectrum per condition, mean ± SEM across mice. <b>C,</b> the event and the standard (solid) next to the same stimuli in the matched control block (dashed); without a control, single-trial V1 power distributions. <b>D, E,</b> power difference in dB (red more, blue less) per area and frequency, event minus standard (D) or minus the same stimulus in the control block (E); dots mark cells where the mutual information between single-trial power and trial identity is significant across mice (FDR q &lt; 0.05).</p><p>Mutual information asks how well the power of a single trial tells whether that trial was the event: 0 bits not at all, 1 bit perfectly; 0.04, 0.16 and 0.5 bits correspond to d′ of 0.5, 1 and 2. Event versus standard mixes a different stimulus with release from adaptation; the control block keeps the stimulus, and its orientation tuning, the same, and <i>Standard (adaptation)</i> compares the standard with its control.</p>
+    </section>
+    <div id="interactive-view" class="lfp-body" hidden>
+      <div class="paradigms" id="ctx" role="group" aria-label="Paradigm"></div>
+      <p class="lfp-note" id="note"></p>
+      <div class="lfp-top"><figure class="lfp-panel " id="i-fig-A"><span class="letter">A</span><img id="i-img-A" alt="Example V1 trial and trial-averaged spectrogram" src="media/lfp-spectral-mi/standard_A_example.png"></figure><figure class="lfp-panel " id="i-fig-B"><span class="letter">B</span><img id="i-img-B" alt="V1 power spectra per condition" src="media/lfp-spectral-mi/standard_B_spectra.png"></figure><figure class="lfp-panel " id="i-fig-C"><span class="letter">C</span><img id="i-img-C" alt="V1 spectra versus the matched control, or single-trial power" src="media/lfp-spectral-mi/standard_C_spectra_control.png"></figure></div><figure class="lfp-panel wide" id="i-fig-D"><span class="letter">D</span><img id="i-img-D" alt="Power difference versus the standard by area and frequency" src="media/lfp-spectral-mi/standard_D_heatmap_standard.png"></figure><figure class="lfp-panel wide" id="i-fig-E"><span class="letter">E</span><img id="i-img-E" alt="Power difference versus the matched control by area and frequency" src="media/lfp-spectral-mi/standard_E_heatmap_control.png"></figure>
+    </div>
+    <section id="static-view" class="lfp-body" aria-label="Static LFP spectral information figure">
+      <div class="lfp-top"><figure class="lfp-panel " id="s-fig-A"><span class="letter">A</span><img id="s-img-A" alt="Example V1 trial and trial-averaged spectrogram" src="media/lfp-spectral-mi/standard_A_example.png"></figure><figure class="lfp-panel " id="s-fig-B"><span class="letter">B</span><img id="s-img-B" alt="V1 power spectra per condition" src="media/lfp-spectral-mi/standard_B_spectra.png"></figure><figure class="lfp-panel " id="s-fig-C"><span class="letter">C</span><img id="s-img-C" alt="V1 spectra versus the matched control, or single-trial power" src="media/lfp-spectral-mi/standard_C_spectra_control.png"></figure></div><figure class="lfp-panel wide" id="s-fig-D"><span class="letter">D</span><img id="s-img-D" alt="Power difference versus the standard by area and frequency" src="media/lfp-spectral-mi/standard_D_heatmap_standard.png"></figure><figure class="lfp-panel wide" id="s-fig-E"><span class="letter">E</span><img id="s-img-E" alt="Power difference versus the matched control by area and frequency" src="media/lfp-spectral-mi/standard_E_heatmap_control.png"></figure>
+    </section>
+  </main>
+<script>
+(() => {
+  "use strict";
+
+  const toggle = document.getElementById("figure-legend-toggle");
+  const legend = document.getElementById("figure-legend");
+  const staticButton = document.querySelector('[data-view="static"]');
+
+  function setLegendOpen(open) {
+    if (!toggle || !legend) return;
+    legend.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+  }
+
+  function syncLegend() {
+    if (!toggle || !staticButton) return;
+    const isStatic = staticButton.getAttribute("aria-pressed") === "true"
+      || staticButton.getAttribute("aria-selected") === "true";
+    toggle.hidden = isStatic;
+    if (isStatic) setLegendOpen(false);
+  }
+
+  if (toggle && legend) {
+    toggle.addEventListener("click", () => setLegendOpen(legend.hidden));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !legend.hidden) {
+        setLegendOpen(false);
+        toggle.focus();
+      }
+    });
+    if (staticButton) {
+      new MutationObserver(syncLegend).observe(staticButton, {
+        attributes: true,
+        attributeFilter: ["aria-pressed", "aria-selected"],
+      });
+    }
+    syncLegend();
+  }
+
+  const simpleViewer = document.querySelector("[data-simple-view]");
+  if (simpleViewer) {
+    const buttons = simpleViewer.querySelectorAll("[data-view]");
+    function selectView(view) {
+      simpleViewer.querySelector("#interactive-view").hidden = view !== "interactive";
+      simpleViewer.querySelector("#static-view").hidden = view !== "static";
+      buttons.forEach((button) => {
+        const active = button.dataset.view === view;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+      });
+      syncLegend();
+      window.dispatchEvent(new Event("resize"));
+    }
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => selectView(button.dataset.view));
+    });
+    selectView("static");
+  }
+})();
+</script>
+<script>
+(() => {
+  "use strict";
+  const MAN = {"standard": {"label": "Standard mismatch", "event": "orientation_45", "event_label": "Orientation 45\u00b0", "n_animals": 15, "note": "Control: Control block 1, the same gratings, halts and omissions in random order with the same timing.", "panels": {"A": "panels/standard_A_example.png", "B": "panels/standard_B_spectra.png", "C": "panels/standard_C_spectra_control.png", "D": "panels/standard_D_heatmap_standard.png", "E": "panels/standard_E_heatmap_control.png"}, "figure": "lfp_spectral_mi_standard.png", "images": {"A": "media/lfp-spectral-mi/standard_A_example.png", "B": "media/lfp-spectral-mi/standard_B_spectra.png", "C": "media/lfp-spectral-mi/standard_C_spectra_control.png", "D": "media/lfp-spectral-mi/standard_D_heatmap_standard.png", "E": "media/lfp-spectral-mi/standard_E_heatmap_control.png"}}, "sensorimotor": {"label": "Sensorimotor mismatch (closed loop)", "event": "motor_orientation_45", "event_label": "Orientation 45\u00b0", "n_animals": 13, "note": "No control: the open-loop replay presents each event only ~8 times. C shows single-trial power distributions instead, and there is no panel E.", "panels": {"A": "panels/sensorimotor_A_example.png", "B": "panels/sensorimotor_B_spectra.png", "C": "panels/sensorimotor_C_single_trials.png", "D": "panels/sensorimotor_D_heatmap_standard.png"}, "figure": "lfp_spectral_mi_sensorimotor.png", "images": {"A": "media/lfp-spectral-mi/sensorimotor_A_example.png", "B": "media/lfp-spectral-mi/sensorimotor_B_spectra.png", "C": "media/lfp-spectral-mi/sensorimotor_C_single_trials.png", "D": "media/lfp-spectral-mi/sensorimotor_D_heatmap_standard.png"}}, "sequence": {"label": "Sequence mismatch", "event": "halt", "event_label": "Halt", "n_animals": 14, "note": "Control: Control block 2, the sequence gratings shuffled.", "panels": {"A": "panels/sequence_A_example.png", "B": "panels/sequence_B_spectra.png", "C": "panels/sequence_C_spectra_control.png", "D": "panels/sequence_D_heatmap_standard.png", "E": "panels/sequence_E_heatmap_control.png"}, "figure": "lfp_spectral_mi_sequence.png", "images": {"A": "media/lfp-spectral-mi/sequence_A_example.png", "B": "media/lfp-spectral-mi/sequence_B_spectra.png", "C": "media/lfp-spectral-mi/sequence_C_spectra_control.png", "D": "media/lfp-spectral-mi/sequence_D_heatmap_standard.png", "E": "media/lfp-spectral-mi/sequence_E_heatmap_control.png"}}, "duration": {"label": "Duration mismatch", "event": "isi_150ms", "event_label": "Gap 150 ms (early)", "n_animals": 14, "note": "No control block has the same gap deviants: C shows single-trial power distributions instead, and there is no panel E.", "panels": {"A": "panels/duration_A_example.png", "B": "panels/duration_B_spectra.png", "C": "panels/duration_C_single_trials.png", "D": "panels/duration_D_heatmap_standard.png"}, "figure": "lfp_spectral_mi_duration.png", "images": {"A": "media/lfp-spectral-mi/duration_A_example.png", "B": "media/lfp-spectral-mi/duration_B_spectra.png", "C": "media/lfp-spectral-mi/duration_C_single_trials.png", "D": "media/lfp-spectral-mi/duration_D_heatmap_standard.png"}}};
+  const order = ["standard", "sequence", "sensorimotor", "duration"].filter((c) => MAN[c]);
+  const bar = document.getElementById("ctx");
+  function show(ctx) {
+    const m = MAN[ctx];
+    for (const b of bar.children) b.setAttribute("aria-pressed", String(b.dataset.ctx === ctx));
+    for (const k of ["A", "B", "C", "D", "E"]) {
+      const src = m.images[k];
+      document.getElementById("i-fig-" + k).hidden = !src;
+      if (src) document.getElementById("i-img-" + k).src = src;
+    }
+    document.getElementById("note").textContent =
+      `${m.label} · ${m.n_animals} mice · V1 example: ${m.event_label}. ${m.note}`;
+  }
+  for (const c of order) {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.ctx = c; b.textContent = MAN[c].label;
+    b.addEventListener("click", () => show(c));
+    bar.appendChild(b);
+  }
+  show(order[0]);
+})();
+</script>
+</body>
+</html>
