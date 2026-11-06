@@ -525,9 +525,9 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
         assert (REPO_ROOT / relative_path).is_file(), relative_path
 
     figures = re.findall(r":::\{figure\} [^\n]+\n(?P<options>.*?)\n\n", manuscript, re.DOTALL)
-    assert len(figures) == 5
+    assert len(figures) == 6
     assert manuscript.count(":::{figure} ./images/figures/imported/") == 0
-    assert manuscript.count(":::{figure} ./images/figures/generated/") == 5
+    assert manuscript.count(":::{figure} ./images/figures/generated/") == 6
     assert "./images/figures/generated/figure-01-overview.svg" in manuscript
     assert "./images/figures/generated/figure-01-panel-c-cohorts.svg" not in manuscript
     assert ":label: fig-experimental-design" not in manuscript
@@ -590,7 +590,7 @@ def test_data_access_explains_archive_code_and_workflow_skills() -> None:
         assert (REPO_ROOT / ".claude" / "skills" / skill / "SKILL.md").is_file()
 
 
-def test_static_figure_reorganization_keeps_ten_main_and_six_supplementary_figures() -> None:
+def test_static_figure_reorganization_keeps_ten_main_and_seven_supplementary_figures() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
     blocks = re.findall(
         r"^:::\{(?:figure|iframe)\} [^\n]+\n.*?^:::\s*$",
@@ -608,9 +608,9 @@ def test_static_figure_reorganization_keeps_ten_main_and_six_supplementary_figur
         "fig-basic-stimuli-plan", "fig-supp-wavemap", "fig-standard-oddball-responses",
         "fig-behavior-tracking",
     ]
-    for number in range(1, 7):
+    for number in range(1, 8):
         assert manuscript.count(f"**Supplementary Figure {number}.**") == 1
-    assert len(re.findall(r"\*\*Supplementary Figure \d+\.\*\*", manuscript)) == 6
+    assert len(re.findall(r"\*\*Supplementary Figure \d+\.\*\*", manuscript)) == 7
     assert ":label: fig-supp-eye-tracking" not in manuscript
     assert ":label: fig-supp-pupil-event-responses" not in manuscript
     assert main[7].index("**A,** Enlarged visual-cortex") < main[7].index("**B,** Saved regional")

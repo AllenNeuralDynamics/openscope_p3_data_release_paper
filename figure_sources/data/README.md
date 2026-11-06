@@ -32,6 +32,15 @@ Maintainers can refresh and commit all three publication tables by manually runn
 
 `neuropixels-unit-yield.csv` contains one row for each unit-bearing session NWB in the July 30, 2026 snapshot of draft Dandiset 001637. It records total units, units passing all three manuscript QC thresholds, and the available `Probe*` electrode groups. The DANDI asset-manifest checksum, thresholds, skipped schema-only NWBs, and vendored checksum are recorded in `neuropixels-unit-yield.provenance.json`. Regenerate it with `uv run --with h5py --with numpy --with remfile python scripts/extract_neuropixels_unit_yield.py`.
 
+`lfp-spectral-mi-standard.json` holds everything Supplementary Figure 7 draws for the
+standard-oddball paradigm: the group power difference (dB) and FDR *q* per event, area and
+frequency vs the standard and vs the matched control, the V1 power spectra of every mouse
+(main block, and control trials pooled, before and after the mismatch block), and the example
+trial with its trial-averaged spectrogram. It is exported by section 8 of
+`figure_sources/python/lfp_spectral_mi.ipynb`; `lfp-spectral-mi-standard.provenance.json`
+records the pinned DANDI asset identifiers and checksums, the analysis parameters and the
+JSON's SHA-256, which `lfp_spectral_mi_figure.py` checks before drawing.
+
 ## Neuropixels unit table
 
 `neuropixels-units.parquet` lists every sorted unit in all 60 session NWBs of
