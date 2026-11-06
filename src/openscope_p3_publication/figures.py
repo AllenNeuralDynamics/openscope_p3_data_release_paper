@@ -7044,6 +7044,7 @@ def write_neuropixels_implant_svg(output: Path = NEUROPIXELS_IMPLANT_STATIC_OUTP
 
 def main() -> None:
     from .ecephys_qc_figure import write_ecephys_qc_html, write_ecephys_qc_svg
+    from .lfp_spectral_mi_figure import write_lfp_spectral_mi_svg
     from .mesoscope_plane_snr_figure import (
         write_mesoscope_plane_snr_html,
         write_mesoscope_plane_snr_svg,
@@ -7108,6 +7109,7 @@ def main() -> None:
     unit_yield_svg_path = write_unit_yield_svg()
     sensorimotor_running_svg_path = write_sensorimotor_running_svg()
     sensorimotor_running_html_path = write_sensorimotor_running_html()
+    lfp_spectral_mi_svg_path = write_lfp_spectral_mi_svg()
     wavemap_paths = build_wavemap_publication()
     optotagging_html_path = write_optotagging_heatmap_html(
         static_presentation=OPTOTAGGING_HEATMAP_STATIC_OUTPUT.with_name(
@@ -7160,6 +7162,7 @@ def main() -> None:
     print(f"Wrote {unit_yield_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {sensorimotor_running_svg_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {sensorimotor_running_html_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {lfp_spectral_mi_svg_path.relative_to(REPO_ROOT)}")
     for path in wavemap_paths:
         print(f"Wrote {path.relative_to(REPO_ROOT)}")
     print(f"Wrote {qc_svg_path.relative_to(REPO_ROOT)}")
