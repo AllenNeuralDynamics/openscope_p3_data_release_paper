@@ -878,8 +878,9 @@ def test_supplementary_and_power_figures_are_current() -> None:
     assert "./interactive/unit-yield.html" not in manuscript
     assert "(fig-supp-neuropixels-unit-yield)=" in manuscript
     assert "[Figure 6D](#fig-ecephys-qc-dashboard)" in manuscript
-    assert "these broader gates differ from b, c, f and g" in prose.lower()
-    assert "60 unit-bearing sessions from 16 mice" in prose
+    assert "using the same qc gates as b, c, f, and g" in prose.lower()
+    assert "59 CCF-aligned sessions from 16 mice" in prose
+    assert "71.2% on day 4" in prose
     assert "./interactive/neuropixels-trajectories.html" in manuscript
     assert "(fig-supp-neuropixels-recorded-trajectories)=" in manuscript
     assert (

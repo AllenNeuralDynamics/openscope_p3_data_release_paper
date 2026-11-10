@@ -49,11 +49,9 @@ def test_unit_qc_methods_report_snapshot_population_and_gates() -> None:
         "$10^{-6}$",
         "99th percentile without discarding retained values",
         "not tracking the same neurons",
-        "panel D used broader gates",
-        "ISI violations ratio < 0.5",
-        "presence ratio > 0.8",
-        "amplitude cutoff < 0.1",
-        "without an SNR threshold",
+        "Population panels B, C, D, F, and G",
+        "divides each session's retained units by the recorded probe count",
+        "normalizes to each mouse's day-1 baseline",
     ):
         assert requirement in prose
     assert "first and fourth" not in prose

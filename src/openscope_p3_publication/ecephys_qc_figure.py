@@ -10,6 +10,7 @@ import shutil
 import struct
 import xml.etree.ElementTree as ET
 import zlib
+from datetime import date
 from pathlib import Path
 
 import matplotlib as mpl
@@ -23,7 +24,6 @@ from .figures import (
     FIGURE_SANS_FONT,
     load_figure_controls,
     load_figure_stylesheet,
-    load_unit_yield_data,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -155,6 +155,88 @@ def load_ecephys_qc_data(
     else:
         json_text = raw_bytes.decode("utf-8")
     return json.loads(json_text)
+
+
+def load_ecephys_qc_unit_yield(data_path: Path = DATA_JSON_PATH) -> dict:
+    master_data = load_ecephys_qc_data(data_path)
+    units = master_data.get("units", {})
+    if "session_key" not in units or "probe" not in units:
+        master_data = load_ecephys_qc_data(DATA_JSON_PATH)
+        units = master_data.get("units", {})
+
+    df = pd.DataFrame(units)
+    qc_df = df[
+        (df["isi_violations_ratio"] < 0.01)
+        & (df["presence_ratio"] > 0.90)
+        & (df["amplitude_cutoff"] < 0.10)
+        & (df["snr"] >= 3.0)
+        & (df["depth_from_cortex_um"] >= 0.0)
+        & (df["area"] != "void")
+    ]
+
+    probe_counts = df.groupby("session_key")["probe"].nunique()
+    qc_counts = qc_df.groupby("session_key").size()
+
+    sessions = []
+    for session_key, probe_count in probe_counts.items():
+        mouse_id, session_date = str(session_key).split("_", 1)
+        qc_unit_count = int(qc_counts.get(session_key, 0))
+        sessions.append(
+            {
+                "session_key": str(session_key),
+                "mouse_id": mouse_id,
+                "session_date": session_date,
+                "probe_count": int(probe_count),
+                "qc_unit_count": qc_unit_count,
+                "unitsPerProbe": qc_unit_count / int(probe_count),
+                "included": qc_unit_count > 0 and int(probe_count) > 0,
+            }
+        )
+
+    sessions.sort(key=lambda item: (item["mouse_id"], item["session_date"], item["session_key"]))
+
+    records = []
+    by_mouse: dict[str, list[dict]] = {}
+    for session in sessions:
+        by_mouse.setdefault(session["mouse_id"], []).append(session)
+
+    for _mouse_id, mouse_sessions in sorted(by_mouse.items()):
+        first_date = date.fromisoformat(mouse_sessions[0]["session_date"])
+        day1_baseline = mouse_sessions[0]["unitsPerProbe"]
+        for session in mouse_sessions:
+            current_date = date.fromisoformat(session["session_date"])
+            day = (current_date - first_date).days + 1
+            percent_of_day1 = (
+                100.0 * session["unitsPerProbe"] / day1_baseline if day1_baseline > 0 else 0.0
+            )
+            records.append(
+                {
+                    **session,
+                    "day": day,
+                    "percentOfDay1": percent_of_day1,
+                }
+            )
+
+    included_records = [record for record in records if record["included"]]
+    days = sorted({record["day"] for record in included_records})
+    summary = []
+    for day in days:
+        day_records = [record for record in included_records if record["day"] == day]
+        summary.append(
+            {
+                "day": day,
+                "sessionCount": len(day_records),
+                "meanPercent": float(np.mean([record["percentOfDay1"] for record in day_records])),
+                "meanUnitsPerProbe": float(
+                    np.mean([record["unitsPerProbe"] for record in day_records])
+                ),
+            }
+        )
+
+    return {
+        "records": records,
+        "summary": summary,
+    }
 
 
 def _validate_ap_excerpt(payload: dict, dtype: str, expected_hash: str) -> None:
@@ -559,7 +641,7 @@ def write_ecephys_qc_svg(output: Path = OUT_SVG_PATH, data_path: Path = DATA_JSO
         cbar.solids.set_rasterized(False)
         cbar.set_label("Mean SNR")
 
-        yield_payload = load_unit_yield_data()
+        yield_payload = load_ecephys_qc_unit_yield(data_path)
         yield_records = [record for record in yield_payload["records"] if record["included"]]
         yield_axis = fig.add_subplot(layout[1, 4:])
         yield_axis.set_gid("panel-D-unit-yield")
