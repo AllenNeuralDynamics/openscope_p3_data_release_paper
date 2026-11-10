@@ -27,6 +27,14 @@ COUNT_COLUMNS = [
     "n_recorded", "n_soma", "n_eligible", "n_q1_testable", "n_q2_testable",
     "n_joint_testable", "n_untestable",
     *[f"n_{screen}_responsive" for screen, _ in SCREENS],
+    *[
+        name
+        for repeat in ("pre", "post")
+        for name in (
+            f"n_joint_{repeat}_testable",
+            *[f"n_{screen}_responsive_{repeat}" for screen, _ in SCREENS],
+        )
+    ],
 ]
 
 
@@ -36,6 +44,14 @@ def prepare_cohort_panel(units: pd.DataFrame) -> dict:
         "session_id", "subject_id", "asset_id", "plane", "roi_id", "area", "event_id",
         "signal", "is_soma", "eligible", "q1_testable", "q2_testable", "joint_testable",
         *[f"{s}_responsive" for s, _ in SCREENS],
+        *[
+            name
+            for repeat in ("pre", "post")
+            for name in (
+                f"joint_{repeat}_testable", f"q2_{repeat}_responsive",
+                f"joint_{repeat}_responsive",
+            )
+        ],
     }
     if not required.issubset(units):
         raise ValueError(f"Missing mesoscope cohort columns: {sorted(required - set(units))}")
@@ -54,12 +70,32 @@ def prepare_cohort_panel(units: pd.DataFrame) -> dict:
         work[f"testable_{screen}"] = work.eligible & work[f"{screen}_testable"]
     for screen, _ in SCREENS:
         work[f"responsive_{screen}"] = work.testable & work[f"{screen}_responsive"]
+    for repeat in ("pre", "post"):
+        work[f"testable_{repeat}"] = work.eligible & work[f"joint_{repeat}_testable"]
+        for screen, _ in SCREENS:
+            response_flag = (
+                f"{screen}_responsive" if screen == "q1"
+                else f"{screen}_{repeat}_responsive"
+            )
+            work[f"responsive_{screen}_{repeat}"] = (
+                work[f"testable_{repeat}"] & work[response_flag]
+            )
     keys = ["event_id", "signal", "session_id", "subject_id", "asset_id", "area"]
     sessions = work.groupby(keys, observed=True, sort=True).agg(
         n_recorded=("eligible", "size"), n_soma=("is_soma", "sum"),
         n_eligible=("eligible", "sum"), n_joint_testable=("testable", "sum"),
         **{f"n_{s}_testable": (f"testable_{s}", "sum") for s in ("q1", "q2")},
         **{f"n_{s}_responsive": (f"responsive_{s}", "sum") for s, _ in SCREENS},
+        **{
+            f"n_{screen}_responsive_{repeat}": (
+                f"responsive_{screen}_{repeat}", "sum",
+            )
+            for repeat in ("pre", "post") for screen, _ in SCREENS
+        },
+        **{
+            f"n_joint_{repeat}_testable": (f"testable_{repeat}", "sum")
+            for repeat in ("pre", "post")
+        },
     ).reset_index().rename(columns={"area": "brain_area"})
     sessions["n_untestable"] = sessions.n_eligible - sessions.n_joint_testable
     sessions["minimum_eligible_rois"] = MINIMUM_ELIGIBLE_ROIS
@@ -111,6 +147,19 @@ def prepare_cohort_panel(units: pd.DataFrame) -> dict:
             kind="stable", inplace=True,
         )
         frame.reset_index(drop=True, inplace=True)
+    for repeat in ("pre", "post"):
+        for frame in (areas, mice, sessions):
+            _response_fractions(frame, repeat)
+        bootstrapped = []
+        for (event, signal), frame in areas.groupby(["event_id", "signal"], sort=True):
+            frame = frame.copy().reset_index(drop=True)
+            contributing = mice.loc[
+                mice.event_id.eq(event) & mice.signal.eq(signal)
+                & mice[f"n_joint_{repeat}_testable"].gt(0)
+            ]
+            _mouse_bootstrap_intervals(frame, contributing, repeat)
+            bootstrapped.append(frame)
+        areas = pd.concat(bootstrapped, ignore_index=True)
     return {"areas": areas, "mice": mice, "sessions": sessions}
 
 

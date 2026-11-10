@@ -1,0 +1,5 @@
+event_id,unit_count,pre_trials,post_trials,excluded_pre,excluded_post,clipped_heatmap_samples,heatmap_samples
+orientation_90,203,34,34,0,0,514,60900
+orientation_45,203,33,33,1,1,665,60900
+halt,203,34,34,0,0,725,60900
+omission,203,34,34,0,0,270,60900

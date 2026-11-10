@@ -79,7 +79,7 @@
     }
   ],
   "responsive_dff_peak": 0.915552020072937,
-  "retrieved_date": "2026-10-31",
+  "retrieved_date": "2026-11-05",
   "session_id": "multiplane-ophys_832700_2026-01-30_09-32-25",
   "software": {
     "h5py": "3.16.0",
@@ -94,7 +94,7 @@
     },
     {
       "path": "figure_sources/data/mesoscope-standard-oddball-832700-2026-01-30/provenance.json",
-      "sha256": "85a77de50984be4ac8cc6a009870a32bd9f09633595f446ab1ed4c6a850c8b23"
+      "sha256": "c829df0aa777bf41e9c532f66fcde6007c9add1c3d4b78485aef0a6eae114742"
     },
     {
       "path": "figure_sources/data/mesoscope-unit-extraction-roi-metrics.csv.gz",
@@ -102,7 +102,7 @@
     },
     {
       "path": "src/openscope_p3_publication/mesoscope_standard_oddball.py",
-      "sha256": "36f069b3c8d63568a7e1a0976ff7f5794bab14eadf13e9ad5da0f433c34c112d"
+      "sha256": "f0092cda28237108b3482aa05434eed352327aab309aa02ad267656d667b7370"
     },
     {
       "path": "src/openscope_p3_publication/mesoscope_standard_oddball_display.py",

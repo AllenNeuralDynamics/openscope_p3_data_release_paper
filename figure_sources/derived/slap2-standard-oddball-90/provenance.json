@@ -160,15 +160,15 @@
     },
     {
       "path": "figure_sources/derived/slap2-standard-oddball-cohort/session-dmd-statistics.csv",
-      "sha256": "436889f166d4dd7caad5b5875272d470ffab666bafaba798fb88cddab83d8a58"
+      "sha256": "cb151ec37b0a4491cfbdde83a731319437aec673d2fc41b1a674415305543521"
     },
     {
       "path": "figure_sources/derived/slap2-standard-oddball-cohort/group-statistics.csv",
-      "sha256": "ef1038a18be9d1d1ebeeb49a0d222c4d2f7a3c7087630fec3e17c9637869684b"
+      "sha256": "04a63a74e8d33d03632fdde20a55d7c12296386c3345ec9eb0813402550716e4"
     },
     {
       "path": "figure_sources/derived/slap2-standard-oddball-cohort/provenance.json",
-      "sha256": "56d652b84ebee01d760938fbe1bc7cafa6b5837d83a558c2c2c6aace50876224"
+      "sha256": "a8013028aeb4352f3d3b13d0f61ba51d0738f7d9294834023ef02a9936fab045"
     },
     {
       "path": "src/openscope_p3_publication/figure_typography.py",
@@ -184,7 +184,7 @@
     },
     {
       "path": "figure_sources/data/slap2-standard-oddball-828408-2025-11-18/statistics.csv.gz",
-      "sha256": "8857f42e2875912ecf8a5d50fda752b09af4594ca3c0078e06904a3534da8151"
+      "sha256": "be932ea5ab4cb96f4ab53b7d2d1136b43995de8e3bd1a5a8fa146a31fdfaa8bb"
     },
     {
       "path": "figure_sources/data/slap2-standard-oddball-828408-2025-11-18/responses.npz",
@@ -192,7 +192,7 @@
     },
     {
       "path": "figure_sources/data/slap2-standard-oddball-828408-2025-11-18/provenance.json",
-      "sha256": "648129ad3aa0f16be47a7431d27b56a58ea5eb82e9ad74285a49af86059eeb09"
+      "sha256": "a3423e16368f4fab067aec5093f6056cba8e57d07866a8ea9ec18cba8424aed5"
     }
   ],
   "version": 2

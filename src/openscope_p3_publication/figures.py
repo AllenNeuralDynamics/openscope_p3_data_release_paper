@@ -7044,6 +7044,9 @@ def write_neuropixels_implant_svg(output: Path = NEUROPIXELS_IMPLANT_STATIC_OUTP
 
 def main() -> None:
     from .ecephys_qc_figure import write_ecephys_qc_html, write_ecephys_qc_svg
+    from .ephys_c1_context_figure import build_ephys_c1_context_comparison
+    from .ephys_c1_event_differences import build_ephys_c1_event_differences
+    from .ephys_c1_pseudocontext_figure import build_ephys_c1_pseudocontext
     from .mesoscope_plane_snr_figure import (
         write_mesoscope_plane_snr_html,
         write_mesoscope_plane_snr_svg,
@@ -7060,6 +7063,7 @@ def main() -> None:
         write_sensorimotor_running_svg,
     )
     from .slap2_standard_oddball_figure import build_slap2_standard_oddball
+    from .standard_oddball_c1_sensitivity import build_c1_sensitivity_figure
     from .standard_oddball_column import build_standard_oddball_column
     from .standard_oddball_explorer import build_standard_oddball_explorer
     from .standard_oddball_matched_columns import (
@@ -7092,6 +7096,10 @@ def main() -> None:
     mesoscope_oddball_paths = build_mesoscope_standard_oddball(primary_only=True)
     slap2_oddball_paths = build_slap2_standard_oddball(primary_only=True)
     three_modality_oddball_paths = build_three_modality_standard_oddball_columns(primary_only=True)
+    c1_sensitivity_paths = build_c1_sensitivity_figure()
+    c1_pseudocontext_paths = build_ephys_c1_pseudocontext()
+    c1_context_comparison_paths = build_ephys_c1_context_comparison()
+    c1_event_difference_paths = build_ephys_c1_event_differences()
     oddball_explorer_path = build_standard_oddball_explorer()
     neural_viewer_path = write_neural_viewer_html()
     segmentation_viewer_path = write_segmentation_viewers()
@@ -7143,6 +7151,14 @@ def main() -> None:
     for path in slap2_oddball_paths:
         print(f"Wrote {path.relative_to(REPO_ROOT)}")
     for path in three_modality_oddball_paths:
+        print(f"Wrote {path.relative_to(REPO_ROOT)}")
+    for path in c1_sensitivity_paths:
+        print(f"Wrote {path.relative_to(REPO_ROOT)}")
+    for path in c1_pseudocontext_paths:
+        print(f"Wrote {path.relative_to(REPO_ROOT)}")
+    for path in c1_context_comparison_paths:
+        print(f"Wrote {path.relative_to(REPO_ROOT)}")
+    for path in c1_event_difference_paths:
         print(f"Wrote {path.relative_to(REPO_ROOT)}")
     print(f"Wrote {oddball_explorer_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {neural_viewer_path.relative_to(REPO_ROOT)}")

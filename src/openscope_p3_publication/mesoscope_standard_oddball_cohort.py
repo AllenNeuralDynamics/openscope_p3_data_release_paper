@@ -26,6 +26,14 @@ RUNNING = ROOT / "figure_sources/data/running-statistics.json"
 KEYS = ["asset_id", "plane", "roi_id", "event_id", "signal"]
 SIGNALS = ("dff", "oasis")
 RESPONSE_SECONDS = 0.5
+COHORT_COLUMNS = (
+    "session_id", "subject_id", "asset_id", "event_id", "signal", "roi_id",
+    "plane", "area", "is_soma", "quality_class", "eligible", "eligibility_reason",
+    "q1_testable", "q1_responsive", "q2_testable", "q2_responsive",
+    "joint_testable", "joint_responsive", "q2_pre_testable", "q2_pre_responsive",
+    "joint_pre_testable", "joint_pre_responsive", "q2_post_testable", "q2_post_responsive",
+    "joint_post_testable", "joint_post_responsive",
+)
 
 
 def cohort_inventory() -> pd.DataFrame:
@@ -86,15 +94,35 @@ def optical_event_windows(tables: dict) -> dict:
     for event_id in EVENTS:
         spec = original[event_id]
         event: dict = {"excluded": {}}
-        for condition in ("context", "control"):
-            table = tables[condition]
+        condition_indices = {
+            "context": spec["context_indices"],
+            "control": spec["control_indices"],
+            "control_pre": spec["control_pre_indices"],
+            "control_post": spec["control_post_indices"],
+        }
+        source_conditions = {
+            "context": "context", "control": "control",
+            "control_pre": "control", "control_post": "control",
+        }
+        for condition, indices in condition_indices.items():
+            source_condition = source_conditions[condition]
+            table = tables[source_condition]
             rows, excluded = [], []
-            for number, index in enumerate(spec[f"{condition}_indices"]):
+            baseline_by_index = dict(zip(
+                spec[f"{source_condition}_indices"],
+                spec[f"{source_condition}_baseline"],
+                strict=True,
+            ))
+            comparison_by_index = dict(zip(
+                spec["context_indices"], spec["context_comparison"], strict=True,
+            ))
+            clean_by_index = dict(zip(spec["context_indices"], spec["clean"], strict=True))
+            for index in indices:
                 start = float(table["start"][index])
-                comparison = spec["context_comparison"][number] if condition == "context" else None
-                baseline = spec[f"{condition}_baseline"][number]
+                comparison = comparison_by_index[index] if condition == "context" else None
+                baseline = baseline_by_index[index]
                 reason = None
-                if condition == "context" and not spec["clean"][number]:
+                if condition == "context" and not clean_by_index[index]:
                     reason = "adjacent_mismatch_or_block_boundary"
                 elif condition == "context" and comparison is None:
                     reason = "missing_preceding_standard"
@@ -122,7 +150,11 @@ def optical_event_windows(tables: dict) -> dict:
                 raise ValueError(f"{event_id}/{condition}: fewer than two usable optical trials.")
             event[condition], event["excluded"][condition] = rows, excluded
         result[event_id] = event
-    if result["orientation_90"] != trial_windows(tables):
+    reference = trial_windows(tables)
+    if any(
+        result["orientation_90"][condition] != reference[condition]
+        for condition in ("context", "control")
+    ):
         raise ValueError("Cohort 90-degree optical windows differ from the existing analysis.")
     return result
 
@@ -178,7 +210,8 @@ def native_window_statistics(
             output[key][:, j], counts[key][:, j] = means[:, column], n[:, column]
     return output, {
         "read_strategy": "contiguous" if contiguous else "coalesced_complete_native_slabs",
-        "frame_count_read": frames, "frame_slices": [[g[0], g[1]] for g in groups],
+        "frame_count_read": frames, "frame_slice_count": len(groups),
+        "frame_slice_span": [groups[0][0], groups[-1][1]] if groups else None,
         "values_and_slices_sha256": digest.hexdigest(),
         "native_frame_count_range": {
             key: [int(value.min()), int(value.max())] for key, value in counts.items()
@@ -196,7 +229,7 @@ def finite_row_means(values: np.ndarray) -> np.ndarray:
 
 
 def load_cohort(directory: Path = COHORT_DIR) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
-    """Load verified original ROI statistics without cloud access."""
+    """Load verified original-ROI classifications without cloud access."""
     provenance = json.loads((directory / "provenance.json").read_text())
     if provenance.get("version") != 1 or tuple(provenance.get("events", [])) != EVENTS:
         raise ValueError("Unsupported mesoscope cohort schema/events.")
@@ -209,6 +242,8 @@ def load_cohort(directory: Path = COHORT_DIR) -> tuple[pd.DataFrame, pd.DataFram
     units = pd.read_csv(
         directory / "units.csv.gz", float_precision="round_trip", dtype={"subject_id": str},
     )
+    if units.columns.tolist() != list(COHORT_COLUMNS):
+        raise ValueError("Mesoscope cohort unit-summary columns changed.")
     sessions = pd.read_csv(
         directory / "sessions.csv", keep_default_na=False, dtype={"subject_id": str},
     )
@@ -219,17 +254,19 @@ def load_cohort(directory: Path = COHORT_DIR) -> tuple[pd.DataFrame, pd.DataFram
         or not units.groupby(["asset_id", "plane", "roi_id"]).size().eq(8).all()
     ):
         raise ValueError("Mesoscope cohort has missing/duplicate ROI, event or signal identities.")
-    for screen in ("q1", "q2"):
-        valid = np.isfinite(units[f"{screen}_p"]) & np.isfinite(units[f"{screen}_mi"])
-        responsive = valid & units[f"{screen}_p"].lt(0.05) & units[f"{screen}_mi"].abs().gt(0.1)
-        if (
-            not units[f"{screen}_testable"].eq(valid).all()
-            or not units[f"{screen}_responsive"].eq(responsive).all()
-        ):
-            raise ValueError("Mesoscope cohort response/testability flags changed.")
     if (
         not units.joint_testable.eq(units.q1_testable & units.q2_testable).all()
         or not units.joint_responsive.eq(units.q1_responsive & units.q2_responsive).all()
     ):
         raise ValueError("Mesoscope cohort joint classifications changed.")
+    for repeat in ("pre", "post"):
+        if (
+            not units[f"joint_{repeat}_testable"].eq(
+                units.q1_testable & units[f"q2_{repeat}_testable"]
+            ).all()
+            or not units[f"joint_{repeat}_responsive"].eq(
+                units.q1_responsive & units[f"q2_{repeat}_responsive"]
+            ).all()
+        ):
+            raise ValueError(f"Mesoscope C1 {repeat} classifications changed.")
     return units, sessions, provenance

@@ -76,7 +76,11 @@ def recorded_trial_windows(timestamps: np.ndarray, windows: dict) -> dict:
     ))
     result = deepcopy(windows)
     for event, spec in result.items():
-        for condition in ("context", "control"):
+        conditions = (
+            "context", "control",
+            *[name for name in ("control_pre", "control_post") if name in spec],
+        )
+        for condition in conditions:
             kept = []
             for row in spec[condition]:
                 bounds = [row["baseline"], row["response"], row["comparison"]]

@@ -1,0 +1,152 @@
+{
+  "bootstrap_rule": "95% percentile mouse-cluster bootstrap; resample contributing mice with replacement within each region and recompute summed responsive / summed joint-testable counts; fixed session/group inclusion and shared resamples for Q1, Q2 and Both",
+  "conditions": [
+    "pre",
+    "context",
+    "post"
+  ],
+  "description": "Alternative layout, not a replacement for Supplementary Figure 7. A: pre-context C1 heatmap. B, top: the exact actual-context heatmap from Figure 9 D. C, top: post-context C1 heatmap. All three show the same 203 eligible visual SUA, without a responsiveness filter, in the original context-only Rastermap order on Figure 9 D's +/-44 Hz scale; values beyond the limits saturate. Each condition subtracts its own per-unit preceding-grey display baseline pooled over complete half-open 20-ms bins. SDFs use 5-ms bins, a causal 25-ms exponential kernel, and the window -0.75 to +0.75 seconds. Each block contributes 34 presentations, including zero-spike trials; context trials retain Figure 9's clean-predecessor rule. Dashed lines mark onset; black bars mark each condition's median presentation duration. The same 203 units from mouse 830794's January 27, 2026 session are displayed. B, bottom: pre-C1 (dashed grey) and post-C1 (solid purple) baseline-subtracted mean SDFs across the same 51 units. Same eligible visual units in both control curves; actual-context 90-degree Q1 raw p <0.05 and signed MI >0.1; finite p and MI; no Q2 restriction. Shading is sample SD (ddof=1) across these neurons divided by sqrt(neuron count), not trial or across-mouse uncertainty. This population differs from Figure 9's positive Q1 AND Q2 mean-trace population. C, bottom: unchanged regional pseudo-Q1, pseudo-Q2, and Both fractions from 13 sessions, sharing 6642 jointly testable eligible units across included regions; intervals are the Figure 9 10,000-resample 95% mouse-cluster bootstrap. 95% percentile mouse-cluster bootstrap; resample contributing mice with replacement within each region and recompute summed responsive / summed joint-testable counts; fixed session/group inclusion and shared resamples for Q1, Q2 and Both. Pseudo-Q1 tests post-C1 versus its preceding within-block stimulus, whose orientation/type varies, not an expected standard. Pseudo-Q2 compares post-C1 with pre-C1 after each trial's grey-baseline subtraction. Both screens require raw p <0.05 and absolute MI >0.1, either sign; Both is their intersection. Cohort eligibility, region inclusion, counts, and exclusions are unchanged. This exploratory repeat comparison does not isolate prediction error or drift.",
+  "display": {
+    "clipped_samples_by_condition": [
+      493,
+      589,
+      331
+    ],
+    "finite_samples": 182700,
+    "limit": 44,
+    "limit_rule": "Exact Figure 9 D context-only pooled absolute 99th-percentile ceiling."
+  },
+  "mean_unit_count": 51,
+  "outputs": [
+    {
+      "name": "ephys-c1-context-comparison.svg",
+      "sha256": "86818c14b10232f63285067a937bd2404d4a8aaf3b629d997814f5e002ae64e5"
+    },
+    {
+      "name": "mean-traces.csv",
+      "sha256": "2a0ca192e57962dadb4d418e5ccf5ad33cf60cde5a185ab0f529f2a2272f184a"
+    },
+    {
+      "name": "unit-selection.csv",
+      "sha256": "0804ca726ca30aa5752c9f3185e902f28e3a4566f870666a51b1e1e2318ad819"
+    },
+    {
+      "name": "regions.csv",
+      "sha256": "474fa80b3a985686367c2752a6498c54302836a3b2be13a626bec3afa202be28"
+    }
+  ],
+  "selected_unit_ids": [
+    1522,
+    1540,
+    1571,
+    1564,
+    1572,
+    1580,
+    1574,
+    1576,
+    1578,
+    1589,
+    1593,
+    1583,
+    1597,
+    1588,
+    1596,
+    1608,
+    1628,
+    888,
+    898,
+    909,
+    915,
+    944,
+    931,
+    939,
+    933,
+    951,
+    964,
+    982,
+    975,
+    971,
+    984,
+    981,
+    987,
+    989,
+    988,
+    1000,
+    997,
+    349,
+    380,
+    403,
+    399,
+    436,
+    507,
+    592,
+    1140,
+    1143,
+    612,
+    624,
+    629,
+    631,
+    634
+  ],
+  "selection_rule": "Same eligible visual units in both control curves; actual-context 90-degree Q1 raw p <0.05 and signed MI >0.1; finite p and MI; no Q2 restriction.",
+  "sem_rule": "Across-neuron sample SD (ddof=1) / sqrt(n), same cells in both curves.",
+  "sources": [
+    {
+      "path": "src/openscope_p3_publication/ephys_c1_context_figure.py",
+      "sha256": "21a01ab348094e718a581996a4a0a2c2ac729a69f50655883220ea8e06570353"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-event-responses.json",
+      "sha256": "a75dd4b49b8e36d30e88820e878ea517c98a4a3e826e5d131a3a7935a19a3cc4"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-event-responses.provenance.json",
+      "sha256": "9b87edba18b4a5e9a079612890cf0ade08ba227c97a6d3999ea7f1d0f759c009"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-90-population.json",
+      "sha256": "214ab09afe84d075b027da3c9d63f1d739c6858228e1fa66acaeac019b6afb60"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-90-population.provenance.json",
+      "sha256": "4942d04f811030b6412875281356676668aa6af25e1bf3b028b8b3d54d22115c"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-90-rastermap.json",
+      "sha256": "bc9f80842ae18b0e5aa8b12b2d60005c11a4a33c3e77d647f2309eb0bc3b7461"
+    },
+    {
+      "path": "figure_sources/data/ephys-c1-population/provenance.json",
+      "sha256": "d87a4009ecbfc8bab11c68390e147041156d7e386811b7aa00ce99b579c62bf5"
+    },
+    {
+      "path": "figure_sources/data/ephys-c1-pseudocontext/provenance.json",
+      "sha256": "40ba08ec3d737e4ffb48ebe1bfebfc515d6e36f8e8da4d1d92415684f86172c6"
+    },
+    {
+      "path": "src/openscope_p3_publication/ephys_c1_population.py",
+      "sha256": "7529d3f1dee4391951b45363e8b5809793a1329539704b2bd75d079ad1a75dac"
+    },
+    {
+      "path": "src/openscope_p3_publication/ephys_c1_pseudocontext_figure.py",
+      "sha256": "f2ad4c7e23f2bc0be663233edf9e4dba17a7470eaf92eceb5c16ea7cb5a999b6"
+    },
+    {
+      "path": "src/openscope_p3_publication/ephys_c1_mean_traces.py",
+      "sha256": "b28913869766e28228018c6783819451394e171914799a6a3c5672e13da47649"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_cohort_figure.py",
+      "sha256": "2de1624955568521b5b5b0fcf63e924d0c3d0308d9e2794ab0f69f47482b61ba"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_neuropixels.py",
+      "sha256": "256122f5d0f0f87bc523e7c4e7937ad0b25763b7e7d88053ab95c25d6d18d2df"
+    },
+    {
+      "path": "src/openscope_p3_publication/figure_typography.py",
+      "sha256": "171ba65deff578a2e0e7d786611bf033d9349cb21bd5d38677c4fb09d2b556f8"
+    }
+  ],
+  "version": 1
+}

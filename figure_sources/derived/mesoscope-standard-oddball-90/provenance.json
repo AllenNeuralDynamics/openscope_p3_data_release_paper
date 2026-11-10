@@ -1,7 +1,7 @@
 {
   "cohort_analysis": {
     "directory": "../mesoscope-standard-oddball-cohort",
-    "provenance_sha256": "036c40a176b96d6c958a07e26a9821cefc1fd1be33648aa2af4d5eeb7217f6a5"
+    "provenance_sha256": "7a10275434ef482fddef1d99c746c694b26691c92f12793a55d8cc0e45aa2fd2"
   },
   "example_roi_keys": [
     "VISl_6:64",
@@ -18,7 +18,7 @@
     },
     {
       "path": "roi-statistics.csv",
-      "sha256": "32dbf9e158e10367c731b8390244d43928ce03242816dc21114fc64068e03396"
+      "sha256": "2d97e8537683d4b7213920b687aa5739127006c4dcee0c591f4d41e441d71b8f"
     }
   ],
   "panel_a_dff_peak_threshold": 0.5,
@@ -35,7 +35,7 @@
     },
     {
       "path": "src/openscope_p3_publication/figures.py",
-      "sha256": "cf05e47d5045df4fe2c49693c7045f58546ee113a99638df3223c8bcae9ed911"
+      "sha256": "e7b279ef5007a559ce463e711a2c6b9f349877e36e2257cabdd93914ed8af0ad"
     },
     {
       "path": "figure_sources/media/platform-logos/mesoscope.png",
@@ -47,23 +47,23 @@
     },
     {
       "path": "figure_sources/data/mesoscope-standard-oddball-832700-2026-01-30/provenance.json",
-      "sha256": "85a77de50984be4ac8cc6a009870a32bd9f09633595f446ab1ed4c6a850c8b23"
+      "sha256": "c829df0aa777bf41e9c532f66fcde6007c9add1c3d4b78485aef0a6eae114742"
     },
     {
       "path": "figure_sources/data/mesoscope-standard-oddball-832700-2026-01-30/display-provenance.json",
-      "sha256": "9a1efa3dfa688f9832447a52a1a9096f0f8dab86a293109e7e5e17fd00ace3d1"
+      "sha256": "8d66fe92b8ea8a05fdeac6fd8f0fa42a44c3cd3a0bf9150745aaecb69742d569"
     },
     {
       "path": "src/openscope_p3_publication/mesoscope_standard_oddball_cohort_figure.py",
-      "sha256": "227373b0eea2287a33b1cc70dd363d5d0d15b3cf95d9c90bb9121f3a965cfc95"
+      "sha256": "a11d1b9cd3c70477df099d3b0943c7fa12bf315ed658bd0b4369111a9e393503"
     },
     {
       "path": "figure_sources/data/standard-oddball-publication/provenance.json",
-      "sha256": "1f334a7cf9b58773bd40756587df2e358c69aae1f1fef0b79bcb51a6abf39b0a"
+      "sha256": "a8bd3475acdb9324a19fd3d40458ec73caf681197ba76f9ebfe1b79274e7d6cb"
     },
     {
       "path": "figure_sources/data/standard-oddball-publication/cohorts.json",
-      "sha256": "69f0e1395ce8e5dcbbb84b1fb3ef7fb271a684842de9c37267290f9c021bcdad"
+      "sha256": "ae5ca8bdbcfe1a6a1dcb0e9b15631b75922a6fad816ae822cba7e19912f93802"
     }
   ],
   "stimulus_spans": {

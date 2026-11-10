@@ -44,10 +44,10 @@ from openscope_p3_publication.slap2_standard_oddball import (
 )
 
 
-def extract_native(stage_dir: Path) -> None:
+def extract_native(stage_dir: Path, *, output: Path = SNAPSHOT, overwrite: bool = False) -> None:
     """Extract full-precision native statistics and compact display-only summaries."""
     import remfile
-    if stage_dir.exists() or SNAPSHOT.exists():
+    if stage_dir.exists() or (output.exists() and not overwrite):
         raise FileExistsError("Refusing to overwrite existing native stage or frozen snapshot.")
     asset = next(r for r in json.loads(ASSETS.read_text())["source_assets"]
                  if r["asset_id"] == ASSET_ID)
@@ -321,12 +321,15 @@ def extract_native(stage_dir: Path) -> None:
     print(f"Saved complete native stage: {stage_dir}", flush=True)
 
 
-def finalize_snapshot(stage_dir: Path, *, calcium_positive_only: bool) -> None:
+def finalize_snapshot(
+    stage_dir: Path, *, calcium_positive_only: bool,
+    output: Path = SNAPSHOT, overwrite: bool = False,
+) -> None:
     """Select display examples offline, without discarding or rereading successful native work."""
     from rastermap import Rastermap
 
-    if SNAPSHOT.exists():
-        raise FileExistsError(f"Refusing to overwrite frozen snapshot: {SNAPSHOT}")
+    if output.exists() and not overwrite:
+        raise FileExistsError(f"Refusing to overwrite frozen snapshot: {output}")
     payload = json.loads((stage_dir / "provenance.json").read_text())
     for record in payload["inputs"]:
         if sha256(ROOT / record["path"]) != record["sha256"]:
@@ -374,15 +377,71 @@ def finalize_snapshot(stage_dir: Path, *, calcium_positive_only: bool) -> None:
             "order_sha256": hashlib.sha256(np.asarray(order, dtype="<u4").tobytes()).hexdigest(),
         },
     )
-    SNAPSHOT.mkdir(parents=True)
-    shutil.copyfile(stage_dir / "statistics.csv.gz", SNAPSHOT / "statistics.csv.gz")
-    np.savez_compressed(SNAPSHOT / "responses.npz", **arrays)
+    output.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(stage_dir / "statistics.csv.gz", output / "statistics.csv.gz")
+    np.savez_compressed(output / "responses.npz", **arrays)
     payload["outputs"] = [
-        {"path": name, "sha256": sha256(SNAPSHOT / name)}
+        {"path": name, "sha256": sha256(output / name)}
         for name in ("statistics.csv.gz", "responses.npz")
     ]
-    (SNAPSHOT / "provenance.json").write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    (output / "provenance.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+    )
     print(f"Wrote {len(stats)} statistical rows / {len(keys)} eligible sources.", flush=True)
+
+
+def refresh_stage_source_hashes(stage_dir: Path) -> None:
+    """Revalidate unchanged native checkpoints against the C1-split window helper."""
+    path = stage_dir / "provenance.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    for record in payload["outputs"]:
+        if sha256(stage_dir / record["path"]) != record["sha256"]:
+            raise ValueError(f"Native-stage output changed: {record['path']}")
+    refreshable = {
+        "scripts/extract_slap2_standard_oddball.py",
+        "src/openscope_p3_publication/mesoscope_standard_oddball_cohort.py",
+    }
+    for source in payload["inputs"]:
+        actual = sha256(ROOT / source["path"])
+        if actual != source["sha256"]:
+            normalized = source["path"].replace("\\", "/")
+            if normalized not in refreshable:
+                raise ValueError(f"Unreviewed native-stage source changed: {normalized}")
+            source.setdefault("frozen_source_sha256", source["sha256"])
+            source["sha256"] = actual
+    payload["source_hashes_refreshed_date"] = datetime.now(UTC).date().isoformat()
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8", newline="\n",
+    )
+    print(f"Refreshed {path}; native checkpoint arrays were not changed.", flush=True)
+
+
+def refresh_snapshot_source_hashes(directory: Path) -> None:
+    """Revalidate unchanged snapshot arrays against reviewed source-only edits."""
+    path = directory / "provenance.json"
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    for record in payload["outputs"]:
+        if sha256(directory / record["path"]) != record["sha256"]:
+            raise ValueError(f"SLAP2 snapshot output changed: {record['path']}")
+    refreshable = {
+        "scripts/extract_slap2_standard_oddball.py",
+        "src/openscope_p3_publication/mesoscope_standard_oddball_cohort.py",
+    }
+    for source in payload["inputs"]:
+        actual = sha256(ROOT / source["path"])
+        if actual != source["sha256"]:
+            normalized = source["path"].replace("\\", "/")
+            if normalized not in refreshable:
+                raise ValueError(f"Unreviewed SLAP2 snapshot source changed: {normalized}")
+            source.setdefault("frozen_source_sha256", source["sha256"])
+            source["sha256"] = actual
+    payload["source_hashes_refreshed_date"] = datetime.now(UTC).date().isoformat()
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8", newline="\n",
+    )
+    print(f"Refreshed {path}; frozen SLAP2 outputs were not changed.", flush=True)
 
 
 def main() -> None:
@@ -390,15 +449,36 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stage-dir", type=Path, required=True)
     parser.add_argument("--finalize-only", action="store_true")
+    parser.add_argument("--refresh-stage-source-hashes", action="store_true")
+    parser.add_argument("--refresh-snapshot-source-hashes", action="store_true")
     parser.add_argument("--native-only", action="store_true")
     parser.add_argument("--calcium-either-sign", action="store_true")
+    parser.add_argument("--output", type=Path, default=SNAPSHOT)
+    parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
+    if args.refresh_stage_source_hashes:
+        if (
+            args.native_only or args.finalize_only or args.refresh_snapshot_source_hashes
+        ):
+            parser.error("--refresh-stage-source-hashes cannot be combined with extraction modes.")
+        refresh_stage_source_hashes(args.stage_dir)
+        return
+    if args.refresh_snapshot_source_hashes:
+        if args.native_only or args.finalize_only:
+            parser.error(
+                "--refresh-snapshot-source-hashes cannot be combined with extraction modes."
+            )
+        refresh_snapshot_source_hashes(args.output)
+        return
     if args.native_only and args.finalize_only:
         parser.error("--native-only and --finalize-only cannot be combined.")
     if not args.finalize_only:
-        extract_native(args.stage_dir)
+        extract_native(args.stage_dir, output=args.output, overwrite=args.overwrite)
     if not args.native_only:
-        finalize_snapshot(args.stage_dir, calcium_positive_only=not args.calcium_either_sign)
+        finalize_snapshot(
+            args.stage_dir, calcium_positive_only=not args.calcium_either_sign,
+            output=args.output, overwrite=args.overwrite,
+        )
 
 
 if __name__ == "__main__":

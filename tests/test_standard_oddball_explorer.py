@@ -7,8 +7,10 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
+from openscope_p3_publication import standard_oddball_c1_sensitivity as sensitivity
 from openscope_p3_publication import standard_oddball_explorer as explorer
 from openscope_p3_publication.mesoscope_standard_oddball import load_snapshot as load_mesoscope
 from openscope_p3_publication.slap2_standard_oddball import load_snapshot as load_slap2
@@ -48,6 +50,11 @@ def test_primary_signals_and_event_coverage(payload: dict) -> None:
             assert 0 < r["n"] <= r["n_eligible"]
             assert 0 <= r["counts"]["joint"] <= min(r["counts"]["q1"], r["counts"]["q2"])
             assert all(0 <= n <= r["n"] for n in r["counts"].values())
+            assert set(r["repeats"]) == {"pooled", "pre", "post"}
+            assert r["repeats"]["pooled"]["n"] == r["n"]
+            for repeat in r["repeats"].values():
+                assert 0 <= repeat["n"] <= repeat["n_eligible"]
+                assert all(0 <= n <= repeat["n"] for n in repeat["counts"].values())
     assert {r["group"] for r in payload["datasets"][2]["cohort"]} == {"DMD1", "DMD2"}
     json.dumps(payload, allow_nan=False)
 
@@ -97,12 +104,95 @@ def test_exact_published_cohort_counts_and_uncertainty(payload: dict) -> None:
     for row in slap_rows.values():
         assert row["n_sessions"] == row["n_mice"] == len(row["points"]) == 2
         assert all(interval is None for interval in row["intervals"].values())
+        assert row["repeats"]["pre"]["n"] > 0
+        assert row["repeats"]["post"]["n"] > 0
+
+
+def test_cohort_rows_keep_repeat_denominators_separate() -> None:
+    areas = pd.DataFrame([{
+        "brain_area": "VISp", "n_joint_testable": 10, "n_eligible": 12,
+        "n_sessions": 2, "n_mice": 2,
+        "n_q1_responsive": 5, "n_q2_responsive": 4, "n_joint_responsive": 3,
+        "n_joint_pre_testable": 6, "n_q1_responsive_pre": 3,
+        "n_q2_responsive_pre": 2, "n_joint_responsive_pre": 2,
+        "n_joint_post_testable": 8, "n_q1_responsive_post": 4,
+        "n_q2_responsive_post": 3, "n_joint_responsive_post": 2,
+        "bootstrap_status": "estimated", "bootstrap_status_pre": "estimated",
+        "bootstrap_status_post": "estimated",
+        **{
+            f"fraction_{screen}_responsive{suffix}_ci95_{bound}": value
+            for suffix in ("", "_pre", "_post")
+            for screen, value in (("q1", 0.1), ("q2", 0.2), ("joint", 0.3))
+            for bound in ("low", "high")
+        },
+    }])
+    mice = pd.DataFrame([{
+        "brain_area": "VISp", "subject_id": "mouse-a", "n_joint_testable": 10,
+        "n_joint_pre_testable": 6, "n_joint_post_testable": 8,
+        "n_q1_responsive": 5, "n_q2_responsive": 4, "n_joint_responsive": 3,
+        "n_q1_responsive_pre": 3, "n_q2_responsive_pre": 2,
+        "n_joint_responsive_pre": 2, "n_q1_responsive_post": 4,
+        "n_q2_responsive_post": 3, "n_joint_responsive_post": 2,
+    }])
+
+    row, = explorer.cohort_rows({"areas": areas, "mice": mice}, "orientation_90")
+
+    assert row["n"] == 10 and row["repeats"]["pre"]["n"] == 6
+    assert row["repeats"]["post"]["n"] == 8
+    assert row["repeats"]["pre"]["counts"] == {"q1": 3, "q2": 2, "joint": 2}
+    assert row["repeats"]["pre"]["intervals"]["q2"] == [0.2, 0.2]
+    assert row["repeats"]["pre"]["points"][0]["n"] == 6
+
+
+def test_static_sensitivity_summary_renders_counts_and_provenance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    values = {
+        repeat: {"count": count, "denominator": 10, "interval": interval}
+        for repeat, count, interval in (
+            ("pooled", 4, [0.2, 0.6]), ("pre", 3, [0.1, 0.5]), ("post", 5, None),
+        )
+    }
+    monkeypatch.setattr(sensitivity, "sensitivity_rows", lambda: [
+        sensitivity._record("VISp", values, modality="Neuropixels"),
+    ])
+    source_dirs = [tmp_path / name for name in ("neuropixels", "mesoscope", "slap2")]
+    source_file = tmp_path / "standard_oddball_c1_sensitivity.py"
+    source_file.write_text("", encoding="utf-8")
+    for source_dir in source_dirs:
+        source_dir.mkdir()
+        (source_dir / "provenance.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(sensitivity, "ROOT", tmp_path)
+    monkeypatch.setattr(sensitivity, "__file__", str(source_file))
+    monkeypatch.setattr(sensitivity, "NEUROPIXELS_DIR", source_dirs[0])
+    monkeypatch.setattr(sensitivity, "MESOSCOPE_DIR", source_dirs[1])
+    monkeypatch.setattr(sensitivity, "SLAP2_DIR", source_dirs[2])
+
+    image, provenance = sensitivity.build_c1_sensitivity_figure(
+        tmp_path / "sensitivity.svg", tmp_path / "provenance.json",
+    )
+
+    assert image.is_file()
+    svg = image.read_text(encoding="utf-8")
+    assert "90° Q2 sensitivity" in svg
+    assert "3/10" in svg and "5/10" in svg
+    assert json.loads(provenance.read_text(encoding="utf-8"))["event"] == "orientation_90"
+    first_image, first_provenance = image.read_bytes(), provenance.read_bytes()
+    sensitivity.build_c1_sensitivity_figure(image, provenance)
+    assert first_image == image.read_bytes()
+    assert first_provenance == provenance.read_bytes()
 
 
 def test_deterministic_self_contained_output(
     payload: dict, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(explorer, "load_explorer_data", lambda: payload)
+    sensitivity_svg = tmp_path / "sensitivity.svg"
+    sensitivity_svg.write_text("<svg/>", encoding="utf-8")
+    sensitivity_provenance = tmp_path / "sensitivity.provenance.json"
+    sensitivity_provenance.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(explorer, "STATIC_SENSITIVITY", sensitivity_svg)
+    monkeypatch.setattr(explorer, "STATIC_SENSITIVITY_PROVENANCE", sensitivity_provenance)
     path = explorer.build_standard_oddball_explorer(tmp_path / "explorer.html")
     before = path.read_bytes(), path.with_suffix(".provenance.json").read_bytes()
     explorer.build_standard_oddball_explorer(path)
@@ -111,9 +201,11 @@ def test_deterministic_self_contained_output(
     for control in (
         "modality-tabs", "event-select", "area-select", "responsiveness-select",
         "metric-select", "sort-select", "source-select", "colorbar-canvas",
+        "cohort-control-repeat",
     ):
         assert f'id="{control}"' in html
     assert "data:image/svg+xml;base64," in html
+    assert "pooled C1 controls" in html and "pre-context C1 repeat" in html
     assert "data-simple-view" in html and "legend-toggle" in html
     for removed in (
         "selection-status", "dataset-notes", "color-key", "cohort-table",
@@ -135,14 +227,17 @@ def test_deterministic_self_contained_output(
 def test_manuscript_figure9_and_supplement6_are_distinct() -> None:
     manuscript = (explorer.ROOT / "index.md").read_text(encoding="utf-8")
     assert manuscript.count(":label: fig-standard-oddball-responses") == 1
+    assert manuscript.count(":name: fig-standard-oddball-c1-sensitivity") == 1
     assert manuscript.count(":label: fig-neuropixels-event-responses") == 1
     assert (
         manuscript.index(":label: fig-standard-oddball-responses")
+        < manuscript.index(":name: fig-standard-oddball-c1-sensitivity")
         < manuscript.index(":label: fig-behavior-tracking")
         < manuscript.index("# Supplementary Figure 6:")
         < manuscript.index(":label: fig-neuropixels-event-responses")
     )
     assert "[Figure 9](#fig-standard-oddball-responses)" in manuscript
+    assert "standard-oddball-c1-repeat-sensitivity.svg" in manuscript
     assert "[Supplementary Figure 6](#fig-neuropixels-event-responses)" in manuscript
 
 

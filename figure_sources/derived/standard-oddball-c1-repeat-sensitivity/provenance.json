@@ -1,0 +1,34 @@
+{
+  "denominator": "Eligible jointly Q1/Q2-testable observations per selected C1 repeat.",
+  "event": "orientation_90",
+  "output": {
+    "path": "standard-oddball-c1-repeat-sensitivity.svg",
+    "sha256": "3b0aa3f55e6d187197b8f78df9f6ff6b681004895e308af898e8c9461fe76596"
+  },
+  "repeats": [
+    "pooled",
+    "pre",
+    "post"
+  ],
+  "response_rule": "Raw Q2 p<0.05 and abs(MI)>0.1; either sign.",
+  "sources": [
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_c1_sensitivity.py",
+      "sha256": "2ae4e4d783299b0413d3b7c1b23dd798c7eba34730f84a91aaad86c417da7b21"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-standard-oddball-cohort/provenance.json",
+      "sha256": "9032c382be521015fe346cc554d8960243cadec4b07a68c27b7b16c3bf3dc682"
+    },
+    {
+      "path": "figure_sources/data/mesoscope-standard-oddball-cohort/provenance.json",
+      "sha256": "68f7ed4069f2bec5641b0d3f4c638c698fdaf538a8669071ea68e0d62d224bf5"
+    },
+    {
+      "path": "figure_sources/data/slap2-standard-oddball-cohort/provenance.json",
+      "sha256": "2dd2b68def56da1ef08c0f3f7c84b5f02d564cd5bd3908b1cda02782d020049d"
+    }
+  ],
+  "uncertainty": "95% mouse-cluster bootstrap intervals for Neuropixels and mesoscope; no bootstrap intervals for two-mouse SLAP2.",
+  "version": 1
+}

@@ -37,6 +37,12 @@ from .standard_oddball_publication_data import (
 
 OUTPUT = ROOT / "interactive/standard-oddball-explorer.html"
 STATIC = ROOT / "images/figures/generated/standard-oddball-three-modality-dff-glutamate.svg"
+STATIC_SENSITIVITY = (
+    ROOT / "images/figures/generated/standard-oddball-c1-repeat-sensitivity.svg"
+)
+STATIC_SENSITIVITY_PROVENANCE = (
+    ROOT / "figure_sources/derived/standard-oddball-c1-repeat-sensitivity/provenance.json"
+)
 EVENT_LABELS = {
     "orientation_45": "45° orientation", "orientation_90": "90° orientation",
     "halt": "Motion halt", "omission": "Omission",
@@ -47,6 +53,13 @@ SCREENS = ("q1", "q2", "joint")
 def records(frame: pd.DataFrame) -> list[dict]:
     """Serialize finite values without JavaScript-invalid NaN literals."""
     return json.loads(frame.to_json(orient="records", double_precision=15))
+
+
+def _provenance_path(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.resolve().as_posix()
 
 
 def population_view(
@@ -72,27 +85,49 @@ def population_view(
 def cohort_rows(
     prepared: dict, event: str, *, grouping: str = "brain_area",
 ) -> list[dict]:
-    """Normalize existing pooled counts, mouse points and bootstrap endpoints."""
+    """Normalize pooled and repeat-specific counts, points and bootstrap endpoints."""
     result = []
     for row in prepared["areas"].to_dict("records"):
         group = row[grouping]
         mice = prepared["mice"].loc[prepared["mice"][grouping].eq(group)]
+        repeats = {}
+        for repeat in ("pooled", "pre", "post"):
+            suffix = "" if repeat == "pooled" else f"_{repeat}"
+            denominator = f"n_joint{suffix}_testable"
+            counts = {
+                screen: int(row[f"n_{screen}_responsive{suffix}"]) for screen in SCREENS
+            }
+            intervals = {}
+            for screen in SCREENS:
+                status = row.get(f"bootstrap_status{suffix}")
+                low = row.get(f"fraction_{screen}_responsive{suffix}_ci95_low")
+                high = row.get(f"fraction_{screen}_responsive{suffix}_ci95_high")
+                intervals[screen] = (
+                    [float(low), float(high)]
+                    if status == "estimated" and pd.notna(low) and pd.notna(high) else None
+                )
+            points = []
+            for m in mice.to_dict("records"):
+                n = int(m[denominator])
+                if n == 0:
+                    continue
+                points.append({
+                    "mouse": str(m["subject_id"]), "n": n,
+                    "counts": {
+                        screen: int(m[f"n_{screen}_responsive{suffix}"])
+                        for screen in SCREENS
+                    },
+                })
+            repeats[repeat] = {
+                "n": int(row[denominator]),
+                "n_eligible": int(row["n_eligible"]),
+                "n_sessions": int(row["n_sessions"]),
+                "n_mice": int(row["n_mice"]),
+                "counts": counts, "intervals": intervals, "points": points,
+            }
+        pooled = repeats["pooled"]
         result.append({
-            "event": event, "group": group, "n": int(row["n_joint_testable"]),
-            "n_eligible": int(row["n_eligible"]),
-            "n_sessions": int(row["n_sessions"]), "n_mice": int(row["n_mice"]),
-            "counts": {s: int(row[f"n_{s}_responsive"]) for s in SCREENS},
-            "intervals": {
-                s: [
-                    float(row[f"fraction_{s}_responsive_ci95_{b}"]) for b in ("low", "high")
-                ] if row.get("bootstrap_status") == "estimated" else None
-                for s in SCREENS
-            },
-            "points": [
-                {"mouse": str(m["subject_id"]), "n": int(m["n_joint_testable"]),
-                 "counts": {s: int(m[f"n_{s}_responsive"]) for s in SCREENS}}
-                for m in mice.to_dict("records") if m["n_joint_testable"] > 0
-            ],
+            "event": event, "group": group, **pooled, "repeats": repeats,
         })
     return result
 
@@ -183,26 +218,16 @@ def load_explorer_data() -> dict:
         for row in records(slap_rows.reset_index())
     ]
     slap_cohort = []
-    for row in slap_prepared["pooled"].to_dict("records"):
-        if row["group"] == "Pooled":
-            continue
-        points = slap_prepared["sessions"].loc[
-            slap_prepared["sessions"].event_id.eq(row["event_id"])
-            & slap_prepared["sessions"].group.eq(row["group"])
-            & slap_prepared["sessions"].contributing
+    for event in EVENTS:
+        areas = slap_prepared["pooled"].loc[
+            slap_prepared["pooled"].event_id.eq(event)
+            & slap_prepared["pooled"].group.ne("Pooled")
         ]
-        slap_cohort.append({
-            "event": row["event_id"], "group": row["group"], "n": int(row["n_joint_testable"]),
-            "n_eligible": int(row["n_eligible"]), "n_sessions": int(row["n_sessions"]),
-            "n_mice": int(row["n_mice"]),
-            "counts": {s: int(row[f"n_{s}_responsive"]) for s in SCREENS},
-            "intervals": {s: None for s in SCREENS},
-            "points": [
-                {"mouse": str(m["subject_id"]), "n": int(m["n_joint_testable"]),
-                 "counts": {s: int(m[f"n_{s}_responsive"]) for s in SCREENS}}
-                for m in points.to_dict("records")
-            ],
-        })
+        mice = slap_prepared["sessions"].loc[
+            slap_prepared["sessions"].event_id.eq(event)
+            & slap_prepared["sessions"].group.ne("Pooled")
+        ]
+        slap_cohort.extend(cohort_rows({"areas": areas, "mice": mice}, event, grouping="group"))
     slap2 = {
         "id": "slap2", "label": "SLAP2 glutamate", "unit": "a.u.", "kind": "sources",
         "session": slap_payload["session_id"], "mouse": "828408",
@@ -275,8 +300,8 @@ def load_explorer_data() -> dict:
 
 def build_standard_oddball_explorer(output: Path = OUTPUT) -> Path:
     """Generate a self-contained explorer with the complete static print counterpart."""
-    if not STATIC.is_file():
-        raise ValueError("Build the three-modality static counterpart before the explorer.")
+    if not STATIC.is_file() or not STATIC_SENSITIVITY.is_file():
+        raise ValueError("Build both static counterparts before the explorer.")
     payload = load_explorer_data()
     template = (JAVASCRIPT_DIR / "standard-oddball-explorer.html").read_text(encoding="utf-8")
     replacements = {
@@ -289,13 +314,19 @@ def build_standard_oddball_explorer(output: Path = OUTPUT) -> Path:
         "__STATIC__": "data:image/svg+xml;base64," + base64.b64encode(
             STATIC.read_bytes()
         ).decode("ascii"),
+        "__STATIC_SENSITIVITY__": "data:image/svg+xml;base64," + base64.b64encode(
+            STATIC_SENSITIVITY.read_bytes()
+        ).decode("ascii"),
     }
     for token, value in replacements.items():
         template = template.replace(token, value)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(template, encoding="utf-8", newline="\n")
     sources = [
-        Path(__file__), Path(__file__).with_name("standard_oddball_cohort_figure.py"), STATIC,
+        Path(__file__), Path(__file__).with_name("standard_oddball_cohort_figure.py"),
+        STATIC, STATIC_SENSITIVITY,
+        STATIC_SENSITIVITY_PROVENANCE,
+        Path(__file__).with_name("standard_oddball_c1_sensitivity.py"),
         *[JAVASCRIPT_DIR / f"standard-oddball-explorer.{ext}" for ext in ("html", "css", "js")],
         ROOT / "figure_sources/data/neuropixels-standard-oddball-90-population.provenance.json",
         ROOT / "figure_sources/data/neuropixels-standard-oddball-90-rastermap.json",
@@ -315,7 +346,7 @@ def build_standard_oddball_explorer(output: Path = OUTPUT) -> Path:
     ]
     output.with_suffix(".provenance.json").write_text(json.dumps({
         "version": 2, "population_events": list(EVENTS), "statistics_events": list(EVENTS),
-        "sources": [{"path": p.relative_to(ROOT).as_posix(), "sha256": sha256(p)} for p in sources],
+        "sources": [{"path": _provenance_path(p), "sha256": sha256(p)} for p in sources],
         "output_sha256": sha256(output),
     }, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
     return output

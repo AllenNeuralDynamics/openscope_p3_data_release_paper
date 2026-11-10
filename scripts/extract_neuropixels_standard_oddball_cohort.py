@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 from openscope_p3_publication.mismatch_responsiveness import benjamini_hochberg
+from openscope_p3_publication.neural_response_figure import DATA_PATH, PROVENANCE_PATH
 from openscope_p3_publication.standard_oddball_cohort import (
     COHORT_DIR,
     CONFIG,
@@ -38,16 +39,23 @@ from openscope_p3_publication.standard_oddball_cohort import (
     summarize_units,
     visual_rows,
 )
+from openscope_p3_publication.standard_oddball_cohort_figure import PANEL_COLUMNS
+from openscope_p3_publication.standard_oddball_neuropixels import load_diagnostic
+from openscope_p3_publication.standard_oddball_publication_data import STATISTICS
 from openscope_p3_publication.units import session_unit_table
 
 API = "https://api.dandiarchive.org/api/assets"
+SCRIPT_PATH = Path(__file__).resolve()
 SOURCES = [
-    Path(__file__).resolve(), LEDGER, MANIFEST, METADATA,
+    SCRIPT_PATH, LEDGER, MANIFEST, METADATA, DATA_PATH, PROVENANCE_PATH,
     *[
         ROOT / f"src/openscope_p3_publication/{name}.py"
         for name in (
             "standard_oddball_cohort", "mismatch_responsiveness", "neural_responses",
             "pupil_responses", "mismatch_adjacency", "units",
+            "standard_oddball_cohort_figure", "standard_oddball_neuropixels",
+            "neural_response_figure",
+            "standard_oddball_publication_data",
         )
     ],
 ]
@@ -72,6 +80,83 @@ def csv_bytes(frame: pd.DataFrame) -> bytes:
     return gzip.compress(
         frame.to_csv(index=False, float_format="%.17g", lineterminator="\n").encode(),
         compresslevel=9, mtime=0,
+    )
+
+
+def publication_example_statistics(frame: pd.DataFrame) -> pd.DataFrame:
+    """Keep the original four-event statistics for the displayed diagnostic units."""
+    diagnostic = load_diagnostic()
+    session_id = diagnostic.session["sessionId"]
+    unit_ids = [str(unit["id"]) for unit in diagnostic.units]
+    rows = frame.loc[
+        frame.session_id.eq(session_id) & frame.nwb_unit_id.astype(str).isin(unit_ids),
+        ["session_id", "nwb_unit_id", "event_id", "eligible", *STATISTICS],
+    ].copy()
+    if (
+        len(rows) != len(unit_ids) * len(EVENTS)
+        or not rows.eligible.all()
+        or rows.duplicated(["nwb_unit_id", "event_id"]).any()
+    ):
+        raise ValueError("Publication example statistics do not cover the diagnostic units.")
+    return rows.sort_values(["nwb_unit_id", "event_id"], kind="stable").reset_index(drop=True)
+
+
+def compact_existing_output(output_dir: Path) -> None:
+    """Compact a verified full cohort export without repeating its remote extraction."""
+    provenance_path = output_dir / "provenance.json"
+    provenance = json.loads(provenance_path.read_text())
+    for entry in provenance["outputs"]:
+        path = output_dir / entry["name"]
+        if not path.is_file() or sha256(path) != entry["sha256"]:
+            raise ValueError(f"Existing cohort output checksum mismatch: {entry['name']}")
+
+    units_path = output_dir / "units.csv.gz"
+    frame = pd.read_csv(
+        units_path, float_precision="round_trip", dtype={"subject_id": str, "unit_name": str},
+    )
+    if (
+        len(frame) != provenance["unit_event_rows"]
+        or frame.duplicated(KEYS).any()
+        or set(frame.event_id) != set(EVENTS)
+        or not frame.groupby(["asset_id", "nwb_unit_id"]).size().eq(len(EVENTS)).all()
+    ):
+        raise ValueError("Existing cohort unit/event table failed validation.")
+    if not set(PANEL_COLUMNS).issubset(frame.columns):
+        raise ValueError("Existing cohort lacks Figure 9 panel columns.")
+
+    source_entries = {entry["path"]: entry for entry in provenance["sources"]}
+    sources = []
+    for path in SOURCES:
+        relative = str(path.relative_to(ROOT))
+        current_hash = sha256(path)
+        source = {"path": relative, "sha256": current_hash}
+        previous = source_entries.get(relative)
+        if previous and previous["sha256"] != current_hash:
+            if path != SCRIPT_PATH:
+                raise ValueError(f"Existing cohort source changed: {relative}")
+            source["frozen_source_sha256"] = previous["sha256"]
+        sources.append(source)
+
+    compact_units = frame.loc[:, PANEL_COLUMNS]
+    examples = publication_example_statistics(frame)
+    units_path.write_bytes(csv_bytes(compact_units))
+    (output_dir / "example-statistics.csv.gz").write_bytes(csv_bytes(examples))
+    provenance["sources"] = sources
+    provenance["unit_columns"] = list(PANEL_COLUMNS)
+    provenance["example_statistics_columns"] = list(examples.columns)
+    provenance["outputs"] = [
+        {"name": name, "sha256": sha256(output_dir / name)}
+        for name in sorted(
+            {entry["name"] for entry in provenance["outputs"]}
+            | {"example-statistics.csv.gz"}
+        )
+    ]
+    provenance_path.write_text(json.dumps(provenance, indent=2, sort_keys=True) + "\n")
+    print(
+        f"Compacted {len(frame):,} unit/event rows to "
+        f"{(units_path.stat().st_size / 1024**2):.2f} MiB; "
+        f"saved {len(examples):,} example-statistics rows.",
+        flush=True,
     )
 
 
@@ -167,7 +252,7 @@ def extract_session(record: dict, metadata: pd.DataFrame) -> tuple[pd.DataFrame,
             block["event_id"] = event
             blocks.append(block)
         result = pd.concat(blocks, ignore_index=True)
-        for prefix in ("q1", "q2"):
+        for prefix in ("q1", "q2", "q2_pre", "q2_post"):
             result[f"{prefix}_q_across_events"] = benjamini_hochberg(result[f"{prefix}_p"])
         result = classify_units(result)
         trial_inventory = {
@@ -255,17 +340,28 @@ def replay_reference(frame: pd.DataFrame) -> None:
 def main() -> None:
     """Preflight, replay, extract, and publish only a completely verified cohort."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--work-dir", type=Path, required=True)
+    parser.add_argument("--work-dir", type=Path)
     parser.add_argument("--output-dir", type=Path, default=COHORT_DIR)
     parser.add_argument("--max-workers", type=int, default=2)
     parser.add_argument(
         "--session-id", help="Extract/checkpoint only this session; do not publish.",
     )
     parser.add_argument("--preflight-only", action="store_true")
+    parser.add_argument("--compact-existing", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
     if args.max_workers < 1:
         parser.error("--max-workers must be positive.")
+    if args.compact_existing:
+        if not args.overwrite or args.session_id or args.preflight_only:
+            parser.error(
+                "--compact-existing requires --overwrite and cannot be combined with "
+                "extraction options."
+            )
+        compact_existing_output(args.output_dir)
+        return
+    if args.work_dir is None:
+        parser.error("--work-dir is required for extraction.")
     if args.output_dir.exists() and not args.overwrite and not args.session_id:
         parser.error("Output exists; inspect it before using --overwrite.")
     inventory = cohort_inventory()
@@ -325,7 +421,11 @@ def main() -> None:
     ):
         raise ValueError("Cohort keys or complete session/event coverage failed validation.")
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    outputs = {"units.csv.gz": csv_bytes(frame)}
+    example_statistics = publication_example_statistics(frame)
+    outputs = {
+        "units.csv.gz": csv_bytes(frame.loc[:, PANEL_COLUMNS]),
+        "example-statistics.csv.gz": csv_bytes(example_statistics),
+    }
     outputs["sessions.csv"] = inventory.to_csv(index=False, lineterminator="\n").encode()
     for level in ("session", "mouse", "area"):
         name = f"{level}-area.csv" if level != "area" else "area.csv"
@@ -340,6 +440,8 @@ def main() -> None:
         "session_count": len(selected), "mouse_count": frame.subject_id.nunique(),
         "unit_count": len(frame.drop_duplicates(["asset_id", "nwb_unit_id"])),
         "unit_event_rows": len(frame), "events": list(EVENTS), "sources": sources,
+        "unit_columns": list(PANEL_COLUMNS),
+        "example_statistics_columns": list(example_statistics.columns),
         "software": {
             name: version(name) for name in ("numpy", "scipy", "pandas", "h5py", "remfile")
         },

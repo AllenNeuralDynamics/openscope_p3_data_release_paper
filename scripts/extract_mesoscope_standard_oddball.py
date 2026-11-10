@@ -41,8 +41,9 @@ def main() -> None:
     """Read bounded native-signal ranges, then persist only compact derived data."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=SNAPSHOT)
+    parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
-    if args.output.exists():
+    if args.output.exists() and not args.overwrite:
         raise SystemExit(f"Refusing to overwrite an existing snapshot: {args.output}")
     try:
         import remfile
@@ -212,7 +213,7 @@ def main() -> None:
         ROOT / "src/openscope_p3_publication/mismatch_adjacency.py",
         QUALITY_PATH, ROOT / "figure_sources/data/experimental-sessions.csv",
     ]
-    args.output.mkdir(parents=True)
+    args.output.mkdir(parents=True, exist_ok=True)
     table_path = args.output / "statistics.csv.gz"
     stats.to_csv(
         table_path, index=False, float_format="%.17g",

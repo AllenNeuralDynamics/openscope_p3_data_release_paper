@@ -32,39 +32,54 @@ PANEL_COLUMNS = (
     "session_id", "subject_id", "asset_id", "nwb_unit_id", "event_id",
     "brain_division", "brain_area", "qc_pass", "decoder_label", "probe_excluded",
     "eligible", "joint_testable", "q1_responsive", "q2_responsive", "joint_responsive",
+    "joint_pre_testable", "q2_pre_responsive", "joint_pre_responsive",
+    "joint_post_testable", "q2_post_responsive", "joint_post_responsive",
 )
 
 
-def _response_fractions(frame: pd.DataFrame) -> None:
+def _response_fractions(frame: pd.DataFrame, repeat: str = "") -> None:
+    suffix = f"_{repeat}" if repeat else ""
+    denominator = f"n_joint{suffix}_testable"
     for screen, _ in SCREENS:
-        frame[f"fraction_{screen}_responsive"] = frame[f"n_{screen}_responsive"].div(
-            frame.n_joint_testable.replace(0, np.nan)
+        frame[f"fraction_{screen}_responsive{suffix}"] = frame[
+            f"n_{screen}_responsive{suffix}"
+        ].div(
+            frame[denominator].replace(0, np.nan)
         )
 
 
-def _mouse_bootstrap_intervals(areas: pd.DataFrame, mice: pd.DataFrame) -> None:
+def _mouse_bootstrap_intervals(
+    areas: pd.DataFrame, mice: pd.DataFrame, repeat: str = "",
+) -> None:
+    suffix = f"_{repeat}" if repeat else ""
+    denominator_name = f"n_joint{suffix}_testable"
     for screen, _ in SCREENS:
         for bound in ("low", "high"):
-            areas[f"fraction_{screen}_responsive_ci95_{bound}"] = np.nan
-    areas["bootstrap_status"] = "insufficient_mice"
+            areas[f"fraction_{screen}_responsive{suffix}_ci95_{bound}"] = np.nan
+    status_column = f"bootstrap_status{suffix}"
+    areas[status_column] = "insufficient_mice"
     for index, row in areas.iterrows():
-        group = mice.loc[mice.brain_area.eq(row.brain_area)].sort_values("subject_id")
+        group = mice.loc[
+            mice.brain_area.eq(row.brain_area) & mice[denominator_name].gt(0)
+        ].sort_values("subject_id")
         if len(group) < 2:
             continue
         seed_key = f"{BOOTSTRAP_SEED}:{row.brain_area}"
         seed = int.from_bytes(hashlib.sha256(seed_key.encode()).digest()[:8], "big")
         rng = np.random.default_rng(seed)
         draws = rng.integers(len(group), size=(BOOTSTRAP_REPLICATES, len(group)))
-        denominator = group.n_joint_testable.to_numpy(dtype=np.int64)
+        denominator = group[denominator_name].to_numpy(dtype=np.int64)
         numerator = group[
-            [f"n_{screen}_responsive" for screen, _ in SCREENS]
+            [f"n_{screen}_responsive{suffix}" for screen, _ in SCREENS]
         ].to_numpy(dtype=np.int64)
+        if denominator.sum() == 0:
+            continue
         estimates = numerator[draws].sum(axis=1) / denominator[draws].sum(axis=1)[:, None]
         bounds = np.quantile(estimates, [0.025, 0.975], axis=0, method="linear")
         for j, (screen, _) in enumerate(SCREENS):
-            areas.loc[index, f"fraction_{screen}_responsive_ci95_low"] = bounds[0, j]
-            areas.loc[index, f"fraction_{screen}_responsive_ci95_high"] = bounds[1, j]
-        areas.loc[index, "bootstrap_status"] = "estimated"
+            areas.loc[index, f"fraction_{screen}_responsive{suffix}_ci95_low"] = bounds[0, j]
+            areas.loc[index, f"fraction_{screen}_responsive{suffix}_ci95_high"] = bounds[1, j]
+        areas.loc[index, status_column] = "estimated"
 
 
 def prepare_cohort_panel(
@@ -98,6 +113,16 @@ def prepare_cohort_panel(
         raise ValueError("Joint response flags do not equal the Q1/Q2 intersection.")
     for screen, _ in SCREENS:
         work[f"responsive_{screen}"] = work.testable & work[f"{screen}_responsive"]
+    for repeat in ("pre", "post"):
+        work[f"testable_{repeat}"] = work.eligible & work[f"joint_{repeat}_testable"]
+        for screen, _ in SCREENS:
+            response_flag = (
+                f"{screen}_responsive" if screen == "q1"
+                else f"{screen}_{repeat}_responsive"
+            )
+            work[f"responsive_{screen}_{repeat}"] = (
+                work[f"testable_{repeat}"] & work[response_flag]
+            )
     session_keys = ["session_id", "subject_id", "region"]
     sessions = work.groupby(session_keys, observed=True, sort=True).agg(
         n_recorded=("qc_sua", "size"), n_qc_sua=("qc_sua", "sum"),
@@ -105,6 +130,16 @@ def prepare_cohort_panel(
         **{
             f"n_{screen}_responsive": (f"responsive_{screen}", "sum")
             for screen, _ in SCREENS
+        },
+        **{
+            f"n_{screen}_responsive_{repeat}": (
+                f"responsive_{screen}_{repeat}", "sum",
+            )
+            for repeat in ("pre", "post") for screen, _ in SCREENS
+        },
+        **{
+            f"n_joint_{repeat}_testable": (f"testable_{repeat}", "sum")
+            for repeat in ("pre", "post")
         },
     ).reset_index()
     sessions["included"] = sessions.n_qc_sua.ge(MINIMUM_QC_SUA)
@@ -120,6 +155,14 @@ def prepare_cohort_panel(
         counts = [
             "n_recorded", "n_qc_sua", "n_eligible", "n_joint_testable",
             *[f"n_{screen}_responsive" for screen, _ in SCREENS],
+            *[
+                name
+                for repeat in ("pre", "post")
+                for name in (
+                    f"n_joint_{repeat}_testable",
+                    *[f"n_{screen}_responsive_{repeat}" for screen, _ in SCREENS],
+                )
+            ],
         ]
         result = included.groupby(keys, observed=True, sort=True).agg(
             **{name: (name, "sum") for name in counts},
@@ -140,6 +183,11 @@ def prepare_cohort_panel(
     if areas.empty:
         raise ValueError("No testable units remain after the panel C QC-SUA cutoff.")
     _mouse_bootstrap_intervals(areas, mice)
+    for repeat in ("pre", "post"):
+        _response_fractions(sessions, repeat)
+        _response_fractions(areas, repeat)
+        _response_fractions(mice, repeat)
+        _mouse_bootstrap_intervals(areas, mice, repeat)
     _response_fractions(sessions)
     sessions["minimum_qc_sua"] = MINIMUM_QC_SUA
     sessions = sessions.rename(columns={"region": "brain_area"})

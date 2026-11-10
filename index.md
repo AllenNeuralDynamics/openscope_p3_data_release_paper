@@ -1323,6 +1323,8 @@ courses; cohorts quantify two complementary comparisons. Q1 compares the deviant
 with the immediately preceding expected standard using a paired, two-sided
 Wilcoxon test. Q2 compares the same physical event in context and matched control
 blocks using a two-sided Mann–Whitney test on baseline-subtracted responses.
+The primary comparison pools both C1 control repeats, which bracket the context
+block; separate pre-context and post-context C1 comparisons are sensitivity analyses.
 The exploratory screen requires raw *p* < 0.05 and |MI| > 0.1; Both is the
 intersection, allowing either sign. Q1 MI averages finite per-trial raw response
 ratios; Q2 MI is the ratio of condition-mean baseline-subtracted responses.
@@ -1339,11 +1341,15 @@ legacy QC-labelled sessions lack a verified standard-block mapping and are
 not treated as nonresponsive.
 
 The interactive view selects modality, mismatch event, available area or DMD,
-and population responsiveness. Four-event cohort statistics are available for
+population responsiveness, and the pooled, pre-context, or post-context C1
+control repeat for cohort Q2. Pooled C1 is the default and primary analysis;
+repeat-specific jointly testable denominators are recalculated for each sensitivity
+comparison. Four-event cohort statistics are available for
 45°, 90°, motion halt and omission, with committed example-session time-course
 populations for every event in all three modalities. Population filters retain frozen ordering
-and do not recompute tests or alter cohort denominators. Interactive activity
-aligns directly to native stimulus-table start times over −1.5 to +1.5 s;
+and do not recompute tests or alter cohort denominators. The static view includes
+a separate 90° summary of pooled and repeat-specific Q2 results below.
+Interactive activity aligns directly to native stimulus-table start times over −1.5 to +1.5 s;
 the static figure retains its original window. The original
 four-context Neuropixels analysis remains available in
 [Supplementary Figure 6](#fig-neuropixels-event-responses).
@@ -1388,6 +1394,10 @@ mouse points and no bootstrap intervals; circles/squares identify mice
 828408/829704. Optical observations are not necessarily independent neurons.
 All SLAP2 selections use frozen glutamate High/Intermediate-SNR labels and
 each DMD's own fully recorded trials, without bridging acquisition gaps.
+The static view also includes a 90° Q2 sensitivity summary comparing pooled
+C1 controls with each flanking repeat; labels report responsive/testable counts.
+Neuropixels and mesoscope intervals are mouse-cluster bootstrap intervals;
+SLAP2 is shown without intervals. The pooled C1 comparison remains primary.
 
 Source-verified snapshots and extraction provenance are retained in the
 [publication repository](https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper),
@@ -1397,6 +1407,21 @@ with pinned assets from Dandisets
 [001424](https://dandiarchive.org/dandiset/001424).
 These exploratory illustrations do not establish predictive computation
 or cross-modality differences.
+:::
+
+:::{image} ./images/figures/generated/standard-oddball-c1-repeat-sensitivity.svg
+:name: fig-standard-oddball-c1-sensitivity
+:alt: 90-degree Q2-responsive fractions using pooled, pre-context, and post-context C1 controls across Neuropixels, mesoscope, and SLAP2 groups. Labels give responsive/testable counts; mouse-cluster bootstrap intervals are shown for Neuropixels and mesoscope, and SLAP2 has no interval.
+:width: 100%
+:::
+
+**Sensitivity of the 90° Q2 comparison to the C1 repeat.** Each bar shows
+the number of eligible jointly Q1/Q2-testable observations passing the
+baseline-subtracted Q2 screen divided by that repeat's testable denominator.
+Pooled C1 remains the primary comparison; pre-context and post-context C1 are
+sensitivity analyses. Error bars are 95% mouse-cluster bootstrap intervals for
+Neuropixels and mesoscope; SLAP2 includes two mice and is shown without
+intervals. A source may contribute to more than one group.
 :::
 
 ## Behavioral data analysis across modalities
@@ -1743,6 +1768,68 @@ Data come from the public draft of
 pinned asset IDs and checksums retained in provenance. Context-specific response
 definitions, exclusions, and multiple-comparison qualifications are given in the
 accompanying text.
+:::
+
+# Supplementary Figure 7: Pre- and post-context C1 in the ephys recordings
+
+[Supplementary Figure 7](#fig-ephys-c1-pseudocontext) treats the post-context
+C1 repeat as a pseudo-context and the pre-context C1 repeat as its control.
+Unlike the Figure 9 sensitivity comparisons, this analysis does not use responses
+from the intervening standard-oddball context. It measures differences between
+the flanking control repeats, including stimulus-history and recording-time
+effects; it is not an oddball-selectivity test or a pure estimate of temporal
+drift. The original Figure 9 comparisons are unchanged.
+
+:::{figure} ./images/figures/generated/ephys-c1-pseudocontext.svg
+:label: fig-ephys-c1-pseudocontext
+:enumerated: false
+:width: 100%
+:alt: Three population heatmaps show pre-context C1, post-context C1, and post-minus-pre baseline-subtracted firing rates for the same 203 units in one fixed Rastermap order. Panel D, centered beneath A and B, shows pre/post mean firing traces with across-neuron SEM for the same 51 positive actual-context Q1 responders. Panel E, centered beneath B and C, shows regional pseudo-Q1, pseudo-Q2, and Both responsive percentages across 13 ephys sessions with mouse-bootstrap intervals.
+
+**Supplementary Figure 7.** Ephys C1 repeat negative control for 90° presentations.
+**A–C,** Trial-mean spike-density functions (SDFs) for pre-context C1, post-context
+C1, and post minus pre, respectively, in the same 203 eligible visual
+cortex/thalamus single units from mouse 830794's January 27, 2026 session used in
+Figure 9 D. Rows retain the original context-only Rastermap order across all
+three maps; no responsiveness filter or separate condition sorting is applied.
+Each repeat contributes 34 presentations, including zero-spike trials.
+SDFs use 5 ms bins and a causal 25 ms exponential kernel over −0.75 to +0.75 s.
+Each condition subtracts its own per-unit preceding-grey display baseline,
+pooling complete half-open 20 ms bins. Panel C is the difference of these
+separately baseline-subtracted means, not paired trials.
+All three maps share symmetric Hz limits set to the ceiling of the pooled
+absolute 99th percentile; values beyond those limits saturate. Dashed lines mark
+onset and black bars mark the median 90° presentation duration.
+**D,** Pre-C1 (dashed gray) and post-C1 (solid purple) baseline-subtracted
+mean SDFs (spikes/s) for the same 51 visual units selected by positive Q1 responsiveness in
+the actual standard-oddball context (finite raw *p* < 0.05 and signed MI > 0.1).
+There is no Q2 restriction or selection on post-C1 pseudo-Q1; this differs from
+Figure 9's joint-positive mean population. Each curve equally weights the same
+cells and retains its own per-unit display baseline. Shading is the across-neuron
+sample SD (ddof=1) divided by √51, not trial or across-mouse uncertainty.
+**E,** Regional pseudo-Q1, pseudo-Q2, and Both responsive fractions across the
+13 selected ephys sessions, using Figure 9 G's anatomical groups, QC, >1 Hz
+eligibility, probe exclusions, and minimum 20 QC-passing single units per
+session/region. All three screens share each region's jointly testable eligible
+denominator; the included groups contain 6,670 eligible and 6,642 jointly
+testable units. Pseudo-Q1 compares each post-C1 90° response with the immediately
+preceding within-block stimulus response (paired Wilcoxon, raw-rate trial-wise
+MI). These predecessors have varying orientations/types, including halts and
+omissions, and are not assumed to be expected standards. Pseudo-Q2 compares
+post-C1 with pre-C1 after each trial's preceding-grey subtraction (two-sided
+Mann–Whitney *U*, condition-mean MI). Native statistical windows are unchanged
+and distinct from the display-bin baseline calculation. Missing or cross-block
+post-C1 predecessors are excluded; none are excluded in this cohort. Both
+screens require uncorrected *p* < 0.05 and |MI| > 0.1, either sign; Both is their
+intersection. Counts are 619/6,642 pseudo-Q1 (9.3%), 693/6,642 pseudo-Q2 (10.4%),
+and 140/6,642 Both (2.1%). Intervals are 95% percentile mouse-cluster bootstrap
+intervals from 10,000 resamples within each region, retaining session inclusion
+and resampling the same mice for all three screens. This is an exploratory
+repeat comparison, not evidence that these units encode prediction errors.
+Source: pinned public [Dandiset 001637](https://dandiarchive.org/dandiset/001637/draft/files)
+assets; exact unit/trial identities, source checksums, and extraction provenance
+are committed with the [statistical snapshot](./figure_sources/data/ephys-c1-pseudocontext/provenance.json)
+and [display snapshot](./figure_sources/data/ephys-c1-population/provenance.json).
 :::
 
 # Supplementary Text 1: Published oddball paradigms and sampling ranges

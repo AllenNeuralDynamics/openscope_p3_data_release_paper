@@ -79,20 +79,29 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=DIRECTORY)
     parser.add_argument("--refresh-renderer-provenance", action="store_true")
+    parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
     if args.refresh_renderer_provenance:
         refresh_renderer_provenance(args.output)
         return
-    if args.output.exists():
+    if args.output.exists() and not args.overwrite:
         raise FileExistsError(f"Refusing to overwrite publication snapshot: {args.output}")
     _, _, np_provenance = load_cohort()
     np_units = pd.read_csv(
         COHORT_DIR / "units.csv.gz", float_precision="round_trip", dtype={"subject_id": str},
     )
+    np_examples = pd.read_csv(
+        COHORT_DIR / "example-statistics.csv.gz", float_precision="round_trip",
+        dtype={"session_id": str, "nwb_unit_id": str},
+    )
     meso_units, inventory, meso_provenance = load_mesoscope_analysis()
     meso_prepared = prepare_mesoscope(meso_units)
     diagnostic = load_diagnostic()
     meso_payload, _, _ = load_mesoscope()
+    meso_examples = pd.read_csv(
+        MESOSCOPE_COHORT_DIR / "example-statistics.csv.gz",
+        float_precision="round_trip", dtype={"session_id": str, "roi_key": str},
+    )
     data = {
         "version": 1,
         "neuropixels": {
@@ -122,11 +131,12 @@ def main() -> None:
         },
         "example_statistics": {
             "neuropixels": source_statistics(
-                np_units, diagnostic.session["sessionId"], [str(u["id"]) for u in diagnostic.units],
+                np_examples, diagnostic.session["sessionId"],
+                [str(u["id"]) for u in diagnostic.units],
                 "nwb_unit_id",
             ),
             "mesoscope": source_statistics(
-                meso_units, meso_payload["session_id"], meso_payload["roi_keys"], "roi_key",
+                meso_examples, meso_payload["session_id"], meso_payload["roi_keys"], "roi_key",
             ),
         },
     }
@@ -137,6 +147,17 @@ def main() -> None:
             "mesoscope_standard_oddball_cohort_figure",
         )],
     ]
+    renderer_sources = {
+        "scripts/freeze_standard_oddball_publication.py",
+        "src/openscope_p3_publication/standard_oddball_cohort_figure.py",
+        "src/openscope_p3_publication/mesoscope_standard_oddball_cohort_figure.py",
+    }
+    input_records = []
+    for path in inputs:
+        record = {"path": path.relative_to(ROOT).as_posix(), "sha256": sha256(path)}
+        if record["path"] in renderer_sources:
+            record["frozen_source_sha256"] = record["sha256"]
+        input_records.append(record)
     upstream = [
         {"path": path.relative_to(ROOT).as_posix(), "sha256": sha256(path)}
         for directory in (COHORT_DIR, MESOSCOPE_COHORT_DIR)
@@ -152,9 +173,9 @@ def main() -> None:
             {k: v for k, v in session.items() if k != "trial_inventory"}
             for session in np_provenance["sessions"]
         ],
-        "inputs": [{"path": p.relative_to(ROOT).as_posix(), "sha256": sha256(p)} for p in inputs],
+        "inputs": input_records,
     }
-    args.output.mkdir(parents=True)
+    args.output.mkdir(parents=True, exist_ok=True)
     path = args.output / "cohorts.json"
     path.write_text(
         json.dumps(data, allow_nan=False, separators=(",", ":")) + "\n",

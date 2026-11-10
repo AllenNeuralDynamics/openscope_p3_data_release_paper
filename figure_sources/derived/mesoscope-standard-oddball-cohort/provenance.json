@@ -17,15 +17,15 @@
   "outputs": [
     {
       "path": "session-area-statistics.csv",
-      "sha256": "7b7e4c8e3091ff90451554a5232195416fc71e87e0bafac1dbec32843e26898c"
+      "sha256": "97180e25e33af3bf031422e72f28209c082bba31575b386bf582e3cbd3c4735c"
     },
     {
       "path": "mouse-area-statistics.csv",
-      "sha256": "e8cfd5a7beb5804ae05f88f5047cc9031e4c134877248009cd9f831b985a40e0"
+      "sha256": "cb209041f38f5db707e047c554428cf4d05ea080688ef255ffddabed073f69bb"
     },
     {
       "path": "area-statistics.csv",
-      "sha256": "7efbd702858e6046f4cdfb5a15b8916dc5da05d30d544b69304f43314b44fbfb"
+      "sha256": "767bd946b9f725d252cd9b9b07e5f6d43a06439be4c397ce951a771872f932aa"
     }
   ],
   "response_rule": "Raw p<0.05 and abs(MI)>0.1, either sign; Both is the intersection.",
@@ -138,19 +138,19 @@
   "sources": [
     {
       "path": "src/openscope_p3_publication/mesoscope_standard_oddball_cohort_figure.py",
-      "sha256": "227373b0eea2287a33b1cc70dd363d5d0d15b3cf95d9c90bb9121f3a965cfc95"
+      "sha256": "a11d1b9cd3c70477df099d3b0943c7fa12bf315ed658bd0b4369111a9e393503"
     },
     {
       "path": "src/openscope_p3_publication/standard_oddball_cohort_figure.py",
-      "sha256": "8da6ce3fc3b610b44509e227faf0a9f5a069f9ec249cae1d1fc7f0a218e7b843"
+      "sha256": "2de1624955568521b5b5b0fcf63e924d0c3d0308d9e2794ab0f69f47482b61ba"
     },
     {
       "path": "figure_sources/data/standard-oddball-publication/provenance.json",
-      "sha256": "1f334a7cf9b58773bd40756587df2e358c69aae1f1fef0b79bcb51a6abf39b0a"
+      "sha256": "a8bd3475acdb9324a19fd3d40458ec73caf681197ba76f9ebfe1b79274e7d6cb"
     },
     {
       "path": "figure_sources/data/standard-oddball-publication/cohorts.json",
-      "sha256": "69f0e1395ce8e5dcbbb84b1fb3ef7fb271a684842de9c37267290f9c021bcdad"
+      "sha256": "ae5ca8bdbcfe1a6a1dcb0e9b15631b75922a6fad816ae822cba7e19912f93802"
     }
   ],
   "version": 1

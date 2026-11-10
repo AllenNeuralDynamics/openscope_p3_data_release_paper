@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from .mesoscope_standard_oddball import ROOT, sha256, signal_statistics
-from .slap2_standard_oddball import ASSETS, QUALITY, load_snapshot
+from .slap2_standard_oddball import ASSETS, QUALITY, SNAPSHOT
 
 DATA = ROOT / "figure_sources/data/slap2-standard-oddball-cohort"
 DERIVED = ROOT / "figure_sources/derived/slap2-standard-oddball-cohort"
@@ -100,7 +100,13 @@ def quality_rows(session: str, dmd: int, ids: np.ndarray) -> pd.DataFrame:
 
 def november_reference() -> tuple[pd.DataFrame, dict]:
     """Replay and reuse the approved November native results without a remote reanalysis."""
-    payload, table, arrays = load_snapshot()
+    payload = json.loads((SNAPSHOT / "provenance.json").read_text())
+    for record in payload["outputs"]:
+        if sha256(SNAPSHOT / record["path"]) != record["sha256"]:
+            raise ValueError(f"November pooled reference changed: {record['path']}")
+    table = pd.read_csv(SNAPSHOT / "statistics.csv.gz", float_precision="round_trip")
+    with np.load(SNAPSHOT / "responses.npz", allow_pickle=False) as archive:
+        arrays = {key: archive[key] for key in archive.files}
     selected = table.loc[table.signal.eq("glutamate")].copy()
     for dmd in (1, 2):
         for event in EVENTS:
@@ -131,6 +137,16 @@ def summaries(units: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         or not units.joint_responsive.eq(units.q1_responsive & units.q2_responsive).all()
     ):
         raise ValueError("Invalid or duplicate glutamate cohort statistics/identities.")
+    for repeat in ("pre", "post"):
+        if (
+            not units[f"joint_{repeat}_testable"].eq(
+                units.q1_testable & units[f"q2_{repeat}_testable"]
+            ).all()
+            or not units[f"joint_{repeat}_responsive"].eq(
+                units.q1_responsive & units[f"q2_{repeat}_responsive"]
+            ).all()
+        ):
+            raise ValueError(f"Inconsistent {repeat}-C1 testability/response flags.")
     frames = []
     for group in GROUPS:
         frame = units.copy() if group == "Pooled" else units.loc[
@@ -140,12 +156,34 @@ def summaries(units: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         for screen in ("q1", "q2", "joint"):
             frame[f"testable_{screen}"] = frame.eligible & frame[f"{screen}_testable"]
             frame[f"responsive_{screen}"] = frame.testable & frame[f"{screen}_responsive"]
+        for repeat in ("pre", "post"):
+            frame[f"testable_{repeat}"] = (
+                frame.eligible & frame[f"joint_{repeat}_testable"]
+            )
+            for screen in ("q1", "q2", "joint"):
+                response_flag = (
+                    "q1_responsive" if screen == "q1"
+                    else f"{screen}_{repeat}_responsive"
+                )
+                frame[f"responsive_{screen}_{repeat}"] = (
+                    frame[f"testable_{repeat}"] & frame[response_flag]
+                )
         by = ["session_id", "subject_id", "asset_id", "event_id"]
         sessions = frame.groupby(by, sort=True).agg(
             n_original=("eligible", "size"), n_eligible=("eligible", "sum"),
             n_joint_testable=("testable", "sum"),
             **{f"n_{s}_testable": (f"testable_{s}", "sum") for s in ("q1", "q2")},
             **{f"n_{s}_responsive": (f"responsive_{s}", "sum") for s in ("q1", "q2", "joint")},
+            **{
+                f"n_{screen}_responsive_{repeat}": (
+                    f"responsive_{screen}_{repeat}", "sum",
+                )
+                for repeat in ("pre", "post") for screen in ("q1", "q2", "joint")
+            },
+            **{
+                f"n_joint_{repeat}_testable": (f"testable_{repeat}", "sum")
+                for repeat in ("pre", "post")
+            },
         ).reset_index()
         sessions["group"] = group
         sessions["included"] = sessions.n_eligible.ge(MINIMUM_ELIGIBLE)
@@ -165,6 +203,14 @@ def summaries(units: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
                 frame[f"n_{screen}_responsive"], frame.n_joint_testable,
                 out=np.full(len(frame), np.nan), where=frame.n_joint_testable.gt(0),
             )
+        for repeat in ("pre", "post"):
+            for screen in ("q1", "q2", "joint"):
+                frame[f"{screen}_{repeat}_fraction"] = np.divide(
+                    frame[f"n_{screen}_responsive_{repeat}"],
+                    frame[f"n_joint_{repeat}_testable"],
+                    out=np.full(len(frame), np.nan),
+                    where=frame[f"n_joint_{repeat}_testable"].gt(0),
+                )
         frame["minimum_eligible_sources"] = MINIMUM_ELIGIBLE
     return sessions, pooled
 

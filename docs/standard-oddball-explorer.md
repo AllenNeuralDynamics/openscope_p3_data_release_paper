@@ -81,6 +81,192 @@ uv run python scripts/freeze_standard_oddball_publication.py --output /path/to/n
 
 ## Available controls and data
 
+### Separate ephys C1 pseudo-context analysis
+
+The [focused extractor](../scripts/extract_ephys_c1_pseudocontext.py) tests a
+different comparison from the explorer's actual-context sensitivity analyses:
+post-context C1 is the pseudo-context and pre-context C1 is its control.
+This initial analysis covers matched 90-degree single presentations in the
+13 selected ephys sessions, without changing Figure 9 or its frozen statistics.
+
+- Pseudo-Q1 compares each post-C1 90-degree response with the immediately preceding
+  within-block stimulus response, using the existing paired Wilcoxon and MI rules.
+  The predecessor can have any recorded C1 orientation/type, including another
+  90-degree single, a halt, or an omission. These are not assumed to be expected
+  standards. The provenance records each predecessor and excluded trial.
+- Pseudo-Q2 compares post-C1 versus pre-C1 90-degree responses after subtracting
+  each presentation's preceding-grey baseline, using the existing Mann-Whitney
+  and condition-mean MI rules. Native spike-count windows are unchanged.
+- Raw p < 0.05 and absolute MI > 0.1 define responsiveness; Both is their
+  intersection. Regional Q1/Q2/Both counts share the jointly testable eligible
+  denominator. Separate Q1 and Q2 testability counts are also saved.
+- Original unit eligibility, probe exclusions, anatomical groups, and the
+  minimum 20 QC-passing SUA per session/region remain unchanged. Missing or
+  cross-block post-C1 predecessors are excluded; the matched pre-C1 pool remains
+  intact. No additional predecessor-orientation restriction is applied.
+
+This comparison measures control stimulus-history and pre/post differences;
+it is neither an oddball-selectivity test nor a pure estimate of temporal drift.
+
+Run the example first with a fresh output directory:
+
+```bash
+uv run --extra dev --with remfile python scripts/extract_ephys_c1_pseudocontext.py \
+  --work-dir /tmp/ephys-c1-pseudo-checkpoints \
+  --output-dir /tmp/ephys-c1-pseudo-example \
+  --session-id ecephys_830794_2026-01-27_11-25-31
+```
+
+Omit `--session-id` and choose a fresh `--output-dir` to run the full cohort;
+completed checkpoints are reused only when source signatures and checksums match.
+The [result snapshot](../figure_sources/data/ephys-c1-pseudocontext/) contains
+per-unit statistics, session/region counts, and pinned-source/trial provenance.
+Every session's native spike digest is checked against the original extraction.
+The loader `load_pseudo` in
+[ephys_c1_pseudocontext.py](../src/openscope_p3_publication/ephys_c1_pseudocontext.py)
+verifies checksums and recomputes count summaries offline.
+
+For the 13-session snapshot, the included regions contain 6,670 eligible units,
+of which 6,642 are jointly testable. On that shared denominator, pseudo-Q1
+identifies 619 units (9.3%), pseudo-Q2 identifies 693 (10.4%), and Both identifies
+140 (2.1%). All sessions retain 34 pre-C1 and 34 post-C1 90-degree presentations.
+Across the 442 post-C1 presentations, the predecessors are 403 single gratings,
+13 halts, and 26 omissions; single-grating orientations vary. These predecessor
+types are retained, not reclassified as standards.
+
+| Region | Jointly testable | Pseudo-Q1 | Pseudo-Q2 | Both |
+| --- | ---: | ---: | ---: | ---: |
+| LGd | 480 | 116 | 135 | 42 |
+| VISp | 499 | 170 | 133 | 51 |
+| VISl | 289 | 73 | 63 | 12 |
+| VISa | 186 | 18 | 32 | 6 |
+| Frontal | 3,055 | 123 | 188 | 13 |
+| Hippocampus | 1,306 | 43 | 87 | 4 |
+| SSp | 436 | 59 | 36 | 10 |
+| STR | 391 | 17 | 19 | 2 |
+
+#### Supplemental population figure
+
+[Supplementary Figure 7](../index.md#fig-ephys-c1-pseudocontext) shows pre-C1,
+post-C1, and post-minus-pre heatmaps for the same 203 visual units as Figure 9 D,
+with regional pseudo-Q1/Q2/Both bars for the full cohort in panel E, centered
+beneath B and C. Panel D, centered beneath A and B, shows pre/post-C1 mean SDFs
+and across-neuron SEM using the same 51 positive
+actual-context Q1 visual units as the alternative layout (raw p <0.05, signed
+MI >0.1, no Q2 restriction). Selection details appear in the caption rather
+than a mean-panel title. All three maps
+retain Figure 9's frozen context-only Rastermap order, with no response-based
+selection. Each condition subtracts its own per-unit preceding-grey display
+baseline. The difference is between the baseline-subtracted means, not paired
+pre/post trials. The shared symmetric color limit is the ceiling of the pooled
+absolute 99th percentile of all three maps, with saturation beyond that limit.
+SDFs retain the existing 5 ms bins and causal 25 ms kernel; the display baseline
+pools complete half-open 20 ms bins and is not the native Q2 statistical rate.
+
+The separate [display extractor](../scripts/extract_ephys_c1_population.py)
+streams only the pinned example session. It verifies all 203 full-unit spike
+digests against Figure 9, rechecks original and pseudo-context trial identities,
+and verifies that the split raw means and bin-weighted display baselines
+reconstruct the original pooled control. The compact
+[display snapshot](../figure_sources/data/ephys-c1-population/) and its provenance
+are committed inputs, not a build-time download. To refresh deliberately, choose
+a fresh output directory and review before replacing the published snapshot:
+
+```bash
+uv run --extra dev --with remfile python scripts/extract_ephys_c1_population.py \
+  --output-dir /tmp/ephys-c1-population-refresh
+```
+
+The [renderer](../src/openscope_p3_publication/ephys_c1_pseudocontext_figure.py)
+runs offline as part of `uv run build-publication-figures`. Regional bars reuse
+Figure 9's 10,000-replicate mouse-cluster bootstrap, pooling included sessions
+within mouse before resampling. Both layouts use the same
+[mean-trace helper](../src/openscope_p3_publication/ephys_c1_mean_traces.py), avoiding
+separate selection or SEM calculations. Derived area/mouse tables, ordered unit
+baselines and Q1 selection, time-by-condition mean/SEM traces,
+clipping statistics, and output/source checksums are saved in
+[the figure audit directory](../figure_sources/derived/ephys-c1-pseudocontext/).
+Figure 9 and its primary statistics are not changed.
+
+#### Alternative pre/context/post layout
+
+A separate [alternative SVG](../images/figures/generated/ephys-c1-context-comparison.svg)
+keeps the existing supplement and manuscript entry intact. Its top row shows
+**A**, pre-C1; **B**, the exact actual-context heatmap from Figure 9 D; and **C**,
+post-C1. All maps retain the same 203 units and original context-only Rastermap
+order. The common color limits are Figure 9 D's original +/-44 Hz, not a new
+limit estimated from the controls. There is no difference heatmap in this version.
+
+Below B, pre/post-C1 baseline-subtracted mean SDFs use one fixed pool of **51
+actual-context Q1-positive visual units** (finite raw p <0.05 and signed MI >0.1).
+There is **no Q2 restriction**: this is not Figure 9's joint-positive mean pool,
+nor a selection on post-C1 pseudo-Q1. Both curves equally weight the same cells;
+shading is sample SD across neurons (ddof=1) divided by sqrt(51), not across-trial
+or across-mouse uncertainty. The conditions retain their separate per-unit
+display baselines. Below C, the same regional pseudo-Q1/Q2/Both bars and
+mouse-bootstrap intervals are compressed into one column; their cohort and
+denominators are unchanged.
+
+The [alternative renderer](../src/openscope_p3_publication/ephys_c1_context_figure.py)
+reuses the committed context and split-control snapshots offline; no NWB
+re-extraction is needed. It runs in `uv run build-publication-figures`, writing
+separate [audit outputs](../figure_sources/derived/ephys-c1-context-comparison/):
+the full 203-unit selection table, time-by-condition mean/SEM traces, regional
+counts and intervals, clipping statistics, and source/output checksums. The
+current supplement remains the manuscript version while this alternative is
+available for comparison.
+
+#### Four-event post-minus-pre experiment
+
+The separate [four-event figure](../images/figures/generated/ephys-c1-event-differences.svg)
+compares post-C1 minus pre-C1 for 90-degree singles, 45-degree singles, halt, and
+omission. It is an exploratory display for the same example session, not a
+replacement for S7 or a new cohort Q1/Q2 analysis. These are matched event types
+inside C1 controls, not oddball-context deviants.
+
+All four heatmaps retain the same 203 eligible visual units and original
+context-only Rastermap order, without event-specific responsiveness selection.
+For each unit, the difference is
+`(post SDF - post grey baseline) - (pre SDF - pre grey baseline)`.
+SDFs use 5 ms bins, a causal 25 ms exponential kernel and the existing
+[-0.75, +0.75] s display window. Display baselines pool complete half-open
+20 ms bins within each trial's preceding grey. The plotted means equally weight
+all 203 unitwise differences, and SEM is their sample SD (ddof=1) divided by
+sqrt(203). It is **not** the independent sum of pre/post SEMs or trial/mouse
+uncertainty. Heatmaps share a symmetric pooled absolute 99th-percentile ceiling
+color scale, with saturation beyond the limits; mean traces also share one
+symmetric Hz axis.
+
+Each condition contributes 34 presentations for 90 degrees, halt and omission.
+The first 45-degree presentation in **each** C1 repeat (control rows 0 and 544)
+has no preceding-grey baseline. Those two trials are explicitly excluded from
+both the SDF and its baseline, leaving **33 pre and 33 post** for 45 degrees.
+Baselines are not borrowed or imputed. Exclusions and exact retained trial
+identities are recorded in the source snapshot.
+
+The original 90-degree split snapshot is reused unchanged. The additional
+[three-event snapshot](../figure_sources/data/ephys-c1-event-populations/) stores
+compact pre/post means and baselines, not NWB files. Its
+[extractor](../scripts/extract_ephys_c1_event_populations.py) checks all 203
+full-unit spike digests against Figure 9, verifies exact four-event stimulus
+tables/trial identities, reproduces the saved 90-degree split exactly, and
+replays the six existing native trial-spike examples in every event.
+To refresh deliberately, use a fresh output directory:
+
+```bash
+uv run --extra dev --with remfile python scripts/extract_ephys_c1_event_populations.py \
+  --output-dir /tmp/ephys-c1-event-populations-refresh
+```
+
+The [renderer](../src/openscope_p3_publication/ephys_c1_event_differences.py)
+runs offline in the normal figure build. Its
+[audit directory](../figure_sources/derived/ephys-c1-event-differences/) contains
+trial/exclusion/clipping counts, mean/SEM traces, unit identities/order and
+source/output checksums. No significance screen or drift-specific interpretation
+is implied; the current manuscript and both previous C1 figures are unchanged.
+
+### Explorer controls
+
 - Primary signals only: Neuropixels SDF, mesoscope stored Delta F/F percent,
   and SLAP2 glutamate in arbitrary units.
 - Event selection: 45-degree orientation, 90-degree orientation, motion halt,

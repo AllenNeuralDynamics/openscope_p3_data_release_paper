@@ -4,8 +4,9 @@
   "event": "orientation_90",
   "inputs": [
     {
+      "frozen_source_sha256": "2ba67f12d891c1798dfd1bc4242e8d80a3c024a5aa0c4b3b96243dbb8c1c9b91",
       "path": "scripts/extract_standard_oddball_explorer_window.py",
-      "sha256": "2ba67f12d891c1798dfd1bc4242e8d80a3c024a5aa0c4b3b96243dbb8c1c9b91"
+      "sha256": "26d4a8c0e82b867db5fe5303763d9b1f9123a62aa5a2856905fa66a09c5c62e2"
     },
     {
       "path": "src/openscope_p3_publication/standard_oddball_explorer_window.py",
@@ -16,12 +17,14 @@
       "sha256": "214ab09afe84d075b027da3c9d63f1d739c6858228e1fa66acaeac019b6afb60"
     },
     {
+      "frozen_source_sha256": "85a77de50984be4ac8cc6a009870a32bd9f09633595f446ab1ed4c6a850c8b23",
       "path": "figure_sources/data/mesoscope-standard-oddball-832700-2026-01-30/provenance.json",
-      "sha256": "85a77de50984be4ac8cc6a009870a32bd9f09633595f446ab1ed4c6a850c8b23"
+      "sha256": "c829df0aa777bf41e9c532f66fcde6007c9add1c3d4b78485aef0a6eae114742"
     },
     {
+      "frozen_source_sha256": "648129ad3aa0f16be47a7431d27b56a58ea5eb82e9ad74285a49af86059eeb09",
       "path": "figure_sources/data/slap2-standard-oddball-828408-2025-11-18/provenance.json",
-      "sha256": "648129ad3aa0f16be47a7431d27b56a58ea5eb82e9ad74285a49af86059eeb09"
+      "sha256": "a3423e16368f4fab067aec5093f6056cba8e57d07866a8ea9ec18cba8424aed5"
     }
   ],
   "modalities": {
@@ -26246,6 +26249,7 @@
     "slap2": "9f20df60d4efa45fcd5476c1c719688116c78777024098bfb577b5782903967a"
   },
   "retrieved_date": "2026-11-01",
+  "source_hashes_refreshed_date": "2026-11-05",
   "version": 1,
   "window": [
     -1.5,

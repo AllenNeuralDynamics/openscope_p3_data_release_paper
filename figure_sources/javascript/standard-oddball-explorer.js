@@ -4,7 +4,7 @@
   const get = (id) => document.getElementById(id);
   const state = { modality: "neuropixels", event: "orientation_90", area: "all",
     screen: "all", metric: "context", sort: "rastermap", scope: "population",
-    source: null, color: 100 };
+    controlRepeat: "pooled", source: null, color: 100 };
   const cache = new Map();
   let visibleRows = [];
   const screens = ["q1", "q2", "joint"];
@@ -284,6 +284,10 @@
     get("cohort-empty").hidden = rows.length > 0;
     get("cohort-empty").textContent = "No eligible jointly testable cohort summary is available for this area/event. This is not a zero-responsive result.";
     if (!rows.length) return;
+    const repeatLabel = {
+      pooled: "pooled C1 (primary)", pre: "pre-context C1", post: "post-context C1",
+    }[state.controlRepeat];
+    get("cohort-title").textContent = `Cohort responsiveness: ${repeatLabel}`;
     const left = 85, right = 1020, bottom = 240, top = 40;
     const y = (fraction) => bottom - fraction * (bottom - top);
     ctx.fillStyle = "#293133"; ctx.textAlign = "right";
@@ -295,19 +299,22 @@
     });
     const width = (right - left) / rows.length;
     rows.forEach((r, i) => {
+      const selected = r.repeats[state.controlRepeat];
       screens.forEach((s, j) => {
         const center = left + (i + 0.5) * width + (j - 1) * width * 0.23;
-        const barWidth = Math.min(45, width * 0.2), fraction = r.counts[s] / r.n;
+        const barWidth = Math.min(45, width * 0.2), fraction = selected.counts[s] / selected.n;
         ctx.fillStyle = colors[j]; ctx.globalAlpha = 0.65;
         ctx.fillRect(center - barWidth / 2, y(fraction), barWidth, bottom - y(fraction));
         ctx.globalAlpha = 1;
-        if (r.intervals[s]) {
+        if (selected.intervals[s]) {
           ctx.beginPath(); ctx.strokeStyle = "#333";
-          ctx.moveTo(center, y(r.intervals[s][0])); ctx.lineTo(center, y(r.intervals[s][1]));
+          ctx.moveTo(center, y(selected.intervals[s][0]));
+          ctx.lineTo(center, y(selected.intervals[s][1]));
           ctx.stroke();
         }
-        r.points.forEach((m, k) => {
-          const x = center + (k - (r.points.length - 1) / 2) * Math.min(5, barWidth / r.points.length);
+        selected.points.forEach((m, k) => {
+          const x = center + (k - (selected.points.length - 1) / 2)
+            * Math.min(5, barWidth / selected.points.length);
           ctx.beginPath(); ctx.fillStyle = "white"; ctx.strokeStyle = "#333";
           if (d.id === "slap2" && m.mouse === "829704") {
             ctx.rect(x - 2.5, y(m.counts[s] / m.n) - 2.5, 5, 5);
@@ -319,14 +326,20 @@
       });
       ctx.fillStyle = "#293133"; ctx.textAlign = "center";
       ctx.fillText(r.group === "Hippocampus" ? "HIP" : r.group, left + (i + 0.5) * width, bottom + 25);
-      ctx.fillText(`n=${r.n.toLocaleString()}`, left + (i + 0.5) * width, bottom + 47);
+      ctx.fillText(
+        `n=${r.repeats[state.controlRepeat].n.toLocaleString()}`,
+        left + (i + 0.5) * width, bottom + 47,
+      );
     });
     ctx.textAlign = "left";
-    get("cohort-canvas").setAttribute("aria-label", `${d.label}, ${eventLabel()}. ${
-      rows.map((r) => `${r.group}, jointly testable n=${r.n}: ${
-        screens.map((s, j) => `${labels[j]} ${r.counts[s]}/${r.n}`).join(", ")}. ${
-        r.points.map((m) => `Mouse ${m.mouse}, n=${m.n}: ${
-          screens.map((s, j) => `${labels[j]} ${m.counts[s]}`).join(", ")}`).join("; ")}`
+    get("cohort-canvas").setAttribute("aria-label", `${d.label}, ${eventLabel()}, ${
+      repeatLabel}. ${rows.map((r) => {
+        const selected = r.repeats[state.controlRepeat];
+        return `${r.group}, jointly testable n=${selected.n} of ${selected.n_eligible} eligible: ${
+          screens.map((s, j) => `${labels[j]} ${selected.counts[s]}/${selected.n}`).join(", ")}. ${
+          selected.points.map((m) => `Mouse ${m.mouse}, n=${m.n}: ${
+            screens.map((s, j) => `${labels[j]} ${m.counts[s]}`).join(", ")}`).join("; ")}`;
+      }
       ).join(". ")}`);
   }
   function render() {
@@ -360,6 +373,10 @@
     ["metric-select", "metric"], ["sort-select", "sort"], ["scope-select", "scope"],
     ["source-select", "source"],
   ]) get(id).addEventListener("change", () => { state[key] = get(id).value; render(); });
+  get("cohort-control-repeat").addEventListener("change", () => {
+    state.controlRepeat = get("cohort-control-repeat").value;
+    render();
+  });
   get("color-limit").addEventListener("input", () => {
     state.color = Number(get("color-limit").value); render();
   });

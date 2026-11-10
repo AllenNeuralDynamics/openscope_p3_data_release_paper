@@ -56,6 +56,23 @@ def load_neuropixels_cohort(event: str = "orientation_90") -> dict:
                 )
             ):
                 raise ValueError(f"Invalid frozen Neuropixels {screen} counts/fractions.")
+        for repeat in ("pre", "post"):
+            n = table[f"n_joint_{repeat}_testable"]
+            for screen in ("q1", "q2", "joint"):
+                count = table[f"n_{screen}_responsive_{repeat}"]
+                fraction = table[f"fraction_{screen}_responsive_{repeat}"]
+                valid = n.gt(0)
+                expected = count.loc[valid] / n.loc[valid]
+                if (
+                    np.any(count.lt(0) | count.gt(n))
+                    or not np.allclose(
+                        fraction.loc[valid], expected, rtol=1e-14, atol=1e-16,
+                    )
+                    or fraction.loc[~valid].notna().any()
+                ):
+                    raise ValueError(
+                        f"Invalid frozen Neuropixels {repeat}-C1 {screen} counts/fractions."
+                    )
     return {**prepared, "provenance": source["provenance"]}
 
 

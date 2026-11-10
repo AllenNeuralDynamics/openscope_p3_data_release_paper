@@ -32,11 +32,15 @@
         across acquisition pauses. Source identities, tests and recorded-trial ranges
         are available to assistive technology; complete counts are in the frozen data.</p>
       <p>Q1 compares the deviant with the preceding standard; Q2 compares context and
-        matched-control baseline-subtracted responses. The exploratory screen uses raw
+        matched-control baseline-subtracted responses. Cohort Q2 can use the pooled
+        C1 controls (primary) or either flanking C1 repeat (sensitivity analysis); Q1
+        is unchanged. The exploratory screen uses raw
         p&lt;0.05 and |MI|&gt;0.1, either sign. Both is their intersection. Q2-nonsignificant
         is not proof of absent visual activity. Frozen context-only Rastermap orders are
         filtered, never refitted. SLAP2 rows remain grouped by DMD.</p>
       <p>Cohort bars pool responsive counts over eligible jointly testable observations.
+        The C1 repeat selector changes the Q2 comparison and the joint-testable
+        denominator; the pooled C1 result is the default.
         Points identify mice; Neuropixels/mesoscope intervals are 95% mouse-cluster
         bootstrap bounds. The two-mouse SLAP2 subset has no bootstrap intervals.
         SLAP2 circles/squares mark mice 828408/829704. Exact counts and mouse IDs
@@ -46,6 +50,7 @@
     </section>
     <section id="static-view">
       <img src="__STATIC__" alt="Standard-oddball responses across Neuropixels, mesoscope calcium and SLAP2 glutamate: example trials, population heatmaps and means, and cohort Q1/Q2/Both proportions.">
+      <img src="__STATIC_SENSITIVITY__" alt="Static 90-degree Q2 sensitivity summary comparing pooled C1 controls with the pre-context C1 repeat and post-context C1 repeat, with responsive counts, testable denominators, and mouse-cluster intervals where available.">
     </section>
     <section id="interactive-view" hidden>
       <h1>Standard-oddball explorer</h1>
@@ -60,6 +65,11 @@
           <option value="joint_responsive">Both Q1 and Q2</option>
           <option value="positive_joint">Both positive</option>
           <option value="q2_nonsignificant">Q2-nonsignificant</option>
+        </select></label>
+        <label>C1 control repeat<select id="cohort-control-repeat">
+          <option value="pooled">Pooled (primary)</option>
+          <option value="pre">Before context</option>
+          <option value="post">After context</option>
         </select></label>
         <label>Heatmap value<select id="metric-select">
           <option value="context">Context change</option>
@@ -93,7 +103,7 @@
           aria-label="Context and control baseline-subtracted time courses"></canvas>
       </section>
       <section id="cohort-panel">
-        <h2>Cohort responsiveness</h2>
+        <h2 id="cohort-title">Cohort responsiveness</h2>
         <canvas id="cohort-canvas" width="1100" height="310" role="img"
           aria-label="Event-specific Q1, Q2 and Both proportions by area or DMD"></canvas>
         <p id="cohort-empty" role="status" hidden></p>

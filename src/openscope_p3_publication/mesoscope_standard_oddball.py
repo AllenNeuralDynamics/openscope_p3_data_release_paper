@@ -133,7 +133,12 @@ def signal_statistics(collected: dict) -> pd.DataFrame:
     statistics = response_statistics(
         collected, [True] * collected["context_test"].shape[1],
     )
-    for screen in ("q1", "q2"):
+    screens = ["q1", "q2"]
+    screens.extend(
+        f"q2_{repeat}" for repeat in ("pre", "post")
+        if f"q2_{repeat}_p" in statistics
+    )
+    for screen in screens:
         p = statistics[f"{screen}_p"]
         mi = statistics[f"{screen}_mi"]
         valid = np.isfinite(p) & np.isfinite(mi)
@@ -144,12 +149,32 @@ def signal_statistics(collected: dict) -> pd.DataFrame:
             ~np.isfinite(p), "insufficient_valid_trials",
             np.where(~np.isfinite(mi), "undefined_mi", "testable"),
         )
-    statistics["joint_testable"] = statistics.q1_testable & statistics.q2_testable
-    statistics["joint_responsive"] = statistics.q1_responsive & statistics.q2_responsive
-    statistics["positive_joint"] = (
-        statistics.joint_responsive & statistics.q1_mi.gt(0.1) & statistics.q2_mi.gt(0.1)
-    )
-    statistics["q2_nonsignificant"] = statistics.q2_testable & statistics.q2_p.ge(0.05)
+    for repeat in ("", "pre", "post"):
+        suffix = f"_{repeat}" if repeat else ""
+        q2 = f"q2{suffix}"
+        if q2 not in screens:
+            continue
+        joint = f"joint{suffix}"
+        statistics[f"{joint}_testable"] = statistics.q1_testable & statistics[f"{q2}_testable"]
+        statistics[f"{joint}_responsive"] = (
+            statistics.q1_responsive & statistics[f"{q2}_responsive"]
+        )
+        statistics[f"positive_joint{suffix}"] = (
+            statistics[f"{joint}_responsive"]
+            & statistics.q1_mi.gt(0.1) & statistics[f"{q2}_mi"].gt(0.1)
+        )
+        statistics[f"negative_joint{suffix}"] = (
+            statistics[f"{joint}_responsive"]
+            & statistics.q1_mi.lt(-0.1) & statistics[f"{q2}_mi"].lt(-0.1)
+        )
+        statistics[f"mixed_joint{suffix}"] = (
+            statistics[f"{joint}_responsive"]
+            & ~statistics[f"positive_joint{suffix}"]
+            & ~statistics[f"negative_joint{suffix}"]
+        )
+        statistics[f"{q2}_nonsignificant"] = (
+            statistics[f"{q2}_testable"] & statistics[f"{q2}_p"].ge(0.05)
+        )
     return statistics
 
 

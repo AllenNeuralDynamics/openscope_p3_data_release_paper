@@ -1,0 +1,156 @@
+{
+  "bootstrap": {
+    "replicates": 10000,
+    "rule": "95% percentile mouse-cluster bootstrap; resample contributing mice with replacement within each region and recompute summed responsive / summed joint-testable counts; fixed session/group inclusion and shared resamples for Q1, Q2 and Both",
+    "seed": 0
+  },
+  "description": "Supplementary Figure 7. Ephys C1 repeat negative control. A-C: pre-context C1, post-context C1, and post-minus-pre trial-mean SDFs for the same 203 eligible visual SUA from mouse 830794 used in Figure 9 D. All maps share the original context-only Rastermap row order, without a responsiveness filter, 34 presentations of a 90-degree grating per repeat, 5-ms bins, and a 25-ms causal exponential kernel. Each condition subtracts its own unit-specific preceding-grey display baseline, pooled over complete half-open 20-ms bins; the difference is post minus pre after subtraction. Shared color limits are +/-31 Hz, the ceiling of the pooled absolute 99th percentile across all three maps, with saturation beyond the limits. Dashed lines mark onset; black bars mark the median presentation duration. D, centered beneath A and B: pre-C1 (dashed grey) and post-C1 (solid purple) baseline-subtracted mean SDFs across the same 51 actual-context Q1-positive visual units. Same eligible visual units in both control curves; actual-context 90-degree Q1 raw p <0.05 and signed MI >0.1; finite p and MI; no Q2 restriction. Shading is across-neuron sample SD (ddof=1) divided by sqrt(neuron count), not trial or across-mouse uncertainty. This is the same mean-trace population as the alternative layout, not Figure 9's joint-positive pool and not a selection on post-C1 pseudo-Q1. E, centered beneath B and C: regional pseudo-Q1, pseudo-Q2, and Both percentages from 13 sessions, using the Figure 9 regional inclusion criteria and jointly testable denominator. Counts are 619/6642 pseudo-Q1, 693/6642 pseudo-Q2, and 140/6642 Both. Intervals are 95% mouse-cluster bootstrap intervals (10,000 resamples). Pseudo-Q1 compares post-C1 responses with the preceding within-block stimulus, whose orientation/type varies; it does not test an expected standard. Pseudo-Q2 compares post-C1 with pre-C1 after each trial's grey-baseline subtraction. Both screens use raw p < 0.05 and absolute MI > 0.1, either sign; this exploratory repeat comparison does not isolate prediction error.",
+  "display": {
+    "clipped_samples": 1740,
+    "finite_samples": 182700,
+    "limit": 31,
+    "limit_rule": "ceil(pooled absolute 99th percentile)",
+    "unavailable_rows_by_event_condition": [
+      0,
+      0,
+      0
+    ],
+    "unavailable_samples": 0
+  },
+  "heatmap_shape": [
+    3,
+    203,
+    300
+  ],
+  "mean_unit_count": 51,
+  "outputs": [
+    {
+      "name": "ephys-c1-pseudocontext.svg",
+      "sha256": "aec00c1ac66228e395a205ab87f8df0986c568c8248c56df26f1a26164a7a89b"
+    },
+    {
+      "name": "areas.csv",
+      "sha256": "474fa80b3a985686367c2752a6498c54302836a3b2be13a626bec3afa202be28"
+    },
+    {
+      "name": "mice.csv",
+      "sha256": "3cf07840071a86bcf4456fb2ddd0fedde1059aade01021e6cc375c23f9eb126f"
+    },
+    {
+      "name": "display-units.csv",
+      "sha256": "b07b39c9089ecf3b4d091b757275702c8434c1ac7a95be6d89907292bda6e9e3"
+    },
+    {
+      "name": "mean-traces.csv",
+      "sha256": "2a0ca192e57962dadb4d418e5ccf5ad33cf60cde5a185ab0f529f2a2272f184a"
+    }
+  ],
+  "region_order": [
+    "LGd",
+    "VISp",
+    "VISl",
+    "VISa",
+    "Frontal",
+    "Hippocampus",
+    "SSp",
+    "STR"
+  ],
+  "selected_unit_ids": [
+    1522,
+    1540,
+    1571,
+    1564,
+    1572,
+    1580,
+    1574,
+    1576,
+    1578,
+    1589,
+    1593,
+    1583,
+    1597,
+    1588,
+    1596,
+    1608,
+    1628,
+    888,
+    898,
+    909,
+    915,
+    944,
+    931,
+    939,
+    933,
+    951,
+    964,
+    982,
+    975,
+    971,
+    984,
+    981,
+    987,
+    989,
+    988,
+    1000,
+    997,
+    349,
+    380,
+    403,
+    399,
+    436,
+    507,
+    592,
+    1140,
+    1143,
+    612,
+    624,
+    629,
+    631,
+    634
+  ],
+  "selection_rule": "Same eligible visual units in both control curves; actual-context 90-degree Q1 raw p <0.05 and signed MI >0.1; finite p and MI; no Q2 restriction.",
+  "sem_rule": "Across-neuron sample SD (ddof=1) / sqrt(n), same cells in both curves.",
+  "sources": [
+    {
+      "path": "src/openscope_p3_publication/ephys_c1_pseudocontext_figure.py",
+      "sha256": "f2ad4c7e23f2bc0be663233edf9e4dba17a7470eaf92eceb5c16ea7cb5a999b6"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-event-responses.json",
+      "sha256": "a75dd4b49b8e36d30e88820e878ea517c98a4a3e826e5d131a3a7935a19a3cc4"
+    },
+    {
+      "path": "figure_sources/data/neuropixels-event-responses.provenance.json",
+      "sha256": "9b87edba18b4a5e9a079612890cf0ade08ba227c97a6d3999ea7f1d0f759c009"
+    },
+    {
+      "path": "figure_sources/data/ephys-c1-population/provenance.json",
+      "sha256": "d87a4009ecbfc8bab11c68390e147041156d7e386811b7aa00ce99b579c62bf5"
+    },
+    {
+      "path": "figure_sources/data/ephys-c1-pseudocontext/provenance.json",
+      "sha256": "40ba08ec3d737e4ffb48ebe1bfebfc515d6e36f8e8da4d1d92415684f86172c6"
+    },
+    {
+      "path": "src/openscope_p3_publication/ephys_c1_pseudocontext.py",
+      "sha256": "6aef575b9366e25135c44eed3a312341f9b278e019b6de8cfb20c1fc03eb39ae"
+    },
+    {
+      "path": "src/openscope_p3_publication/ephys_c1_mean_traces.py",
+      "sha256": "b28913869766e28228018c6783819451394e171914799a6a3c5672e13da47649"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_cohort_figure.py",
+      "sha256": "2de1624955568521b5b5b0fcf63e924d0c3d0308d9e2794ab0f69f47482b61ba"
+    },
+    {
+      "path": "src/openscope_p3_publication/standard_oddball_neuropixels.py",
+      "sha256": "256122f5d0f0f87bc523e7c4e7937ad0b25763b7e7d88053ab95c25d6d18d2df"
+    },
+    {
+      "path": "src/openscope_p3_publication/figure_typography.py",
+      "sha256": "171ba65deff578a2e0e7d786611bf033d9349cb21bd5d38677c4fb09d2b556f8"
+    }
+  ],
+  "version": 1
+}

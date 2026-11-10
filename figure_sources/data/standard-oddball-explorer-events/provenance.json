@@ -9,12 +9,14 @@
   ],
   "inputs": [
     {
+      "frozen_source_sha256": "04fe88fcc729037ef44de8709b09ab5e714e4d75e84cf23e5a8a06e31e3f0654",
       "path": "scripts/extract_standard_oddball_explorer_events.py",
-      "sha256": "04fe88fcc729037ef44de8709b09ab5e714e4d75e84cf23e5a8a06e31e3f0654"
+      "sha256": "b2fe355fda686ec277baa02728329635dbbbf973580fee9966427dffc34f14b2"
     },
     {
+      "frozen_source_sha256": "2ba67f12d891c1798dfd1bc4242e8d80a3c024a5aa0c4b3b96243dbb8c1c9b91",
       "path": "scripts/extract_standard_oddball_explorer_window.py",
-      "sha256": "2ba67f12d891c1798dfd1bc4242e8d80a3c024a5aa0c4b3b96243dbb8c1c9b91"
+      "sha256": "26d4a8c0e82b867db5fe5303763d9b1f9123a62aa5a2856905fa66a09c5c62e2"
     },
     {
       "path": "src/openscope_p3_publication/standard_oddball_explorer_events.py",
@@ -25,12 +27,14 @@
       "sha256": "cffe55951b53690ede3f8bc1e91f8057b715f91d42c641f19068e1122c964f1e"
     },
     {
+      "frozen_source_sha256": "d7698ddaaac6e359bd530a56aef9c1fe758fb368da9bfe52349a7fce461ee6f7",
       "path": "src/openscope_p3_publication/standard_oddball_cohort.py",
-      "sha256": "d7698ddaaac6e359bd530a56aef9c1fe758fb368da9bfe52349a7fce461ee6f7"
+      "sha256": "5eb4467fba2276e39b37ccbaa81d9487d2eca7d9ab7a2c22f0a423a5c0514168"
     },
     {
+      "frozen_source_sha256": "39829d37c4954d8b9a2ffa351651809482ce6bc13563c259016aa4446c7ccd2b",
       "path": "src/openscope_p3_publication/mesoscope_standard_oddball_cohort.py",
-      "sha256": "39829d37c4954d8b9a2ffa351651809482ce6bc13563c259016aa4446c7ccd2b"
+      "sha256": "61fd020c27a5984515587bb01bde09952dbcd0a32aa63f60fd432f082bda25ca"
     },
     {
       "path": "src/openscope_p3_publication/standard_oddball_examples.py",
@@ -41,16 +45,19 @@
       "sha256": "d0fe9dfa36ef79ebd2f9156f4c1e423f26a9b3308fa3bcb79ba19b723a3164d3"
     },
     {
+      "frozen_source_sha256": "32e3db276068b6a8890ed8360a73623d8178cb0006e73ef73e9b20e45525e495",
       "path": "figure_sources/data/standard-oddball-explorer-window/provenance.json",
-      "sha256": "32e3db276068b6a8890ed8360a73623d8178cb0006e73ef73e9b20e45525e495"
+      "sha256": "164e8f46d3c01ff571bd8b9380953d72cbd0684204983e71689a9144586d52ad"
     },
     {
+      "frozen_source_sha256": "85a77de50984be4ac8cc6a009870a32bd9f09633595f446ab1ed4c6a850c8b23",
       "path": "figure_sources/data/mesoscope-standard-oddball-832700-2026-01-30/provenance.json",
-      "sha256": "85a77de50984be4ac8cc6a009870a32bd9f09633595f446ab1ed4c6a850c8b23"
+      "sha256": "c829df0aa777bf41e9c532f66fcde6007c9add1c3d4b78485aef0a6eae114742"
     },
     {
+      "frozen_source_sha256": "648129ad3aa0f16be47a7431d27b56a58ea5eb82e9ad74285a49af86059eeb09",
       "path": "figure_sources/data/slap2-standard-oddball-828408-2025-11-18/provenance.json",
-      "sha256": "648129ad3aa0f16be47a7431d27b56a58ea5eb82e9ad74285a49af86059eeb09"
+      "sha256": "a3423e16368f4fab067aec5093f6056cba8e57d07866a8ea9ec18cba8424aed5"
     }
   ],
   "modalities": {
@@ -98011,6 +98018,7 @@
     "slap2": "2728b34af7b6cf8ec465d3ee019289f740625851d2240ae19a9b49ad96fc8f66"
   },
   "retrieved_date": "2026-11-01",
+  "source_hashes_refreshed_date": "2026-11-05",
   "version": 1,
   "window": [
     -1.5,

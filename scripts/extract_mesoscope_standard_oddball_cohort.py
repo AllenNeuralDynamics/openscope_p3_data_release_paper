@@ -23,11 +23,13 @@ from openscope_p3_publication.mesoscope_standard_oddball import (
     QUALITY_PATH,
     ROOT,
     SESSION_ID,
+    SNAPSHOT,
     load_snapshot,
     sha256,
     signal_statistics,
 )
 from openscope_p3_publication.mesoscope_standard_oddball_cohort import (
+    COHORT_COLUMNS,
     COHORT_DIR,
     EVENTS,
     KEYS,
@@ -40,11 +42,13 @@ from openscope_p3_publication.mesoscope_standard_oddball_cohort import (
     optical_event_windows,
 )
 from openscope_p3_publication.mismatch_responsiveness import benjamini_hochberg
+from openscope_p3_publication.standard_oddball_publication_data import STATISTICS
 
 API = "https://api.dandiarchive.org/api/assets"
 SOURCES = [
     Path(__file__).resolve(), LEDGER, RUNNING, QUALITY_PATH,
     ROOT / "figure_sources/data/mesoscope-unit-extraction.provenance.json",
+    ROOT / "src/openscope_p3_publication/standard_oddball_publication_data.py",
     *[ROOT / f"src/openscope_p3_publication/{name}.py" for name in (
         "mesoscope_standard_oddball_cohort", "mesoscope_standard_oddball",
         "standard_oddball_cohort", "mismatch_responsiveness",
@@ -72,6 +76,19 @@ def csv_bytes(frame: pd.DataFrame) -> bytes:
         frame.to_csv(index=False, float_format="%.17g", lineterminator="\n").encode(),
         compresslevel=9, mtime=0,
     )
+
+
+def compact_session_info(info: dict) -> dict:
+    """Keep the slice count/span and digest without every read boundary."""
+    for plane in info["planes"]:
+        for signal in plane["signals"].values():
+            slices = signal.pop("frame_slices", None)
+            if slices is not None:
+                signal["frame_slice_count"] = len(slices)
+                signal["frame_slice_span"] = (
+                    [slices[0][0], slices[-1][1]] if slices else None
+                )
+    return info
 
 
 def extract_session(record: dict, quality: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
@@ -103,7 +120,7 @@ def extract_session(record: dict, quality: pd.DataFrame) -> tuple[pd.DataFrame, 
         trials = optical_event_windows(tables)
         windows = {}
         for event, rows in trials.items():
-            for condition in ("context", "control"):
+            for condition in ("context", "control", "control_pre", "control_post"):
                 for name, suffix in (("response", "test"), ("baseline", "baseline")):
                     windows[f"{event}/{condition}_{suffix}"] = [
                         row[name] for row in rows[condition]
@@ -232,12 +249,14 @@ def extract_session(record: dict, quality: pd.DataFrame) -> tuple[pd.DataFrame, 
             plane_sources.append(plane_info)
     frame = pd.concat(blocks, ignore_index=True)
     for indices in frame.groupby(["signal", "event_id"]).groups.values():
-        for screen in ("q1", "q2", "q2_raw"):
+        for screen in (
+            "q1", "q2", "q2_raw", "q2_pre", "q2_pre_raw", "q2_post", "q2_post_raw",
+        ):
             frame.loc[indices, f"{screen}_q"] = benjamini_hochberg(
                 frame.loc[indices, f"{screen}_p"],
             )
     for indices in frame.groupby("signal").groups.values():
-        for screen in ("q1", "q2"):
+        for screen in ("q1", "q2", "q2_pre", "q2_post"):
             frame.loc[indices, f"{screen}_q_across_events"] = benjamini_hochberg(
                 frame.loc[indices, f"{screen}_p"],
             )
@@ -247,7 +266,13 @@ def extract_session(record: dict, quality: pd.DataFrame) -> tuple[pd.DataFrame, 
 
 def replay_reference(frame: pd.DataFrame) -> None:
     """Require the original January 30 90-degree statistics and classifications for every ROI."""
-    _, original, _ = load_snapshot()
+    provenance = json.loads((SNAPSHOT / "provenance.json").read_text())
+    for output in provenance["outputs"]:
+        if sha256(SNAPSHOT / output["path"]) != output["sha256"]:
+            raise ValueError(f"Frozen mesoscope reference changed: {output['path']}")
+    original = pd.read_csv(
+        SNAPSHOT / "statistics.csv.gz", float_precision="round_trip",
+    )
     current = frame.loc[frame.event_id.eq("orientation_90")].set_index(["signal", "roi_key"])
     reference = original.set_index(["signal", "roi_key"])
     # The old display sidecar's auxiliary raw-Q2 q values used per-plane families.
@@ -274,6 +299,23 @@ def replay_reference(frame: pd.DataFrame) -> None:
     print("Reference replay passed: all 4,742 ROI/signal 90-degree rows.", flush=True)
 
 
+def publication_example_statistics(units: pd.DataFrame) -> pd.DataFrame:
+    """Keep the original all-event example rows needed by the offline figure explorer."""
+    payload, _, _ = load_snapshot()
+    keys = payload["roi_keys"]
+    rows = units.loc[
+        units.session_id.eq(payload["session_id"]) & units.signal.eq("dff")
+        & units.roi_key.isin(keys),
+        ["session_id", "roi_key", "event_id", "eligible", *STATISTICS],
+    ].copy()
+    if (
+        len(rows) != len(keys) * len(EVENTS) or not rows.eligible.all()
+        or rows.duplicated(["roi_key", "event_id"]).any()
+    ):
+        raise ValueError("Mesoscope publication example source identity or eligibility changed.")
+    return rows
+
+
 def main() -> None:
     """Preflight, validate the reference, checkpoint sessions, then publish the complete cohort."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -281,12 +323,25 @@ def main() -> None:
     parser.add_argument("--output-dir", type=Path, default=COHORT_DIR)
     parser.add_argument("--max-workers", type=int, default=2)
     parser.add_argument("--preflight-only", action="store_true")
+    parser.add_argument("--finalize-only", action="store_true")
+    parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--session-id")
     args = parser.parse_args()
     if args.max_workers < 1:
         parser.error("--max-workers must be positive.")
-    if args.output_dir.exists() and not args.session_id and not args.preflight_only:
+    if args.finalize_only and (args.preflight_only or args.session_id):
+        parser.error("--finalize-only cannot be combined with preflight or a single session.")
+    if (
+        args.output_dir.exists() and not args.session_id and not args.preflight_only
+        and not args.overwrite
+    ):
         parser.error("Refusing to overwrite an existing cohort output directory.")
+    previous_provenance_path = args.output_dir / "provenance.json"
+    previous_provenance = (
+        json.loads(previous_provenance_path.read_text())
+        if args.finalize_only and previous_provenance_path.is_file()
+        else None
+    )
     inventory = cohort_inventory()
     records = inventory.loc[inventory.included].to_dict("records")
     with ThreadPoolExecutor(max_workers=args.max_workers) as pool:
@@ -306,14 +361,33 @@ def main() -> None:
     quality = pd.read_csv(QUALITY_PATH)
     args.work_dir.mkdir(parents=True, exist_ok=True)
 
+    def read_checkpoint(record):
+        stem = args.work_dir / record["asset_id"]
+        table_path, info_path = stem.with_suffix(".csv.gz"), stem.with_suffix(".json")
+        if not table_path.is_file() or not info_path.is_file():
+            raise FileNotFoundError(f"{record['session_id']}: missing extraction checkpoint.")
+        info = json.loads(info_path.read_text())
+        if (
+            info.get("table_sha256") != sha256(table_path)
+            or info.get("session_id") != record["session_id"]
+            or info.get("asset_id") != record["asset_id"]
+        ):
+            raise ValueError(f"{record['session_id']}: checkpoint identity/checksum changed.")
+        frame = pd.read_csv(
+            table_path, float_precision="round_trip", dtype={"subject_id": str},
+        )
+        return frame, info
+
     def run(record):
         stem = args.work_dir / record["asset_id"]
         table_path, info_path = stem.with_suffix(".csv.gz"), stem.with_suffix(".json")
-        if table_path.exists() and info_path.exists():
+        if table_path.is_file() and info_path.is_file():
             info = json.loads(info_path.read_text())
             if (
                 info.get("signature") == signature
                 and info.get("table_sha256") == sha256(table_path)
+                and info.get("session_id") == record["session_id"]
+                and info.get("asset_id") == record["asset_id"]
             ):
                 print(f"{record['quality_key']}: verified checkpoint", flush=True)
                 return pd.read_csv(
@@ -337,11 +411,22 @@ def main() -> None:
         if args.session_id == SESSION_ID:
             replay_reference(frame)
         return
-    reference_result = run(reference)
-    replay_reference(reference_result[0])
-    with ThreadPoolExecutor(max_workers=args.max_workers) as pool:
-        results = list(pool.map(run, [r for r in selected if r != reference]))
-    results.append(reference_result)
+    if args.finalize_only:
+        results = [read_checkpoint(record) for record in selected]
+        checkpoint_signatures = {info.get("signature") for _, info in results}
+        if len(checkpoint_signatures) != 1 or None in checkpoint_signatures:
+            raise ValueError("Finalize-only requires checkpoints from one extraction signature.")
+        signature = checkpoint_signatures.pop()
+    else:
+        reference_result = run(reference)
+        replay_reference(reference_result[0])
+        with ThreadPoolExecutor(max_workers=args.max_workers) as pool:
+            results = list(pool.map(run, [r for r in selected if r != reference]))
+        results.append(reference_result)
+    reference_frame = next(
+        frame for frame, info in results if info["session_id"] == SESSION_ID
+    )
+    replay_reference(reference_frame)
     units = pd.concat([frame for frame, _ in results], ignore_index=True).sort_values(
         KEYS, kind="stable",
     )
@@ -352,21 +437,72 @@ def main() -> None:
         raise ValueError(
             "Incomplete cohort: every original ROI needs both signals and four events."
         )
-    content = csv_bytes(units)
-    if len(content) > 50 * 1024**2:
-        raise ValueError(f"Derived table exceeds approved 50 MiB: {len(content)} bytes.")
-    args.output_dir.mkdir(parents=True)
-    table_path, inventory_path = args.output_dir / "units.csv.gz", args.output_dir / "sessions.csv"
+    for screen in ("q1", "q2", "q2_pre", "q2_post"):
+        valid = np.isfinite(units[f"{screen}_p"]) & np.isfinite(units[f"{screen}_mi"])
+        if (
+            not units[f"{screen}_testable"].eq(valid).all()
+            or not units[f"{screen}_responsive"].eq(
+                valid & units[f"{screen}_p"].lt(0.05) & units[f"{screen}_mi"].abs().gt(0.1)
+            ).all()
+        ):
+            raise ValueError(f"Mesoscope {screen} classifications changed before publication.")
+    for repeat in ("", "_pre", "_post"):
+        if (
+            not units[f"joint{repeat}_testable"].eq(
+                units.q1_testable & units[f"q2{repeat}_testable"]
+            ).all()
+            or not units[f"joint{repeat}_responsive"].eq(
+                units.q1_responsive & units[f"q2{repeat}_responsive"]
+            ).all()
+        ):
+            raise ValueError(f"Mesoscope joint{repeat} classifications changed before publication.")
+    published_units = units.loc[:, COHORT_COLUMNS]
+    content = csv_bytes(published_units)
+    maximum_bytes = 10 * 1024**2
+    if len(content) > maximum_bytes:
+        raise ValueError(f"Compact derived table exceeds 10 MiB: {len(content)} bytes.")
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    examples = publication_example_statistics(units)
+    table_path = args.output_dir / "units.csv.gz"
+    inventory_path = args.output_dir / "sessions.csv"
+    examples_path = args.output_dir / "example-statistics.csv.gz"
     table_path.write_bytes(content)
     inventory.to_csv(inventory_path, index=False, lineterminator="\n")
+    examples_path.write_bytes(csv_bytes(examples))
+    software = {
+        name: version(name) for name in ("numpy", "scipy", "pandas", "h5py")
+    }
+    if args.finalize_only:
+        if previous_provenance is None or "remfile" not in previous_provenance.get(
+            "software", {},
+        ):
+            raise ValueError(
+                "Finalize-only needs the previous remfile version in cohort provenance."
+            )
+        software["remfile"] = previous_provenance["software"]["remfile"]
+    else:
+        software["remfile"] = version("remfile")
     provenance = {
         "version": 1, "dandiset": "001768", "dandiset_version": "draft",
         "events": list(EVENTS), "signals": list(SIGNALS), "session_count": len(selected),
-        "mouse_count": units.subject_id.nunique(), "row_count": len(units),
+        "mouse_count": units.subject_id.nunique(), "row_count": len(published_units),
+        "analysis_row_count": len(units), "unit_columns": list(COHORT_COLUMNS),
         "roi_session_observations": len(units.drop_duplicates(["asset_id", "plane", "roi_id"])),
         "sources": sources, "asset_manifest": selected,
+        "checkpoint_signature": signature,
+        "unit_table_definition": (
+            "All original ROI/event/signal identities with eligibility and response "
+            "classifications; "
+            "C1 pre/post Q2 and joint testability/responsiveness flags. Per-repeat p/MI values "
+            "are computed and validated during extraction; only their classifications are "
+            "retained in this compact publication table. Separate all-event dF/F statistics "
+            "preserve the complete publication example cohort."
+        ),
+        "publication_example_rows": len(examples),
+        "publication_example_columns": examples.columns.tolist(),
         "sessions": [
-            info for _, info in sorted(results, key=lambda result: result[1]["session_id"])
+            compact_session_info(info)
+            for _, info in sorted(results, key=lambda result: result[1]["session_id"])
         ],
         "definition": (
             "All original ROIs, four events, native half-open 500-ms optical windows; "
@@ -374,16 +510,20 @@ def main() -> None:
             "raw p<0.05 and abs(MI)>0.1, either sign; no amplitude or Hz gate. "
             "BH across all original ROIs per session/signal/event, plus across-event alternatives."
         ),
-        "outputs": [{"path": p.name, "sha256": sha256(p)} for p in (table_path, inventory_path)],
-        "software": {
-            name: version(name) for name in ("numpy", "scipy", "pandas", "h5py", "remfile")
-        },
-        "units_csv_gzip_bytes": len(content), "approved_maximum_bytes": 50 * 1024**2,
+        "outputs": [
+            {"path": p.name, "sha256": sha256(p)}
+            for p in (table_path, inventory_path, examples_path)
+        ],
+        "software": software,
+        "units_csv_gzip_bytes": len(content), "approved_maximum_bytes": maximum_bytes,
     }
     (args.output_dir / "provenance.json").write_text(
         json.dumps(provenance, indent=2, sort_keys=True) + "\n",
     )
-    print(f"Published {len(units)} rows; compressed statistics {len(content) / 1024**2:.2f} MiB.")
+    print(
+        f"Published {len(published_units)} compact unit rows; "
+        f"{len(content) / 1024**2:.2f} MiB compressed.",
+    )
 
 
 if __name__ == "__main__":

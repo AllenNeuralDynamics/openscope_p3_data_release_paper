@@ -77,6 +77,38 @@ def verify_90(modality: str, keys: list[str], arrays: dict, events: dict) -> Non
                 raise ValueError(f"{modality}/{group}/{c}: 90-degree retained rows changed.")
 
 
+def refresh_source_hashes(directory: Path) -> None:
+    """Revalidate unchanged display arrays against the C1-split source revisions."""
+    path = directory / "provenance.json"
+    metadata = json.loads(path.read_text(encoding="utf-8"))
+    for modality, expected in metadata["outputs"].items():
+        if sha256(directory / f"{modality}.npz") != expected:
+            raise ValueError(f"Four-event {modality} output checksum changed.")
+    refreshable = {
+        "scripts/extract_standard_oddball_explorer_events.py",
+        "scripts/extract_standard_oddball_explorer_window.py",
+        "figure_sources/data/standard-oddball-explorer-window/provenance.json",
+        "src/openscope_p3_publication/standard_oddball_cohort.py",
+        "src/openscope_p3_publication/mesoscope_standard_oddball_cohort.py",
+        "figure_sources/data/mesoscope-standard-oddball-832700-2026-01-30/provenance.json",
+        "figure_sources/data/slap2-standard-oddball-828408-2025-11-18/provenance.json",
+    }
+    for source in metadata["inputs"]:
+        actual = sha256(ROOT / source["path"])
+        if actual != source["sha256"]:
+            normalized = source["path"].replace("\\", "/")
+            if normalized not in refreshable:
+                raise ValueError(f"Unreviewed four-event explorer source changed: {normalized}")
+            source.setdefault("frozen_source_sha256", source["sha256"])
+            source["sha256"] = actual
+    metadata["source_hashes_refreshed_date"] = datetime.now(UTC).date().isoformat()
+    path.write_text(
+        json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8", newline="\n",
+    )
+    print(f"Refreshed {path}; frozen display arrays were not changed.", flush=True)
+
+
 def extract_neuropixels(remote_type: type, stage: Path) -> tuple[dict, dict]:
     """Read each checksum-verified spike train once and align all four retained events."""
     diagnostic = load_diagnostic()
@@ -246,7 +278,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stage", type=Path, required=True)
     parser.add_argument("--output", type=Path, default=DIRECTORY)
+    parser.add_argument("--refresh-source-hashes", action="store_true")
     args = parser.parse_args()
+    if args.refresh_source_hashes:
+        refresh_source_hashes(args.output)
+        return
     if args.output.exists():
         raise FileExistsError(f"Refusing to overwrite existing snapshot: {args.output}")
     import remfile
