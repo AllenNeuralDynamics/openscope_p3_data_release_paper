@@ -3921,7 +3921,10 @@ def test_ecephys_qc_dashboard_snapshot_and_outputs(tmp_path: Path) -> None:
     assert float(spike_label.get("x")) == pytest.approx(float(first_marker.get("x")))
     assert float(spike_label.get("y")) < float(first_marker.get("y"))
     assert "illustrative-raw-voltage" not in svg_text
-    from openscope_p3_publication.ecephys_qc_figure import load_ecephys_unit_trace
+    from openscope_p3_publication.ecephys_qc_figure import (
+        load_ecephys_qc_unit_yield,
+        load_ecephys_unit_trace,
+    )
     trace = load_ecephys_unit_trace()
     snr_path = root.find(".//svg:g[@id='recorded-snr-voltage']/svg:path", namespace)
     snr_points = re.findall(r"[ML]\s+([-0-9.]+)\s+([-0-9.]+)", snr_path.get("d"))
@@ -4017,7 +4020,7 @@ def test_ecephys_qc_dashboard_snapshot_and_outputs(tmp_path: Path) -> None:
             assert all(float(label.get("x")) > (f[0] + f[2]) / 2 for label in labels)
             assert all(float(label.get("y")) > (f[1] + f[3]) / 2 for label in labels)
     assert b[2] - b[0] < g[2] - g[0]
-    for record in load_unit_yield_data()["summary"]:
+    for record in load_ecephys_qc_unit_yield()["summary"]:
         count = root.find(
             f".//svg:g[@id='yield-session-count-day-{record['day']}']/svg:text", namespace
         )
@@ -4026,7 +4029,7 @@ def test_ecephys_qc_dashboard_snapshot_and_outputs(tmp_path: Path) -> None:
     points = [tuple(map(float, pair)) for pair in re.findall(
         r"[ML]\s+([-0-9.]+)\s+([-0-9.]+)", mean_path.get("d")
     )]
-    summary = load_unit_yield_data()["summary"]
+    summary = load_ecephys_qc_unit_yield()["summary"]
     assert len(points) == len(summary)
     for point, record in zip(points, summary, strict=True):
         day_fraction = (record["day"] - summary[0]["day"]) / (

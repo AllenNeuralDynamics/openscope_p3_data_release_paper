@@ -297,9 +297,12 @@ Possible QC failure can come from these cases: white foam buildup on the edge of
 #### Neuropixels unit quality control
 
 The unit-quality analyses in [Figure 6](#fig-ecephys-qc-dashboard) used a committed
-pool of 192,273 sorted units from 59 CCF-aligned sessions across
-16 mice ([DANDI:001637](https://dandiarchive.org/dandiset/001637/draft)). Unit anatomy was
-assigned via the extremum electrode channel. Population panels B, C, F, and G
+pool of 192,273 sorted units from 59 sessions across
+16 mice ([DANDI:001637](https://dandiarchive.org/dandiset/001637/draft)). The excluded
+60th session, mouse 832691 on 2026-03-25, failed session-inventory QC because of
+mouse stress, whereas session `830851_2026-03-17` (also tagged for mouse stress in
+the inventory) was retained in the 59-session cohort. Unit anatomy was
+assigned via the extremum electrode channel. Population panels B, C, D, F, and G
 retained 23,045 units with ISI violations ratio < 0.01 (1.5 ms refractory
 threshold), presence ratio > 0.90, amplitude cutoff < 0.10, and peak-channel
 waveform SNR ≥ 3.0, together with non-negative depth from cortical entry and
@@ -309,9 +312,9 @@ of SNR, ISI violations ratio, and peak-to-peak unit-location drift.
 Zero-violation ratios are displayed at $10^{-6}$ on logarithmic axes; the drift
 display is limited to the 99th percentile without discarding retained values.
 These comparisons concern repeated acute insertions, not tracking the same
-neurons across days. Recording-day yield in panel D used broader gates:
-ISI violations ratio < 0.5, presence ratio > 0.8, and amplitude cutoff < 0.1,
-without an SNR threshold.
+neurons across days. Recording-day yield in panel D divides each session's
+retained units by the recorded probe count and normalizes to each mouse's
+day-1 baseline.
 
 #### Optotagging protocol
 
@@ -1136,7 +1139,7 @@ panel without network access.
 ### Neuropixels recordings
 
 (fig-supp-neuropixels-unit-yield)=
-To support repeated targeting while avoiding blood vessels, each probe's entry point was shifted slightly from its position on the previous day. Across 60 unit-bearing sessions from 16 mice, mean QC-passing unit yield per recorded probe declined from 100% of the day-1 baseline to 80.9% on day 4 ([Figure 6D](#fig-ecephys-qc-dashboard)). Unit-quality metrics and unit-location drift summaries are shown alongside this yield summary in [Figure 6](#fig-ecephys-qc-dashboard).
+To support repeated targeting while avoiding blood vessels, each probe's entry point was shifted slightly from its position on the previous day. Across 59 sessions from 16 mice, mean QC-passing unit yield per recorded probe declined from 100% of the day-1 baseline to 71.2% on day 4 ([Figure 6D](#fig-ecephys-qc-dashboard)). Unit-quality metrics and unit-location drift summaries are shown alongside this yield summary in [Figure 6](#fig-ecephys-qc-dashboard).
 
 :::{iframe} ./interactive/openscope_qc_dashboard.html
 :label: fig-ecephys-qc-dashboard
@@ -1184,22 +1187,22 @@ identify the source units, electrodes, raw AP chunks, sample intervals, sorting
 run, analyzer version, and measurement parameters.
 The electrode is the channel with the largest negative trough in the unit's
 recorded mean waveform, matched to the raw AP store by channel name.
-Population analyses (B, C, F, G) include 192,273 units from 59 CCF-aligned sessions
-across 16 mice. Displayed distributions retain units passing ISI-violations
+Population analyses (B, C, D, F, G) include 192,273 units from 59 sessions
+across 16 mice; the excluded 60th session (mouse 832691 on 2026-03-25) failed
+inventory QC because of mouse stress, while session `830851_2026-03-17` is retained.
+Displayed distributions retain units passing ISI-violations
 ratio <0.01, presence ratio >0.90, amplitude cutoff <0.10, SNR >=3.0, and
 localized cortical depth, excluding unlabeled ('void') channels.
 **B,** Empirical cumulative distribution functions (ECDFs) of unit SNR,
 comparing initial (first session, blue) and final (last session, orange)
 recordings. Bold lines denote pooled populations; faint lines show individual
 mice. **C,** ECDF of refractory-period ISI-violation ratios.
-**D,** Recording-day unit yield across 60 unit-bearing sessions from 16 mice.
+**D,** Recording-day unit yield across the same 59 sessions from 16 mice,
+using the same QC gates as B, C, F, and G.
 Light-gray lines connect each mouse's sessions, the bold black line shows the daily mean,
-and *n* is the number of sessions on each day. Units in this panel pass
-ISI-violations ratio <0.5, presence ratio >0.8, and amplitude cutoff <0.1;
-these broader gates differ from B, C, F and G. QC-passing units are divided by the
+and *n* is the number of sessions on each day. Retained QC-passing units are divided by the
 recorded probe count and normalized to each mouse's day-1 value. Mean yield
-declines from 100% on day 1 to 80.9% on day 4. The yield snapshot is from the
-public draft of Dandiset 001637 retrieved July 30, 2026.
+declines from 100% on day 1 to 71.2% on day 4.
 **E,** Measured unit-location drift for unit 201, reconstructing its saved
 `drift_ptp` (31.09 µm): median vertical spike location in each complete 60 s
 bin with at least 100 spikes, plotted relative to the unit's full-session

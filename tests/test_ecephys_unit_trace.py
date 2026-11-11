@@ -22,8 +22,11 @@ def test_unit_qc_methods_report_snapshot_population_and_gates() -> None:
     units = load_ecephys_qc_data()["units"]
     count = len(units["snr"])
     assert f"{count:,} sorted units" in prose
-    assert f"{len(set(units['session_key']))} CCF-aligned sessions" in prose
+    assert f"{len(set(units['session_key']))} sessions" in prose
     assert f"{len(set(units['mouse_id']))} mice" in prose
+    assert "832691 on 2026-03-25" in prose
+    assert "mouse stress" in prose
+    assert "830851_2026-03-17" in prose
     keep = np.ones(count, dtype=bool)
     for metric, operation, threshold in (
         ("isi_violations_ratio", np.less, 0.01),
@@ -49,11 +52,9 @@ def test_unit_qc_methods_report_snapshot_population_and_gates() -> None:
         "$10^{-6}$",
         "99th percentile without discarding retained values",
         "not tracking the same neurons",
-        "panel D used broader gates",
-        "ISI violations ratio < 0.5",
-        "presence ratio > 0.8",
-        "amplitude cutoff < 0.1",
-        "without an SNR threshold",
+        "Population panels B, C, D, F, and G",
+        "divides each session's retained units by the recorded probe count",
+        "normalizes to each mouse's day-1 baseline",
     ):
         assert requirement in prose
     assert "first and fourth" not in prose
