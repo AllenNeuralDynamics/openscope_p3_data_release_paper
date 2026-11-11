@@ -1,8 +1,8 @@
 {
   "description": "OpenScope Ecephys QC Dashboard Data",
   "snapshot": "ecephys-qc-dashboard.json.gz",
-  "snapshot_sha256": "a6a57a013f05e8b16bf09760b6588a31261b7d1bb9c9ff78a22f670116b1a836",
-  "timestamp_utc": "2026-11-11T17:39:37.052919+00:00",
+  "snapshot_sha256": "4dee86f0b33b9100dad8c1e49776046c17e3854d345846f699501f79152b4898",
+  "timestamp_utc": "2026-10-10T22:39:18.742346+00:00",
   "dandiset": "001637",
   "version": "draft",
   "source_assets": [
@@ -305,12 +305,6 @@
       "asset_id": "ce62d153-644b-4da9-b5a7-823353bb7ccb",
       "path": "sub-830849/sub-830849_ses-ecephys-830849-2026-03-06-10-51-58_ecephys.nwb",
       "modified": "2026-06-30 15:33:04.363401+00:00"
-    },
-    {
-      "session_key": "832691_2026-03-25",
-      "asset_id": "09d6a6d5-bffc-4069-b966-164c5294e5be",
-      "path": "sub-832691/sub-832691_ses-ecephys-832691-2026-03-25-10-22-33_ecephys.nwb",
-      "modified": "2026-08-07 11:38:11.018982+00:00"
     },
     {
       "session_key": "834686_2026-03-25",

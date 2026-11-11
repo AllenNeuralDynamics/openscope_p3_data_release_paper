@@ -22,8 +22,11 @@ def test_unit_qc_methods_report_snapshot_population_and_gates() -> None:
     units = load_ecephys_qc_data()["units"]
     count = len(units["snr"])
     assert f"{count:,} sorted units" in prose
-    assert f"{len(set(units['session_key']))} CCF-aligned sessions" in prose
+    assert f"{len(set(units['session_key']))} sessions" in prose
     assert f"{len(set(units['mouse_id']))} mice" in prose
+    assert "832691 on 2026-03-25" in prose
+    assert "mouse stress" in prose
+    assert "830851_2026-03-17" in prose
     keep = np.ones(count, dtype=bool)
     for metric, operation, threshold in (
         ("isi_violations_ratio", np.less, 0.01),
