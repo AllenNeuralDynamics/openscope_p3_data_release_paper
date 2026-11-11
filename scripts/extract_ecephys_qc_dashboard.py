@@ -190,6 +190,7 @@ SESSION_DESIGN = {
             "830847_2026-03-11",
             "830848_2026-03-04",
             "830849_2026-03-06",
+            "832691_2026-03-25",
             "834686_2026-03-25",
             "834687_2026-03-18",
         ],
@@ -1638,7 +1639,7 @@ def build_static_spectral_payload(manifest, csd_records, align_units, l1_refs, c
 
 
 def _compact_fr_series(ts):
-    if ts is None:
+    if ts is None or not isinstance(ts, (list, tuple, np.ndarray)):
         return None
     out = []
     for v in ts:
