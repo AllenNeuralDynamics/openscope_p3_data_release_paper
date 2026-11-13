@@ -186,6 +186,26 @@ and [mesoscope](https://dandiarchive.org/dandiset/001768/draft/files) Dandisets.
 The example CSVs define the protocol and schema; they are not a replay of a
 particular recorded session.
 
+The `Duration` and `Delay` values in these tables, and the durations given in
+[Stimuli parameters](#stimuli-parameters), are requested (nominal) values.
+Presentation was quantized to whole display frames. On the Neuropixels and
+mesoscope rigs (nominally 60 Hz, measured refresh rate 59.95 Hz), 343 ms gratings
+in the standard oddball, duration mismatch, standard control (C1) and jitter
+control (C3) blocks were displayed for 22 frames (367 ms). Between standard
+trials, the 343 ms grey interval lasted 20 frames (333.6 ms), so standard onsets
+were 700.6 ms apart. The 343 ms events of the sensorimotor mismatch and
+open-loop control (C4) blocks lasted 21 frames (350.3 ms). The 250 ms elements
+of the sequence mismatch and sequential control (C2) blocks were displayed for
+16 frames (267 ms). Across sessions, each of these counts held for at least 97%
+of the corresponding rows, and nearly all other presentations were one frame
+shorter (about 2.5% of the 250 ms elements and 1.5% of the jitter control
+gratings). In all three modalities, a row's `Delay` sets the grey
+interval before that row's stimulus, from the previous row's `stop_time` to its
+own `start_time`. The `start_time` and `stop_time` values in the Neuropixels and
+mesoscope NWB tables are display-synchronized and give the presented timing; in
+the SLAP2 tables ([DANDI:001424](https://dandiarchive.org/dandiset/001424/draft)),
+`stop_time` equals `start_time` plus the nominal `Duration`.
+
 In the sensorimotor mismatch context, the phase of the drifting grating was coupled to the angular position of the running disc via a rotary encoder. The wheel-to-visual coupling was computed as: phase (radians) = 2π × R × θ / tan(1/f × π/180), where R is the wheel radius-to-screen ratio (0.36), θ is the wheel angle in degrees, and f is the spatial frequency (0.04 cpd). This coupling was calibrated so that the resulting visual flow approximated the optic flow a freely moving mouse would experience during forward locomotion.
 
 (stimuli-parameters)=
