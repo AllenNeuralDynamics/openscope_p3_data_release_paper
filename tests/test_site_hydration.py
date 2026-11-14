@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from openscope_p3_publication.site_hydration import bound_site_hydration
+from openscope_p3_publication.site_hydration import FIGURE_STARTUP, bound_site_hydration
 
 SOURCE = (
     "function hydrate(){};window.requestIdleCallback?"
@@ -42,7 +42,7 @@ def test_hydration_is_bounded_and_cache_distinct(tmp_path: Path) -> None:
     result = bound_site_hydration(tmp_path)
     asset = tmp_path / "build" / result["asset"]
     assert entry.read_text(encoding="utf-8") == SOURCE
-    assert asset.read_text(encoding="utf-8") == SOURCE.replace(
+    assert asset.read_text(encoding="utf-8") == FIGURE_STARTUP + SOURCE.replace(
         "requestIdleCallback(hydrate)", "requestIdleCallback(hydrate,{timeout:1500})"
     )
     assert page.read_text(encoding="utf-8") == original_page.replace(
@@ -65,6 +65,50 @@ def test_hydration_patch_is_idempotent(tmp_path: Path) -> None:
     assert before == {path: path.read_bytes() for path in before}
 
 
+def test_embedded_figures_are_lazy_loaded_without_content_changes(tmp_path: Path) -> None:
+    entry, page = site_fixture(tmp_path)
+    original = page.read_text(encoding="utf-8") + (
+        '\n<iframe src="./interactive/first.html" title="First figure"></iframe>'
+        '\n<IFRAME\nsrc="./interactive/second.html"\ntitle="Second figure"></IFRAME>'
+        '\n<iframe src="./interactive/eager.html" loading="eager"></iframe>'
+        '\n<script>const sample = \'<iframe src="./interactive/example.html">\';</script>'
+    )
+    page.write_text(original, encoding="utf-8")
+    result = bound_site_hydration(tmp_path)
+    rendered = page.read_text(encoding="utf-8")
+    assert rendered.count(' loading="lazy"') == 2
+    expected = original.replace(
+        '<iframe src="./interactive/first.html" title="First figure">',
+        '<iframe data-publication-src="./interactive/first.html" '
+        'title="First figure" loading="lazy">',
+    ).replace(
+        '<IFRAME\nsrc="./interactive/second.html"\ntitle="Second figure">',
+        '<iframe data-publication-src="./interactive/second.html" '
+        'title="Second figure" loading="lazy">',
+    )
+    assert rendered == expected.replace(entry.name, result["asset"]).replace(
+        "manifest-original.js", result["manifest"]
+    )
+    assert bound_site_hydration(tmp_path)["pages_updated"] == 0
+    assert page.read_text(encoding="utf-8") == rendered
+
+
+def test_lazy_loading_upgrades_an_already_bounded_page(tmp_path: Path) -> None:
+    site_fixture(tmp_path)
+    original = bound_site_hydration(tmp_path)
+    page = tmp_path / "index.html"
+    page.write_text(
+        page.read_text(encoding="utf-8")
+        + '\n<iframe src="./interactive/figure.html"></iframe>',
+        encoding="utf-8",
+    )
+    result = bound_site_hydration(tmp_path)
+    assert result["pages_updated"] == 1
+    assert result["asset"] == original["asset"]
+    assert result["manifest"] == original["manifest"]
+    assert ' loading="lazy"' in page.read_text(encoding="utf-8")
+
+
 def test_hydration_scheduler_receives_a_deadline(tmp_path: Path) -> None:
     node = shutil.which("node")
     if not node:
@@ -76,7 +120,8 @@ def test_hydration_scheduler_receives_a_deadline(tmp_path: Path) -> None:
         "import {runInNewContext} from 'node:vm'; let deadline; let calls=0;"
         "const window={requestIdleCallback(callback,options){deadline=options.timeout;"
         "callback();calls+=1;},setTimeout(){throw new Error('Unexpected fallback');}};"
-        f"runInNewContext({json.dumps(source)},{{window}});"
+        "const document={querySelectorAll(){return [];}};"
+        f"runInNewContext({json.dumps(source)},{{window,document}});"
         "console.log(JSON.stringify({deadline,calls}));"
     )
     completed = subprocess.run(
@@ -84,6 +129,38 @@ def test_hydration_scheduler_receives_a_deadline(tmp_path: Path) -> None:
         capture_output=True, text=True, encoding="utf-8",
     )
     assert json.loads(completed.stdout) == {"deadline": 1500, "calls": 1}
+
+
+def test_figures_start_only_when_near_the_viewport() -> None:
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("Node.js is required for the figure startup runtime check.")
+    code = (
+        "import {runInNewContext} from 'node:vm'; let activate; let margin;"
+        "const frames=['first.html','second.html'].map(source=>({"
+        "dataset:{publicationSrc:source},removeAttribute(){delete this.dataset.publicationSrc;}"
+        "})); const observed=[]; const unobserved=[];"
+        "const window={IntersectionObserver:class {constructor(callback,options){"
+        "activate=callback;margin=options.rootMargin;}observe(frame){observed.push(frame);}"
+        "unobserve(frame){unobserved.push(frame);}}};"
+        "const document={querySelectorAll(){return frames;}};"
+        f"runInNewContext({json.dumps(FIGURE_STARTUP)},{{window,document}});"
+        "const before=frames.map(frame=>frame.src??null);"
+        "activate([{target:frames[0],isIntersecting:true},"
+        "{target:frames[1],isIntersecting:false}]);"
+        "console.log(JSON.stringify({before,after:frames.map(frame=>frame.src??null),"
+        "pending:frames.map(frame=>frame.dataset.publicationSrc??null),"
+        "observed:observed.length,unobserved:unobserved.length,margin}));"
+    )
+    completed = subprocess.run(
+        [node, "--input-type=module", "-e", code], check=True,
+        capture_output=True, text=True, encoding="utf-8",
+    )
+    assert json.loads(completed.stdout) == {
+        "before": [None, None], "after": ["first.html", None],
+        "pending": [None, "second.html"], "observed": 2, "unobserved": 1,
+        "margin": "1200px 0px",
+    }
 
 
 @pytest.mark.parametrize("source", ["unknown bootstrap", SOURCE + SOURCE])

@@ -96,6 +96,13 @@ uses a cache-distinct entry URL without changing the original bundled asset,
 manuscript text, or contribution data. Unsupported bootstrap shapes fail clearly.
 Run the same command after local `myst build --html` previews.
 
+The same step defers manuscript iframe URLs until an intersection observer finds
+them within 1,200 pixels of the viewport, with native `loading="lazy"` as an
+additional hint. This reduces startup memory pressure on mobile Safari without
+changing manuscript text, figure destinations, or viewer controls. Explicit eager
+loading is preserved; browsers without intersection observers load normally.
+The site pins book-theme 1.4.1 to match the pinned MyST 1.10.1 build toolchain.
+
 ### Figure 6 recorded diagnostic examples
 
 Panel A reads the compact, checksummed

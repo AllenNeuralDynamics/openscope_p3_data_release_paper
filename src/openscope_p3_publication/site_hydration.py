@@ -1,4 +1,4 @@
-"""Bound the idle-only hydration bootstrap emitted by the pinned MyST version."""
+"""Bound MyST hydration startup and defer off-screen publication figures."""
 
 from __future__ import annotations
 
@@ -6,11 +6,69 @@ import argparse
 import hashlib
 import json
 import re
+from html import escape
+from html.parser import HTMLParser
 from pathlib import Path, PurePosixPath
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SUPPORTED_MYST = "1.10.1"
 HYDRATION_CALL = re.compile(r"(window\.requestIdleCallback\()([A-Za-z_$][\w$]*)(\))")
+FIGURE_STARTUP = """(() => {
+    const frames = document.querySelectorAll("iframe[data-publication-src]");
+    const load = frame => {
+        frame.src = frame.dataset.publicationSrc;
+        frame.removeAttribute("data-publication-src");
+    };
+    if (!window.IntersectionObserver) {
+        frames.forEach(load);
+        return;
+    }
+    const observer = new window.IntersectionObserver(entries => {
+        for (const entry of entries) {
+            if (entry.isIntersecting) {
+                load(entry.target);
+                observer.unobserve(entry.target);
+            }
+        }
+    }, {rootMargin: "1200px 0px"});
+    frames.forEach(frame => observer.observe(frame));
+})();
+"""
+
+
+class _LazyIframeParser(HTMLParser):
+    def __init__(self, source: str) -> None:
+        super().__init__(convert_charrefs=False)
+        self.line_offsets = [0]
+        for line in source.splitlines(keepends=True):
+            self.line_offsets.append(self.line_offsets[-1] + len(line))
+        self.replacements: list[tuple[int, int, str]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        if tag != "iframe" or not attributes.get("src") or attributes.get("loading") == "eager":
+            return
+        updated = [
+            ("data-publication-src" if name == "src" else name, value)
+            for name, value in attrs
+        ]
+        if "loading" not in attributes:
+            updated.append(("loading", "lazy"))
+        rendered = "<iframe" + "".join(
+            f' {name}="{escape(value, quote=True)}"' if value is not None else f" {name}"
+            for name, value in updated
+        ) + ">"
+        line, column = self.getpos()
+        start = self.line_offsets[line - 1] + column
+        self.replacements.append((start, start + len(self.get_starttag_text()), rendered))
+
+
+def _lazy_figure_frames(source: str) -> str:
+    parser = _LazyIframeParser(source)
+    parser.feed(source)
+    for start, end, rendered in reversed(parser.replacements):
+        source = source[:start] + rendered + source[end:]
+    return source
 
 
 def bound_site_hydration(html_dir: Path, myst_version: str = SUPPORTED_MYST) -> dict:
@@ -24,7 +82,7 @@ def bound_site_hydration(html_dir: Path, myst_version: str = SUPPORTED_MYST) -> 
     source = entry.read_text(encoding="utf-8")
     if len(HYDRATION_CALL.findall(source)) != 1:
         raise ValueError("Unrecognized MyST hydration bootstrap; refusing to patch it.")
-    patched = HYDRATION_CALL.sub(r"\1\2,{timeout:1500}\3", source)
+    patched = FIGURE_STARTUP + HYDRATION_CALL.sub(r"\1\2,{timeout:1500}\3", source)
     digest = hashlib.sha256(patched.encode("utf-8")).hexdigest()
     name = f"hydration-entry-{digest[:20]}.js"
     manifests = sorted((html_dir / "build").glob("manifest-*.js"))
@@ -53,10 +111,12 @@ def bound_site_hydration(html_dir: Path, myst_version: str = SUPPORTED_MYST) -> 
     for page in pages:
         text = page.read_text(encoding="utf-8")
         existing_references += text.count(manifest_name)
-        if entry.name in text or manifest.name in text:
-            changes.append((
-                page, text.replace(entry.name, name).replace(manifest.name, manifest_name)
-            ))
+        if any(reference in text for reference in (entry.name, manifest.name, manifest_name)):
+            updated = _lazy_figure_frames(text).replace(entry.name, name).replace(
+                manifest.name, manifest_name
+            )
+            if updated != text:
+                changes.append((page, updated))
     if not changes:
         asset = html_dir / "build" / name
         if (
