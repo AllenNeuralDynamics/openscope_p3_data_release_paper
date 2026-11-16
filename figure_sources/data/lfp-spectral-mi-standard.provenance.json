@@ -1,0 +1,139 @@
+{
+  "archive_url": "https://dandiarchive.org/dandiset/001637/draft/files",
+  "assets": {
+    "sub-820454/sub-820454_ses-ecephys-820454-2025-11-05-15-21-15_ecephys.nwb": {
+      "asset_id": "21988ae7-fce0-41f2-a2af-b6c2ddcd6e52",
+      "dandi_etag": "8384d8828eada8c3fce3559a78231819-216",
+      "modified": "2026-08-07 12:39:43.916191+00:00",
+      "sha256": "c2c026effe9a660cc22c9ccd54a3404cf40e2f0fce27763c43fd9575ecc50961",
+      "size": 14443031618
+    },
+    "sub-830794/sub-830794_ses-ecephys-830794-2026-01-27-11-25-31_ecephys.nwb": {
+      "asset_id": "50a50f11-dbf8-482f-bc8f-6629e91c2f06",
+      "dandi_etag": "d43748b4b5c0b02f906107f2fcb0613c-170",
+      "modified": "2026-08-07 06:17:34.935499+00:00",
+      "sha256": "5cb1309956fff80d0700c3a19363e60b3845dab701b0d11a0c9216caeb98df7c",
+      "size": 11376942209
+    },
+    "sub-830795/sub-830795_ses-ecephys-830795-2026-02-24-15-08-59_ecephys.nwb": {
+      "asset_id": "bcd5353c-af8e-4a60-87b6-8b29568d84f5",
+      "dandi_etag": "32d1ce5cdd6ba19601fc343ae426ce3c-185",
+      "modified": "2026-08-07 12:33:14.052423+00:00",
+      "sha256": "dbfbb781bf5b9966723421bc54a7c2991113d734a2eafeb35fa1c8641d0189fc",
+      "size": 12379407293
+    },
+    "sub-830846/sub-830846_ses-ecephys-830846-2026-03-11-10-19-32_ecephys.nwb": {
+      "asset_id": "680d1c0c-e338-4d0b-ba29-4329436d2ae2",
+      "dandi_etag": "c5c9b35bf2ef2f8642817fce28d6776b-196",
+      "modified": "2026-06-30 15:24:39.402591+00:00",
+      "sha256": "eabc1dbfef9d58b6692636989eeddc7a81eb4ebae3f9258a1520954bb99a136f",
+      "size": 13095960631
+    },
+    "sub-830847/sub-830847_ses-ecephys-830847-2026-03-11-15-46-40_ecephys.nwb": {
+      "asset_id": "156b6e72-c822-471a-be9b-69297f4eda78",
+      "dandi_etag": "c303ce45e51c58e05ff25fd1e1e16370-201",
+      "modified": "2026-08-06 04:24:54.415505+00:00",
+      "sha256": "f3675a085aa47a9946781d826bd80b976731d7a2d0fca34ec8c40cd341547426",
+      "size": 13434010643
+    },
+    "sub-830848/sub-830848_ses-ecephys-830848-2026-03-04-15-34-54_ecephys.nwb": {
+      "asset_id": "e597fc7d-a8e5-4a1f-833e-4eee1c139e35",
+      "dandi_etag": "5e6d441d2b5de74f59d9b0f4f574d0fd-192",
+      "modified": "2026-08-07 12:25:32.636816+00:00",
+      "sha256": "54d555ac6207bf39768d6e9e8a269f2a61acb9c6c57f5da49ba20ece023d4ed8",
+      "size": 12852157417
+    },
+    "sub-830849/sub-830849_ses-ecephys-830849-2026-03-06-10-51-58_ecephys.nwb": {
+      "asset_id": "ce62d153-644b-4da9-b5a7-823353bb7ccb",
+      "dandi_etag": "bde35af8e1045d7c7b9ae8c2fbb49fcd-187",
+      "modified": "2026-06-30 15:33:04.363401+00:00",
+      "sha256": "b3b1c25d6f6f548fda2cd9ca610894963fff49d51ea5f249c40784987c7bf31d",
+      "size": 12544938972
+    },
+    "sub-830851/sub-830851_ses-ecephys-830851-2026-03-17-10-46-04_ecephys.nwb": {
+      "asset_id": "9b9e8abe-7b43-47f1-b8e1-4114f87898a1",
+      "dandi_etag": "c890e24cec431efc73bda51349ad653a-191",
+      "modified": "2026-06-30 12:27:45.271720+00:00",
+      "sha256": "2ae7f404e488144b81cff7e273ba386b88c3468e6fb0efce1d1f26c1e45436fe",
+      "size": 12793015545
+    },
+    "sub-830852/sub-830852_ses-ecephys-830852-2026-02-24-10-20-58_ecephys.nwb": {
+      "asset_id": "92ea6e6a-7525-4589-bfd3-839a48d27b7c",
+      "dandi_etag": "06b511269178f554e3378cce261e8b2a-187",
+      "modified": "2026-08-07 06:20:35.291965+00:00",
+      "sha256": "17e6846f3201d1d415ff7a0fc5af37a9eec9692c442b92d7d3ff34a75f86c230",
+      "size": 12490078288
+    },
+    "sub-832691/sub-832691_ses-ecephys-832691-2026-03-25-10-22-33_ecephys.nwb": {
+      "asset_id": "09d6a6d5-bffc-4069-b966-164c5294e5be",
+      "dandi_etag": "71681223245f14125e360175c6114a33-191",
+      "modified": "2026-08-07 11:38:11.018982+00:00",
+      "sha256": "a69a41e9bd080c216b2fd0cce77b714721a563d8db5a0e62b9a935f3e39dda66",
+      "size": 12807322159
+    },
+    "sub-834686/sub-834686_ses-ecephys-834686-2026-03-25-15-47-48_ecephys.nwb": {
+      "asset_id": "edfcb46c-943c-4ba7-b47f-2d3f24e1cf59",
+      "dandi_etag": "5c59d7d71e83353f3905cadc1f409f6b-191",
+      "modified": "2026-08-07 06:14:51.343737+00:00",
+      "sha256": "429c43dd3b24abb2b5a9508a1b81eb47aa6dd4efbc72ef6ead4b987ab8de63f7",
+      "size": 12754631214
+    },
+    "sub-834687/sub-834687_ses-ecephys-834687-2026-03-18-15-50-10_ecephys.nwb": {
+      "asset_id": "a7f50043-8883-4c0e-a956-2ff3e0f1b0ef",
+      "dandi_etag": "721a6cb69736250ca779d90ed8e9083c-192",
+      "modified": "2026-08-06 04:22:36.928920+00:00",
+      "sha256": "132bc6734ff516ef8f7aa920b74f5c7b777201632a61e9b19cac06ad08dc2ce5",
+      "size": 12819445281
+    },
+    "sub-834691/sub-834691_ses-ecephys-834691-2026-02-17-10-49-35_ecephys.nwb": {
+      "asset_id": "a909a36b-7f70-4e9f-b95e-7f913e5d724a",
+      "dandi_etag": "c02e6940cd191c62db405f340057f237-167",
+      "modified": "2026-08-07 06:18:55.505226+00:00",
+      "sha256": "2e514a6c73b36c776a2c06ddcac0b5db9af50ebd536e20b6addfd73a0bbf3bc1",
+      "size": 11195891728
+    },
+    "sub-848387/sub-848387_ses-ecephys-848387-2026-05-05-15-55-50_ecephys.nwb": {
+      "asset_id": "fedadbb4-0398-44bd-9678-f0bcc0e52fd3",
+      "dandi_etag": "59cbf4e02f513ac72c2858d236d77a23-193",
+      "modified": "2026-08-07 06:20:18.205071+00:00",
+      "sha256": "8dbae1101a4e807bdb65e644c6c65e4f017359c48b1161426027aeb0ec9f2e6a",
+      "size": 12898130425
+    },
+    "sub-848390/sub-848390_ses-ecephys-848390-2026-05-05-10-08-25_ecephys.nwb": {
+      "asset_id": "81807807-957a-40bf-9b81-52a8d560c8e6",
+      "dandi_etag": "cf5ef908f64461acbc968bf684a44dfe-202",
+      "modified": "2026-08-07 06:17:23.918498+00:00",
+      "sha256": "d9fc28eba1dfe02f00be7be76ba4a356726f66e9f1f9fe532112d82d186cfddd",
+      "size": 13493293847
+    }
+  },
+  "dandiset_id": "001637",
+  "dandiset_version": "draft",
+  "description": "Standard-oddball LFP power changes (Supplementary Figure 7): group power differences and FDR q per area and frequency, V1 spectra per mouse, and the example trial.",
+  "exported_on": "2026-11-06",
+  "output": {
+    "path": "lfp-spectral-mi-standard.json",
+    "sha256": "90c8279119e85f378f29207c7b822b1444affae6c37ae2d8b2850fc61bd9c818"
+  },
+  "parameters": {
+    "alpha": 0.05,
+    "balanced_draws": 20,
+    "chunk_s": 1.0,
+    "control_block": "(?i)^standard_control$",
+    "freq_bins": "50 log-spaced, 4-100 Hz",
+    "group_test": "one-sided Wilcoxon of MI > 0, Benjamini-Hochberg per event",
+    "label_shuffles": 200,
+    "max_channels_per_area": 10,
+    "max_control_per_stimulus": 70,
+    "max_standards": 400,
+    "mi": "Gaussian-copula, balanced classes",
+    "min_animals_shown": 3,
+    "min_animals_tested": 6,
+    "min_trials": 20,
+    "nfft": 16384,
+    "oddball_trials": 35,
+    "skip_after_deviant": 2,
+    "taper": "Gaussian, FWHM = median standard duration"
+  },
+  "version": 1
+}
