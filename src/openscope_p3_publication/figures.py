@@ -1308,12 +1308,17 @@ def _add_targeting_to_neural_static_svg(output: Path) -> None:
     _write_svg_tree(output, root)
 
 
-def write_unit_extraction_plan_svg(output: Path = UNIT_EXTRACTION_PLAN_OUTPUT) -> Path:
+def write_unit_extraction_plan_svg(
+    output: Path = UNIT_EXTRACTION_PLAN_OUTPUT,
+) -> tuple[Path, Path]:
+    """Write Figure 5 and its by-cohort variant, and keep the legacy class panels current."""
+    from openscope_p3_publication.slap2_figure5 import BY_COHORT_OUTPUT, write_figure5
     from openscope_p3_publication.slap2_glutamate_figure7_panels import (
-        write_slap2_glutamate_figure,
+        write_publication_panels,
     )
 
-    return write_slap2_glutamate_figure(output)
+    write_publication_panels(output.parent)
+    return write_figure5(output, BY_COHORT_OUTPUT)
 
 
 def write_unit_extraction_mesoscope_svg(
@@ -7059,7 +7064,6 @@ def main() -> None:
         write_sensorimotor_running_html,
         write_sensorimotor_running_svg,
     )
-    from .slap2_figure5_variants import write_figure5_variants
     from .slap2_standard_oddball_figure import build_slap2_standard_oddball
     from .standard_oddball_column import build_standard_oddball_column
     from .standard_oddball_explorer import build_standard_oddball_explorer
@@ -7072,8 +7076,9 @@ def main() -> None:
     figure_1_panel_c_path = write_figure_1_panel_c_svg()
     hardware_path = write_hardware_figure_svg()
     hardware_supplement_path = write_hardware_supplement_svg()
-    unit_extraction_plan_path = write_unit_extraction_plan_svg()
-    unit_extraction_plan_variant_paths = write_figure5_variants()
+    unit_extraction_plan_path, unit_extraction_plan_by_cohort_path = (
+        write_unit_extraction_plan_svg()
+    )
     unit_extraction_mesoscope_path = write_unit_extraction_mesoscope_svg()
     receptive_fields_path = write_receptive_fields_svg()
     html_path = write_interactive_html()
@@ -7123,8 +7128,7 @@ def main() -> None:
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {hardware_supplement_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_plan_path.relative_to(REPO_ROOT)}")
-    for variant_path in unit_extraction_plan_variant_paths:
-        print(f"Wrote {variant_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {unit_extraction_plan_by_cohort_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_mesoscope_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {receptive_fields_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")

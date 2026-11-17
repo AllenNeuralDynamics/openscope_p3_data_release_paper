@@ -1,0 +1,147 @@
+{
+  "dandiset_id": "001424",
+  "dandiset_version": "draft",
+  "outputs": {
+    "slap2_context_rates_all_sessions.csv": "a1197c56958e40c149f749af9e9a1c08b5c5fe58a7406886bc1ebe569d1862e9",
+    "slap2_metrics_all_sessions.csv": "41fab0c74a3b485bd252664431a405c84b6ba873b641e62afd571a283534a04e",
+    "slap2_session_summary.csv": "27e21c055e08971f5bdedf5c7ea338ed6767290e19cf866d24dcf2bf5e77809c"
+  },
+  "parameters": {
+    "classification_scope": "one fit over all sessions",
+    "classification_seed": 0,
+    "detection_threshold_sd": 3.0,
+    "large_event_minimum_sd": 4.0,
+    "sampling_interval_rule": "nominal 200 Hz; median timestamp step only checked (#59)",
+    "sampling_interval_seconds": 0.005,
+    "tau_seconds": 0.02
+  },
+  "retrieved_at": "2026-11-17T10:26:41+00:00",
+  "sessions_from": {
+    "path": "figure_sources/data/slap2-glutamate-qc/slap2_metrics_all_sessions.csv",
+    "sha256": "05fb3ac28577de6451495457f4051ef63151da5bb2eec8dc8ce6e4c68a326734"
+  },
+  "source_assets": [
+    {
+      "asset_id": "98e54c75-2b4a-41ca-b502-b58d63b1f6d5",
+      "path": "sub-776270/sub-776270_ses-SLAP2-776270-2025-07-02-11-50-06_image+ophys.nwb",
+      "sha256": "d2c2be3d9201cf3e98f8f3f5a867cb988d9960a5489d2cbc35e9810cd81b3b3d",
+      "size": 527290644
+    },
+    {
+      "asset_id": "ff65e279-c30f-4c92-8687-c8934d2b9342",
+      "path": "sub-794237/sub-794237_ses-20250403T103830_image+ophys.nwb",
+      "sha256": "dd7d48d597f0f2276e6056de0f5d47830767c9fc780e7ac3e3d71a622e331b61",
+      "size": 2529711248
+    },
+    {
+      "asset_id": "4c105b81-0522-4139-b6d9-5f454e3a2076",
+      "path": "sub-794237/sub-794237_ses-20250424T142019_image+ophys.nwb",
+      "sha256": "656b103d7f7d689eea654b11b0750e1ba8769773940775a17900d6a8074fac30",
+      "size": 2385128084
+    },
+    {
+      "asset_id": "1fccbd05-7ba2-4e40-9cb8-e8814119f756",
+      "path": "sub-794237/sub-794237_ses-20250508T145040_image+ophys.nwb",
+      "sha256": "375a7ed7c5793cba2aaa24834db5849a71901d36d772a9b94e80df01a619c801",
+      "size": 2763502656
+    },
+    {
+      "asset_id": "b8c05ec0-0a74-46f5-956d-e82af3cc5d27",
+      "path": "sub-796630/sub-796630_ses-SLAP2-796630-2025-08-25-14-59-15_image+ophys.nwb",
+      "sha256": "38fe9e1d52a2dbd211d09fa172aac8005024c2da3a7f446bc751f1a697106d39",
+      "size": 1528694576
+    },
+    {
+      "asset_id": "1b6509ef-70d7-46e4-9c8e-587bb6ace95f",
+      "path": "sub-796630/sub-796630_ses-SLAP2-796630-2025-08-28-14-25-34_image+ophys.nwb",
+      "sha256": "af8798fbd52184adfce210ad1e6442c49dfc3488f1195062b48d00f25e3206b6",
+      "size": 1467934164
+    },
+    {
+      "asset_id": "eb2eb08b-14b2-479d-ac1b-1259db054727",
+      "path": "sub-796630/sub-796630_ses-SLAP2-796630-2025-09-26-10-48-22_image+ophys.nwb",
+      "sha256": "82428429b16cf30528b46690bd09ba4d2c836098b22ae5a01f8e42e815c61139",
+      "size": 1872522164
+    },
+    {
+      "asset_id": "44871646-ca8d-440d-b970-5756ed7cb47e",
+      "path": "sub-796630/sub-796630_ses-SLAP2-796630-2025-10-01-14-23-25_image+ophys.nwb",
+      "sha256": "4642ac3e001a741b75a9a604d1c8ad40375c1548bacf5681e61324c77ca1297d",
+      "size": 2619720316
+    },
+    {
+      "asset_id": "2ecafd40-29a6-422f-92b0-32f7e940c783",
+      "path": "sub-801381/sub-801381_ses-SLAP2-801381-2025-06-05-14-57-42_image+ophys.nwb",
+      "sha256": "16b79a80981c5a81cd69f555ae710add02edf530e79f9b5869045b770e6c9416",
+      "size": 1005358404
+    },
+    {
+      "asset_id": "22ad0a5a-c28c-45c7-af6f-98817ef16c54",
+      "path": "sub-801381/sub-801381_ses-SLAP2-801381-2025-09-26-14-17-56_image+ophys.nwb",
+      "sha256": "0621409bc6c6607b7e6a7c87fa8eb94fb34032e5aada45d1bcc253cd5a34856a",
+      "size": 960973284
+    },
+    {
+      "asset_id": "d5120d10-e8b5-469b-b7a1-0b03cef0a831",
+      "path": "sub-801381/sub-801381_ses-SLAP2-801381-2025-10-02-15-23-18_image+ophys.nwb",
+      "sha256": "ad7f61020e3fa783391ef67ad1d8072f1548eb42d9ed103e17ebb6ecc1f10e01",
+      "size": 2303311004
+    },
+    {
+      "asset_id": "d23a03af-c3bd-4cf0-9492-6dca96fb201d",
+      "path": "sub-803496/sub-803496_ses-SLAP2-803496-2025-07-02-15-33-26_image+ophys.nwb",
+      "sha256": "5ede03805ff06556520723bf7e89ae83eeb291818949e2145d923a6c704805e9",
+      "size": 678863608
+    },
+    {
+      "asset_id": "0929c67a-7eca-46d8-836d-430a8df136ae",
+      "path": "sub-828408/sub-828408_ses-828408-2025-11-13-10-30-53_image+ophys.nwb",
+      "sha256": "3b7fd9d9ead2b7fc044f0f3d5033617e706b0c3f5e99e9db74c35d9384b98195",
+      "size": 2616654491
+    },
+    {
+      "asset_id": "686c579b-eddf-4e7d-b9b2-c633e2d1fb15",
+      "path": "sub-828408/sub-828408_ses-828408-2025-11-18-14-44-48_image+ophys.nwb",
+      "sha256": "6cf6d61adad31d49ba761fea0767b437112fb7f83729be500aff63966a64f6ac",
+      "size": 3846456589
+    },
+    {
+      "asset_id": "90509ad1-232a-4f9e-bc45-c5a194c6e994",
+      "path": "sub-828409/sub-828409_ses-828409-2025-11-20-10-01-34_image+ophys.nwb",
+      "sha256": "71646fd9b905a11b13f690cb0248ac62c84a9d25caf383cd18ee9da3147c7493",
+      "size": 1000457770
+    },
+    {
+      "asset_id": "e03a3c9e-1699-4742-b352-7385c3a90610",
+      "path": "sub-828409/sub-828409_ses-828409-2025-11-21-11-14-03_image+ophys.nwb",
+      "sha256": "e162f2d8e30dcbb6339f641863a07a964905390a1041d2e5ca6c878d1812398f",
+      "size": 2831214109
+    },
+    {
+      "asset_id": "983e5908-15f5-4235-b477-71f0ce47c1fc",
+      "path": "sub-829704/sub-829704_ses-829704-2025-12-10-13-47-47_image+ophys.nwb",
+      "sha256": "536aba16ee5d004b3ae617124eda0ed37e1ac88f0ec152f14b9a6eb3b6870fb1",
+      "size": 2522110791
+    },
+    {
+      "asset_id": "e36d24b2-ee5d-44d4-8119-b4f3f53e80d1",
+      "path": "sub-829704/sub-829704_ses-829704-2025-12-11-12-57-26_image+ophys.nwb",
+      "sha256": "d19e175db49a452fc60feec598eb01b7174d16e8a460dd964eda067f0e14ad2d",
+      "size": 2151916401
+    },
+    {
+      "asset_id": "e136d355-5d49-4cc0-bcd4-b7539d639557",
+      "path": "sub-829704/sub-829704_ses-829704-2025-12-16-11-03-04_image+ophys.nwb",
+      "sha256": "2b955d0d38077bb2ea1f08712a7c934a54830272c9d5fec5978326130af0221f",
+      "size": 3438876944
+    },
+    {
+      "asset_id": "018a6c38-a3e6-4246-abb4-01c01281f392",
+      "path": "sub-829704/sub-829704_ses-829704-2025-12-18-10-57-36_image+ophys.nwb",
+      "sha256": "1cddcea5a22f20599492df8bc07a997778ece683c36653293b222ecfffd97738",
+      "size": 3709531648
+    }
+  ],
+  "source_hash_verification": "SHA-256 of each NWB matched its published DANDI digest.",
+  "version": 1
+}

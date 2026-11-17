@@ -991,7 +991,7 @@ measuring action potentials.
 
 For SLAP2 glutamate imaging, SILo localizes spatially sparse glutamate-release sources along dendrites, refines their spatial profiles, and extracts their fluorescence time courses. Multiple extracted sources can belong to the same neuron, so source counts are not neuron counts. [Figure 3](#fig-aligned-neural-signals) compares the spatial filters and matched activity traces from representative sessions. The preprocessing, segmentation, source-extraction, and curation procedures are described under [Data processing](#data-processing) in Methods.
 
-[Figure 4](#fig-mesoscope-unit-extraction) reports mesoscope event-amplitude signal quality; [Figure 5](#fig-unit-extraction-plan) presents the separate SLAP2 glutamate analysis. Their source counts and quality classes retain their modality-specific definitions.
+[Figure 4](#fig-mesoscope-unit-extraction) reports mesoscope event-amplitude signal quality; [Figure 5](#fig-unit-extraction-plan) presents the separate SLAP2 glutamate analysis. Their source counts and quality measures retain their modality-specific definitions: three event-amplitude classes for mesoscope ROIs, and median event amplitude for SLAP2 glutamate sources.
 
 :::{iframe} ./interactive/mesoscope-plane-snr.html
 :label: fig-mesoscope-unit-extraction
@@ -1071,66 +1071,49 @@ complete 81-session cohort.
 
 :::{figure} ./images/figures/generated/figure-07-unit-extraction-plan.svg
 :label: fig-unit-extraction-plan
-:alt: One SLAP2 raw trace with detected events, an amplitude arrow, a noise-reference band and an individual footprint; three class histograms above one DMD2 dendritic map beside a grid-free full-archive scatter; shared-axis class compositions.
+:alt: One SLAP2 raw glutamate trace with detected events, an amplitude arrow and a noise-reference band, beside its source footprint; two dendritic maps with sources colored by median event amplitude; a cumulative distribution of median event amplitude with one gray line per session and a black line for all sources; source distributions for the two imaging paths and for each session.
 :width: 100%
 
-**SLAP2 glutamate signal-quality analysis.** Panels progress left to right and
-top to bottom. **A,** DMD1 source 9 from
+**SLAP2 glutamate signal quality.** **A,** DMD1 source 9 from
 `sub-794237_ses-20250508T145040`: its raw ΔF/F trace over the 900-920 s interval,
-with its individual footprint on the native mean image at right (**B**). Orange triangles
-mark detections from an exponential matched filter with a 20 ms decay
-constant and a 3 SD detection level; orange text identifies one detection directly.
-Sampling is approximately 200 Hz. The gray band is the full-recording raw median
-plus/minus three raw-noise SD: a noise reference, **not** the detection threshold,
-which applies to the filtered trace and its own noise scale.
-The single black arrow spans the largest measurable event amplitude in the
-displayed window, from its preceding local baseline to its raw peak. The baseline
-is the median 20-60 ms before detection; the peak search spans 40 ms after
-the detection. The plotted arrow is in ΔF/F; event-amplitude statistics divide
-that difference by raw-trace noise SD.
-**C–E,** Histograms show full-recording event amplitudes for DMD2 sources
-1 (High SNR; C), 21 (Intermediate; D), and 26 (Low SNR; E), selected near their
-example-session class medians. Gray bands and percentages highlight only
-amplitudes below 2 and at least 4 raw-noise SD, matching the scatter axes.
-Both percentages use all finite event amplitudes without renormalizing;
-the unshaded middle-range events remain in the complete histograms.
-Displayed histogram tails are clipped to the plotted range.
-**F,** The apical DMD2 map shows transparent filled ROIs
-on its native example-session mean image. It contains 59 sources:
-33 Low SNR (gold), 24 Intermediate (blue), and 2 High SNR (green).
-White rings and source IDs identify the three histogram
-examples. This map is from this session only, not a spatial pool across
-recordings. Both DMDs remain in the archive scatter and class-composition summaries.
-**G,** The scatter at right shows all 2,521 classified sources across
-20 sessions and 8 mice in the below-2 versus at-least-4-SD event-fraction plane;
-Matching white rings with dark edging and source IDs identify the same three
-histogram examples as in the map. Classes retain the original
-archive-wide k-means fit to the three event-amplitude fractions, ordered by
-their at-least-4-SD fraction, without refitting. These are full-recording
-statistics, not classifications of the short displayed excerpts.
-**H,** Three-class proportions on one shared vertical 0-100% stacked-bar axis.
-The first four bars pool classified sources within each DMD/cohort combination;
-the remaining 20 bars show individual sessions, grouped by cohort and mouse
-and ordered by acquisition date. Dates label individual bars; brackets underneath
-group their dates by mouse, with mouse IDs on a separate labeled row.
-The four compartment/cohort denominators are
-882 and 862 sources (Glu only, DMD1 and DMD2), and 364 and 413 sources
-(Glu + Ca, DMD1 and DMD2). Tick labels give DMDs or session dates;
-mouse identifiers appear above session groups. Each stack
-sums to 100%. The compartment pools and session bars reuse the same sources
-and are not independent samples. Stimulus-context event-rate plots are omitted.
-The archive contains 2,540 sources: 665 Low SNR, 1,026 Intermediate, 830 High SNR,
-and 19 sources excluded for undefined noise or event-amplitude features.
-Percentage denominators exclude those 19 sources. Sources are not neuron counts.
-Glu only denotes the 12 glutamate-only sessions; Glu + Ca denotes the 8
-glutamate-plus-calcium sessions. The latter contain non-negative, denoised ΔF/F
-and therefore a different noise scale: cross-cohort class differences
-must not be interpreted as differences in preparation quality. Source data are from
-[DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files), with the
-analysis and original results contributed in
+with its individual footprint on the native mean image at right (**B**). Orange
+triangles mark detections from an exponential matched filter with a 20 ms decay
+constant and a 3 SD detection level, applied to a nominal 200 Hz sample series.
+The gray band is the full-recording raw median plus/minus three raw-noise SD: a
+noise reference, **not** the detection threshold, which applies to the filtered
+trace and its own noise scale. The single black arrow spans the largest measurable
+event amplitude in the displayed window, from its preceding local baseline (the
+median 20-60 ms before detection) to its raw peak (the maximum within 40 ms after
+the detection). Event amplitudes divide that difference by the raw-trace noise SD.
+**C, D,** The DMD1 (proximal dendrites) and DMD2 (apical dendrites) maps of the same
+session, with each source filled by its median event amplitude on the shared color
+scale (2nd-98th percentile of all sources; arrowheads mark values beyond it). The
+white ring marks the source in A. The maps show this session only.
+**E,** Cumulative distribution of median event amplitude: one gray line per session
+and a black line for all 2,521 sources with a measurable noise floor (median 4.43 SD;
+interquartile range 3.98-5.07 SD). The dashed line marks 2.5 SD, the median
+amplitude of detections on noise-only surrogates: for each glutamate-only source,
+detection windows were removed, the Fourier phases of the remaining trace were
+randomized, and the unchanged detector was run.
+**F,** Sources by imaging path, DMD1 (1,246 sources) and DMD2 (1,275 sources). Dots
+are sources, colored as in C and D; black bars mark the median and interquartile
+range. The proximal and apical labels follow the NWB imaging-plane metadata, which
+records them for mouse 794237. **G,** The same per session, ordered by cohort,
+mouse and acquisition date, with brackets grouping sessions by mouse. In F and G the
+axis ends at 8 SD; 30 sources with larger values (maximum 391 SD) are drawn at the
+top edge. The pools in F and the sessions in G reuse the same sources.
+The archive contains 2,540 sources from 20 sessions and 8 mice; 19 sources with an
+undefined noise floor are excluded. Sources are not neuron counts. Twelve sessions
+are glutamate-only; the other eight also image calcium and contain only
+non-negative, denoised ΔF/F, so their noise SD is a denoiser residual. Their higher
+amplitudes (median 5.27 against 4.15 SD) therefore reflect processing, not
+preparation quality, and the noise-only reference uses the glutamate-only sessions
+only. The archive tables were recomputed with a nominal 5 ms sample interval. Source
+data are from [DANDI:001424](https://dandiarchive.org/dandiset/001424/draft/files),
+with the analysis originally contributed in
 [community PR #171](https://github.com/AllenNeuralDynamics/openscope-community-predictive-processing/pull/171).
-The committed archive tables and four-trace example snapshot regenerate every
-panel without network access.
+The committed archive tables, noise-only reference and example snapshot regenerate
+every panel without network access.
 :::
 
 ### Neuropixels recordings
@@ -1230,7 +1213,7 @@ Three further quality questions remain in preparation: motion correction across 
 
 ### SLAP imaging
 
-The event-based glutamate QC analysis in [Figure 5](#fig-unit-extraction-plan) characterizes 2,540 extracted sources across 20 sessions from 8 mice. It separates event detection from amplitude measurement and retains both within-session and archive-wide quality labels in the released tables. The figure preserves the original three archive-wide classes without refitting: 665 Low SNR, 1,026 Intermediate, and 830 High SNR sources; 19 sources are excluded. One example raw trace and its individual footprint link detected events to a measured amplitude and a raw-noise reference band. Three event-amplitude histograms and both example-session dendritic maps illustrate the classes, and the archive-wide feature space shows their full-recording event fractions. A shared percentage axis compares class composition across compartment/cohort pools and individual sessions. These signal-quality classes describe the recorded traces, not cell identities or a common preparation-quality scale across the two processing cohorts.
+The event-based glutamate QC analysis in [Figure 5](#fig-unit-extraction-plan) characterizes 2,540 extracted sources across 20 sessions from 8 mice. It separates event detection from amplitude measurement and summarizes each source by one continuous value, its median event amplitude in raw-noise SD. Across the 2,521 sources with a measurable noise floor, the median is 4.43 SD (interquartile range 3.98-5.07 SD), above the 2.5 SD median of detections on noise-only surrogates. Session medians range from 3.74 to 5.48 SD, and the two imaging paths are similar (DMD1, 4.41 SD; DMD2, 4.44 SD). One example raw trace and its individual footprint link detected events to a measured amplitude and a raw-noise reference band. The released tables also retain the within-session and archive-wide quality labels of the original analysis; the figure does not use them. Amplitudes describe the recorded traces, not cell identities, and are not a common preparation-quality scale across the two processing cohorts.
 
 Bleaching and remaining cross-session stability analyses are still in progress.
 
@@ -1387,7 +1370,9 @@ sources per session/area or DMD, before testability filtering. G/H show
 mouse points and no bootstrap intervals; circles/squares identify mice
 828408/829704. Optical observations are not necessarily independent neurons.
 All SLAP2 selections use frozen glutamate High/Intermediate-SNR labels and
-each DMD's own fully recorded trials, without bridging acquisition gaps.
+each DMD's own fully recorded trials, without bridging acquisition gaps. The labels
+predate the sample-interval correction of the Figure 5 tables, which does not change
+the eligible sources of these sessions.
 
 Source-verified snapshots and extraction provenance are retained in the
 [publication repository](https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper),

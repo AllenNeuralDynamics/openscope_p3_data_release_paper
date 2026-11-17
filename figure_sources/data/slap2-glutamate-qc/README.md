@@ -5,6 +5,12 @@ This is the migrated contribution by Ido Aizenbud from
 pinned to commit `a0f6af8a05f296d1c376bd10e1edd70766699c25`. His three original
 commits are retained in the migration history. The CSV values are unchanged.
 
+**Frozen.** These tables predate the sampling-interval fix of
+[issue #59](https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper/issues/59).
+Figure 9 and the legacy three-class panels pin them by checksum, so they stay byte-identical.
+Figure 5 reads the refreshed tables in `../slap2-glutamate-qc-v2/`. The eligible
+(High SNR plus Intermediate) sources of the Figure 9 sessions are the same in both versions.
+
 ## Contents
 
 - `slap2_metrics_all_sessions.csv`: 2,540 source records from 20 sessions and 8 mice.

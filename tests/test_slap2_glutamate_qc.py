@@ -39,6 +39,7 @@ from openscope_p3_publication.slap2_glutamate_qc_events import (
     assign_classes,
     detect_events,
     event_amplitudes_raw,
+    matched_filter_kernel,
     sampling_interval,
 )
 
@@ -582,6 +583,20 @@ def test_missing_samples_do_not_create_amplitudes() -> None:
     assert np.isnan(amplitudes).all()
     with pytest.raises(ValueError, match="sampling interval"):
         sampling_interval(np.array([1.0, 0.0]))
+
+
+def test_sampling_interval_is_nominal_for_interpolated_and_jittered_timestamps() -> None:
+    # Dual-channel DMD1: uneven steps whose median (4.6 ms) is below their mean (5 ms) (#59).
+    interpolated = np.r_[0.0, np.cumsum(np.tile([0.0046, 0.0046, 0.0058], 300))]
+    assert np.nanmedian(np.diff(interpolated)) == pytest.approx(0.0046)
+    assert np.mean(np.diff(interpolated)) == pytest.approx(0.005)
+    assert sampling_interval(interpolated) == 0.005
+    # Medians on either side of 5 ms used to give 21- and 20-sample kernels.
+    for step in (0.0049997, 0.0050005):
+        dt = sampling_interval(np.arange(1000) * step)
+        assert matched_filter_kernel(dt).size == 20
+    with pytest.raises(ValueError, match="200 Hz"):
+        sampling_interval(np.arange(100) / 30.0)
 
 
 def test_notebook_is_thin_offline_and_has_no_saved_outputs() -> None:

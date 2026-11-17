@@ -1,0 +1,21 @@
+subject,session,layout,has_calcium,context_source,n_sources,n_rectified,duration_s,n_contexts,median_event_rate_hz,median_false_pos_frac,median_robust_snr,median_frac_gt4sd,n_low_snr,n_intermediate,n_high_snr
+776270,sub-776270_ses-SLAP2-776270-2025-07-02-11-50-06,fluorescence,False,inferred from orientation statistics,40,0,3929.4,5,0.673,0.0,2.394,0.501,20,13,7
+794237,sub-794237_ses-20250403T103830,dff,False,inferred from orientation statistics,223,0,2058.5,5,1.046,0.0034,2.314,0.483,111,94,18
+794237,sub-794237_ses-20250424T142019,dff,False,inferred from orientation statistics,157,0,3086.6,5,0.845,0.0105,2.163,0.433,102,47,8
+794237,sub-794237_ses-20250508T145040,dff,False,inferred from orientation statistics,179,0,3088.4,5,1.044,0.0061,2.284,0.461,116,60,3
+796630,sub-796630_ses-SLAP2-796630-2025-08-25-14-59-15,fluorescence,False,inferred from orientation statistics,133,0,3949.7,5,0.658,0.0,2.423,0.555,36,80,17
+796630,sub-796630_ses-SLAP2-796630-2025-08-28-14-25-34,fluorescence,False,inferred from orientation statistics,119,0,3950.5,5,0.722,0.0,2.475,0.57,19,83,17
+796630,sub-796630_ses-SLAP2-796630-2025-09-26-10-48-22,fluorescence,False,inferred from orientation statistics,167,0,3950.5,5,0.699,0.0,2.496,0.592,20,108,39
+796630,sub-796630_ses-SLAP2-796630-2025-10-01-14-23-25,fluorescence,False,inferred from orientation statistics,227,0,3949.8,5,0.762,0.0,2.535,0.58,42,141,44
+801381,sub-801381_ses-SLAP2-801381-2025-06-05-14-57-42,fluorescence,False,inferred from orientation statistics,131,0,3020.0,5,0.815,0.0004,2.585,0.528,60,50,21
+801381,sub-801381_ses-SLAP2-801381-2025-09-26-14-17-56,fluorescence,False,inferred from orientation statistics,113,0,3950.5,5,0.749,0.0,2.506,0.543,41,60,12
+801381,sub-801381_ses-SLAP2-801381-2025-10-02-15-23-18,fluorescence,False,inferred from orientation statistics,203,0,3924.0,5,0.843,0.0,2.633,0.537,88,87,28
+803496,sub-803496_ses-SLAP2-803496-2025-07-02-15-33-26,fluorescence,False,inferred from orientation statistics,52,0,3930.0,5,0.566,0.0,2.315,0.505,17,35,0
+828408,sub-828408_ses-828408-2025-11-13-10-30-53,dual,True,interval tables,91,0,4326.5,7,1.396,0.0,3.578,0.704,0,15,75
+828408,sub-828408_ses-828408-2025-11-18-14-44-48,dual,True,interval tables,134,7,4340.1,7,1.346,0.0,3.528,0.734,0,13,106
+828409,sub-828409_ses-828409-2025-11-20-10-01-34,dual,True,interval tables,28,2,4503.8,7,1.313,0.0,3.431,0.733,0,2,24
+828409,sub-828409_ses-828409-2025-11-21-11-14-03,dual,True,interval tables,97,1,4377.7,7,1.186,0.0,3.275,0.697,0,16,80
+829704,sub-829704_ses-829704-2025-12-10-13-47-47,dual,True,interval tables,101,0,4325.7,7,1.178,0.0,3.288,0.699,1,15,85
+829704,sub-829704_ses-829704-2025-12-11-12-57-26,dual,True,interval tables,76,0,4356.2,7,1.111,0.0,3.194,0.692,0,12,64
+829704,sub-829704_ses-829704-2025-12-16-11-03-04,dual,True,interval tables,144,0,3905.6,7,1.184,0.0,3.252,0.718,2,11,131
+829704,sub-829704_ses-829704-2025-12-18-10-57-36,dual,True,interval tables,125,0,4377.7,7,1.131,0.0,3.234,0.708,1,15,109

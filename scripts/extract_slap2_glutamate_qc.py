@@ -36,6 +36,12 @@ Usage:
     uv run --extra nwb-view python scripts/extract_slap2_glutamate_qc.py \
         --output /tmp/slap2-qc-refresh --cache /tmp/slap2-nwb-cache
     uv run python scripts/extract_slap2_glutamate_qc.py --output <dir> --refit-only
+
+Like-for-like refresh of the tabled sessions, with a provenance record (issue #59):
+    uv run --extra nwb-view python scripts/extract_slap2_glutamate_qc.py \
+        --output figure_sources/data/slap2-glutamate-qc-v2 --cache /tmp/slap2_cache \
+        --keep-downloads \
+        --sessions-from figure_sources/data/slap2-glutamate-qc/slap2_metrics_all_sessions.csv
 """
 
 from __future__ import annotations
@@ -55,7 +61,10 @@ import numpy as np
 import pandas as pd
 
 from openscope_p3_publication.slap2_glutamate_qc_events import (  # noqa: E402
+    NOMINAL_SAMPLING_INTERVAL_S,
+    SD_DETECT,
     SD_LARGE,
+    TAU_IGLUSNFR4F_S,
     assign_classes,
     assign_event_contexts,
     baseline_noise,
@@ -465,6 +474,65 @@ def write_outputs(args, all_metrics, all_ctx, summaries) -> None:
         new.sort_values(keys).to_csv(path, index=False)
 
 
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(1 << 24):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def select_sessions(assets: list[dict], table: Path) -> list[dict]:
+    """Keep exactly the sessions of an existing metrics table, so a refresh is like-for-like."""
+    wanted = set(pd.read_csv(table, usecols=["session"]).session)
+    chosen = [a for a in assets
+              if Path(a["path"]).name.replace("_image+ophys.nwb", "") in wanted]
+    if len(chosen) != len(wanted):
+        raise SystemExit(f"{len(wanted) - len(chosen)} sessions of {table} are not on DANDI.")
+    return chosen
+
+
+def write_table_provenance(output: Path, assets: list[dict], paths: dict[str, Path],
+                           sessions_from: Path | None) -> None:
+    """Record the verified source assets, parameters and output checksums of a table run."""
+    records = []
+    for asset in assets:
+        published = api_get(f"https://api.dandiarchive.org/api/assets/{asset['asset_id']}/")
+        expected = published["digest"]["dandi:sha2-256"]
+        observed = sha256_file(paths[asset["asset_id"]])
+        if observed != expected:
+            raise ValueError(f"{asset['path']}: local copy differs from the DANDI digest.")
+        records.append({"asset_id": asset["asset_id"], "path": asset["path"],
+                        "size": asset["size"], "sha256": expected})
+    tables = ("slap2_metrics_all_sessions.csv", "slap2_context_rates_all_sessions.csv",
+              "slap2_session_summary.csv")
+    provenance = {
+        "version": 1,
+        "dandiset_id": DANDISET,
+        "dandiset_version": "draft",
+        "retrieved_at": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
+        "source_assets": records,
+        "source_hash_verification": "SHA-256 of each NWB matched its published DANDI digest.",
+        "sessions_from": None if sessions_from is None else {
+            "path": sessions_from.resolve().relative_to(REPO_ROOT).as_posix(),
+            "sha256": sha256_file(sessions_from),
+        },
+        "parameters": {
+            "sampling_interval_seconds": NOMINAL_SAMPLING_INTERVAL_S,
+            "sampling_interval_rule": "nominal 200 Hz; median timestamp step only checked (#59)",
+            "tau_seconds": TAU_IGLUSNFR4F_S,
+            "detection_threshold_sd": SD_DETECT,
+            "large_event_minimum_sd": SD_LARGE,
+            "classification_seed": 0,
+            "classification_scope": "one fit over all sessions",
+        },
+        "outputs": {name: sha256_file(output / name) for name in tables},
+    }
+    (output / "provenance.json").write_text(
+        json.dumps(provenance, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n"
+    )
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--output", type=Path, required=True)
@@ -476,6 +544,8 @@ def main() -> None:
                     help="Allow a 10-100 MiB example only after explicit maintainer approval.")
     ap.add_argument("--cache", type=Path, default=Path("/tmp/slap2_cache"))
     ap.add_argument("--limit", type=int, default=None)
+    ap.add_argument("--sessions-from", type=Path, default=None,
+                    help="process exactly the sessions of this metrics table")
     ap.add_argument("--only", default=None,
                     help="process only assets whose path contains this substring")
     ap.add_argument("--merge", action="store_true",
@@ -500,6 +570,8 @@ def main() -> None:
     args.cache.mkdir(parents=True, exist_ok=True)
 
     assets = list_assets()
+    if args.sessions_from:
+        assets = select_sessions(assets, args.sessions_from)
     if args.only:
         assets = [a for a in assets if args.only in a["path"]]
         if not assets:
@@ -509,7 +581,7 @@ def main() -> None:
     print(f"{len(assets)} sessions to process "
           f"({sum(a['size'] for a in assets)/1e9:.1f} GB)\n", flush=True)
 
-    all_metrics, all_ctx, summaries, failures = [], [], [], []
+    all_metrics, all_ctx, summaries, failures, paths = [], [], [], [], {}
     t_start = time.time()
     for i, a in enumerate(assets, 1):
         name = Path(a["path"]).name.replace("_image+ophys.nwb", "")
@@ -517,6 +589,7 @@ def main() -> None:
         print(f"[{i}/{len(assets)}] {name}", flush=True)
         try:
             p = fetch(a, args.cache)
+            paths[a["asset_id"]] = p
             t0 = time.time()
             m, c, s = process(p, subject, name)
             all_metrics.append(m)
@@ -547,6 +620,8 @@ def main() -> None:
         print(f"  FAILED {f['session']}: {f['error']}")
     if summaries:
         fit_archive_classes(args.output)
+    if args.keep_downloads and not failures and not args.merge:
+        write_table_provenance(args.output, assets, paths, args.sessions_from)
 
 
 if __name__ == "__main__":

@@ -588,8 +588,8 @@ in different output formats.
 | [figure-06-neuropixels-unit-filters.svg](../images/figures/generated/figure-06-neuropixels-unit-filters.svg) | Neuropixels unit-template/extraction static panels. |
 | [figure-06-segmentation-viewers.svg](../images/figures/generated/figure-06-segmentation-viewers.svg) | Combined static segmentation/extraction figure. |
 | [figure-06-slap2-source-filters.svg](../images/figures/generated/figure-06-slap2-source-filters.svg) | SLAP2 source-mask/extraction static panels. |
-| [figure-07-unit-extraction-plan.svg](../images/figures/generated/figure-07-unit-extraction-plan.svg) | Wrapper around preserved unit-extraction-plan artwork with obsolete embedded numbering masked. |
-| [figure-07-unit-extraction-plan-variant-a.svg](../images/figures/generated/figure-07-unit-extraction-plan-variant-a.svg), [figure-07-unit-extraction-plan-variant-b.svg](../images/figures/generated/figure-07-unit-extraction-plan-variant-b.svg) | Candidate SLAP2 Figure 5 layouts for review, not used by the manuscript; see `figure_sources/data/slap2-figure5-variants/README.md`. |
+| [figure-07-unit-extraction-plan.svg](../images/figures/generated/figure-07-unit-extraction-plan.svg) | Figure 5: SLAP2 glutamate signal quality as median event amplitude, drawn by `slap2_figure5.py`. |
+| [figure-07-unit-extraction-plan-by-cohort.svg](../images/figures/generated/figure-07-unit-extraction-plan-by-cohort.svg) | Figure 5 variant split by processing cohort, not used by the manuscript; see `figure_sources/data/slap2-figure5-noise/README.md`. |
 | [receptive-fields.svg](../images/figures/generated/receptive-fields.svg) | Receptive fields mapped with local Gabor patches and the Zebra noise movie, for the receptive-field section. |
 | [figure-10-neuropixels-event-responses.svg](../images/figures/generated/figure-10-neuropixels-event-responses.svg) | Static counterpart to the Neuropixels mismatch-response explorer. |
 | [multimodal-hardware.svg](../images/figures/generated/multimodal-hardware.svg) | Hardware composition generated from the extracted PowerPoint images and placements. |
