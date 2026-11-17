@@ -109,6 +109,13 @@ def test_committed_figures_regenerate_identically(tmp_path: Path) -> None:
     assert by_cohort.read_bytes() == BY_COHORT_OUTPUT.read_bytes()
 
 
+def test_svg_ids_do_not_depend_on_float_hashes() -> None:
+    for path in (POOLED_OUTPUT, BY_COHORT_OUTPUT):
+        svg = path.read_text(encoding="utf-8")
+        assert not re.search(r'id="(?:p|m|image)[0-9a-f]{10}"', svg)
+        assert 'clip-path="url(#slap2-figure5' in svg
+
+
 def test_only_the_variant_separates_the_cohorts() -> None:
     pooled, by_cohort = _visible_text(POOLED_OUTPUT), _visible_text(BY_COHORT_OUTPUT)
     assert "Glu only" not in pooled and "Glu + Ca" not in pooled

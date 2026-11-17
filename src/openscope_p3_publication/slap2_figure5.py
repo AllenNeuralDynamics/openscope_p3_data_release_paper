@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -433,10 +434,26 @@ def _compose(rows: list[Row]) -> plt.Figure:
     return fig
 
 
-def _write(rows: list[Row], output: Path, title: str, description: str) -> Path:
+def stable_svg_ids(svg: str, prefix: str) -> str:
+    """Replace Matplotlib's hash-based clip, marker and image IDs by sequential names.
+
+    Matplotlib hashes each clip box's floats into its ID, so last-bit float differences
+    between Python builds or platforms change the IDs although every drawn number is equal.
+    """
+    hashed = r"(?:p|m|image)[0-9a-f]{10}"
+    names = {
+        old: f"{prefix}-{index}"
+        for index, old in enumerate(dict.fromkeys(re.findall(rf'id="({hashed})"', svg)))
+    }
+    pattern = rf'(id="|url\(#|href="#)({hashed})(?=[")])'
+    return re.sub(pattern, lambda match: match.group(1) + names.get(match.group(2),
+                                                                      match.group(2)), svg)
+
+
+def _write(rows: list[Row], output: Path, title: str, description: str, id_prefix: str) -> Path:
     fig = _compose(rows)
     panels.save_panel(fig, output.parent, output.stem, preview_png=False)
-    svg = output.read_text(encoding="utf-8")
+    svg = stable_svg_ids(output.read_text(encoding="utf-8"), id_prefix)
     opening = svg.index(">", svg.index("<svg")) + 1
     accessible = (
         f'<title id="title">{escape(title)}</title>'
@@ -465,10 +482,12 @@ def write_figure5(
         written_pooled = _write(
             figure_rows(inputs, by_cohort=False), pooled,
             "SLAP2 glutamate signal quality: median event amplitude", shared,
+            "slap2-figure5",
         )
         written_by_cohort = _write(
             figure_rows(inputs, by_cohort=True), by_cohort,
             "SLAP2 glutamate signal quality by processing cohort",
             shared + " E, F and G separate the glutamate-only and glutamate-plus-calcium cohorts.",
+            "slap2-figure5-by-cohort",
         )
     return written_pooled, written_by_cohort
