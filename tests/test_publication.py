@@ -546,7 +546,7 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     assert "./images/figures/generated/supplementary-recording-hardware.svg" in manuscript
     assert "./images/figures/generated/figure-06-segmentation-viewers.svg" not in manuscript
     assert "./images/figures/generated/figure-06-unit-extraction-mesoscope.svg" in manuscript
-    assert "./images/figures/generated/figure-07-unit-extraction-plan.svg" in manuscript
+    assert "./images/figures/generated/figure-05-unit-extraction-plan.svg" in manuscript
     assert "./images/figures/generated/receptive-fields.svg" in manuscript
     assert "./images/figures/generated/figure-08-basic-stimuli-plan.svg" not in manuscript
     assert "./images/figures/generated/figure-11-standard-oddball-plan.svg" not in manuscript
@@ -644,7 +644,7 @@ def test_mesoscope_and_slap2_quality_figures_remain_separate() -> None:
         ":placeholder: ./images/figures/generated/figure-06-unit-extraction-mesoscope.svg"
         in mesoscope
     )
-    assert ":::{figure} ./images/figures/generated/figure-07-unit-extraction-plan.svg" in slap2
+    assert ":::{figure} ./images/figures/generated/figure-05-unit-extraction-plan.svg" in slap2
     assert "columns are in preparation" not in mesoscope
     assert "complete 81-session cohort" in mesoscope
     assert "multiplane-ophys_839909_2026-02-20_12-53-27" in mesoscope
@@ -1440,7 +1440,6 @@ def test_figure_captions_and_interactive_placement() -> None:
     assert ":label: fig-unit-extraction-plan" in manuscript
     assert "all 2,521 sources with a measurable noise floor" in prose
     assert "reflect processing, not preparation quality" in prose
-    assert "predate the sample-interval correction of the Figure 5 tables" in prose
     assert "The stimulus design enables receptive field (RF) mapping" in manuscript
     assert all(
         f"[Fig. 7{panels}](#fig-basic-stimuli-plan)" in manuscript

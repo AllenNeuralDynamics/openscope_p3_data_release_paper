@@ -134,5 +134,5 @@ def test_figures_have_scale_bars_and_accessible_text() -> None:
 
 def test_manuscript_uses_the_pooled_figure_only() -> None:
     manuscript = (REPO_ROOT / "index.md").read_text(encoding="utf-8")
-    assert "./images/figures/generated/figure-07-unit-extraction-plan.svg" in manuscript
-    assert "figure-07-unit-extraction-plan-by-cohort" not in manuscript
+    assert "./images/figures/generated/figure-05-unit-extraction-plan.svg" in manuscript
+    assert "figure-05-unit-extraction-plan-by-cohort" not in manuscript

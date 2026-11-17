@@ -1069,7 +1069,7 @@ signal-to-noise definitions and 60 s trace excerpts. It does not contain the
 complete 81-session cohort.
 :::
 
-:::{figure} ./images/figures/generated/figure-07-unit-extraction-plan.svg
+:::{figure} ./images/figures/generated/figure-05-unit-extraction-plan.svg
 :label: fig-unit-extraction-plan
 :alt: One SLAP2 raw glutamate trace with detected events, an amplitude arrow and a noise-reference band, beside its source footprint; two dendritic maps with sources colored by median event amplitude; a cumulative distribution of median event amplitude with one gray line per session and a black line for all sources; source distributions for the two imaging paths and for each session.
 :width: 100%
@@ -1370,9 +1370,7 @@ sources per session/area or DMD, before testability filtering. G/H show
 mouse points and no bootstrap intervals; circles/squares identify mice
 828408/829704. Optical observations are not necessarily independent neurons.
 All SLAP2 selections use frozen glutamate High/Intermediate-SNR labels and
-each DMD's own fully recorded trials, without bridging acquisition gaps. The labels
-predate the sample-interval correction of the Figure 5 tables, which does not change
-the eligible sources of these sessions.
+each DMD's own fully recorded trials, without bridging acquisition gaps.
 
 Source-verified snapshots and extraction provenance are retained in the
 [publication repository](https://github.com/AllenNeuralDynamics/openscope_p3_data_release_paper),

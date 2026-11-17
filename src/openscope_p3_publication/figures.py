@@ -149,7 +149,7 @@ NEUROPIXELS_IMPLANT_STATIC_OUTPUT = HARDWARE_STATIC_OUTPUT.with_name(
 IMPORTED_FIGURE_DIR = REPO_ROOT / "images" / "figures" / "imported"
 UNIT_EXTRACTION_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-04-unit-extraction-plan.png"
 UNIT_EXTRACTION_PLAN_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-07-unit-extraction-plan.svg"
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-05-unit-extraction-plan.svg"
 )
 MESOSCOPE_UNIT_EXTRACTION_OUTPUT = (
     REPO_ROOT

@@ -3,9 +3,9 @@
 Each source is summarized by one continuous metric, its median event amplitude in raw-noise SD,
 instead of archive-wide k-means classes. Two layouts share panels A-D:
 
-* the manuscript figure pools all sessions (`figure-07-unit-extraction-plan.svg`);
+* the manuscript figure pools all sessions (`figure-05-unit-extraction-plan.svg`);
 * a variant splits the cumulative distribution, DMD pools and session axis by processing cohort
-  (`figure-07-unit-extraction-plan-by-cohort.svg`).
+  (`figure-05-unit-extraction-plan-by-cohort.svg`).
 
 Inputs are the issue-59 refresh of the archive tables, the noise-only surrogate reference and the
 pinned example snapshot. Figure 9 and the legacy class panels keep the earlier archive tables.
@@ -35,8 +35,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 TABLE_DIR = REPO_ROOT / "figure_sources/data/slap2-glutamate-qc-v2"
 NOISE_DIR = REPO_ROOT / "figure_sources/data/slap2-figure5-noise"
 GENERATED = REPO_ROOT / "images/figures/generated"
-POOLED_OUTPUT = GENERATED / "figure-07-unit-extraction-plan.svg"
-BY_COHORT_OUTPUT = GENERATED / "figure-07-unit-extraction-plan-by-cohort.svg"
+POOLED_OUTPUT = GENERATED / "figure-05-unit-extraction-plan.svg"
+BY_COHORT_OUTPUT = GENERATED / "figure-05-unit-extraction-plan-by-cohort.svg"
 
 AMPLITUDE = "median_event_raw_sd"
 AMPLITUDE_LABEL = "Median event amplitude (raw-noise SD)"

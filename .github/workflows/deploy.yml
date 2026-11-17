@@ -64,7 +64,7 @@ jobs:
           retention-days: 3
           path: |
             images/figures/generated/figure7_panel*
-            images/figures/generated/figure-07-unit-extraction-plan.svg
+            images/figures/generated/figure-05-unit-extraction-plan.svg
             images/figures/generated/figure-06-unit-extraction-mesoscope.svg
             images/figures/generated/receptive-fields.svg
             interactive/mesoscope-plane-snr.html
@@ -118,7 +118,7 @@ jobs:
           retention-days: 3
           path: |
             images/figures/generated/figure7_panel*
-            images/figures/generated/figure-07-unit-extraction-plan.svg
+            images/figures/generated/figure-05-unit-extraction-plan.svg
 
       - name: Preserve Neuropixels QC drift diagnostics
         if: failure() && steps.generated-figures.outcome == 'failure'

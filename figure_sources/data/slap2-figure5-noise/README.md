@@ -4,8 +4,8 @@ These tables give the noise-only reference line of SLAP2 Figure 5 (`fig-unit-ext
 
 | File | Use |
 |---|---|
-| `figure-07-unit-extraction-plan.svg` | Manuscript Figure 5: all sessions pooled |
-| `figure-07-unit-extraction-plan-by-cohort.svg` | Variant with E–G split into the glutamate-only and glutamate-plus-calcium cohorts; not in the manuscript |
+| `figure-05-unit-extraction-plan.svg` | Manuscript Figure 5: all sessions pooled |
+| `figure-05-unit-extraction-plan-by-cohort.svg` | Variant with E–G split into the glutamate-only and glutamate-plus-calcium cohorts; not in the manuscript |
 
 Rendering: `write_figure5` in `slap2_figure5.py`, offline, as part of
 `uv run build-publication-figures`. The figure also reads the issue-59 archive tables in
