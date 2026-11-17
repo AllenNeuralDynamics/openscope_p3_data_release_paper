@@ -546,7 +546,7 @@ def test_manuscript_local_assets_and_figure_metadata() -> None:
     assert "./images/figures/generated/supplementary-recording-hardware.svg" in manuscript
     assert "./images/figures/generated/figure-06-segmentation-viewers.svg" not in manuscript
     assert "./images/figures/generated/figure-06-unit-extraction-mesoscope.svg" in manuscript
-    assert "./images/figures/generated/figure-07-unit-extraction-plan.svg" in manuscript
+    assert "./images/figures/generated/figure-05-unit-extraction-plan.svg" in manuscript
     assert "./images/figures/generated/receptive-fields.svg" in manuscript
     assert "./images/figures/generated/figure-08-basic-stimuli-plan.svg" not in manuscript
     assert "./images/figures/generated/figure-11-standard-oddball-plan.svg" not in manuscript
@@ -644,7 +644,7 @@ def test_mesoscope_and_slap2_quality_figures_remain_separate() -> None:
         ":placeholder: ./images/figures/generated/figure-06-unit-extraction-mesoscope.svg"
         in mesoscope
     )
-    assert ":::{figure} ./images/figures/generated/figure-07-unit-extraction-plan.svg" in slap2
+    assert ":::{figure} ./images/figures/generated/figure-05-unit-extraction-plan.svg" in slap2
     assert "columns are in preparation" not in mesoscope
     assert "complete 81-session cohort" in mesoscope
     assert "multiplane-ophys_839909_2026-02-20_12-53-27" in mesoscope
@@ -653,23 +653,19 @@ def test_mesoscope_and_slap2_quality_figures_remain_separate() -> None:
     assert "900-920 s" in slap2
     assert "20 ms decay" in slap2
     assert "40 ms after" in slap2
-    assert "**C–E,** Histograms" in slap2
     assert "**not** the detection threshold" in slap2
     assert "single black arrow" in slap2
-    assert "DMD2 map" in slap2 and "59 sources" in slap2
-    assert "proximal DMD1 map" not in slap2
-    assert "Both DMDs remain in the archive scatter and class-composition summaries" in slap2
-    assert "transparent filled ROIs" in slap2
+    assert "nominal 200 Hz sample series" in slap2
+    assert "median event amplitude" in slap2
+    assert "all 2,521 sources with a measurable noise" in slap2
+    assert "noise-only surrogates" in slap2
+    assert "DMD1 (1,246 sources) and DMD2 (1,275 sources)" in slap2
+    assert "records them for mouse 794237" in slap2
+    assert "axis ends at 8 SD; 30 sources" in slap2
+    assert "19 sources with an\nundefined noise floor are excluded" in slap2
     assert "this session only" in slap2
-    assert "all 2,521 classified sources" in slap2
-    assert "without refitting" in slap2
-    assert "one shared vertical 0-100%" in slap2
-    assert "first four bars" in slap2
-    assert "remaining 20 bars" in slap2
-    assert "1,026 Intermediate, 830 High SNR" in slap2
-    assert "Percentage denominators exclude those 19 sources" in slap2
-    assert "Non-low SNR" not in slap2
-    assert "Stimulus-context event-rate plots are omitted" in slap2
+    for retired in ("High SNR", "Intermediate", "Low SNR", "k-means", "Histograms"):
+        assert retired not in slap2
     assert "Mean ± SEM" not in slap2
     assert "all 277 somatic ROIs" in mesoscope
     assert "not amplitude histograms" in mesoscope
@@ -678,9 +674,9 @@ def test_mesoscope_and_slap2_quality_figures_remain_separate() -> None:
     for label in ("A", "C–E", "F", "G", "H", "I"):
         assert f"**{label},**" in mesoscope
     assert "(**B,** orange outline)" in mesoscope
-    for label in ("A", "C–E", "F", "G", "H"):
+    for label in ("A", "C, D", "E", "F", "G"):
         assert f"**{label},**" in slap2
-    assert "**I,**" not in slap2
+    assert "**H,**" not in slap2
     assert "(**B**)" in slap2
     assert manuscript.index(mesoscope) < manuscript.index(slap2)
     assert not re.search(r"^(?:<{7}|={7}|>{7})", manuscript, re.MULTILINE)
@@ -1442,10 +1438,8 @@ def test_figure_captions_and_interactive_placement() -> None:
     )
     assert "[Figure 3](#fig-aligned-neural-signals)" in manuscript
     assert ":label: fig-unit-extraction-plan" in manuscript
-    assert "all 2,521 classified sources" in manuscript
-    assert "Percentage denominators exclude those 19 sources" in manuscript
-    assert "first four bars pool classified sources" in prose
-    assert "cross-cohort class differences must not be interpreted" in prose
+    assert "all 2,521 sources with a measurable noise floor" in prose
+    assert "reflect processing, not preparation quality" in prose
     assert "The stimulus design enables receptive field (RF) mapping" in manuscript
     assert all(
         f"[Fig. 7{panels}](#fig-basic-stimuli-plan)" in manuscript

@@ -44,22 +44,40 @@ import pandas as pd
 # iGluSnFR4f decay constant used by the SLAP2 SILo source extractor (Methods).
 TAU_IGLUSNFR4F_S = 0.020
 
+# Every SLAP2 glutamate session in the archive samples dF/F at a nominal 200 Hz.
+# Median timestamp steps range from 4.5 ms (dual-channel DMD1) to 5.4 ms (mistimed trials).
+NOMINAL_SAMPLING_INTERVAL_S = 0.005
+SAMPLING_INTERVAL_TOLERANCE = 0.15
+
 # Event-amplitude thresholds, in SDs above the non-event baseline.
 SD_DETECT = 3.0   # detection floor (false-positive controlled, see module docstring)
 SD_LARGE = 4.0    # large-event boundary, identical to the mesoscope scheme (#156)
 
 
 def sampling_interval(ts: np.ndarray) -> float:
-    """Median sample interval, tolerant of gaps and missing timestamps.
+    """Nominal 200 Hz sample interval, after checking the timestamps agree with it.
+
+    The median timestamp step is not a usable dt (#59). In the dual-channel
+    sessions, dF/F samples are interpolated between cycle starts, so the median
+    step is 4.5-4.9 ms while the mean step within a trial is 5.0 ms. And because
+    the kernel length is ceil(5 tau / dt), a median a few microseconds either
+    side of 5 ms flipped glutamate-only sessions between 20 and 21 samples,
+    which moved every detection by one sample relative to the raw trace.
+    Returning the nominal interval gives every session the same kernel and
+    makes `n_valid * dt` the recorded duration.
 
     Some sessions carry NaN timestamps (sub-828409 2025-11-20 has 5883 of them
-    on DMD2). A plain `np.median` propagates the NaN into the kernel length and
-    the run dies on `int(nan)`, so take the nanmedian and validate.
+    on DMD2), so the check uses the nanmedian.
     """
-    dt = float(np.nanmedian(np.diff(np.asarray(ts, dtype=float))))
-    if not np.isfinite(dt) or dt <= 0:
-        raise ValueError(f"Could not determine a sampling interval (got {dt!r}).")
-    return dt
+    median = float(np.nanmedian(np.diff(np.asarray(ts, dtype=float))))
+    if not np.isfinite(median) or median <= 0:
+        raise ValueError(f"Could not determine a sampling interval (got {median!r}).")
+    if abs(median / NOMINAL_SAMPLING_INTERVAL_S - 1) > SAMPLING_INTERVAL_TOLERANCE:
+        raise ValueError(
+            f"Median timestamp step {1e3 * median:.3f} ms is not a "
+            f"{1 / NOMINAL_SAMPLING_INTERVAL_S:.0f} Hz recording; check the sampling interval."
+        )
+    return NOMINAL_SAMPLING_INTERVAL_S
 
 
 def matched_filter_kernel(dt: float, tau: float = TAU_IGLUSNFR4F_S) -> np.ndarray:

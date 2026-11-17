@@ -149,7 +149,7 @@ NEUROPIXELS_IMPLANT_STATIC_OUTPUT = HARDWARE_STATIC_OUTPUT.with_name(
 IMPORTED_FIGURE_DIR = REPO_ROOT / "images" / "figures" / "imported"
 UNIT_EXTRACTION_PLAN_SOURCE = IMPORTED_FIGURE_DIR / "figure-04-unit-extraction-plan.png"
 UNIT_EXTRACTION_PLAN_OUTPUT = (
-    REPO_ROOT / "images" / "figures" / "generated" / "figure-07-unit-extraction-plan.svg"
+    REPO_ROOT / "images" / "figures" / "generated" / "figure-05-unit-extraction-plan.svg"
 )
 MESOSCOPE_UNIT_EXTRACTION_OUTPUT = (
     REPO_ROOT
@@ -1308,12 +1308,17 @@ def _add_targeting_to_neural_static_svg(output: Path) -> None:
     _write_svg_tree(output, root)
 
 
-def write_unit_extraction_plan_svg(output: Path = UNIT_EXTRACTION_PLAN_OUTPUT) -> Path:
+def write_unit_extraction_plan_svg(
+    output: Path = UNIT_EXTRACTION_PLAN_OUTPUT,
+) -> tuple[Path, Path]:
+    """Write Figure 5 and its by-cohort variant, and keep the legacy class panels current."""
+    from openscope_p3_publication.slap2_figure5 import BY_COHORT_OUTPUT, write_figure5
     from openscope_p3_publication.slap2_glutamate_figure7_panels import (
-        write_slap2_glutamate_figure,
+        write_publication_panels,
     )
 
-    return write_slap2_glutamate_figure(output)
+    write_publication_panels(output.parent)
+    return write_figure5(output, BY_COHORT_OUTPUT)
 
 
 def write_unit_extraction_mesoscope_svg(
@@ -7071,7 +7076,9 @@ def main() -> None:
     figure_1_panel_c_path = write_figure_1_panel_c_svg()
     hardware_path = write_hardware_figure_svg()
     hardware_supplement_path = write_hardware_supplement_svg()
-    unit_extraction_plan_path = write_unit_extraction_plan_svg()
+    unit_extraction_plan_path, unit_extraction_plan_by_cohort_path = (
+        write_unit_extraction_plan_svg()
+    )
     unit_extraction_mesoscope_path = write_unit_extraction_mesoscope_svg()
     receptive_fields_path = write_receptive_fields_svg()
     html_path = write_interactive_html()
@@ -7121,6 +7128,7 @@ def main() -> None:
     print(f"Wrote {hardware_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {hardware_supplement_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_plan_path.relative_to(REPO_ROOT)}")
+    print(f"Wrote {unit_extraction_plan_by_cohort_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {unit_extraction_mesoscope_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {receptive_fields_path.relative_to(REPO_ROOT)}")
     print(f"Wrote {CONTEXT_CONTROLS_STATIC_OUTPUT.relative_to(REPO_ROOT)}")
